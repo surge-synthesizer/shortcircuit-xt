@@ -1,0 +1,108 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "hamburger-stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {}
+    },
+    "color-mono": {
+      "class": "knob70",
+      "label": "Color",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 10,
+        "y": 20
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          0
+        ]
+      }
+    },
+    "level-mono": {
+      "class": "knob70",
+      "label": "Level",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 110,
+        "y": 20
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          0
+        ]
+      }
+    },
+    "color-stereo": {
+      "class": "knob50",
+      "label": "Color",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 20,
+        "y": 10
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "level-stereo": {
+      "class": "knob50",
+      "label": "Level",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 120,
+        "y": 10
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "width": {
+      "class": "knob50",
+      "label": "Width",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 70,
+        "y": 75
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    }
+  }
+}

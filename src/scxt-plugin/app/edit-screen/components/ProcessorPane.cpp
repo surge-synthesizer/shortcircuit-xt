@@ -230,9 +230,6 @@ void ProcessorPane::rebuildControlsFromDescription()
 
     switch (processorControlDescription.type)
     {
-    case dsp::processor::proct_SurgeFilters:
-        layoutControlsSurgeFilters();
-        break;
     case dsp::processor::proct_VemberClassic:
         layoutControlsWithJsonEngine("voicefx-layouts/filters/vember-classic.json");
         break;
@@ -266,11 +263,11 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_fx_microgate:
-        layoutControlsMicroGate();
+        layoutControlsWithJsonEngine("voicefx-layouts/delay/micrograte.json");
         break;
 
     case dsp::processor::proct_stereotool:
-        layoutControlsStereoTool();
+        layoutControlsWithJsonEngine("voicefx-layouts/utility/stereo-tool.json");
         break;
 
     case dsp::processor::proct_gainmatrix:
@@ -300,23 +297,19 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_osc_correlatednoise:
-        layoutControlsCorrelatedNoiseGen();
-        break;
-
-    case dsp::processor::proct_osc_VA:
-        layoutControlsVAOsc();
+        layoutControlsWithJsonEngine("voicefx-layouts/generators/correlated-noise.json");
         break;
 
     case dsp::processor::proct_stringResonator:
-        layoutControlsStringResonator();
+        layoutControlsWithJsonEngine("voicefx-layouts/generators/string-resonator.json");
         break;
 
     case dsp::processor::proct_StaticPhaser:
-        layoutControlsStaticPhaser();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/static-phaser.json");
         break;
 
     case dsp::processor::proct_fmfilter:
-        layoutControlsFMFilter();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/fm-filter.json");
         break;
 
     case dsp::processor::proct_Tremolo:
@@ -324,15 +317,15 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_Phaser:
-        layoutControlsPhaser();
+        layoutControlsWithJsonEngine("voicefx-layouts/modulation/phaser.json");
         break;
 
     case dsp::processor::proct_Chorus:
-        layoutControlsChorus();
+        layoutControlsWithJsonEngine("voicefx-layouts/modulation/chorus.json");
         break;
 
     case dsp::processor::proct_fx_ringmod:
-        layoutControlsRingMod();
+        layoutControlsWithJsonEngine("voicefx-layouts/audio-rate-mod/ring-mod.json");
         break;
 
     case dsp::processor::proct_osc_EBWaveforms:
@@ -482,49 +475,6 @@ void ProcessorPane::layoutControls()
     }
 }
 
-// We broke this up, but let's keep it around for a while
-// so folks have a chance to transfer settings.
-void ProcessorPane::layoutControlsSurgeFilters()
-{
-    // FIXME
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    auto cols = lo::columns(getContentAreaComponent()->getLocalBounds(), 2);
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knobCX<locon::largeKnob>(*floatEditors[0], cols[0].getCentreX(), 5);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knobCX<locon::largeKnob>(*floatEditors[1], cols[1].getCentreX(), 5);
-
-    auto col0 = cols[0]
-                    .withTrimmedTop(floatEditors[0]->label->getBottom() + 15)
-                    .withHeight(18)
-                    .withWidth(cols[0].getWidth() + 15);
-
-    for (int i = 0; i < 2; ++i)
-    {
-        auto ms = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[i]);
-        ms->setBounds(col0);
-        col0 = col0.translated(0, 25);
-
-        if (i == 0)
-        {
-            editor->configureHasDiscreteMenuBuilder(ms.get());
-
-            ms->popupMenuBuilder->mode =
-                sst::jucegui::components::DiscreteParamMenuBuilder::Mode::GROUP_LIST;
-            ms->popupMenuBuilder->setGroupList(sst::filters::filterGroupName());
-        }
-
-        intEditors[i] = std::make_unique<intEditor_t>(std::move(ms));
-        if (intAttachments[i]->getMin() == intAttachments[i]->getMax())
-        {
-            intEditors[i]->item->setEnabled(false);
-        }
-    }
-}
-
 // May want to break this up
 void ProcessorPane::layoutControlsEBWaveforms()
 {
@@ -631,342 +581,6 @@ void ProcessorPane::layoutControlsEBWaveforms()
     auto detuneLoc = floatEditors[3]->item->getBounds();
     auto xtloc = juce::Rectangle<int>(detuneLoc.getRight() - 10, detuneLoc.getY() - 4, 14, 14);
     intEditors[2]->item->setBounds(xtloc);
-}
-
-void ProcessorPane::layoutControlsCorrelatedNoiseGen()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    createHamburgerStereo(0);
-    bool stereoSwitch = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    if (stereoSwitch)
-    {
-        lo::knob<50>(*floatEditors[0], 20, 10);
-        lo::knob<50>(*floatEditors[1], 120, 10);
-    }
-    else
-    {
-        lo::knob<70>(*floatEditors[0], 10, 20);
-        lo::knob<70>(*floatEditors[1], 110, 20);
-    }
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<50>(*floatEditors[2], 70, 75);
-    floatEditors[2]->setVisible(intAttachments[0]->getValue());
-}
-
-void ProcessorPane::layoutControlsStringResonator()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    createHamburgerStereo(0);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto dual = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[1]);
-    dual->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-    dual->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
-    auto dualBounds = bounds.withLeft(1).withRight(11).withTop(63).withBottom(74);
-    dual->setBounds(dualBounds);
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(dual));
-    attachRebuildToIntAttachment(1);
-
-    bool stereoSwitch = intAttachments[0]->getValue();
-    bool dualSwitch = intAttachments[1]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], floatAttachments[5]->getLabel());
-
-    floatEditors[4]->setVisible(stereoSwitch);
-    floatEditors[5]->setVisible(stereoSwitch);
-
-    if (stereoSwitch)
-    {
-        lo::knob<40>(*floatEditors[0], 5, 10);
-        lo::knob<40>(*floatEditors[1], 5, 70);
-        lo::knob<40>(*floatEditors[2], 50, 10);
-        lo::knob<40>(*floatEditors[3], 50, 70);
-        lo::knob<40>(*floatEditors[4], 95, 10);
-        lo::knob<40>(*floatEditors[5], 95, 70);
-    }
-    else
-    {
-        lo::knob<40>(*floatEditors[0], 5, 10);
-        lo::knob<40>(*floatEditors[1], 5, 70);
-        lo::knob<40>(*floatEditors[2], 72, 10);
-        lo::knob<40>(*floatEditors[3], 72, 70);
-    }
-
-    floatEditors[1]->item->setEnabled(dualSwitch);
-    floatEditors[3]->item->setEnabled(dualSwitch);
-    floatEditors[5]->item->setEnabled(dualSwitch);
-
-    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], floatAttachments[6]->getLabel());
-    lo::knob<40>(*floatEditors[6], 140, 10);
-
-    floatEditors[7] = createWidgetAttachedTo(floatAttachments[7], floatAttachments[7]->getLabel());
-    lo::knob<40>(*floatEditors[7], 140, 70);
-}
-
-void ProcessorPane::layoutControlsStaticPhaser()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    createHamburgerStereo(1);
-    bool stereoSwitch = intAttachments[1]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    if (stereoSwitch == true)
-    {
-        lo::knob<45>(*floatEditors[0], 5, 10);
-    }
-    else
-    {
-
-        lo::knob<45>(*floatEditors[0], 5, 43);
-    }
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<45>(*floatEditors[1], 5, 85);
-
-    floatEditors[1]->setVisible(stereoSwitch);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<45>(*floatEditors[3], 65, 10);
-
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
-    lo::knob<45>(*floatEditors[4], 125, 10);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<45>(*floatEditors[2], 65, 85);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-
-    auto stageSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
-    auto switchBounds = bounds.withLeft(125).withTop(78).withRight(180).withBottom(145);
-    stageSwitch->setBounds(switchBounds);
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(stageSwitch));
-}
-
-void ProcessorPane::layoutControlsPhaser()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    createHamburgerStereo(1);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto shapeSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
-    auto switchBounds = bounds.withLeft(130).withRight(185).withTop(75).withBottom(145);
-    shapeSwitch->setBounds(switchBounds);
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(shapeSwitch));
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knob<40>(*floatEditors[0], 5, 0);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<40>(*floatEditors[2], 50, 20);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<40>(*floatEditors[1], 95, 0);
-
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], floatAttachments[5]->getLabel());
-    lo::knob<40>(*floatEditors[5], 140, 20);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<50>(*floatEditors[3], 5, 80);
-
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
-    lo::knob<50>(*floatEditors[4], 65, 80);
-}
-
-void ProcessorPane::layoutControlsMicroGate()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knob<55>(*floatEditors[0], 25, 0);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<55>(*floatEditors[1], 105, 0);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<55>(*floatEditors[2], 25, 75);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<55>(*floatEditors[3], 105, 75);
-}
-
-void ProcessorPane::layoutControlsStereoTool()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knob<55>(*floatEditors[0], 25, 0);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<55>(*floatEditors[1], 105, 0);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<55>(*floatEditors[2], 25, 75);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<55>(*floatEditors[3], 105, 75);
-}
-
-void ProcessorPane::layoutControlsVAOsc()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto wave = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
-    auto switchBounds = bounds.withLeft(130).withRight(185).withTop(75).withBottom(145);
-    wave->setBounds(switchBounds);
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(wave));
-    attachRebuildToIntAttachment(0);
-
-    int waveSwitch = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knob<50>(*floatEditors[0], 35, 5);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<50>(*floatEditors[1], 100, 5);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<50>(*floatEditors[2], 5, 80);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<50>(*floatEditors[3], 65, 80);
-
-    floatEditors[4] = createWidgetAttachedTo(floatAttachments[4], floatAttachments[4]->getLabel());
-    lo::knob<50>(*floatEditors[4], 5, 80);
-
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], floatAttachments[5]->getLabel());
-    lo::knob<50>(*floatEditors[5], 65, 80);
-
-    floatEditors[2]->setVisible(false);
-    floatEditors[3]->setVisible(false);
-    floatEditors[4]->setVisible(false);
-    floatEditors[5]->setVisible(false);
-
-    if (waveSwitch == 2)
-    {
-        floatEditors[2]->setVisible(true);
-        floatEditors[3]->setVisible(true);
-    }
-    else if (waveSwitch == 1)
-    {
-        floatEditors[4]->setVisible(true);
-        floatEditors[5]->setVisible(true);
-    }
-}
-
-void ProcessorPane::layoutControlsChorus()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    createHamburgerStereo(1);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto shapeSwitch = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
-    auto switchBounds = bounds.withLeft(130).withRight(185).withTop(75).withBottom(145);
-    shapeSwitch->setBounds(switchBounds);
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(shapeSwitch));
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knob<50>(*floatEditors[0], 35, 5);
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<50>(*floatEditors[1], 100, 5);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<50>(*floatEditors[2], 5, 80);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<50>(*floatEditors[3], 65, 80);
-}
-
-void ProcessorPane::layoutControlsFMFilter()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    createHamburgerStereo(0);
-
-    bool stereoSwitch = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    if (stereoSwitch == true)
-    {
-        lo::knob<42>(*floatEditors[0], 5, 5);
-    }
-    else
-    {
-        lo::knob<42>(*floatEditors[0], 5, 40);
-    }
-
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    lo::knob<42>(*floatEditors[1], 33, 65);
-
-    floatEditors[1]->setVisible(stereoSwitch);
-
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    lo::knob<42>(*floatEditors[2], 68, 5);
-
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    lo::knob<42>(*floatEditors[3], 98, 65);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-
-    auto numBounds = bounds.withTop(5).withBottom(27).withLeft(130).withRight(180);
-    auto num = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[2]);
-    num->setBounds(numBounds);
-    intEditors[2] = std::make_unique<intEditor_t>(std::move(num));
-
-    auto denomBounds = bounds.withTop(32).withBottom(54).withLeft(130).withRight(180);
-    auto denom = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[3]);
-    denom->setBounds(denomBounds);
-    intEditors[3] = std::make_unique<intEditor_t>(std::move(denom));
-
-    auto modeBounds = bounds.withTop(bounds.getBottom() - 22).translated(0, -3).reduced(3, 0);
-    auto filterMode = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
-    filterMode->setBounds(modeBounds);
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(filterMode));
-}
-
-void ProcessorPane::layoutControlsRingMod()
-{
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    lo::knob<locon::extraLargeKnob>(*floatEditors[0], 30, 15);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-
-    auto numBounds = bounds.withTop(35).withBottom(57).withLeft(130).withRight(180);
-    auto num = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
-    num->setBounds(numBounds);
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(num));
-
-    auto denomBounds = bounds.withTop(62).withBottom(84).withLeft(130).withRight(180);
-    auto denom = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
-    denom->setBounds(denomBounds);
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(denom));
 }
 
 void ProcessorPane::createHamburgerStereo(int attachmentId)

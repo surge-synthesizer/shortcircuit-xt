@@ -1,0 +1,74 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "hamburger-stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {}
+    },
+    "shape": {
+      "class": "vertical-multiswitch",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {
+        "x": 130,
+        "y": 75,
+        "w": 55,
+        "h": 70
+      }
+    },
+    "knob0": {
+      "class": "knob50",
+      "label": "Base Delay",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 35,
+        "y": 5
+      }
+    },
+    "knob1": {
+      "class": "knob50",
+      "label": "Feedback",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 100,
+        "y": 5
+      }
+    },
+    "knob2": {
+      "class": "knob50",
+      "label": "Rate",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 5,
+        "y": 80
+      }
+    },
+    "knob3": {
+      "class": "knob50",
+      "label": "Depth",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 65,
+        "y": 80
+      }
+    }
+  }
+}

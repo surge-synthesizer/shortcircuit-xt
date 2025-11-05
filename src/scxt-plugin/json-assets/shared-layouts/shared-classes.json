@@ -30,6 +30,12 @@
       "h": 50,
       "label-position": "bottom-center"
     },
+    "knob45": {
+      "control-type": "knob",
+      "w": 45,
+      "h": 45,
+      "label-position": "bottom-center"
+    },
     "knob40": {
       "control-type": "knob",
       "w": 40,

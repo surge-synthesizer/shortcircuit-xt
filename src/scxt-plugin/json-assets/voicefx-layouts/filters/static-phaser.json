@@ -1,0 +1,119 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "hamburger-stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {}
+    },
+    "frequency": {
+      "class": "knob45",
+      "label": "Frequency",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 5,
+        "y": 43
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 1,
+        "values": [
+          0
+        ]
+      }
+    },
+    "frequencyL": {
+      "class": "knob45",
+      "label": "Freq L",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 5,
+        "y": 10
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 1,
+        "values": [
+          1
+        ]
+      }
+    },
+    "frequencyR": {
+      "class": "knob45",
+      "label": "Freq R",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 5,
+        "y": 85
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 1,
+        "values": [
+          1
+        ]
+      }
+    },
+    "resonance": {
+      "class": "knob45",
+      "label": "Resonance",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 65,
+        "y": 10
+      }
+    },
+    "spacing": {
+      "class": "knob45",
+      "label": "Feedback",
+      "binding": {
+        "type": "float",
+        "index": 4
+      },
+      "position": {
+        "x": 125,
+        "y": 10
+      }
+    },
+    "feedback": {
+      "class": "knob45",
+      "label": "Spacing",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 65,
+        "y": 85
+      }
+    },
+    "stages": {
+      "class": "vertical-multiswitch",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {
+        "x": 125,
+        "y": 78,
+        "w": 55,
+        "h": 67
+      }
+    }
+  }
+}
