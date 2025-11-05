@@ -1,0 +1,53 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "knob0": {
+      "class": "knob55",
+      "label": "Input Pan",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 25,
+        "y": 0
+      }
+    },
+    "knob1": {
+      "class": "knob55",
+      "label": "Rotation",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 105,
+        "y": 0
+      }
+    },
+    "knob2": {
+      "class": "knob55",
+      "label": "Width",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 25,
+        "y": 75
+      }
+    },
+    "knob3": {
+      "class": "knob55",
+      "label": "Out Balance",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 105,
+        "y": 75
+      }
+    }
+  }
+}

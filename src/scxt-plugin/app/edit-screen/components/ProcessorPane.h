@@ -97,21 +97,10 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void attachRebuildToDeactivateAttachment(int idx);
 
     void layoutControls();
-    void layoutControlsMicroGate();
-    void layoutControlsStereoTool();
-    void layoutControlsSurgeFilters();
     void layoutControlsEBWaveforms();
     void layoutControlsEQNBandParm();
     void layoutControlsEQMorph();
     void layoutControlsEQGraphic();
-    void layoutControlsCorrelatedNoiseGen();
-    void layoutControlsVAOsc();
-    void layoutControlsStringResonator();
-    void layoutControlsStaticPhaser();
-    void layoutControlsPhaser();
-    void layoutControlsChorus();
-    void layoutControlsFMFilter();
-    void layoutControlsRingMod();
 
     void layoutControlsWithJsonEngine(const std::string &jsonpath);
 

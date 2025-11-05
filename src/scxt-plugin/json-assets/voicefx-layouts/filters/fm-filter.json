@@ -1,0 +1,130 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "hamburger-stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {}
+    },
+    "frequency-mono": {
+      "class": "knob40",
+      "label": "Frequency",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 5,
+        "y": 40
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          0
+        ]
+      }
+    },
+    "frequency-l": {
+      "class": "knob40",
+      "label": "Freq L",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 5,
+        "y": 5
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "frequency-r": {
+      "class": "knob40",
+      "label": "Freq R",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 33,
+        "y": 65
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "fm-depth": {
+      "class": "knob40",
+      "label": "FM Depth",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 68,
+        "y": 5
+      }
+    },
+    "resonance": {
+      "class": "knob40",
+      "label": "Resonance",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 98,
+        "y": 65
+      }
+    },
+    "numerator": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 2
+      },
+      "position": {
+        "x": 130,
+        "y": 5,
+        "w": 50
+      }
+    },
+    "denominator": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 3
+      },
+      "position": {
+        "x": 130,
+        "y": 32,
+        "w": 50
+      }
+    },
+    "filter-mode": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {
+        "x": 3,
+        "y": 123,
+        "w": 184
+      }
+    }
+  }
+}

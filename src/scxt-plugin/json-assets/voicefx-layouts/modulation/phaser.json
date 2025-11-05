@@ -1,0 +1,98 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "hamburger-stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {}
+    },
+    "shape-switch": {
+      "class": "vertical-multiswitch",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {
+        "x": 130,
+        "y": 75,
+        "w": 55,
+        "h": 70
+      }
+    },
+    "knob0": {
+      "class": "knob40",
+      "label": "F/back",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 5,
+        "y": 0
+      }
+    },
+    "knob2": {
+      "class": "knob40",
+      "label": "Res",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 50,
+        "y": 20
+      }
+    },
+    "knob1": {
+      "class": "knob40",
+      "label": "Spacing",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 95,
+        "y": 0
+      }
+    },
+    "knob5": {
+      "class": "knob40",
+      "label": "Center",
+      "binding": {
+        "type": "float",
+        "index": 5
+      },
+      "position": {
+        "x": 140,
+        "y": 20
+      }
+    },
+    "knob3": {
+      "class": "knob50",
+      "label": "Rate",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 5,
+        "y": 80
+      }
+    },
+    "knob4": {
+      "class": "knob50",
+      "label": "Depth",
+      "binding": {
+        "type": "float",
+        "index": 4
+      },
+      "position": {
+        "x": 65,
+        "y": 80
+      }
+    }
+  }
+}
