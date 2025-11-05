@@ -158,6 +158,7 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_StaticPhaser, "filters/static-phaser.json");
     a(dsp::processor::proct_fmfilter, "filters/fm-filter.json");
     a(dsp::processor::proct_utilfilt, "filters/utility-filter.json");
+    a(dsp::processor::proct_comb, "filters/comb-filter.json");
 
     a(dsp::processor::proct_eq_tilt, "eq/tilt-eq.json");
 
