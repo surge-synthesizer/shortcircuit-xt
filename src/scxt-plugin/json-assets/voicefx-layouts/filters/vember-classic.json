@@ -1,0 +1,118 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {}
+    },
+    "cutoff": {
+      "class": "knob80",
+      "label": "Cutoff",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 20,
+        "y": 15
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          0
+        ]
+      }
+    },
+    "cutoffL": {
+      "class": "knob55",
+      "label": "Cutoff L",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 5,
+        "y": 25
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "cutoffR": {
+      "class": "knob55",
+      "label": "Cutoff R",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 65,
+        "y": 25
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "resonance": {
+      "class": "knob55",
+      "label": "Resonance",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 125,
+        "y": 25
+      }
+    },
+    "pass": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {
+        "x": 5,
+        "y": 124,
+        "w": 85
+      }
+    },
+    "slope": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 2
+      },
+      "position": {
+        "x": 96,
+        "y": 124,
+        "w": 84
+      }
+    },
+    "drive": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 3
+      },
+      "position": {
+        "x": 96,
+        "y": 98,
+        "w": 84
+      }
+    }
+  }
+}

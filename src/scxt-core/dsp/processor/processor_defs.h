@@ -240,7 +240,7 @@ DEFINE_PROC(ResWarpFilter, procimpl::detail::rWarpImpl, procimpl::detail::rWarpI
 DEFINE_PROC(TripoleFilter, procimpl::detail::tripoleImpl, procimpl::detail::tripoleImpl_os,
             proct_tripole, "Tripole", "Filters", "tripole");
 DEFINE_PROC(SNHFilter, procimpl::detail::SnHImpl, procimpl::detail::SnHImpl_os, proct_snhfilter,
-            "Sample and Hold", "Filters", "SnH");
+            "Sample & Hold", "Filters", "SnH");
 
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
             proct_eq_3band_parametric_A, "3 Band Parametric", "EQ", "eq-parm-3band");
@@ -303,7 +303,7 @@ DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             "eq-morph");
 DEFINE_PROC(SSTFilters, sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<2>>, proct_SurgeFilters,
-            "REPLACE NOW", "Filters", "filt-sstfilters");
+            "SSTFilters (Deprecated)", "Filters", "filt-sstfilters");
 DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
             "Static Phaser", "Filters", "filt-statph");

@@ -60,7 +60,7 @@ std::optional<std::string> resolveJsonFile(const std::string &nm)
 
         if (!isLocal)
         {
-            auto rp = fs::path{"src-ui"} / "json-assets";
+            auto rp = fs::path{"src/scxt-plugin"} / "json-assets";
             if (fs::exists(rp))
             {
                 SCLOG_IF(jsonUI, "Setting JSON path from working dir: " << rp.u8string());
