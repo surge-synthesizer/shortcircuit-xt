@@ -231,11 +231,11 @@ void ProcessorPane::rebuildControlsFromDescription()
         layoutControlsSurgeFilters();
         break;
     case dsp::processor::proct_VemberClassic:
-        layoutControlsVemberClassic();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/vember-classic.json");
         break;
 
     case dsp::processor::proct_K35:
-        layoutControlsK35();
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/k35.json");
         break;
 
     case dsp::processor::proct_obx4:
@@ -271,11 +271,11 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_gainmatrix:
-        layoutControlsWithJsonEngine("voicefx-layouts/gain-matrix.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/utility/gain-matrix.json");
         break;
 
     case dsp::processor::proct_CytomicSVF:
-        layoutControlsWithJsonEngine("voicefx-layouts/fast-svf.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/fast-svf.json");
         break;
 
     case dsp::processor::proct_eq_1band_parametric_A:
@@ -285,7 +285,7 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_eq_tilt:
-        layoutControlsWithJsonEngine("voicefx-layouts/tilt-eq.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/eq/tilt-eq.json");
         break;
 
     case dsp::processor::proct_eq_morph:
@@ -317,7 +317,7 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_Tremolo:
-        layoutControlsWithJsonEngine("voicefx-layouts/tremolo.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/modulation/tremolo.json");
         break;
 
     case dsp::processor::proct_Phaser:
@@ -337,40 +337,40 @@ void ProcessorPane::rebuildControlsFromDescription()
         break;
 
     case dsp::processor::proct_fx_freqshiftmod:
-        layoutControlsWithJsonEngine("voicefx-layouts/freq-shift-mod.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/audio-rate-mod/freq-shift-mod.json");
         break;
 
     case dsp::processor::proct_lifted_delay:
-        layoutControlsWithJsonEngine("voicefx-layouts/lifted-delay.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/delay/lifted-delay.json");
         break;
 
     case dsp::processor::proct_fx_bitcrusher:
-        layoutControlsWithJsonEngine("voicefx-layouts/bitcrusher.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/distortion/bitcrusher.json");
         break;
 
     case dsp::processor::proct_noise_am:
-        layoutControlsWithJsonEngine("voicefx-layouts/noise-am.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/audio-rate-mod/noise-am.json");
         break;
 
     case dsp::processor::proct_osc_phasemod:
-        layoutControlsWithJsonEngine("voicefx-layouts/phase-mod.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/audio-rate-mod/phase-mod.json");
         break;
 
     case dsp::processor::proct_shepard:
-        layoutControlsWithJsonEngine("voicefx-layouts/shepard.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/modulation/shepard.json");
         break;
 
     case dsp::processor::proct_fx_simple_delay:
-        layoutControlsWithJsonEngine("voicefx-layouts/simple-delay.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/delay/simple-delay.json");
         break;
 
     case dsp::processor::proct_fx_waveshaper:
         // layoutControlsWaveshaper();
-        layoutControlsWithJsonEngine("voicefx-layouts/waveshaper.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/distortion/waveshaper.json");
         break;
 
     case dsp::processor::proct_utilfilt:
-        layoutControlsWithJsonEngine("voicefx-layouts/utilfilt.json");
+        layoutControlsWithJsonEngine("voicefx-layouts/filters/utility-filter.json");
         break;
 
     default:
@@ -520,88 +520,6 @@ void ProcessorPane::layoutControlsSurgeFilters()
             intEditors[i]->item->setEnabled(false);
         }
     }
-}
-
-void ProcessorPane::layoutControlsVemberClassic()
-{
-    createHamburgerStereo(0);
-    bool isStereo = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[1]->setVisible(isStereo);
-
-    namespace lo = theme::layout;
-    if (isStereo)
-    {
-        lo::knob<55>(*floatEditors[0], 5, 25);
-        lo::knob<55>(*floatEditors[1], 65, 25);
-    }
-    else
-    {
-        lo::knob<80>(*floatEditors[0], 20, 15);
-    }
-    lo::knob<55>(*floatEditors[2], 125, 25);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto bottom = bounds.getBottom();
-    auto width = bounds.getWidth();
-
-    auto pass = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
-    pass->setBounds(
-        bounds.withLeft(5).withRight(width / 2 - 1).withTop(bottom - 24).withBottom(bottom - 2));
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(pass));
-
-    auto slope = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[2]);
-    slope->setBounds(bounds.withLeft(width / 2 + 1)
-                         .withRight(width - 5)
-                         .withTop(bottom - 24)
-                         .withBottom(bottom - 2));
-    intEditors[2] = std::make_unique<intEditor_t>(std::move(slope));
-    attachRebuildToIntAttachment(2);
-
-    auto drive = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[3]);
-    drive->setBounds(bounds.withLeft(width / 2 + 1)
-                         .withRight(width - 5)
-                         .withTop(bottom - 50)
-                         .withBottom(bottom - 26));
-    intEditors[3] = std::make_unique<intEditor_t>(std::move(drive));
-}
-
-void ProcessorPane::layoutControlsK35()
-{
-    createHamburgerStereo(0);
-    bool isStereo = intAttachments[0]->getValue();
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], floatAttachments[0]->getLabel());
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], floatAttachments[1]->getLabel());
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], floatAttachments[2]->getLabel());
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], floatAttachments[3]->getLabel());
-    floatEditors[1]->setVisible(isStereo);
-
-    namespace lo = theme::layout;
-    if (isStereo)
-    {
-        lo::knob<55>(*floatEditors[0], 5, 25);
-        lo::knob<55>(*floatEditors[1], 65, 25);
-    }
-    else
-    {
-        lo::knob<80>(*floatEditors[0], 20, 15);
-    }
-    lo::knob<40>(*floatEditors[2], 138, 5);
-    lo::knob<40>(*floatEditors[3], 138, 65);
-
-    auto bounds = getContentAreaComponent()->getLocalBounds();
-    auto bottom = bounds.getBottom();
-    auto right = bounds.getRight();
-    auto width = bounds.getWidth() - 10;
-
-    auto pass = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
-    pass->setBounds(
-        bounds.withLeft(5).withRight(right - 50).withTop(bottom - 24).withBottom(bottom - 2));
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(pass));
 }
 
 void ProcessorPane::layoutControlsLinearLadder()

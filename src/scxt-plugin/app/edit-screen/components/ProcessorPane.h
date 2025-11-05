@@ -97,8 +97,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void attachRebuildToDeactivateAttachment(int idx);
 
     void layoutControls();
-    void layoutControlsVemberClassic();
-    void layoutControlsK35();
     void layoutControlsLinearLadder();
     void layoutControlsOBXD4Pole();
     void layoutControlsWarpFilters();
