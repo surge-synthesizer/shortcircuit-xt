@@ -95,6 +95,13 @@ void ProcessorPane::showHamburgerMenu()
         if (pd.id == scxt::dsp::processor::proct_SurgeFilters)
             continue;
 
+#if PRINT_MISSING_JSON
+        if (jsonDefinitions.find(pd.id) == jsonDefinitions.end())
+        {
+            SCLOG("No json def for " << pd.displayGroup << "/" << pd.displayName);
+        }
+#endif
+
         if (pd.displayGroup != priorGroup && priorGroup != "none")
         {
             p.addSubMenu(priorGroup, subMenu);
@@ -139,7 +146,7 @@ void ProcessorPane::setupJsonTypeMap()
     auto a = [this](auto x, auto y) { jsonDefinitions[x] = std::string("voicefx-layouts/") + y; };
 
     a(dsp::processor::proct_VemberClassic, "filters/vember-classic.json");
-    a(dsp::processor::proct_VemberClassic, "filters/vember-classic.json");
+    a(dsp::processor::proct_K35, "filters/k35.json");
     a(dsp::processor::proct_obx4, "filters/obxd-4pole.json");
     a(dsp::processor::proct_diodeladder, "filters/linear-ladder.json");
     a(dsp::processor::proct_cutoffwarp, "filters/warp.json");
@@ -168,6 +175,8 @@ void ProcessorPane::setupJsonTypeMap()
 
     a(dsp::processor::proct_gainmatrix, "utility/gain-matrix.json");
     a(dsp::processor::proct_stereotool, "utility/stereo-tool.json");
+    a(dsp::processor::proct_volpan, "utility/volume-and-pan.json");
+    a(dsp::processor::proct_fx_widener, "utility/widener.json");
 
     a(dsp::processor::proct_fx_ringmod, "audio-rate-mod/ring-mod.json");
     a(dsp::processor::proct_fx_freqshiftmod, "audio-rate-mod/freq-shift-mod.json");

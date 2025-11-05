@@ -1,0 +1,29 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "knob0": {
+      "class": "knob70",
+      "label": "Volume",
+      "binding": {
+        "index": 0,
+        "type": "float"
+      },
+      "position": {
+        "x": 15,
+        "y": 20
+      }
+    },
+    "knob1": {
+      "class": "knob70",
+      "label": "Pan",
+      "binding": {
+        "index": 1,
+        "type": "float"
+      },
+      "position": {
+        "x": 110,
+        "y": 20
+      }
+    }
+  }
+}
