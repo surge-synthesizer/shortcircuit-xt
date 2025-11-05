@@ -267,23 +267,9 @@ void ProcessorPane::layoutControlsEQNBandParm()
 {
     std::unique_ptr<EqDisplayBase> eqdisp;
 
-    switch (processorView.type)
-    {
-    case dsp::processor::proct_eq_1band_parametric_A:
-        eqdisp = std::make_unique<EqNBandDisplay<
-            sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 1>, 1>>(*this);
-        break;
-    case dsp::processor::proct_eq_2band_parametric_A:
-        eqdisp = std::make_unique<EqNBandDisplay<
-            sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 2>, 2>>(*this);
-        break;
-    case dsp::processor::proct_eq_3band_parametric_A:
-        eqdisp = std::make_unique<EqNBandDisplay<
-            sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>, 3>>(*this);
-        break;
-    default:
-        return;
-    }
+    eqdisp = std::make_unique<
+        EqNBandDisplay<sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>, 3>>(
+        *this);
     auto bd = getContentAreaComponent()->getLocalBounds();
     auto slWidth = 0;
     auto eq = bd.withTrimmedRight(slWidth);

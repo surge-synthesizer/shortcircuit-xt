@@ -135,8 +135,6 @@ enum ProcessorType
     proct_stringResonator,
 
     proct_moogLP4sat,
-    proct_eq_1band_parametric_A,
-    proct_eq_2band_parametric_A,
     proct_eq_3band_parametric_A,
     proct_eq_6band,
     proct_eq_morph,

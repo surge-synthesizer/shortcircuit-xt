@@ -225,6 +225,9 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     std::unique_ptr<sst::jucegui::components::Label> multiLabel;
     std::unique_ptr<sst::jucegui::components::TextPushButton> multiButton;
 
+    std::unordered_map<dsp::processor::ProcessorType, std::string> jsonDefinitions;
+    void setupJsonTypeMap();
+
     std::string multiName;
 
     std::string resolveJsonPath(const std::string &path) const override;
