@@ -92,6 +92,9 @@ void ProcessorPane::showHamburgerMenu()
         if (pd.id == scxt::dsp::processor::proct_osc_VA)
             continue;
 
+        if (pd.id == scxt::dsp::processor::proct_SurgeFilters)
+            continue;
+
         if (pd.displayGroup != priorGroup && priorGroup != "none")
         {
             p.addSubMenu(priorGroup, subMenu);
