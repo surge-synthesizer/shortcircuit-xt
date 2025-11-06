@@ -247,7 +247,7 @@ struct GroupMatrixEndpoints
         Sources(engine::Engine *e)
             : lfoSources(e, "GLFO", "GLFO"), midiCCSources(e),
               egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e),
-              rngSources(e), macroSources(e), subordinateVoiceSources(e)
+              rngSources(e), macroSources(e), subordinateVoiceSources(e), midiSources(e)
         {
             registerGroupModSource(e, egSource[0], "EG", "EG1");
             registerGroupModSource(e, egSource[1], "EG", "EG2");
@@ -255,8 +255,23 @@ struct GroupMatrixEndpoints
 
         scxt::modulation::shared::LFOSourceBase<SR, 'grlf', lfosPerGroup, registerGroupModSource>
             lfoSources;
-        scxt::modulation::shared::MIDICCBase<GroupMatrixConfig, SR, 'zncc', registerGroupModSource>
+        scxt::modulation::shared::MIDICCBase<GroupMatrixConfig, SR, 'gncc', registerGroupModSource>
             midiCCSources;
+
+        struct MIDISources
+        {
+            MIDISources(engine::Engine *e)
+                : modWheelSource{'gmid', 'modw'}, chanATSource{'gmid', 'chat'},
+                  pbpm1Source{'gmid', 'pb11'}
+            {
+                registerGroupModSource(e, modWheelSource, "MIDI", "Mod Wheel");
+                GroupMatrixConfig::setDefaultLagFor(modWheelSource, 25);
+                registerGroupModSource(e, chanATSource, "MIDI", "Channel AT");
+                registerGroupModSource(e, pbpm1Source, "MIDI", "Pitch Bend");
+                GroupMatrixConfig::setDefaultLagFor(pbpm1Source, 10);
+            }
+            SR modWheelSource, chanATSource, pbpm1Source;
+        } midiSources;
 
         SR egSource[2];
         scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', registerGroupModSource>
