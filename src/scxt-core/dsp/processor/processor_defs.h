@@ -248,7 +248,7 @@ DEFINE_PROC(TripoleFilter, procimpl::detail::tripoleImpl, procimpl::detail::trip
 DEFINE_PROC(SNHFilter, procimpl::detail::SnHImpl, procimpl::detail::SnHImpl_os, proct_snhfilter,
             "Sample & Hold", "Filters", "SnH");
 DEFINE_PROC(CombFilter, procimpl::detail::combImpl, procimpl::detail::combImpl_os, proct_comb,
-            "CAUTION USE LIMITER", "Filters", "Comb");
+            "Comb", "Filters", "Comb");
 
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
             proct_eq_3band_parametric_A, "3 Band Parametric", "EQ", "eq-parm-3band");
