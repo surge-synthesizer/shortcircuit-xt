@@ -223,6 +223,10 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
         m.bindSourceValue(transportSources.phasors[i], g.phasorEvaluator.outputs[i]);
     }
 
+    m.bindSourceValue(midiSources.modWheelSource, g.parentPart->midiCCValues[1]);
+    m.bindSourceValue(midiSources.chanATSource, g.parentPart->channelAT);
+    m.bindSourceValue(midiSources.pbpm1Source, g.parentPart->pitchBendValue);
+
     m.bindSourceValue(subordinateVoiceSources.anyVoiceGated, g.fAnyGated);
     m.bindSourceValue(subordinateVoiceSources.anyVoiceSounding, g.fAnySounding);
     m.bindSourceValue(subordinateVoiceSources.voiceCount, g.fVoiceCount);
