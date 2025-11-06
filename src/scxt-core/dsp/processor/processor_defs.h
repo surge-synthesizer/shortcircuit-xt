@@ -218,6 +218,12 @@ using SnHImpl =
 using SnHImpl_os =
     sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
                                                 sst::filtersplusplus::FilterModel::SampleAndHold>;
+using combImpl =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
+                                                sst::filtersplusplus::FilterModel::Comb>;
+using combImpl_os =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
+                                                sst::filtersplusplus::FilterModel::Comb>;
 } // namespace procimpl::detail
 
 DEFINE_PROC(CytomicSVF, detail::fastSVFImpl, detail::fastSVFImpl_os, proct_CytomicSVF, "Fast SVF",
@@ -241,6 +247,8 @@ DEFINE_PROC(TripoleFilter, procimpl::detail::tripoleImpl, procimpl::detail::trip
             proct_tripole, "Tripole", "Filters", "tripole");
 DEFINE_PROC(SNHFilter, procimpl::detail::SnHImpl, procimpl::detail::SnHImpl_os, proct_snhfilter,
             "Sample & Hold", "Filters", "SnH");
+DEFINE_PROC(CombFilter, procimpl::detail::combImpl, procimpl::detail::combImpl_os, proct_comb,
+            "CAUTION USE LIMITER", "Filters", "Comb");
 
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
             proct_eq_3band_parametric_A, "3 Band Parametric", "EQ", "eq-parm-3band");
