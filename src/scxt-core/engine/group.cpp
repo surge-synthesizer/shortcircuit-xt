@@ -374,6 +374,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         terminationSequence--;
     }
 
+    mlev = std::max(mlev, 0.f);
     if constexpr (OS)
     {
         outputAmpOS.set_target(mlev * mlev * mlev);
