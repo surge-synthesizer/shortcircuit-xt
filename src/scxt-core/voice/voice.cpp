@@ -768,6 +768,7 @@ template <bool OS> bool Voice::processWithOS()
         terminationSequence--;
         pao *= terminationSequence / blocksToTerminate;
     }
+    pao = std::max(pao, 0.f);
 
     if constexpr (OS)
     {
