@@ -53,5 +53,14 @@ inline void updatePartFullConfig(const partConfigurationPayload_t &p, const engi
 }
 CLIENT_TO_SERIAL(UpdatePartFullConfig, c2s_send_full_part_config, partConfigurationPayload_t,
                  updatePartFullConfig(payload, engine, cont));
+
+// part, b1, part2 b2, swap (0), move (1) or copy (2)
+using partFxSwap_t = std::tuple<int16_t, int16_t, int16_t, int16_t, int16_t>;
+inline void doPartSwapFX(const partFxSwap_t &payload, const engine::Engine &engine,
+                         messaging::MessageController &cont)
+{
+    cont.reportErrorToClient("Not Done", "Part Swap FX not implemented yet");
+}
+CLIENT_TO_SERIAL(SwapPartFX, c2s_swap_part_fx, partFxSwap_t, doPartSwapFX(payload, engine, cont));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_PART_MESSAGES_H

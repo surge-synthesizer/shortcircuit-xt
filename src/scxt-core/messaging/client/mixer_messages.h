@@ -115,5 +115,13 @@ inline void setBusSendStorage(const setBusSendStorage_t &payload,
 }
 CLIENT_TO_SERIAL(SetBusSendStorage, c2s_set_mixer_send_storage, setBusSendStorage_t,
                  setBusSendStorage(payload, cont));
+
+using busFxSwap_t = std::tuple<int16_t, int16_t, int16_t, int16_t, int16_t>;
+inline void doBusSwapFX(const busFxSwap_t &payload, const engine::Engine &engine,
+                        messaging::MessageController &cont)
+{
+    cont.reportErrorToClient("Not Done", "Bus Swap FX not implemented yet");
+}
+CLIENT_TO_SERIAL(SwapBusFX, c2s_swap_bus_fx, busFxSwap_t, doBusSwapFX(payload, engine, cont));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_MIXER_MESSAGES_H
