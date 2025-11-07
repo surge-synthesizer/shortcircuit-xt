@@ -122,6 +122,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
      */
     if (lastOversample != outputInfo.oversample)
     {
+        getEngine()->voiceManager.allSoundsOffMatching(
+            [this](voice::Voice *v) { return v->zone->parentGroup == this; });
         lastOversample = outputInfo.oversample;
         attack();
         for (int i = 0; i < engine::processorCount; ++i)
