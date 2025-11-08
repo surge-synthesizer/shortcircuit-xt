@@ -505,6 +505,6 @@ void ChannelStrip::labelPluginOutput()
     if (cr == 0)
         outputMenu->setLabel("MAIN");
     else
-        outputMenu->setLabel("OUT " + std::to_string(cr + 1));
+        outputMenu->setLabel("OUT " + std::to_string(cr));
 }
 } // namespace scxt::ui::app::mixer_screen
