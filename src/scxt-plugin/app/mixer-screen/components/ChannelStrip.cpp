@@ -482,7 +482,7 @@ void ChannelStrip::showPluginOutput()
         std::string label{"Main"};
         if (i > 0)
         {
-            label = "Out " + std::to_string(i + 1);
+            label = "Out " + std::to_string(i);
         }
         p.addItem(label, true, i == cr, [w = juce::Component::SafePointer(this), i]() {
             if (!w)
@@ -505,6 +505,6 @@ void ChannelStrip::labelPluginOutput()
     if (cr == 0)
         outputMenu->setLabel("MAIN");
     else
-        outputMenu->setLabel("OUT " + std::to_string(cr + 1));
+        outputMenu->setLabel("OUT " + std::to_string(cr));
 }
 } // namespace scxt::ui::app::mixer_screen
