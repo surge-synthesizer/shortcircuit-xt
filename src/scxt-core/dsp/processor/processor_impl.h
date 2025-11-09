@@ -155,7 +155,7 @@ HAS_MEMFN(initVoiceEffectParams);
 HAS_MEMFN(processStereo);
 HAS_MEMFN(processMonoToMono);
 HAS_MEMFN(processMonoToStereo);
-HAS_MEMFN(tailLength);
+HAS_MEMFN(silentSamplesLength);
 HAS_MEMFN(enableKeytrack);
 HAS_MEMFN(getKeytrackDefault);
 HAS_MEMFN(getKeytrack);
@@ -277,11 +277,12 @@ template <typename T> struct SSTVoiceEffectShim : T
     }
     bool mInitCalledOnce{false};
 
-    int tail_length() override
+    int silence_length() override
     {
-        if constexpr (HasMemFn_tailLength<T>::value)
+        if constexpr (HasMemFn_silentSamplesLength<T>::value)
         {
-            return this->tailLength();
+            auto res = this->silentSamplesLength();
+            return res;
         }
         return 0;
     }

@@ -346,6 +346,9 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         }
     }
 
+    auto postProcLevel = sst::basic_blocks::mechanics::blockAbsMax<blockSize>(output[0]) +
+                         sst::basic_blocks::mechanics::blockAbsMax<blockSize>(output[1]);
+
     // Pan
     auto pvo = std::clamp(*endpoints.outputTarget.panP, -1.f, 1.f);
 
@@ -393,17 +396,22 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
     if (activeZones == 0)
     {
-        auto hasR = updateRingout() && (ringoutMax > 0) && inRingout();
+        auto hasS = updateSilenceMax() && (silenceMax > 0) && inSilenceCheck();
         auto hasEG = hasActiveEGs();
+
+        static constexpr float silenceThresh = 1e-8f;
 
         if (hasEG) // If envelopes are still going don't start cointing ringout yet
         {
-            ringoutTime = 0;
+            silenceTime = 0;
         }
-
-        if (hasR || hasEG)
+        else if (hasS && postProcLevel > silenceThresh)
         {
-            ringoutTime += blockSize;
+            silenceTime = 0;
+        }
+        else if (silenceMax > 0)
+        {
+            silenceTime += blockSize;
         }
         else
         {
@@ -417,7 +425,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
             {
                 mUILag.instantlySnap();
                 parentPart->removeActiveGroup();
-                ringoutMax = 0;
+                silenceMax = 0;
                 blocksToTerminate = -1;
                 terminationSequence = -1;
             }
@@ -425,7 +433,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
 }
 
-bool Group::updateRingout()
+bool Group::updateSilenceMax()
 {
     auto res{false};
     int32_t ro{0};
@@ -433,25 +441,15 @@ bool Group::updateRingout()
     {
         if (!p)
             continue;
-        auto tl = p->tail_length();
-        if (tl != 0)
+        auto sm = p->silence_length();
+
+        if (sm != 0)
         {
-            if (tl < 0)
-            {
-                /*
-                 * Someone is infinite. So set ringout time to 0
-                 * then if someone drops away from infinite we start
-                 * counting at their max
-                 */
-                ro = 1000 * sampleRate;
-                ringoutTime = 0;
-            }
-            else
-                ro = ro + tl; // we accumulate ringouts
+            ro = ro + sm; // we accumulate ringouts
             res = true;
         }
     }
-    ringoutMax = ro;
+    silenceMax = ro;
     return res;
 }
 
@@ -468,7 +466,7 @@ void Group::addActiveZone(engine::Zone *zwp)
     // Important we do this *after* the attack since it allows
     // isActive to be accurate with processor ringout
     activeZones++;
-    ringoutTime = 0;
+    silenceTime = 0;
 
     /*
     SCLOG("addZone " << SCD(activeZones));
@@ -506,9 +504,9 @@ void Group::postZoneTraversalRemoveHandler()
     assert(rescanWeakRefs == 0);
     if (activeZones == 0)
     {
-        ringoutMax = 0;
-        ringoutTime = 0;
-        updateRingout();
+        silenceMax = 0;
+        silenceTime = 0;
+        updateSilenceMax();
     }
 }
 
@@ -738,7 +736,7 @@ bool Group::isActive() const
 {
     auto haz = hasActiveZones();
     auto hae = hasActiveEGs();
-    auto ir = inRingout();
+    auto ir = inSilenceCheck();
     auto et = isInTerminationFadeout();
 
     return haz || hae || ir || et;

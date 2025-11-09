@@ -249,11 +249,11 @@ struct Group : MoveableOnly<Group>,
     void onProcessorTypeChanged(int w, dsp::processor::ProcessorType t);
 
     uint32_t activeZones{0};
-    int32_t ringoutTime{0};
-    int32_t ringoutMax{0};
+    int32_t silenceTime{0};
+    int32_t silenceMax{0};
 
     bool hasActiveZones() const { return activeZones != 0; }
-    bool inRingout() const { return ringoutTime < ringoutMax; }
+    bool inSilenceCheck() const { return silenceTime < silenceMax; }
     bool hasActiveEGs() const
     {
         const auto eg0A = egsActive[0] && ((int)eg[0].stage <= (int)ahdsrenv_t::s_release);
@@ -279,7 +279,7 @@ struct Group : MoveableOnly<Group>,
     // when you start EGs so assume gated for one block
     bool attackInThisBlock{false};
 
-    bool updateRingout();
+    bool updateSilenceMax();
 
     typedef std::vector<std::unique_ptr<Zone>> zoneContainer_t;
 

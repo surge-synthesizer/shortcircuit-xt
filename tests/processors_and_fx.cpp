@@ -77,7 +77,7 @@ TEST_CASE("Processors have Formatting")
     }
 }
 
-TEST_CASE("Dump Processor Tails")
+TEST_CASE("Dump Processor Silence Lengths")
 {
     namespace pdsp = scxt::dsp::processor;
     scxt::engine::MemoryPool mp;
@@ -92,7 +92,7 @@ TEST_CASE("Dump Processor Tails")
         auto pt = (pdsp::ProcessorType)i;
         if (pdsp::isProcessorImplemented(pt))
         {
-            DYNAMIC_SECTION("Tail for " << pdsp::getProcessorName(pt))
+            DYNAMIC_SECTION("Silence Length for " << pdsp::getProcessorName(pt))
             {
                 REQUIRE(true);
                 memset(memory, 0, sizeof(memory));
@@ -107,8 +107,8 @@ TEST_CASE("Dump Processor Tails")
 
                 REQUIRE(p);
 
-                std::cout << "Processor " << p->getName() << " has tail at default "
-                          << p->tail_length() << std::endl;
+                std::cout << "Processor " << p->getName() << " has silence length at default "
+                          << p->silence_length() << std::endl;
                 pdsp::unspawnProcessor(p);
             }
         }
