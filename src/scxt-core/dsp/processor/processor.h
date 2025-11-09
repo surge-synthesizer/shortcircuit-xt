@@ -336,7 +336,12 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     /*
      * Tail length in samples
      */
-    virtual int tail_length() { return 0; }
+    // virtual int tail_length() { return 0; }
+
+    /*
+     * number of silent samples which indicate inactivity
+     */
+    virtual int silence_length() { return 0; }
 
     float modulation_output; // processors can use this to output modulation data to the matrix
 
