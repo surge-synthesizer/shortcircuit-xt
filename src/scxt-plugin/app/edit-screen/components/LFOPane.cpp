@@ -1055,6 +1055,24 @@ struct MiscPanel : juce::Component, HasEditor
         gen(modulation::modulators::PhasorStorage::SyncMode::VOICEPOS,
             forZone ? "Voice Position" : "Group Position");
 
+        p.addSeparator();
+        auto genP = [&p, i, this](auto ph, auto l) {
+            auto that = this; // grrrr msvc
+            p.addItem(juce::CharPointer_UTF8(l), true, std::fabs(ph - ms.phasors[i].phase) < 0.001,
+                      [i, w = juce::Component::SafePointer(that), ph] {
+                          if (!w)
+                              return;
+                          w->ms.phasors[i].phase = ph;
+                          w->repushData();
+                          w->updateFromValues();
+                      });
+        };
+        genP(0.0, u8"0° phase");
+        genP(0.25, u8"90° phase");
+        genP(0.5, u8"180° phase");
+        genP(0.75, u8"270° phase");
+        genP(1.f, u8"Random phase");
+
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
     void showDivisionMenu(int i)
@@ -1077,6 +1095,7 @@ struct MiscPanel : juce::Component, HasEditor
         gen(modulation::modulators::PhasorStorage::Division::NOTE, "Note");
         gen(modulation::modulators::PhasorStorage::Division::DOTTED, "Dotted");
         gen(modulation::modulators::PhasorStorage::Division::TRIPLET, "Triplet");
+        gen(modulation::modulators::PhasorStorage::Division::OF_BEAT, "Of Beat");
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
@@ -1111,15 +1130,27 @@ struct MiscPanel : juce::Component, HasEditor
         for (int i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
         {
             const auto &ps = ms.phasors[i];
+            std::string phLab{};
+            if (ps.phase < 0.001)
+                phLab = "";
+            else if (ps.phase < 0.251)
+                phLab = " +90°";
+            else if (ps.phase < 0.501)
+                phLab = " +180°";
+            else if (ps.phase < 0.751)
+                phLab = " +270°";
+            else if (ps.phase > 0.999)
+                phLab = " RND";
             switch (ps.syncMode)
             {
             case modulation::modulators::PhasorStorage::VOICEPOS:
-                syncButtons[i]->setLabel(forZone ? "VOICE" : "GROUP");
+                phLab = (forZone ? "VOICE" : "GROUP") + phLab;
                 break;
             case modulation::modulators::PhasorStorage::SONGPOS:
-                syncButtons[i]->setLabel("SONG");
+                phLab = "SONG" + phLab;
                 break;
             }
+            syncButtons[i]->setLabel(phLab.c_str());
 
             switch (ps.division)
             {
@@ -1131,6 +1162,9 @@ struct MiscPanel : juce::Component, HasEditor
                 break;
             case modulation::modulators::PhasorStorage::DOTTED:
                 divButtons[i]->setLabel("DOT");
+                break;
+            case modulation::modulators::PhasorStorage::OF_BEAT:
+                divButtons[i]->setLabel("OF BEAT");
                 break;
             }
         }

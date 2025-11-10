@@ -42,6 +42,8 @@ std::string PhasorStorage::toStringDivision(const Division &s)
         return "t";
     case Division::DOTTED:
         return "d";
+    case Division::OF_BEAT:
+        return "ob";
     }
     return "ERR";
 }
@@ -49,7 +51,7 @@ std::string PhasorStorage::toStringDivision(const Division &s)
 PhasorStorage::Division PhasorStorage::fromStringDivision(const std::string &s)
 {
     static auto inverse = makeEnumInverse<PhasorStorage::Division, PhasorStorage::toStringDivision>(
-        PhasorStorage::Division::NOTE, PhasorStorage::Division::DOTTED);
+        PhasorStorage::Division::NOTE, PhasorStorage::Division::OF_BEAT);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return PhasorStorage::Division::NOTE;
