@@ -169,6 +169,7 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
     Bus &getBusForOutput(BusAddress &ba)
     {
         busses.busUsed[(int)ba] = true;
+        busses.busByAddress(ba).setInRingout(false);
         return busses.busByAddress(ba);
     }
 
