@@ -133,6 +133,26 @@ void Part::process(Engine &e)
     }
 }
 
+bool Part::isActive()
+{
+    if (!configuration.active)
+        return false;
+    auto res = activeGroups != 0;
+    // Temporary fix until we implement 1804
+
+    bool hasAny{false};
+    for (auto &pe : partEffectStorage)
+    {
+        hasAny = hasAny || (pe.type != AvailableBusEffects::none);
+    }
+
+    if (!res && hasAny)
+    {
+        // This is the part ringout clause
+    }
+    return res || hasAny;
+}
+
 Part::zoneMappingSummary_t Part::getZoneMappingSummary()
 {
     zoneMappingSummary_t res;

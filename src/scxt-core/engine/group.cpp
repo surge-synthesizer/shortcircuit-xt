@@ -413,7 +413,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         {
             silenceTime += blockSize;
         }
-        else
+
+        if (silenceTime > silenceMax)
         {
             if (blocksToTerminate < 0)
             {
