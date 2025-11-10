@@ -94,7 +94,8 @@ struct PhasorStorage
         NOTE,
         TRIPLET,
         DOTTED,
-        OF_BEAT,
+        OF_BPM,  // 1/1 is a quarter note
+        OF_BEAT, // 1/1 is a denominator
     } division{NOTE};
     DECLARE_ENUM_STRING(Division);
 

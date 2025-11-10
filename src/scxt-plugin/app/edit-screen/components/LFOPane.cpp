@@ -1095,6 +1095,7 @@ struct MiscPanel : juce::Component, HasEditor
         gen(modulation::modulators::PhasorStorage::Division::NOTE, "Note");
         gen(modulation::modulators::PhasorStorage::Division::DOTTED, "Dotted");
         gen(modulation::modulators::PhasorStorage::Division::TRIPLET, "Triplet");
+        gen(modulation::modulators::PhasorStorage::Division::OF_BPM, "Of BPM");
         gen(modulation::modulators::PhasorStorage::Division::OF_BEAT, "Of Beat");
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
@@ -1162,6 +1163,10 @@ struct MiscPanel : juce::Component, HasEditor
                 break;
             case modulation::modulators::PhasorStorage::DOTTED:
                 divButtons[i]->setLabel("DOT");
+                break;
+
+            case modulation::modulators::PhasorStorage::OF_BPM:
+                divButtons[i]->setLabel("OF BPM");
                 break;
             case modulation::modulators::PhasorStorage::OF_BEAT:
                 divButtons[i]->setLabel("OF BEAT");
