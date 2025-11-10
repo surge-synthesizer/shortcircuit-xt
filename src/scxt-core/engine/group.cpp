@@ -389,7 +389,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         outputAmp.multiply_2_blocks(lOut, rOut);
     }
 
-    // Finally downsampleif oversmapled
+    // Finally downsample if oversampled
     if (OS)
     {
         osDownFilter.process_block_D2(lOut, rOut, blockSize << 1);
@@ -399,9 +399,9 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         auto hasS = updateSilenceMax() && (silenceMax > 0) && inSilenceCheck();
         auto hasEG = hasActiveEGs();
 
-        static constexpr float silenceThresh = 1e-8f;
+        static constexpr float silenceThresh = 1e-10f;
 
-        if (hasEG) // If envelopes are still going don't start cointing ringout yet
+        if (hasEG) // If envelopes are still going don't start counting silence yet
         {
             silenceTime = 0;
         }
