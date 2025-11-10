@@ -725,7 +725,7 @@ void Group::resetLFOs(int whichLFO)
     }
 
     randomEvaluator.evaluate(getEngine()->rng, miscSourceStorage);
-    phasorEvaluator.attack(getEngine()->transport, miscSourceStorage);
+    phasorEvaluator.attack(getEngine()->transport, miscSourceStorage, getEngine()->rng);
 }
 
 bool Group::isActive() const

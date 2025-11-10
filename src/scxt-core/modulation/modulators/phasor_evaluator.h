@@ -40,11 +40,16 @@ struct PhasorEvaluator
     std::array<float, scxt::phasorsPerGroupOrZone> outputs;
 
     double lastAttackTime{0};
+    std::array<float, scxt::phasorsPerGroupOrZone> rphase;
 
     void attack(sst::basic_blocks::modulators::Transport &transport,
-                modulation::MiscSourceStorage &rs)
+                modulation::MiscSourceStorage &rs, sst::basic_blocks::dsp::RNG &rng)
     {
         lastAttackTime = transport.timeInBeats;
+        for (int i = 0; i < scxt::phasorsPerGroupOrZone; i++)
+        {
+            rphase[i] = rng.unif01();
+        }
     }
 
     void step(sst::basic_blocks::modulators::Transport &transport,
@@ -65,14 +70,20 @@ struct PhasorEvaluator
                 break;
             case PhasorStorage::NOTE:
                 break;
+            case PhasorStorage::OF_BEAT:
+                rat *= transport.signature.denominator;
+                break;
             }
             auto tm = transport.timeInBeats;
             if (ps.syncMode == PhasorStorage::VOICEPOS)
             {
                 tm -= lastAttackTime;
             }
+            auto ph = rs.phasors[i].phase;
+            if (ph > 0.99)
+                ph = rphase[i];
 
-            auto pr = tm * rat;
+            auto pr = (tm + ph) * rat;
             outputs[i] = pr - std::floor(pr);
         }
     }

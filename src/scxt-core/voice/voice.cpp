@@ -163,7 +163,7 @@ void Voice::voiceStarted()
     }
 
     randomEvaluator.evaluate(engine->rng, zone->miscSourceStorage);
-    phasorEvaluator.attack(engine->transport, zone->miscSourceStorage);
+    phasorEvaluator.attack(engine->transport, zone->miscSourceStorage, engine->rng);
 
     auto &aegp = endpoints->egTarget[0];
     if (*aegp.dlyP < 1e-5)

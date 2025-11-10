@@ -147,6 +147,7 @@ SC_STREAMDEF(modulation::modulators::PhasorStorage, SC_FROM({
                  addUnlessDefault<val_t>(v, "sy", ps::SyncMode::VOICEPOS, from.syncMode);
                  addUnlessDefault<val_t>(v, "nu", 1, from.numerator);
                  addUnlessDefault<val_t>(v, "de", 4, from.denominator);
+                 addUnlessDefault<val_t>(v, "ph", 0.f, from.phase);
              }),
              SC_TO({
                  using ps = modulation::modulators::PhasorStorage;
@@ -154,6 +155,7 @@ SC_STREAMDEF(modulation::modulators::PhasorStorage, SC_FROM({
                  findOrSet(v, "sy", ps::SyncMode::VOICEPOS, to.syncMode);
                  findOrSet(v, "nu", 1, to.numerator);
                  findOrSet(v, "de", 4, to.denominator);
+                 findOrSet(v, "ph", 0, to.phase);
              }));
 
 STREAM_ENUM(modulation::modulators::RandomStorage::Style,

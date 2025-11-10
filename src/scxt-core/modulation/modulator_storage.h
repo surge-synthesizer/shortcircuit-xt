@@ -93,9 +93,12 @@ struct PhasorStorage
     {
         NOTE,
         TRIPLET,
-        DOTTED
+        DOTTED,
+        OF_BEAT,
     } division{NOTE};
     DECLARE_ENUM_STRING(Division);
+
+    float phase{0.f};
 
     int32_t numerator{1}, denominator{4};
 };
