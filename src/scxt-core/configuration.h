@@ -89,6 +89,8 @@ static constexpr float silenceThresh{1e-10f};
 
 /*
  * This namespace guards some very useful debugging guards and logs in the code.
+ * Some of them log in the realtime thread so please leave them all
+ * false when you commit.
  */
 namespace log
 {

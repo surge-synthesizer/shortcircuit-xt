@@ -65,6 +65,7 @@ void Patch::process(Engine &e)
                 {
                     busses.busUsed[i + AUX_0] = true;
                     busses.auxBusses[i].inRingout = busses.auxBusses[i].inRingout && b.inRingout;
+                    busses.auxBusses[i].silenceMaxUpstreamBusses += b.silenceMaxSelf;
                     switch (b.busSendStorage.auxLocation[i])
                     {
                     case Bus::BusSendStorage::PRE_FX:
@@ -93,7 +94,10 @@ void Patch::process(Engine &e)
 
     // Process my send busses
     for (auto &b : busses.auxBusses)
+    {
         b.process();
+        busses.mainBus.silenceMaxUpstreamBusses += b.silenceMaxSelf + b.silenceMaxUpstreamBusses;
+    }
 
     // TODO - we can be more parsimonious here if we don't use these
     memset(busses.pluginNonMainOutputs, 0, sizeof(busses.pluginNonMainOutputs));
@@ -104,6 +108,8 @@ void Patch::process(Engine &e)
         if (br == 0)
         {
             busses.mainBus.inRingout = busses.mainBus.inRingout && busses.partBusses[bi].inRingout;
+            busses.mainBus.silenceMaxUpstreamBusses += busses.partBusses[bi].silenceMaxSelf;
+
             // accumulate onto main
             mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[0],
                                                 busses.mainBus.output[0]);

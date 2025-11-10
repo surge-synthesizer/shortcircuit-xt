@@ -101,12 +101,33 @@ void Bus::initializeAfterUnstream(Engine &e)
 }
 void Bus::process()
 {
-    if (inRingout != wasInRingout)
+    if (inRingout)
     {
-        SCLOG_IF(ringout, "BUS " << getBusAddressLabel(address) << " " << SCD(inRingout));
+        int idx{0};
+        for (auto &fx : busEffects)
+        {
+            if (fx && busEffectStorage[idx].isActive)
+            {
+                silenceMaxSelf += fx->silentSamplesLength();
+            }
+            idx++;
+        }
+        if (silenceTime > silenceMaxUpstreamBusses + silenceMaxSelf)
+        {
+            if (!wasSilent)
+            {
+                SCLOG_IF(ringout, "BUS " << getBusAddressLabel(address) << " returning "
+                                         << SCD(silenceTime) << SCD(silenceMaxUpstreamBusses));
+            }
+            wasSilent = true;
+            return;
+        }
     }
-
-    wasInRingout = inRingout;
+    else
+    {
+        silenceTime = 0;
+    }
+    wasSilent = false;
 
     if (hasOSSignal)
     {
@@ -131,8 +152,15 @@ void Bus::process()
         if (fx && busEffectStorage[idx].isActive)
         {
             fx->process(output[0], output[1]);
+            silenceMaxSelf += fx->silentSamplesLength();
         }
         idx++;
+    }
+
+    if (inRingout != wasInRingout)
+    {
+        SCLOG_IF(ringout, "BUS " << getBusAddressLabel(address) << " " << SCD(silenceMaxSelf)
+                                 << SCD(silenceMaxUpstreamBusses));
     }
 
     if (busSendStorage.supportsSends && busSendStorage.hasSends)
@@ -176,6 +204,24 @@ void Bus::process()
 
     float a = vuFalloff;
 
+    if (inRingout)
+    {
+        blockSilenceLevel =
+            mech::blockAbsMax<blockSize>(output[0]) + mech::blockAbsMax<blockSize>(output[1]);
+        if (blockSilenceLevel > silenceThresh)
+        {
+            silenceTime = 0;
+        }
+        else
+        {
+            silenceTime += blockSize;
+        }
+    }
+    else
+    {
+        blockSilenceLevel = std::fabs(output[0][0]) + std::fabs(output[1][0]);
+    }
+
     for (int c = 0; c < 2; ++c)
     {
         vuLevel[c] = std::min(2.f, a * vuLevel[c]);
@@ -184,11 +230,13 @@ void Bus::process()
          * unlucky with sample 0 except in a super pathological case of an exactly
          * 16 sample sin wave or something.
          */
-        if (std::fabs(output[c][0]) > 1e-15)
+        if (blockSilenceLevel > 1e-8f)
         {
             vuLevel[c] = std::max((float)vuLevel[c], mech::blockAbsMax<BLOCK_SIZE>(output[c]));
         }
     }
+
+    wasInRingout = inRingout;
 }
 
 void Bus::sendBusEffectInfoToClient(const scxt::engine::Engine &e, int slot)
