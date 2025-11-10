@@ -1,6 +1,14 @@
 {
   "include": "voicefx-layouts/voicefx-classes.json",
   "controls": {
+    "stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {}
+    },
     "fine": {
       "class": "knob60",
       "label": "Fine",
