@@ -70,6 +70,9 @@ struct PhasorEvaluator
                 break;
             case PhasorStorage::NOTE:
                 break;
+            case PhasorStorage::OF_BPM:
+                rat *= 4.0; // since its always a quarter note
+                break;
             case PhasorStorage::OF_BEAT:
                 rat *= transport.signature.denominator;
                 break;

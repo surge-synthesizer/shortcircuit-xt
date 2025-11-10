@@ -42,6 +42,8 @@ std::string PhasorStorage::toStringDivision(const Division &s)
         return "t";
     case Division::DOTTED:
         return "d";
+    case Division::OF_BPM:
+        return "op";
     case Division::OF_BEAT:
         return "ob";
     }
