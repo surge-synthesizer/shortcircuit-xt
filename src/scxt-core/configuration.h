@@ -84,6 +84,9 @@ static constexpr uint16_t maxGeneratorsPerVoice{64};
 static constexpr size_t modMatrixRowsPerZone{12};
 static constexpr size_t modMatrixRowsPerGroup{12};
 
+// For tail detection use a full block below this level as silence
+static constexpr float silenceThresh{1e-10f};
+
 /*
  * This namespace guards some very useful debugging guards and logs in the code.
  */
@@ -99,7 +102,8 @@ static constexpr bool generatorInitialization{false};
 static constexpr bool sampleLoadAndPurge{false};
 static constexpr bool missingResolution{false};
 static constexpr bool patchIO{false};
-static constexpr bool jsonUI{true};
+static constexpr bool jsonUI{false};
+static constexpr bool ringout{false};
 } // namespace log
 
 // The wireframe implies features beyond what we have. I started coding up the UI elements

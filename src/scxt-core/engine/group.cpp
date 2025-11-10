@@ -399,13 +399,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         auto hasS = updateSilenceMax() && (silenceMax > 0) && inSilenceCheck();
         auto hasEG = hasActiveEGs();
 
-        static constexpr float silenceThresh = 1e-10f;
-
-        if (hasEG) // If envelopes are still going don't start counting silence yet
-        {
-            silenceTime = 0;
-        }
-        else if (hasS && postProcLevel > silenceThresh)
+        if (hasS && postProcLevel > silenceThresh)
         {
             silenceTime = 0;
         }
@@ -414,7 +408,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
             silenceTime += blockSize;
         }
 
-        if (silenceTime > silenceMax)
+        if (!hasEG && (!inSilenceCheck() || silenceMax == 0))
         {
             if (blocksToTerminate < 0)
             {
@@ -424,6 +418,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
             if (terminationSequence == 0)
             {
+                SCLOG_IF(ringout, "Group terminated due to ringout");
                 mUILag.instantlySnap();
                 parentPart->removeActiveGroup();
                 silenceMax = 0;

@@ -142,6 +142,13 @@ struct Config
 HAS_MEMFN(remapParametersForStreamingVersion);
 #undef HAS_MEMFN
 
+template <typename T>
+concept HasSilentSamplesLength = requires(T obj) {
+    {
+        obj.silentSamplesLength()
+    } -> std::same_as<size_t>;
+};
+
 template <typename T> struct Impl : T
 {
     static_assert(T::numParams <= BusEffectStorage::maxBusEffectParams);
@@ -171,6 +178,15 @@ template <typename T> struct Impl : T
     void process(float *__restrict L, float *__restrict R) override { T::processBlock(L, R); }
 
     datamodel::pmd paramAt(int i) const override { return T::paramAt(i); }
+
+    size_t silentSamplesLength() override
+    {
+        if constexpr (HasSilentSamplesLength<T>)
+        {
+            return T::silentSamplesLength();
+        }
+        return 0;
+    }
 
     int numParams() const override { return T::numParams; }
 
