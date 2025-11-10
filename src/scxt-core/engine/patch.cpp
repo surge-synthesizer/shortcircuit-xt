@@ -64,6 +64,7 @@ void Patch::process(Engine &e)
                 if (b.busSendStorage.sendLevels[i] != 0.f)
                 {
                     busses.busUsed[i + AUX_0] = true;
+                    busses.auxBusses[i].inRingout = busses.auxBusses[i].inRingout && b.inRingout;
                     switch (b.busSendStorage.auxLocation[i])
                     {
                     case Bus::BusSendStorage::PRE_FX:
@@ -102,6 +103,7 @@ void Patch::process(Engine &e)
     {
         if (br == 0)
         {
+            busses.mainBus.inRingout = busses.mainBus.inRingout && busses.partBusses[bi].inRingout;
             // accumulate onto main
             mech::accumulate_from_to<blockSize>(busses.partBusses[bi].output[0],
                                                 busses.mainBus.output[0]);

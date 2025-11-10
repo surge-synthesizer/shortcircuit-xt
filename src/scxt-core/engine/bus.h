@@ -99,6 +99,8 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
     float auxoutputPreVCA alignas(16)[2][blockSize];
     float auxoutputPostVCA alignas(16)[2][blockSize];
     float vuLevel[2]{0.f, 0.f}, vuFalloff{0.f};
+    bool inRingout{false}, wasInRingout{false};
+    void setInRingout(bool b) { inRingout = b; }
 
     sst::filters::HalfRate::HalfRateFilter downsampleFilter;
 
@@ -107,6 +109,7 @@ struct Bus : MoveableOnly<Bus>, SampleRateSupport
         memset(output, 0, sizeof(output));
         memset(outputOS, 0, sizeof(outputOS));
         hasOSSignal = false;
+        inRingout = true;
     }
 
     void process();

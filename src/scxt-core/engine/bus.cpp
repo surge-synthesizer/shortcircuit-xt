@@ -101,6 +101,13 @@ void Bus::initializeAfterUnstream(Engine &e)
 }
 void Bus::process()
 {
+    if (inRingout != wasInRingout)
+    {
+        SCLOG_IF(ringout, "BUS " << getBusAddressLabel(address) << " " << SCD(inRingout));
+    }
+
+    wasInRingout = inRingout;
+
     if (hasOSSignal)
     {
         if (!previousHadOSSignal)
