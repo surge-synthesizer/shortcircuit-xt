@@ -220,6 +220,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     void moveGroupToAfter(size_t whichGroup, size_t toAfter);
     void swapGroups(size_t groupA, size_t groupB);
 
+    size_t silenceTime{0}, silenceMax{0};
+
     std::array<float, 128> midiCCValues{}; // 0 .. 1 so the 128 taken out
     float channelAT{0.f};
     float pitchBendValue{0.f}; // -1..1 so the 8192 taken out

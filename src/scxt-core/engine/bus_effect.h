@@ -94,6 +94,7 @@ struct BusEffect
 
     virtual void init(bool defaultsOverrideStorage) = 0;
     virtual void process(float *__restrict L, float *__restrict R) = 0;
+    virtual size_t silentSamplesLength() = 0;
     virtual datamodel::pmd paramAt(int i) const = 0;
     virtual int numParams() const = 0;
     virtual void onSampleRateChanged() = 0;

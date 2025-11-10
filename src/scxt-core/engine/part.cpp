@@ -110,9 +110,12 @@ void Part::process(Engine &e)
 
     if (noGroups)
         memset(defOut, 0, sizeof(defOut));
+    else
+        silenceTime = 0;
 
     if (defaultAssigned || noGroups)
     {
+        silenceMax = 0;
         // this should be the route to point
         auto bi = configuration.routeTo;
         if (configuration.routeTo == DEFAULT_BUS)
@@ -123,6 +126,7 @@ void Part::process(Engine &e)
             if (p)
             {
                 p->process(defOut[0], defOut[1]);
+                silenceMax += p->silentSamplesLength();
             }
         }
 
@@ -131,6 +135,15 @@ void Part::process(Engine &e)
         blk::accumulate_from_to<blockSize>(defOut[0], obus.output[0]);
         blk::accumulate_from_to<blockSize>(defOut[1], obus.output[1]);
     }
+    auto lv = blk::blockAbsMax<blockSize>(defOut[0]) + blk::blockAbsMax<blockSize>(defOut[1]);
+    if (lv > silenceThresh)
+    {
+        silenceTime = 0;
+    }
+    else
+    {
+        silenceTime += blockSize;
+    }
 }
 
 bool Part::isActive()
@@ -138,19 +151,24 @@ bool Part::isActive()
     if (!configuration.active)
         return false;
     auto res = activeGroups != 0;
-    // Temporary fix until we implement 1804
+    auto ringout = silenceMax > 0 && silenceTime < silenceMax;
 
-    bool hasAny{false};
-    for (auto &pe : partEffectStorage)
+    if (log::ringout)
     {
-        hasAny = hasAny || (pe.type != AvailableBusEffects::none);
+        static bool was = false;
+        auto act = res || ringout;
+        if (act != was)
+            SCLOG_IF(ringout, "Part " << partNumber << " active= " << act << " " << silenceTime
+                                      << " " << silenceMax << " ");
+        static int ag{-1};
+        if (ag != activeGroups)
+            SCLOG_IF(ringout, "Part " << partNumber << " activeGroups=" << activeGroups);
+        ag = activeGroups;
+
+        was = act;
     }
 
-    if (!res && hasAny)
-    {
-        // This is the part ringout clause
-    }
-    return res || hasAny;
+    return res || ringout;
 }
 
 Part::zoneMappingSummary_t Part::getZoneMappingSummary()
