@@ -838,7 +838,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         });
 }
 
-void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::VelocityRange vrange)
+void Engine::createEmptyZone(int partN, int groupN, scxt::engine::KeyboardRange krange, scxt::engine::VelocityRange vrange)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
@@ -850,6 +850,10 @@ void Engine::createEmptyZone(scxt::engine::KeyboardRange krange, scxt::engine::V
 
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
+    if (partN >= 0)
+        sp = partN;
+    if (groupN >= 0)
+        sg = groupN;
 
     // give it a name
     std::set<std::string> zoneNames;

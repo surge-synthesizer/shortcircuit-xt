@@ -371,7 +371,7 @@ void ZoneLayoutDisplay::createEmptyZoneAt(const juce::Point<int> &pos)
 
     if (!za.has_value())
     {
-        sendToSerialization(cmsg::AddBlankZone({0, 0, keyMin, keyMax, velMin, velMax}));
+        sendToSerialization(cmsg::AddBlankZone({-1, -1, keyMin, keyMax, velMin, velMax}));
     }
     else
     {
@@ -727,7 +727,7 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
 
         if (!za.has_value())
         {
-            sendToSerialization(cmsg::AddBlankZone({0, 0, ks, ke, vs, ve}));
+            sendToSerialization(cmsg::AddBlankZone({-1, -1, ks, ke, vs, ve}));
         }
         else
         {
@@ -1253,6 +1253,7 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
     bool horiz{true};
     auto vPad{8};
     auto hPad{16};
+    auto abovePad{6};
     if (rr.getWidth() < rr.getHeight() && bb.getWidth() > rr.getWidth() - hPad)
     {
         horiz = false;
@@ -1260,6 +1261,9 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
 
     if (horiz)
     {
+        if (bb.getHeight() + abovePad > rr.getHeight())
+            return;
+
         auto guessTrim1 = (rr.getWidth() - hPad) / bb.getWidth();
         if (guessTrim1 < 0)
             return;
@@ -1270,27 +1274,11 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
             bb = ga.getBoundingBox(0, -1, false);
             trm = 1;
         }
-        if (ga.getNumGlyphs() < 1)
+        if (ga.getNumGlyphs() < 2)
             return;
 
         auto cx = (rr.getWidth() - bb.getWidth()) / 2 + rr.getX();
         auto cy = (rr.getHeight() - bb.getHeight()) / 2 + rr.getY() - bb.getY();
-
-        // Stay in the box
-        if (rr.getBottom() < getHeight() / 2)
-        {
-            if (cy > rr.getBottom() - vPad)
-            {
-                cy = rr.getBottom() - vPad;
-            }
-        }
-        else
-        {
-            if (cy - bb.getHeight() < rr.getY() + vPad)
-            {
-                cy = rr.getY() + vPad + bb.getHeight();
-            }
-        }
 
         auto gs = juce::Graphics::ScopedSaveState(g);
         g.addTransform(juce::AffineTransform().translated(cx, cy));
@@ -1304,6 +1292,9 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
     }
     else
     {
+        if (bb.getHeight() + abovePad > rr.getWidth())
+            return;
+
         auto guessTrim1 = (rr.getHeight() - hPad) / bb.getWidth();
         if (guessTrim1 < 0)
             return;
@@ -1314,6 +1305,10 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
             bb = ga.getBoundingBox(0, -1, false);
             trm = 1;
         }
+
+        if (ga.getNumGlyphs() < 2)
+            return;
+
 
         // the rotations make these signs a pita
         auto cx = (rr.getWidth() + bb.getHeight() - vPad / 2) / 2 + rr.getX();

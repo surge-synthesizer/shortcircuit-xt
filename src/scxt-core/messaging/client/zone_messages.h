@@ -201,7 +201,7 @@ inline void doAddBlankZone(const addBlankZonePayload_t &payload, engine::Engine 
                            MessageController &cont)
 {
     auto [part, group, ks, ke, vs, ve] = payload;
-    engine.createEmptyZone({ks, ke}, {vs, ve});
+    engine.createEmptyZone(part, group, {ks, ke}, {vs, ve});
 }
 
 CLIENT_TO_SERIAL(AddBlankZone, c2s_add_blank_zone, addBlankZonePayload_t,
