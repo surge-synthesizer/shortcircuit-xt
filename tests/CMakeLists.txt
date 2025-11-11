@@ -1,8 +1,6 @@
 # And finally the test suite
 add_executable(scxt-test
 		test_main.cpp
-		console_ui.cpp
-		test_utilities.cpp
 
 		sfz_parse.cpp
         streaming.cpp
@@ -18,6 +16,7 @@ target_link_libraries(scxt-test
 		fmt
         scxt-core
         shortcircuit::catch2
+		console-ui
         )
 
 if (WIN32)

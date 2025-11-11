@@ -35,7 +35,6 @@ namespace scxt::tuning
 
 MidikeyRetuner::MidikeyRetuner()
 {
-    SCLOG("Creating Midi Key Tuner");
     mtsClient = MTS_RegisterClient();
     if (mtsClient && MTS_HasMaster(mtsClient))
     {

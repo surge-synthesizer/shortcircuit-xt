@@ -25,20 +25,31 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "catch2/catch2.hpp"
-#include <chrono>
 #include "console_harness.h"
 
-TEST_CASE("Basic Console UI Startup")
+namespace scxt::clients::console_ui
 {
-    scxt::clients::console_ui::ConsoleHarness th;
-    REQUIRE(th.start(true));
-    REQUIRE(th.engine);
-    REQUIRE(th.editor);
 
-    for (int i = 0; i < 36; ++i)
-    {
-        th.editor->stepUI();
-        std::this_thread::sleep_for(std::chrono::milliseconds(17));
-    }
+bool ConsoleHarness::start(bool logMessages, double sampleRate)
+{
+    engine = std::make_unique<scxt::engine::Engine>();
+    engine->runningEnvironment = "SCXT Console Harness";
+
+    engine->setSampleRate(sampleRate);
+
+    editor = std::make_unique<scxt::clients::console_ui::ConsoleUI>(
+        *(engine->getMessageController()), *(engine->defaults), *(engine->getSampleManager()),
+        *(engine->getBrowser()), engine->sharedUIMemoryState);
+    editor->logMessages = logMessages;
+
+    audioThreadProvider = std::make_unique<scxt::clients::console_ui::AudioThreadProvider>(*engine);
+    return true;
 }
+
+ConsoleHarness::~ConsoleHarness()
+{
+    audioThreadProvider.reset();
+    editor.reset();
+    engine.reset();
+}
+} // namespace scxt::clients::console_ui

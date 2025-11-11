@@ -28,7 +28,7 @@
 #include <chrono>
 #include "console_ui.h"
 
-namespace scxt::tests
+namespace scxt::clients::console_ui
 {
 
 ConsoleUI::ConsoleUI(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
@@ -75,4 +75,4 @@ void ConsoleUI::drainQueue()
 
 ConsoleUI::~ConsoleUI() { msgCont.unregisterClient(); }
 
-} // namespace scxt::tests
+} // namespace scxt::clients::console_ui

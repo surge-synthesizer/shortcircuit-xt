@@ -28,12 +28,11 @@
 #include "catch2/catch2.hpp"
 #include "engine/engine.h"
 
-#include "test_utilities.h"
-#include "console_ui.h"
+#include "console_harness.h"
 
 TEST_CASE("Create a Single Blank Zone and it is Selected")
 {
-    scxt::tests::TestHarness th;
+    scxt::clients::console_ui::ConsoleHarness th;
     th.start();
 
     th.stepUI();
@@ -46,7 +45,7 @@ TEST_CASE("Create a Single Blank Zone and it is Selected")
 
 TEST_CASE("Create five zones then multi-select")
 {
-    scxt::tests::TestHarness th;
+    scxt::clients::console_ui::ConsoleHarness th;
     th.start();
     th.stepUI();
 

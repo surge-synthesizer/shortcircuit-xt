@@ -25,20 +25,29 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "catch2/catch2.hpp"
-#include <chrono>
+#include <fstream>
 #include "console_harness.h"
-
-TEST_CASE("Basic Console UI Startup")
+int main(int argc, char **argv)
 {
-    scxt::clients::console_ui::ConsoleHarness th;
-    REQUIRE(th.start(true));
-    REQUIRE(th.engine);
-    REQUIRE(th.editor);
+    auto ch = std::make_unique<scxt::clients::console_ui::ConsoleHarness>();
+    ch->start(false);
 
-    for (int i = 0; i < 36; ++i)
+    ch->stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+
+    using abz = cmsg::AddBlankZone;
+    for (int k = 0; k < 10; ++k)
     {
-        th.editor->stepUI();
-        std::this_thread::sleep_for(std::chrono::milliseconds(17));
+        SCLOG("Starting key " << k)
+        for (int v = 0; v < 127; ++v)
+        {
+            ch->sendToSerialization(abz({0, 0, k, k + 1, v, v + 1}));
+        }
+        ch->stepUI();
     }
+
+    ch->sendToSerialization(cmsg::SaveMulti({"/tmp/stress.scm", 0}));
+    ch->stepUI();
+    return 0;
 }

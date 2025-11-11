@@ -25,31 +25,37 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "test_utilities.h"
+#ifndef SCXT_SRC_CLIENTS_CONSOLE_UI_CONSOLE_HARNESS_H
+#define SCXT_SRC_CLIENTS_CONSOLE_UI_CONSOLE_HARNESS_H
 
-namespace scxt::tests
+#include "console_ui.h"
+#include "audio_thread_provider.h"
+
+namespace scxt::clients::console_ui
 {
-
-bool TestHarness::start(bool logMessages, double sampleRate)
+struct ConsoleHarness : scxt::MoveableOnly<ConsoleHarness>
 {
-    engine = std::make_unique<scxt::engine::Engine>();
-    engine->runningEnvironment = "SCXT Test Harness";
+    std::unique_ptr<scxt::engine::Engine> engine;
+    std::unique_ptr<scxt::clients::console_ui::ConsoleUI> editor;
+    std::unique_ptr<scxt::clients::console_ui::AudioThreadProvider> audioThreadProvider;
 
-    engine->setSampleRate(sampleRate);
+    ~ConsoleHarness();
 
-    editor = std::make_unique<ConsoleUI>(*(engine->getMessageController()), *(engine->defaults),
-                                         *(engine->getSampleManager()), *(engine->getBrowser()),
-                                         engine->sharedUIMemoryState);
-    editor->logMessages = logMessages;
+    bool start(bool logMessages = false, double sampleRate = 48000);
 
-    audioThreadProvider = std::make_unique<AudioThreadProvider>(*engine);
-    return true;
-}
+    void stepUI(size_t forSteps = 10)
+    {
+        for (int i = 0; i < forSteps; ++i)
+        {
+            editor->stepUI();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
 
-TestHarness::~TestHarness()
-{
-    audioThreadProvider.reset();
-    editor.reset();
-    engine.reset();
-}
-} // namespace scxt::tests
+    template <typename T> void sendToSerialization(const T &t)
+    {
+        scxt::messaging::client::clientSendToSerialization(t, *engine->getMessageController());
+    }
+};
+} // namespace scxt::clients::console_ui
+#endif // SHORTCIRCUITXT_CONSOLE_HARNESS_H
