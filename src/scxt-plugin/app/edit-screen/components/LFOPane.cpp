@@ -1069,7 +1069,12 @@ struct MiscPanel : juce::Component, HasEditor
             numDenQuantA[i]->syncValue();
             numDenQuantW[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
             numDenQuantW[i]->setSource(numDenQuantA[i].get());
-
+            numDenQuantW[i]->onPopupMenu = [i, w = juce::Component::SafePointer(this)](auto &) {
+                if (w)
+                {
+                    w->showQuantValueMenu(i);
+                }
+            };
             addAndMakeVisible(*numDenQuantW[i]);
             showNOverD[i] = false;
         }
@@ -1153,6 +1158,30 @@ struct MiscPanel : juce::Component, HasEditor
         sendToSerialization(cmsg::UpdateMiscmodStorageForSelectedGroupOrZone({forZone, ms}));
     }
 
+    void showQuantValueMenu(int i)
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Value");
+        p.addSeparator();
+        auto gen = [&p, i, this](auto v, auto l) {
+            auto that = this; // grrrr msvc
+            p.addItem(l, true, v == (int)(numDenQuantA[i]->getValue()),
+                      [i, w = juce::Component::SafePointer(that), v] {
+                          if (!w)
+                              return;
+                          w->numDenQuantA[i]->setValueFromGUI(v);
+                          w->repushData();
+                          w->updateFromValues();
+                          w->repaint();
+                      });
+        };
+        for (int vv = numDenQuantA[i]->getMax(); vv >= numDenQuantA[i]->getMin(); --vv)
+        {
+            gen(vv, numDenQuantA[i]->getValueAsStringFor(vv));
+        }
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
     void showSyncMenu(int i)
     {
         auto p = juce::PopupMenu();
@@ -1206,6 +1235,7 @@ struct MiscPanel : juce::Component, HasEditor
                           if (!w)
                               return;
                           w->ms.phasors[i].division = v;
+                          w->quantizeForNTD(i);
                           w->repushData();
                           w->updateFromValues();
                       });
@@ -1218,6 +1248,30 @@ struct MiscPanel : juce::Component, HasEditor
         gen(modulation::modulators::PhasorStorage::Division::OF_BEAT, "Of Beat");
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    void quantizeForNTD(int i)
+    {
+        auto d = ms.phasors[i].division;
+        if (d == modulation::modulators::PhasorStorage::Division::NOTE ||
+            d == modulation::modulators::PhasorStorage::Division::DOTTED ||
+            d == modulation::modulators::PhasorStorage::Division::TRIPLET)
+        {
+            auto n = ms.phasors[i].numerator;
+            auto d = ms.phasors[i].denominator;
+            auto r = (int)std::round(log2(n * 1.f / d));
+            if (r < 0)
+            {
+                ms.phasors[i].numerator = 1;
+                ms.phasors[i].denominator = 1 << (-r);
+            }
+            else
+            {
+                ms.phasors[i].numerator = 1 << r;
+                ms.phasors[i].denominator = 1;
+            }
+            numDenQuantA[i]->syncValue();
+        }
     }
     void showRandomModeMenu(int i)
     {
