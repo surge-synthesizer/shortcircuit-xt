@@ -1206,6 +1206,7 @@ struct MiscPanel : juce::Component, HasEditor
                           if (!w)
                               return;
                           w->ms.phasors[i].division = v;
+                          w->quantizeForNTD(i);
                           w->repushData();
                           w->updateFromValues();
                       });
@@ -1218,6 +1219,30 @@ struct MiscPanel : juce::Component, HasEditor
         gen(modulation::modulators::PhasorStorage::Division::OF_BEAT, "Of Beat");
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    void quantizeForNTD(int i)
+    {
+        auto d = ms.phasors[i].division;
+        if (d == modulation::modulators::PhasorStorage::Division::NOTE ||
+            d == modulation::modulators::PhasorStorage::Division::DOTTED ||
+            d == modulation::modulators::PhasorStorage::Division::TRIPLET)
+        {
+            auto n = ms.phasors[i].numerator;
+            auto d = ms.phasors[i].denominator;
+            auto r = (int)std::round(log2(n * 1.f / d));
+            if (r < 0)
+            {
+                ms.phasors[i].numerator = 1;
+                ms.phasors[i].denominator = 1 << (-r);
+            }
+            else
+            {
+                ms.phasors[i].numerator = 1 << r;
+                ms.phasors[i].denominator = 1;
+            }
+            numDenQuantA[i]->syncValue();
+        }
     }
     void showRandomModeMenu(int i)
     {
