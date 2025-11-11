@@ -120,7 +120,36 @@ using busFxSwap_t = std::tuple<int16_t, int16_t, int16_t, int16_t, int16_t>;
 inline void doBusSwapFX(const busFxSwap_t &payload, const engine::Engine &engine,
                         messaging::MessageController &cont)
 {
-    cont.reportErrorToClient("Not Done", "Bus Swap FX not implemented yet");
+
+    auto [bs1, sl1, bs2, sl2, smc] = payload;
+    if (bs1 == bs2 && sl1 == sl2)
+    {
+        cont.reportErrorToClient("Cant move fx onto itself",
+                                 "Bus Swap FX had same bus/slot location");
+        return;
+    }
+
+    cont.scheduleAudioThreadCallback(
+        [bs1, bs2, sl1, sl2](auto &engine) {
+            auto &b1 = engine.getPatch()->busses.busByAddress((engine::BusAddress)bs1);
+            auto &b2 = engine.getPatch()->busses.busByAddress((engine::BusAddress)bs2);
+            auto fs = b1.busEffectStorage[sl1];
+            auto ts = b2.busEffectStorage[sl2];
+
+            b1.setBusEffectType(engine, sl1, ts.type);
+            b2.setBusEffectType(engine, sl2, fs.type);
+
+            b1.busEffectStorage[sl1] = ts;
+            b2.busEffectStorage[sl2] = fs;
+        },
+        [bs1, sl1, bs2, sl2](const auto &engine) {
+            engine.getPatch()
+                ->busses.busByAddress((engine::BusAddress)bs1)
+                .sendBusEffectInfoToClient(engine, sl1);
+            engine.getPatch()
+                ->busses.busByAddress((engine::BusAddress)bs2)
+                .sendBusEffectInfoToClient(engine, sl2);
+        });
 }
 CLIENT_TO_SERIAL(SwapBusFX, c2s_swap_bus_fx, busFxSwap_t, doBusSwapFX(payload, engine, cont));
 } // namespace scxt::messaging::client
