@@ -112,7 +112,8 @@ void Bus::process()
             }
             idx++;
         }
-        if (silenceTime > silenceMaxUpstreamBusses + silenceMaxSelf)
+        if (silenceTime > silenceMaxUpstreamBusses + silenceMaxSelf && vuLevel[0] < silenceThresh &&
+            vuLevel[1] < silenceThresh)
         {
             if (!wasSilent)
             {
