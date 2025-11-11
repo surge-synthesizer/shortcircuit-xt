@@ -316,7 +316,9 @@ void MappingDisplay::setGroupZoneMappingSummary(const engine::Part::zoneMappingS
     if (editor->currentLeadZoneSelection.has_value())
         setLeadSelection(*(editor->currentLeadZoneSelection));
     if (mappingZones)
-        mappingZones->repaint();
+    {
+        mappingZones->mappingWasReset();
+    }
     repaint();
 }
 

@@ -1234,11 +1234,18 @@ std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Po
 void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &rIn,
                                            const std::string &txt, const juce::Colour &col)
 {
-    auto f = editor->themeApplier.interRegularFor(11);
+    if (glyphArrangementCache.find(txt) == glyphArrangementCache.end())
+    {
+        auto f = editor->themeApplier.interRegularFor(11);
 
-    juce::GlyphArrangement ga;
-    ga.addJustifiedText(f, txt, 0, 0, 1000, juce::Justification::topLeft);
-    auto bb = ga.getBoundingBox(0, -1, false);
+        juce::GlyphArrangement gac;
+        gac.addJustifiedText(f, txt, 0, 0, 1000, juce::Justification::topLeft);
+        glyphArrangementCache[txt] = gac;
+        glyphBBCache[txt] = gac.getBoundingBox(0, -1, false);
+    }
+    // important to take a copy since we manipulate it below
+    auto ga = glyphArrangementCache[txt];
+    auto bb = glyphBBCache[txt];
 
     auto zoomedAway = getLocalBounds().contains(rIn.toNearestInt());
     auto rr = getLocalBounds().getIntersection(rIn.toNearestInt());
@@ -1253,10 +1260,15 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
 
     if (horiz)
     {
+        auto guessTrim1 = (rr.getWidth() - hPad) / bb.getWidth();
+        if (guessTrim1 < 0)
+            return;
+        auto trm = (1 - guessTrim1) * ga.getNumGlyphs();
         while (bb.getWidth() > rr.getWidth() - hPad && ga.getNumGlyphs() > 0)
         {
-            ga.removeRangeOfGlyphs(ga.getNumGlyphs() - 1, -1);
+            ga.removeRangeOfGlyphs(ga.getNumGlyphs() - trm, -1);
             bb = ga.getBoundingBox(0, -1, false);
+            trm = 1;
         }
         if (ga.getNumGlyphs() < 1)
             return;
@@ -1292,10 +1304,15 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
     }
     else
     {
+        auto guessTrim1 = (rr.getHeight() - hPad) / bb.getWidth();
+        if (guessTrim1 < 0)
+            return;
+        auto trm = (1 - guessTrim1) * ga.getNumGlyphs();
         while (bb.getWidth() > rr.getHeight() - hPad && ga.getNumGlyphs() > 0)
         {
-            ga.removeRangeOfGlyphs(ga.getNumGlyphs() - 1, -1);
+            ga.removeRangeOfGlyphs(ga.getNumGlyphs() - trm, -1);
             bb = ga.getBoundingBox(0, -1, false);
+            trm = 1;
         }
 
         // the rotations make these signs a pita
