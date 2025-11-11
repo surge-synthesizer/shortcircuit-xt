@@ -894,6 +894,110 @@ struct MiscPanel : juce::Component, HasEditor
         numText, denText;
     std::array<std::unique_ptr<intatt_t>, scxt::phasorsPerGroupOrZone> numTextA, denTextA;
 
+    std::array<bool, scxt::phasorsPerGroupOrZone> showNOverD{};
+
+    struct NumDenQuantAtt : sst::jucegui::data::Continuous
+    {
+        intatt_t &num, &den;
+        NumDenQuantAtt(intatt_t &n, intatt_t &d) : num(n), den(d) {}
+
+        float value{0};
+        float getValue() const override { return value; }
+        float getDefaultValue() const override { return 0; }
+        std::string getLabel() const override { return "NQ"; }
+        void syncValue()
+        {
+            auto n = num.getValue();
+            auto d = den.getValue();
+            auto r = (int)std::round(log2(n * 1.f / d));
+
+            value = r;
+        }
+        void setValueFromGUI(const float &f) override
+        {
+            value = f;
+            auto v = (int)std::round(f);
+            if (v < 0)
+            {
+                num.setValueFromGUI(1);
+                den.setValueFromGUI(1 << (-v));
+            }
+            else
+            {
+                num.setValueFromGUI(1 << v);
+                den.setValueFromGUI(1);
+            }
+        }
+        void setValueFromModel(const float &f) override { value = f; }
+        std::string getValueAsStringFor(float f) const override
+        {
+            auto v = (int)std::round(f);
+            if (v < 0)
+            {
+                return std::string("1 / ") + std::to_string(1 << (-v));
+            }
+
+            return std::to_string(1 << v) + " Wh";
+        }
+        void setValueAsString(const std::string &s) override
+        {
+            if (s.empty())
+            {
+                setValueFromGUI(-2);
+                return;
+            }
+            auto div = s.find("/");
+            if (div == std::string::npos)
+            {
+                auto f = std::atoi(s.c_str());
+                if (f <= 0)
+                {
+                    setValueFromGUI(-2);
+                }
+                else
+                {
+                    auto cv = (int)log2(f);
+                    if (cv > getMax())
+                    {
+                        setValueFromGUI(-2);
+                    }
+                    else
+                    {
+                        setValueFromGUI(cv);
+                    }
+                }
+            }
+            else
+            {
+                auto s1 = s.substr(0, div);
+                auto s2 = s.substr(div + 1);
+                auto v1 = std::atoi(s1.c_str());
+                auto v2 = std::atoi(s2.c_str());
+
+                if (v1 != 1)
+                {
+                    setValueFromGUI(-2);
+                    return;
+                }
+                if (v2 <= 0)
+                {
+                    setValueFromGUI(-2);
+                }
+                else
+                {
+                    auto cv = (int)log2(1.0 / v2);
+                    setValueFromGUI(cv);
+                }
+            }
+        }
+        float getMin() const override { return -6; }
+        float getMax() const override { return 4; }
+    };
+
+    std::array<std::unique_ptr<NumDenQuantAtt>, scxt::phasorsPerGroupOrZone> numDenQuantA;
+    std::array<std::unique_ptr<jcmp::DraggableTextEditableValue>, scxt::phasorsPerGroupOrZone>
+        numDenQuantW;
+
     std::unique_ptr<jcmp::NamedPanelDivider> phasorRandDiv;
 
     std::array<std::unique_ptr<jcmp::Label>, scxt::randomsPerGroupOrZone> randomABCs;
@@ -950,16 +1054,24 @@ struct MiscPanel : juce::Component, HasEditor
             numTextA[i] = std::make_unique<intatt_t>(nd, onChange, ms.phasors[i].numerator);
             numText[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
             numText[i]->setSource(numTextA[i].get());
-            addAndMakeVisible(*numText[i]);
+            addChildComponent(*numText[i]);
 
             denTextA[i] = std::make_unique<intatt_t>(dd, onChange, ms.phasors[i].denominator);
             denText[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
             denText[i]->setSource(denTextA[i].get());
-            addAndMakeVisible(*denText[i]);
+            addChildComponent(*denText[i]);
 
             phasorSlashes[i] = std::make_unique<jcmp::Label>();
             phasorSlashes[i]->setText("/");
-            addAndMakeVisible(*phasorSlashes[i]);
+            addChildComponent(*phasorSlashes[i]);
+
+            numDenQuantA[i] = std::make_unique<NumDenQuantAtt>(*numTextA[i], *denTextA[i]);
+            numDenQuantA[i]->syncValue();
+            numDenQuantW[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
+            numDenQuantW[i]->setSource(numDenQuantA[i].get());
+
+            addAndMakeVisible(*numDenQuantW[i]);
+            showNOverD[i] = false;
         }
 
         for (int i = 0; i < scxt::randomsPerGroupOrZone; ++i)
@@ -1002,9 +1114,16 @@ struct MiscPanel : juce::Component, HasEditor
             prlo.add(jlo::Component(*phasorABCs[i]).withWidth(20));
             prlo.add(jlo::Component(*syncButtons[i]).expandToFill());
             prlo.addGap(5);
-            prlo.add(jlo::Component(*numText[i]).withWidth(20));
-            prlo.add(jlo::Component(*phasorSlashes[i]).withWidth(15));
-            prlo.add(jlo::Component(*denText[i]).withWidth(20));
+            if (showNOverD[i])
+            {
+                prlo.add(jlo::Component(*numText[i]).withWidth(20));
+                prlo.add(jlo::Component(*phasorSlashes[i]).withWidth(15));
+                prlo.add(jlo::Component(*denText[i]).withWidth(20));
+            }
+            else
+            {
+                prlo.add(jlo::Component(*numDenQuantW[i]).withWidth(55));
+            }
             prlo.add(jlo::Component(*divButtons[i]).withWidth(60));
 
             plo.add(prlo);
@@ -1157,21 +1276,31 @@ struct MiscPanel : juce::Component, HasEditor
             {
             case modulation::modulators::PhasorStorage::NOTE:
                 divButtons[i]->setLabel("NOTE");
+                showNOverD[i] = false;
                 break;
             case modulation::modulators::PhasorStorage::TRIPLET:
                 divButtons[i]->setLabel("TRIP");
+                showNOverD[i] = false;
                 break;
             case modulation::modulators::PhasorStorage::DOTTED:
                 divButtons[i]->setLabel("DOT");
+                showNOverD[i] = false;
                 break;
 
             case modulation::modulators::PhasorStorage::OF_BPM:
                 divButtons[i]->setLabel("OF BPM");
+                showNOverD[i] = true;
                 break;
             case modulation::modulators::PhasorStorage::OF_BEAT:
                 divButtons[i]->setLabel("OF BEAT");
+                showNOverD[i] = true;
                 break;
             }
+            numDenQuantA[i]->syncValue();
+            numDenQuantW[i]->setVisible(!showNOverD[i]);
+            denText[i]->setVisible(showNOverD[i]);
+            numText[i]->setVisible(showNOverD[i]);
+            phasorSlashes[i]->setVisible(showNOverD[i]);
         }
 
         for (int i = 0; i < scxt::randomsPerGroupOrZone; ++i)
@@ -1193,6 +1322,7 @@ struct MiscPanel : juce::Component, HasEditor
                 break;
             }
         }
+        resized();
     }
 };
 
