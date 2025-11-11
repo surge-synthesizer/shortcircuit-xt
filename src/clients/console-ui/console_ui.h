@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef CONSOLE_UI_H
-#define CONSOLE_UI_H
+#ifndef SCXT_SRC_CLIENTS_CONSOLE_UI_CONSOLE_UI_H
+#define SCXT_SRC_CLIENTS_CONSOLE_UI_CONSOLE_UI_H
 
 #include <memory>
 #include <thread>
@@ -38,7 +38,7 @@
 #include "messaging/messaging.h"
 #include "selection/selection_manager.h"
 
-namespace scxt::tests
+namespace scxt::clients::console_ui
 {
 struct ConsoleUI
 {
@@ -130,6 +130,6 @@ struct ConsoleUI
     void drainQueue();
 }; // namespace scxt::tests
 
-} // namespace scxt::tests
+} // namespace scxt::clients::console_ui
 
 #endif // CONSOLE_UI_H

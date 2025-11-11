@@ -25,19 +25,10 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef TEST_UTILITIES_H
-#define TEST_UTILITIES_H
+#ifndef SCXT_SRC_CLIENTS_CONSOLE_UI_AUDIO_THREAD_PROVIDER_H
+#define SCXT_SRC_CLIENTS_CONSOLE_UI_AUDIO_THREAD_PROVIDER_H
 
-#include <thread>
-#include <atomic>
-#include "engine/engine.h"
-
-#include "messaging/messaging.h"
-#include "messaging/client/client_messages.h"
-
-#include "console_ui.h"
-
-namespace scxt::tests
+namespace scxt::clients::console_ui
 {
 struct AudioThreadProvider
 {
@@ -78,30 +69,5 @@ struct AudioThreadProvider
         }
     }
 };
-
-struct TestHarness : scxt::MoveableOnly<TestHarness>
-{
-    std::unique_ptr<scxt::engine::Engine> engine;
-    std::unique_ptr<ConsoleUI> editor;
-    std::unique_ptr<AudioThreadProvider> audioThreadProvider;
-
-    ~TestHarness();
-
-    bool start(bool logMessages = false, double sampleRate = 48000);
-
-    void stepUI(size_t forSteps = 10)
-    {
-        for (int i = 0; i < forSteps; ++i)
-        {
-            editor->stepUI();
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-    }
-
-    template <typename T> void sendToSerialization(const T &t)
-    {
-        scxt::messaging::client::clientSendToSerialization(t, *engine->getMessageController());
-    }
-};
-} // namespace scxt::tests
-#endif // TEST_UTILITIES_H
+} // namespace scxt::clients::console_ui
+#endif // SHORTCIRCUITXT_AUDIO_THREAD_PROVIDER_H
