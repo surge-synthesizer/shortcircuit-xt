@@ -508,7 +508,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                                      int16_t group, int16_t zone, int variantID);
 
     // use -1 for p and g here to get best choice
-    void createEmptyZone(int part, int group, KeyboardRange krange = {48, 72}, VelocityRange vrange = {0, 127});
+    void createEmptyZone(int part, int group, KeyboardRange krange = {48, 72},
+                         VelocityRange vrange = {0, 127});
     void duplicateZone(const selection::SelectionManager::ZoneAddress &);
     void copyZone(const selection::SelectionManager::ZoneAddress &);
     void pasteZone(const selection::SelectionManager::ZoneAddress &);

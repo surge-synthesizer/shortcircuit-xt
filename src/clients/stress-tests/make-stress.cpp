@@ -52,7 +52,6 @@ void makeNbyN(int dc, const std::string &path)
     ch->stepUI();
 }
 
-
 void makeNbyNGroupPer(int dc, const std::string &path)
 {
     auto ch = std::make_unique<scxt::clients::console_ui::ConsoleHarness>();

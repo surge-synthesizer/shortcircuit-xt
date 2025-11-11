@@ -1309,7 +1309,6 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
         if (ga.getNumGlyphs() < 2)
             return;
 
-
         // the rotations make these signs a pita
         auto cx = (rr.getWidth() + bb.getHeight() - vPad / 2) / 2 + rr.getX();
         auto cy = (rr.getHeight() - bb.getWidth()) / 2 + rr.getY() + bb.getWidth();

@@ -838,7 +838,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         });
 }
 
-void Engine::createEmptyZone(int partN, int groupN, scxt::engine::KeyboardRange krange, scxt::engine::VelocityRange vrange)
+void Engine::createEmptyZone(int partN, int groupN, scxt::engine::KeyboardRange krange,
+                             scxt::engine::VelocityRange vrange)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
