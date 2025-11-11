@@ -1069,7 +1069,12 @@ struct MiscPanel : juce::Component, HasEditor
             numDenQuantA[i]->syncValue();
             numDenQuantW[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
             numDenQuantW[i]->setSource(numDenQuantA[i].get());
-
+            numDenQuantW[i]->onPopupMenu = [i, w = juce::Component::SafePointer(this)](auto &) {
+                if (w)
+                {
+                    w->showQuantValueMenu(i);
+                }
+            };
             addAndMakeVisible(*numDenQuantW[i]);
             showNOverD[i] = false;
         }
@@ -1153,6 +1158,30 @@ struct MiscPanel : juce::Component, HasEditor
         sendToSerialization(cmsg::UpdateMiscmodStorageForSelectedGroupOrZone({forZone, ms}));
     }
 
+    void showQuantValueMenu(int i)
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Value");
+        p.addSeparator();
+        auto gen = [&p, i, this](auto v, auto l) {
+            auto that = this; // grrrr msvc
+            p.addItem(l, true, v == (int)(numDenQuantA[i]->getValue()),
+                      [i, w = juce::Component::SafePointer(that), v] {
+                          if (!w)
+                              return;
+                          w->numDenQuantA[i]->setValueFromGUI(v);
+                          w->repushData();
+                          w->updateFromValues();
+                          w->repaint();
+                      });
+        };
+        for (int vv = numDenQuantA[i]->getMax(); vv >= numDenQuantA[i]->getMin(); --vv)
+        {
+            gen(vv, numDenQuantA[i]->getValueAsStringFor(vv));
+        }
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
     void showSyncMenu(int i)
     {
         auto p = juce::PopupMenu();
