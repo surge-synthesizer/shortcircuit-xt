@@ -207,8 +207,6 @@ void MixerScreen::setAllBussesToUniqueOutput()
 void MixerScreen::swapEffects(int bus1, int slot1, int bus2, int slot2, bool swapVsMove)
 {
     namespace cmsg = scxt::messaging::client;
-    SCLOG("Swapping effects " << bus1 << "/" << slot1 << " to " << bus2 << "/" << slot2
-                              << (swapVsMove ? " Swap" : " Move"));
     sendToSerialization(cmsg::SwapBusFX({bus1, slot1, bus2, slot2, swapVsMove}));
 }
 
