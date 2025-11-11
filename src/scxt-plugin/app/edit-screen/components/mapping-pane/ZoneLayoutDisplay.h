@@ -48,6 +48,8 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
     juce::Rectangle<float> rectangleForRangeSkipEnd(int kL, int kH, int vL, int vH);
 
+    std::unordered_map<std::string, juce::GlyphArrangement> glyphArrangementCache;
+    std::unordered_map<std::string, juce::Rectangle<float>> glyphBBCache;
     void labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &, const std::string &,
                             const juce::Colour &);
 
@@ -152,6 +154,8 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
 
     void showZoneMenu(const selection::SelectionManager::ZoneAddress &za);
     void showMappingNonZoneMenu(const juce::Point<int> &);
+
+    void mappingWasReset() { repaint(); }
 
     float hPct{0.0}, hZoom{1.0}, vPct{0.0}, vZoom{1.0};
     void setHorizontalZoom(float pctStart, float zoomFactor)

@@ -37,12 +37,13 @@ int main(int argc, char **argv)
     namespace cmsg = scxt::messaging::client;
 
     using abz = cmsg::AddBlankZone;
-    for (int k = 0; k < 10; ++k)
+    auto dc{5};
+    for (int k = 0; k < 127; k += dc)
     {
         SCLOG("Starting key " << k)
-        for (int v = 0; v < 127; ++v)
+        for (int v = 0; v < 127; v += dc)
         {
-            ch->sendToSerialization(abz({0, 0, k, k + 1, v, v + 1}));
+            ch->sendToSerialization(abz({0, 0, k, k + dc - 1, v, v + dc - 1}));
         }
         ch->stepUI();
     }
