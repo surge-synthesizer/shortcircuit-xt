@@ -59,7 +59,35 @@ using partFxSwap_t = std::tuple<int16_t, int16_t, int16_t, int16_t, int16_t>;
 inline void doPartSwapFX(const partFxSwap_t &payload, const engine::Engine &engine,
                          messaging::MessageController &cont)
 {
-    cont.reportErrorToClient("Not Done", "Part Swap FX not implemented yet");
+    auto [p1, b1, p2, b2, smc] = payload;
+    if (p1 != p2)
+    {
+        cont.reportErrorToClient("Cross Part Moves not supported yet",
+                                 "Part Swap FX must be within the same part");
+        return;
+    }
+    if (b1 == b2)
+    {
+        cont.reportErrorToClient("Cant move part onto itself",
+                                 "Part Swap FX had same bus location");
+        return;
+    }
+
+    cont.scheduleAudioThreadCallback(
+        [pti = p1, b1, b2](auto &engine) {
+            const auto &pt = engine.getPatch()->getPart(pti);
+            auto fs = pt->partEffectStorage[b1];
+            auto ts = pt->partEffectStorage[b2];
+
+            pt->setBusEffectType(engine, b1, ts.type);
+            pt->setBusEffectType(engine, b2, fs.type);
+            pt->partEffectStorage[b1] = ts;
+            pt->partEffectStorage[b2] = fs;
+        },
+        [pti = p1, b1, b2](const auto &engine) {
+            engine.getPatch()->getPart(pti)->sendBusEffectInfoToClient(engine, b1);
+            engine.getPatch()->getPart(pti)->sendBusEffectInfoToClient(engine, b2);
+        });
 }
 CLIENT_TO_SERIAL(SwapPartFX, c2s_swap_part_fx, partFxSwap_t, doPartSwapFX(payload, engine, cont));
 } // namespace scxt::messaging::client
