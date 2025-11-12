@@ -82,6 +82,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
     std::string xml((const char *)data);
     free(data);
 
+    // SCLOG(xml);
     auto doc = TiXmlDocument();
     if (!doc.Parse(xml.c_str()))
     {
@@ -137,18 +138,32 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         engine.getSampleManager()->getSample(*lsid)->md5Sum = md5;
 
         auto kr{90}, ks{0}, ke{127}, vs{0}, ve{127};
+        auto klf{0}, khf{0}, vlf{0}, vhf{0};
         auto key = fc->FirstChildElement("key");
         auto vel = fc->FirstChildElement("velocity");
+        auto loop = fc->FirstChildElement("loop");
         if (key)
         {
             key->QueryIntAttribute("root", &kr);
             key->QueryIntAttribute("low", &ks);
             key->QueryIntAttribute("high", &ke);
+            key->QueryIntAttribute("low-fade", &klf);
+            key->QueryIntAttribute("high-fade", &khf);
         }
         if (vel)
         {
             vel->QueryIntAttribute("low", &vs);
             vel->QueryIntAttribute("high", &ve);
+            vel->QueryIntAttribute("low-fade", &vlf);
+            vel->QueryIntAttribute("high-fade", &vhf);
+        }
+        if (loop)
+        {
+            auto md = vel->Attribute("mode");
+            if (md && std::string(md) != "off")
+            {
+                SCLOG("Ignoring loop mode " << md);
+            }
         }
 
         auto group_id = 0;
@@ -167,11 +182,17 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
 
         auto &g = part->getGroup(group_id);
         auto z = std::make_unique<engine::Zone>(*lsid);
+        z->givenName = fc->Attribute("file");
         z->mapping.rootKey = kr;
         z->mapping.keyboardRange.keyStart = ks;
         z->mapping.keyboardRange.keyEnd = ke;
+        z->mapping.keyboardRange.fadeStart = klf;
+        z->mapping.keyboardRange.fadeEnd = khf;
         z->mapping.velocityRange.velStart = vs;
         z->mapping.velocityRange.velEnd = ve;
+        z->mapping.velocityRange.fadeStart = vlf;
+        z->mapping.velocityRange.fadeEnd = vhf;
+
         z->attachToSample(*engine.getSampleManager());
         g->addZone(z);
 
@@ -239,7 +260,6 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         engine.getSelectionManager()->applySelectActions(
             selection::SelectionManager::SelectActionContents(pt, addedGroupIndices.front(), 0,
                                                               true, true, true));
-
         return true;
     }
     else
