@@ -34,9 +34,11 @@ namespace scxt::ui::app
 
 void SCXTEditorDataCache::addSubscription(void *el, size_t soel, sst::jucegui::data::Continuous *c)
 {
-    assert(soel == sizeof(float));
-    csubs[el].insert(c);
-    c->addGUIDataListener(&clistener);
+    if (soel == sizeof(float))
+    {
+        csubs[el].insert(c);
+        c->addGUIDataListener(&clistener);
+    }
 }
 void SCXTEditorDataCache::addSubscription(void *el, size_t soel, sst::jucegui::data::Discrete *d)
 {

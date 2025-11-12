@@ -37,6 +37,7 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     : HasEditor(e), info(e->editorDataCache.groupOutputInfo)
 {
     using fac = connectors::SingleValueFactory<attachment_t, floatMsg_t>;
+    using ifac = connectors::SingleValueFactory<iattachment_t, intMsg_t>;
 
     auto mkg = [this](auto gl) {
         auto res = std::make_unique<jcmp::GlyphPainter>(gl);
@@ -99,6 +100,13 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     tuneGlyph = mkg(jcmp::GlyphPainter::GlyphType::TUNING);
     tuneDrag = mkd('grtn', "Tune");
 
+    ifac::attachAndAdd(info, info.pbDown, this, pbDnA, pbDnVal);
+    ifac::attachAndAdd(info, info.pbUp, this, pbUpA, pbUpVal);
+    pbLabel = std::make_unique<jcmp::Label>();
+    pbLabel->setText("PB");
+    pbLabel->setJustification(juce::Justification::centredRight);
+    addAndMakeVisible(*pbLabel);
+
     editor->editorDataCache.addNotificationCallback(&info,
                                                     [w = juce::Component::SafePointer(this)]() {
                                                         if (w)
@@ -130,6 +138,17 @@ void GroupSettingsCard::resized()
         m->setBounds(r.withTrimmedLeft(componentHeight + 2));
     };
     spair(midiGlyph, midiMenu);
+
+    auto q = b.withHeight(componentHeight).withTrimmedLeft(r.getWidth() + 10);
+    q = q.withWidth(r.getWidth() - componentHeight - 2);
+    q = q.translated(getWidth() - q.getX() - q.getWidth(), 0); // (getWidth()-q.getX()-q.getWidth()
+
+    pbUpVal->setBounds(q);
+    q = q.translated(-(q.getWidth() + 2), 0);
+    pbDnVal->setBounds(q);
+    q = q.translated(-(q.getWidth() + 2), 0);
+    pbLabel->setBounds(q);
+
     r = r.translated(0, rowHeight);
     spair(outputGlyph, outputMenu);
     r = r.translated(0, rowHeight);
@@ -192,6 +211,7 @@ void GroupSettingsCard::rebuildFromInfo()
     {
         midiMenu->setLabel(std::to_string(info.midiChannel + 1));
     }
+    repaint();
 }
 
 void GroupSettingsCard::showPolyMenu()

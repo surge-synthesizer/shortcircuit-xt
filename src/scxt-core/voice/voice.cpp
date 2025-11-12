@@ -990,7 +990,14 @@ float Voice::calculateVoicePitch()
 
     auto fpitch = kd + *endpoints->mappingTarget.pitchOffsetP;
     auto pitchWheel = zone->parentGroup->parentPart->pitchBendValue;
-    auto pitchMv = pitchWheel > 0 ? zone->mapping.pbUp : zone->mapping.pbDown;
+    auto pu = zone->mapping.pbUp;
+    auto pd = zone->mapping.pbDown;
+    if (pu < 0)
+        pu = zone->parentGroup->outputInfo.pbUp;
+    if (pd < 0)
+        pd = zone->parentGroup->outputInfo.pbDown;
+
+    auto pitchMv = pitchWheel > 0 ? pu : pd;
     fpitch += pitchWheel * pitchMv;
 
     float retuner{retunedKeyAtAttack};
