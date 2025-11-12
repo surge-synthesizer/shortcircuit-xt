@@ -56,5 +56,7 @@ std::vector<CompoundElement> getSFZCompoundList(const fs::path &);
 
 std::vector<CompoundElement> getGIGCompoundList(const fs::path &);
 
+std::vector<CompoundElement> getMultisampleCompoundList(const fs::path &);
+
 } // namespace scxt::sample::compound
 #endif // COMPOUND_FILE_H

@@ -99,8 +99,8 @@ struct SampleManager : MoveableOnly<SampleManager>
 
     std::optional<SampleID> setupSampleFromMultifile(const fs::path &, const std::string &md5,
                                                      int idx, void *data, size_t dataSize);
-    std::optional<SampleID> loadSampleFromMultiSample(const fs::path &, int idx,
-                                                      const SampleID &id);
+    std::optional<SampleID> loadSampleFromMultiSample(const fs::path &, const std::string &md5,
+                                                      int idx, const SampleID &id);
 
     std::shared_ptr<Sample> getSample(const SampleID &id) const
     {

@@ -104,7 +104,7 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
     break;
     case Sample::MULTISAMPLE_FILE:
     {
-        nid = loadSampleFromMultiSample(addr.path, addr.region, id);
+        nid = loadSampleFromMultiSample(addr.path, addr.md5sum, addr.region, id);
     }
     break;
     case Sample::GIG_FILE:
@@ -391,7 +391,8 @@ std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &
     return sp->id;
 }
 
-std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path &p, int idx,
+std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path &p,
+                                                                 const std::string &md5, int idx,
                                                                  const SampleID &id)
 {
     if (zipArchives.find(p.u8string()) == zipArchives.end())
@@ -402,7 +403,9 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
     if (!za->isOpen)
         return std::nullopt;
 
-    auto sp = std::make_shared<Sample>(id);
+    auto sp = std::make_shared<Sample>();
+    sp->id.setAsMD5WithAddress(md5, idx, -1, -1);
+    sp->id.setPathHash(p);
 
     size_t ssize;
     auto data = mz_zip_reader_extract_to_heap(&za->zip_archive, idx, &ssize, 0);
@@ -411,7 +414,15 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
     sp->type = Sample::MULTISAMPLE_FILE;
     sp->region = idx;
     sp->mFileName = p;
+    sp->md5Sum = md5;
     samples[sp->id] = sp;
+
+    mz_zip_archive_file_stat file_stat;
+    mz_zip_reader_file_stat(&za->zip_archive, idx, &file_stat);
+
+    sp->displayName =
+        fmt::format("{} - ({} @ {})", file_stat.m_filename, p.filename().u8string(), idx);
+
     updateSampleMemory();
 
     free(data);

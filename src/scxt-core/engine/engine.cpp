@@ -695,6 +695,9 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
     zptr->mapping.velocityRange = vrange;
     zptr->mapping.rootKey = rootKey;
     zptr->attachToSample(*sampleManager);
+    auto samp = getSampleManager()->getSample(*sid);
+    zptr->variantData.variants[0].startSample = 0;
+    zptr->variantData.variants[0].endSample = samp->getSampleLength();
 
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);

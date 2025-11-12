@@ -139,6 +139,10 @@ std::vector<sample::compound::CompoundElement> Browser::expandForBrowser(const f
     {
         return sample::compound::getGIGCompoundList(p);
     }
+    if (extensionMatches(p, ".multisample"))
+    {
+        return sample::compound::getMultisampleCompoundList(p);
+    }
     return {};
 }
 } // namespace scxt::browser
