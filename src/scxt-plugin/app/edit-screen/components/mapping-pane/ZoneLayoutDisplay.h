@@ -155,7 +155,8 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     void showZoneMenu(const selection::SelectionManager::ZoneAddress &za);
     void showMappingNonZoneMenu(const juce::Point<int> &);
 
-    void mappingWasReset() { repaint(); }
+    int gcEvery{0};
+    void mappingWasReset();
 
     float hPct{0.0}, hZoom{1.0}, vPct{0.0}, vZoom{1.0};
     void setHorizontalZoom(float pctStart, float zoomFactor)
