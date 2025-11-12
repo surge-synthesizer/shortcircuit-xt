@@ -1234,6 +1234,9 @@ std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Po
 void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &rIn,
                                            const std::string &txt, const juce::Colour &col)
 {
+    if (rIn.getHeight() < 10 || rIn.getWidth() < 10)
+        return;
+
     if (glyphArrangementCache.find(txt) == glyphArrangementCache.end())
     {
         auto f = editor->themeApplier.interRegularFor(11);
@@ -1374,6 +1377,34 @@ void ZoneLayoutDisplay::updateTooltipContents(bool andShow, const juce::Point<in
     velRow.centerAlignText = "vel";
 
     editor->setTooltipContents(cacheLastZone->name, {keyRow, velRow});
+}
+
+void ZoneLayoutDisplay::mappingWasReset()
+{
+    // We can do this every so often since this gets called a lot when
+    // dragging zones and stuff
+    if (gcEvery == 50)
+    {
+        // Garbage-collect the GA cache
+        std::unordered_set<std::string> keys;
+        for (const auto &[k, _] : glyphArrangementCache)
+            keys.insert(k);
+
+        for (const auto &z : display->summary)
+        {
+            keys.erase(z.name);
+        }
+
+        for (auto &k : keys)
+        {
+            glyphArrangementCache.erase(k);
+            glyphBBCache.erase(k);
+        }
+        gcEvery = 0;
+    }
+    gcEvery++;
+
+    repaint();
 }
 
 } // namespace scxt::ui::app::edit_screen
