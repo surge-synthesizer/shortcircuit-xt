@@ -27,7 +27,8 @@
 
 #include <fstream>
 #include "console_harness.h"
-int main(int argc, char **argv)
+
+void makeNbyN(int dc, const std::string &path)
 {
     auto ch = std::make_unique<scxt::clients::console_ui::ConsoleHarness>();
     ch->start(false);
@@ -37,7 +38,6 @@ int main(int argc, char **argv)
     namespace cmsg = scxt::messaging::client;
 
     using abz = cmsg::AddBlankZone;
-    auto dc{5};
     for (int k = 0; k < 127; k += dc)
     {
         SCLOG("Starting key " << k)
@@ -48,7 +48,39 @@ int main(int argc, char **argv)
         ch->stepUI();
     }
 
-    ch->sendToSerialization(cmsg::SaveMulti({"/tmp/stress.scm", 0}));
+    ch->sendToSerialization(cmsg::SaveMulti({path, 0}));
     ch->stepUI();
+}
+
+void makeNbyNGroupPer(int dc, const std::string &path)
+{
+    auto ch = std::make_unique<scxt::clients::console_ui::ConsoleHarness>();
+    ch->start(false);
+
+    ch->stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+
+    using abz = cmsg::AddBlankZone;
+    int gi{0};
+    for (int k = 0; k < 127; k += dc)
+    {
+        SCLOG("Starting key " << k)
+        for (int v = 0; v < 127; v += dc)
+        {
+            ch->sendToSerialization(cmsg::CreateGroup(0));
+            ch->sendToSerialization(abz({0, gi, k, k + dc - 1, v, v + dc - 1}));
+            gi++;
+        }
+        ch->stepUI();
+    }
+
+    ch->sendToSerialization(cmsg::SaveMulti({path, 0}));
+    ch->stepUI();
+}
+
+int main(int argc, char **argv)
+{
+    makeNbyNGroupPer(5, "/tmp/stressG.scm");
     return 0;
 }
