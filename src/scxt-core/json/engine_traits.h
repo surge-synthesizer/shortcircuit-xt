@@ -392,6 +392,8 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"hip", t.hasIndependentPolyLimit},
                       {"pl", t.polyLimit},
                       {"mc", t.midiChannel},
+                      {"pbu", t.pbUp},
+                      {"pbd", t.pbDown},
                       {"vpm", groupInfoPlayModeTo(t.vmPlayModeInt)},
                       {"vpf", groupInfoPlayModeFeatureTo(t.vmPlayModeFeaturesInt)}};
              }),
@@ -408,6 +410,8 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "pl", result.polyLimit);
                  findOrSet(v, "prCon", true, result.procRoutingConsistent);
                  findOrSet(v, "mc", -1, result.midiChannel);
+                 findOrSet(v, "pbu", 2, result.pbUp);
+                 findOrSet(v, "pbd", 2, result.pbDown);
                  result.routeTo = (engine::BusAddress)(rt);
 
                  std::string tmp;
@@ -450,6 +454,20 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                      {
                          group.getZone(idx)->setupOnUnstream(
                              *(group.parentPart->parentPatch->parentEngine));
+                     }
+                 }
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2025'11'12))
+                 {
+                     for (auto &z : group)
+                     {
+                         if (z->mapping.pbUp == group.outputInfo.pbUp)
+                         {
+                             z->mapping.pbUp = -1;
+                         }
+                         if (z->mapping.pbDown == group.outputInfo.pbDown)
+                         {
+                             z->mapping.pbDown = -1;
+                         }
                      }
                  }
                  group.setupOnUnstream(*(group.parentPart->parentPatch->parentEngine));

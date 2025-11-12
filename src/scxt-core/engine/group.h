@@ -94,6 +94,8 @@ struct Group : MoveableOnly<Group>,
         uint32_t vmPlayModeInt{0};
         uint64_t vmPlayModeFeaturesInt{0};
 
+        int16_t pbUp{2}, pbDown{2};
+
         int16_t midiChannel{-1}; // -1 means "Follow Part"
     } outputInfo;
 
@@ -308,10 +310,17 @@ struct Group : MoveableOnly<Group>,
 };
 } // namespace scxt::engine
 
-SC_DESCRIBE(scxt::engine::Group::GroupOutputInfo,
-            SC_FIELD(amplitude,
-                     pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
-            SC_FIELD(pan, pmd().asPan().withName("Pan"));
+SC_DESCRIBE(
+    scxt::engine::Group::GroupOutputInfo,
+    SC_FIELD(amplitude, pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
+    SC_FIELD(pan, pmd().asPan().withName("Pan")); SC_FIELD(
+        pbUp,
+        pmd().asInt().withName("Pitch Bend Up").withRange(0, 48).withLinearScaleFormatting("keys"))
+        SC_FIELD(pbDown, pmd()
+                             .asInt()
+                             .withName("Pitch Bend Down")
+                             .withRange(0, 48)
+                             .withLinearScaleFormatting("keys"))
             SC_FIELD(procRouting,
                      pmd().asInt().withRange(0, 6).withUnorderedMapFormatting({
                          {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "LIN"},
@@ -322,8 +331,8 @@ SC_DESCRIBE(scxt::engine::Group::GroupOutputInfo,
                          {scxt::engine::Zone::ProcRoutingPath::procRoute_par3, "P3"},
                          {scxt::engine::Zone::ProcRoutingPath::procRoute_bypass, "BYP"},
                      }));
-            SC_FIELD(oversample, pmd().asBool().withName("Oversample"));
-            SC_FIELD(velocitySensitivity,
-                     pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));)
+    SC_FIELD(oversample, pmd().asBool().withName("Oversample"));
+    SC_FIELD(velocitySensitivity,
+             pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));)
 
 #endif

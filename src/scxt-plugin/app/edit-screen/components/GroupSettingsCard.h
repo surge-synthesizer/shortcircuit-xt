@@ -56,13 +56,17 @@ struct GroupSettingsCard : juce::Component, HasEditor
     std::unique_ptr<sst::jucegui::components::TextPushButton> polyMenu, polyModeMenu;
     std::unique_ptr<sst::jucegui::components::TextPushButton> midiMenu, outputMenu, prioMenu,
         glideMenu, srcMenu;
-    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> pbDnVal, pbUpDrag,
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> pbDnVal, pbUpVal,
         glideDrag, volDrag, panDrag, tuneDrag;
 
     using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
+    using intMsg_t = scxt::messaging::client::UpdateGroupOutputInt16TValue;
     typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo> attachment_t;
+    typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo, int16_t>
+        iattachment_t;
 
     std::unique_ptr<attachment_t> volAttachment, panAttachment;
+    std::unique_ptr<iattachment_t> pbDnA, pbUpA;
 
     engine::Group::GroupOutputInfo &info;
 
