@@ -79,7 +79,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
     size_t rsize{0};
     auto data =
         mz_zip_reader_extract_to_heap(&zip_archive, fileToIndex["multisample.xml"], &rsize, 0);
-    std::string xml((const char *)data);
+    std::string xml((const char *)data, rsize);
     free(data);
 
     // SCLOG(xml);
@@ -138,10 +138,13 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         engine.getSampleManager()->getSample(*lsid)->md5Sum = md5;
 
         auto kr{90}, ks{0}, ke{127}, vs{0}, ve{127};
+        float ktrack{1.0}, ktune{0.0};
         auto klf{0}, khf{0}, vlf{0}, vhf{0};
         auto key = fc->FirstChildElement("key");
         auto vel = fc->FirstChildElement("velocity");
         auto loop = fc->FirstChildElement("loop");
+        bool loopOn{false};
+        float loopStart{0}, loopEnd{0};
         if (key)
         {
             key->QueryIntAttribute("root", &kr);
@@ -149,6 +152,8 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
             key->QueryIntAttribute("high", &ke);
             key->QueryIntAttribute("low-fade", &klf);
             key->QueryIntAttribute("high-fade", &khf);
+            key->QueryFloatAttribute("track", &ktrack);
+            key->QueryFloatAttribute("tune", &ktune);
         }
         if (vel)
         {
@@ -159,10 +164,23 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         }
         if (loop)
         {
-            auto md = vel->Attribute("mode");
-            if (md && std::string(md) != "off")
+            auto md = loop->Attribute("mode");
+            if (md)
             {
-                SCLOG("Ignoring loop mode " << md);
+                auto smd = std::string(md);
+                if (smd == "loop")
+                {
+                    loopOn = true;
+                    loop->QueryFloatAttribute("start", &loopStart);
+                    loop->QueryFloatAttribute("stop", &loopEnd);
+                }
+                else if (smd == "off")
+                {
+                }
+                else
+                {
+                    SCLOG("Ignoring loop mode " << md);
+                }
             }
         }
 
@@ -192,8 +210,17 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         z->mapping.velocityRange.velEnd = ve;
         z->mapping.velocityRange.fadeStart = vlf;
         z->mapping.velocityRange.fadeEnd = vhf;
+        z->mapping.tracking = ktrack;
+        z->mapping.pitchOffset = ktune;
 
         z->attachToSample(*engine.getSampleManager());
+        if (loopOn && loopStart + loopEnd > 0)
+        {
+            z->variantData.variants[0].loopActive = true;
+            z->variantData.variants[0].loopMode = engine::Zone::LoopMode::LOOP_WHILE_GATED;
+            z->variantData.variants[0].startLoop = loopStart;
+            z->variantData.variants[0].endLoop = loopEnd;
+        }
         g->addZone(z);
 
         return true;
