@@ -34,6 +34,8 @@
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/ListView.h"
+#include "sst/jucegui/components/TextPushButton.h"
+#include "sst/jucegui/component-adapters/DiscreteToReference.h"
 #include "engine/feature_enums.h"
 
 #include "app/shared/ZoneRightMouseMenu.h"
@@ -76,8 +78,9 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                     rc->gzRow->gsb = sidebar;
                     rc->gzRow->isSelected =
                         selectedZones.find(gzData[row].address) != selectedZones.end();
+                    rc->gzRow->complete();
                 }
-
+                rc->resized();
                 rc->repaint();
             }
         };
@@ -119,11 +122,37 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         SidebarParent *gsb{nullptr};
 
         std::unique_ptr<juce::TextEditor> renameEditor;
+        using bdm_t =
+            sst::jucegui::component_adapters::DiscreteToValueReference<jcmp::ToggleButton, bool>;
+        std::unique_ptr<bdm_t> muteProvider;
+        bool muteValue{false};
         rowComponent()
         {
             renameEditor = std::make_unique<juce::TextEditor>();
             addChildComponent(*renameEditor);
             renameEditor->addListener(this);
+        }
+
+        void complete()
+        {
+            if (!isZone())
+            {
+                const auto &tgl = lbm->gzData;
+                const auto &sg = tgl[rowNumber];
+
+                muteValue = sg.features & engine::GroupZoneFeatures::MUTED;
+                muteProvider = std::make_unique<bdm_t>(muteValue);
+                muteProvider->widget->setLabel("M");
+                muteProvider->setup();
+                muteProvider->onValueChanged = [this](bool v) { setMuteTo(v); };
+                addAndMakeVisible(*muteProvider->widget);
+                resized();
+            }
+            else if (muteProvider && muteProvider->widget)
+            {
+                removeChildComponent(muteProvider->widget.get());
+                muteProvider.reset();
+            }
         }
 
         int zonePad = 16;
@@ -134,6 +163,15 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             NONE,
             DRAG_OVER
         } dragOverState{NONE};
+
+        void setMuteTo(bool v)
+        {
+            assert(!isZone());
+            const auto &tgl = lbm->gzData;
+            const auto &sg = tgl[rowNumber];
+            gsb->sendToSerialization(
+                cmsg::MuteOrSoloGroup({sg.address.part, sg.address.group, v, false}));
+        }
 
         void paint(juce::Graphics &g) override
         {
@@ -243,7 +281,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 g.drawLine(zonePad, getHeight(), getWidth(), getHeight());
 
                 g.setColour(textColor);
-                if (sg.features & engine::ZoneFeatures::MISSING_SAMPLE)
+                if (sg.features & engine::GroupZoneFeatures::MISSING_SAMPLE)
                 {
                     g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
                 }
@@ -265,7 +303,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 g.drawText(sg.name, getLocalBounds().translated(zonePad + 2, 0),
                            juce::Justification::centredLeft);
 
-                if (isLeadZone)
+                if (isLeadZone && voiceCount == 0)
                 {
                     auto b = getLocalBounds().withWidth(zonePad).withTrimmedLeft(2);
                     auto q = b.getHeight() - b.getWidth();
@@ -278,7 +316,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 {
                     auto b = getLocalBounds()
                                  .withWidth(zonePad)
-                                 .translated(getWidth() - zonePad, 0)
+                                 // .translated(getWidth() - zonePad, 0)
                                  .reduced(2);
                     jcmp::GlyphPainter::paintGlyph(g, b, jcmp::GlyphPainter::SPEAKER, textColor);
                 }
@@ -459,6 +497,11 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         void resized() override
         {
             renameEditor->setBounds(getLocalBounds().withTrimmedLeft(zonePad));
+            if (muteProvider && muteProvider->widget)
+            {
+                muteProvider->widget->setBounds(
+                    getLocalBounds().withTrimmedLeft(getWidth() - getHeight() + 2).reduced(2));
+            }
         }
 
         void doGroupRename()

@@ -217,7 +217,6 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
     {
         gzTreeControl->selectedZones =
             std::set<selection::SelectionManager::ZoneAddress>(sel.begin(), sel.end());
-        ;
         gzTreeControl->reassignAllComponents();
     }
 

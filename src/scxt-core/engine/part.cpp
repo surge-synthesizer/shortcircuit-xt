@@ -187,7 +187,7 @@ Part::zoneMappingSummary_t Part::getZoneMappingSummary()
             int32_t features{0};
             if (z->missingSampleCount() > 0)
             {
-                features |= ZoneFeatures::MISSING_SAMPLE;
+                features |= GroupZoneFeatures::MISSING_SAMPLE;
             }
             auto data = zoneMappingItem_t{addr, z->mapping.keyboardRange, z->mapping.velocityRange,
                                           z->getName(), features};

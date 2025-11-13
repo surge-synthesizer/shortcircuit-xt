@@ -30,9 +30,10 @@
 
 namespace scxt::engine
 {
-enum ZoneFeatures
+enum GroupZoneFeatures
 {
     MISSING_SAMPLE = 1 << 0,
+    MUTED = 1 << 1,
 };
 }
 
