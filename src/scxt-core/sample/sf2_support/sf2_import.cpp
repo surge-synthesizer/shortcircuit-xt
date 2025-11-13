@@ -231,8 +231,13 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                     }
                     if (reg->modEnvToFilterFc != 0)
                     {
-                        SCLOG("\tModulation Envelope Generator Cutoff="
-                              << GetValue(reg->modEnvToFilterFc) << "cents");
+                        zn->routingTable.routes[currentModRow].source =
+                            voice::modulation::MatrixEndpoints::Sources::eg2A;
+                        zn->routingTable.routes[currentModRow].target =
+                            voice::modulation::MatrixEndpoints::ProcessorTarget::floatParam(0, 0);
+                        zn->routingTable.routes[currentModRow].depth =
+                            1.0 * reg->modEnvToFilterFc / 100 / 130; // cents, and range -60->70
+                        zn->onRoutingChanged();
                     }
 
                     if (reg->vibLfoToPitch > 0)
