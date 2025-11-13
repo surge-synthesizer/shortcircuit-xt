@@ -126,10 +126,8 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         return c;
                     };
 
-                    auto lk =
-                        noneOr(region->loKey, presetRegion->loKey, (int)sfsamp->OriginalPitch);
-                    auto hk =
-                        noneOr(region->hiKey, presetRegion->hiKey, (int)sfsamp->OriginalPitch);
+                    auto lk = noneOr(region->loKey, presetRegion->loKey, (int)0);
+                    auto hk = noneOr(region->hiKey, presetRegion->hiKey, (int)127);
                     zn->mapping.keyboardRange = {lk, hk};
 
                     auto lv = noneOr(region->minVel, presetRegion->minVel, 0);
