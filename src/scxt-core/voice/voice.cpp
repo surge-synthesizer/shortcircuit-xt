@@ -770,6 +770,11 @@ template <bool OS> bool Voice::processWithOS()
     }
     pao = std::max(pao, 0.f);
 
+    if (zone->parentGroup->outputInfo.muted)
+    {
+        pao = 0.f;
+    }
+
     if constexpr (OS)
     {
         outputAmpOS.set_target(pao * pao * pao * noteExpressions[(int)ExpressionIDs::VOLUME]);

@@ -501,14 +501,19 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
         int32_t groupidx{0};
         for (const auto &group : *part)
         {
-            res.push_back({{partidx, groupidx, -1}, group->getName()});
+            int32_t groupFeatures{0};
+            if (group->outputInfo.muted)
+            {
+                groupFeatures += GroupZoneFeatures::MUTED;
+            }
+            res.push_back({{partidx, groupidx, -1}, group->getName(), groupFeatures});
             int32_t zoneidx{0};
             for (const auto &zone : *group)
             {
                 int32_t zoneFeatures{0};
                 if (zone->missingSampleCount() > 0)
                 {
-                    zoneFeatures |= ZoneFeatures::MISSING_SAMPLE;
+                    zoneFeatures |= GroupZoneFeatures::MISSING_SAMPLE;
                 }
 
                 res.push_back({{partidx, groupidx, zoneidx}, zone->getName(), zoneFeatures});

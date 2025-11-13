@@ -148,6 +148,8 @@ enum ClientToSerializationMessagesIds
     c2s_rename_zone,
     c2s_rename_group,
 
+    c2s_mute_solo_group,
+
     c2s_set_tuning_mode,
 
     c2s_noteonoff,

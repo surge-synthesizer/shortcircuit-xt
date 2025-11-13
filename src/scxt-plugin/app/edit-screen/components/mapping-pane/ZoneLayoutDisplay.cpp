@@ -882,7 +882,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             auto fillColor = editor->themeColor(theme::ColorMap::accent_2b).withAlpha(0.32f);
             auto textColor = editor->themeColor(theme::ColorMap::accent_2a);
 
-            if (z.features & engine::ZoneFeatures::MISSING_SAMPLE)
+            if (z.features & engine::GroupZoneFeatures::MISSING_SAMPLE)
             {
                 borderColor = editor->themeColor(theme::ColorMap::warning_1b);
                 fillColor = editor->themeColor(theme::ColorMap::warning_1b).withAlpha(0.32f);
@@ -894,7 +894,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
                 fillColor = borderColor.withAlpha(0.32f);
                 textColor = editor->themeColor(theme::ColorMap::accent_1a);
 
-                if (z.features & engine::ZoneFeatures::MISSING_SAMPLE)
+                if (z.features & engine::GroupZoneFeatures::MISSING_SAMPLE)
                 {
                     borderColor = editor->themeColor(theme::ColorMap::warning_1a);
                     fillColor = editor->themeColor(theme::ColorMap::warning_1a).withAlpha(0.32f);
@@ -929,7 +929,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             auto selZoneColor = editor->themeColor(theme::ColorMap::accent_1a);
             auto borderColor = selZoneColor;
-            if (z.features & engine::ZoneFeatures::MISSING_SAMPLE)
+            if (z.features & engine::GroupZoneFeatures::MISSING_SAMPLE)
             {
                 selZoneColor = editor->themeColor(theme::ColorMap::warning_1a);
                 borderColor = editor->themeColor(theme::ColorMap::accent_1a);
