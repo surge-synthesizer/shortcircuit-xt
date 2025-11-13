@@ -374,10 +374,15 @@ void Zone::terminateAllVoices()
             toCleanUp[cleanupIdx++] = v;
         }
     }
-    if (cleanupIdx)
+
+    if constexpr (scxt::log::voiceLifecycle)
     {
-        SCLOG("Early-terminating " << cleanupIdx << " voices");
+        if (cleanupIdx)
+        {
+            SCLOG("Early-terminating " << cleanupIdx << " voices");
+        }
     }
+
     for (int i = 0; i < cleanupIdx; ++i)
     {
         toCleanUp[i]->cleanupVoice();

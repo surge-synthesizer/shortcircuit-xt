@@ -186,12 +186,19 @@ template <typename TG, uint32_t gn> struct LFOTargetEndpointData
 
 template <typename TG, uint32_t gn> struct ProcessorTargetEndpointData
 {
+    // so we can get to it without an instance
+    static constexpr TG floatParam(uint32_t par, uint32_t idx)
+    {
+        return TG{gn, 'fp  ' + (uint32_t)(idx + '0' - ' '), par};
+    }
+
     ProcessorTargetEndpointData(uint32_t p)
         : index{p}, mixT{gn, 'mix ', p}, outputLevelDbT{gn, 'oldb', p}
     {
         for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
         {
-            fpT[i] = TG{gn, 'fp  ' + (uint32_t)(i + '0' - ' '), p};
+            fpT[i] = TG{gn, 'fp  ' + (uint32_t)(i + '0' - ' '), index};
+            assert(fpT[i] == floatParam(index, i));
         }
     }
     uint32_t index;
