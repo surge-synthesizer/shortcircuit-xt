@@ -98,7 +98,7 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     fac::attachAndAdd(info, info.pan, this, panAttachment, panDrag);
 
     tuneGlyph = mkg(jcmp::GlyphPainter::GlyphType::TUNING);
-    tuneDrag = mkd('grtn', "Tune");
+    fac::attachAndAdd(info, info.tuning, this, tuneAttachment, tuneDrag);
 
     ifac::attachAndAdd(info, info.pbDown, this, pbDnA, pbDnVal);
     ifac::attachAndAdd(info, info.pbUp, this, pbUpA, pbUpVal);

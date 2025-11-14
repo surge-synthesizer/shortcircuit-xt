@@ -65,7 +65,7 @@ struct GroupSettingsCard : juce::Component, HasEditor
     typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo, int16_t>
         iattachment_t;
 
-    std::unique_ptr<attachment_t> volAttachment, panAttachment;
+    std::unique_ptr<attachment_t> volAttachment, panAttachment, tuneAttachment;
     std::unique_ptr<iattachment_t> pbDnA, pbUpA;
 
     engine::Group::GroupOutputInfo &info;

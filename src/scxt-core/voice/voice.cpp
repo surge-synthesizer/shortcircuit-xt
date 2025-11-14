@@ -1005,6 +1005,8 @@ float Voice::calculateVoicePitch()
     auto pitchMv = pitchWheel > 0 ? pu : pd;
     fpitch += pitchWheel * pitchMv;
 
+    fpitch += zone->parentGroup->outputInfo.tuning;
+
     float retuner{retunedKeyAtAttack};
     if (retuneContinuous)
         retuner =
