@@ -77,7 +77,7 @@ struct Group : MoveableOnly<Group>,
 
     struct GroupOutputInfo
     {
-        float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f};
+        float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f}, tuning{0.f};
         bool muted{false};
         bool oversample{true};
 
@@ -313,24 +313,29 @@ struct Group : MoveableOnly<Group>,
 SC_DESCRIBE(
     scxt::engine::Group::GroupOutputInfo,
     SC_FIELD(amplitude, pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
+    SC_FIELD(tuning, pmd()
+                         .asFloat()
+                         .withRange(-24, 24)
+                         .withLinearScaleFormatting("semitones")
+                         .withDefault(0.f)
+                         .withName("Tuning"));
     SC_FIELD(pan, pmd().asPan().withName("Pan")); SC_FIELD(
         pbUp,
-        pmd().asInt().withName("Pitch Bend Up").withRange(0, 48).withLinearScaleFormatting("keys"))
-        SC_FIELD(pbDown, pmd()
-                             .asInt()
-                             .withName("Pitch Bend Down")
-                             .withRange(0, 48)
-                             .withLinearScaleFormatting("keys"))
-            SC_FIELD(procRouting,
-                     pmd().asInt().withRange(0, 6).withUnorderedMapFormatting({
-                         {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "LIN"},
-                         {scxt::engine::Zone::ProcRoutingPath::procRoute_ser2, "S2"},
-                         {scxt::engine::Zone::ProcRoutingPath::procRoute_ser3, "S3"},
-                         {scxt::engine::Zone::ProcRoutingPath::procRoute_par1, "P1"},
-                         {scxt::engine::Zone::ProcRoutingPath::procRoute_par2, "P2"},
-                         {scxt::engine::Zone::ProcRoutingPath::procRoute_par3, "P3"},
-                         {scxt::engine::Zone::ProcRoutingPath::procRoute_bypass, "BYP"},
-                     }));
+        pmd().asInt().withName("Pitch Bend Up").withRange(0, 48).withLinearScaleFormatting("keys"));
+    SC_FIELD(pbDown, pmd()
+                         .asInt()
+                         .withName("Pitch Bend Down")
+                         .withRange(0, 48)
+                         .withLinearScaleFormatting("keys"));
+    SC_FIELD(procRouting, pmd().asInt().withRange(0, 6).withUnorderedMapFormatting({
+                              {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "LIN"},
+                              {scxt::engine::Zone::ProcRoutingPath::procRoute_ser2, "S2"},
+                              {scxt::engine::Zone::ProcRoutingPath::procRoute_ser3, "S3"},
+                              {scxt::engine::Zone::ProcRoutingPath::procRoute_par1, "P1"},
+                              {scxt::engine::Zone::ProcRoutingPath::procRoute_par2, "P2"},
+                              {scxt::engine::Zone::ProcRoutingPath::procRoute_par3, "P3"},
+                              {scxt::engine::Zone::ProcRoutingPath::procRoute_bypass, "BYP"},
+                          }));
     SC_FIELD(oversample, pmd().asBool().withName("Oversample"));
     SC_FIELD(velocitySensitivity,
              pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));)

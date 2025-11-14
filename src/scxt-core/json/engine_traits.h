@@ -383,6 +383,7 @@ inline uint64_t groupInfoPlayModeFeatureFrom(const std::string &x)
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},
                       {"pan", t.pan},
+                      {"tn", t.tuning},
                       {"oversample", t.oversample},
                       {"velocitySensitivity", t.velocitySensitivity},
                       {"muted", t.muted},
@@ -400,6 +401,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
              SC_TO({
                  findIf(v, "amplitude", result.amplitude);
                  findIf(v, "pan", result.pan);
+                 findOrSet(v, "tn", 0.f, result.tuning);
                  findIf(v, "muted", result.muted);
                  findIf(v, "procRouting", result.procRouting);
                  findIf(v, "velocitySensitivity", result.velocitySensitivity);
