@@ -84,15 +84,14 @@ struct PhasorEvaluator
                 ph = rphase[i];
 
             auto pr{0.f};
-
             switch (ps.direction)
             {
             case PhasorStorage::ASCENDING:
-                auto pr = (tm + ph) * rat;
+                pr = (tm + ph) * rat;
                 outputs[i] = pr - std::floor(pr);
                 break;
             case PhasorStorage::DESCENDING:
-                auto pr = (tm - ph) * rat;
+                pr = (tm - ph) * rat;
                 outputs[i] = pr - std::ceil(pr);
                 break;
             }
