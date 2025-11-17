@@ -140,11 +140,16 @@ STREAM_ENUM(modulation::modulators::PhasorStorage::SyncMode,
             modulation::modulators::PhasorStorage::toStringSyncMode,
             modulation::modulators::PhasorStorage::fromStringSyncMode);
 
+STREAM_ENUM(modulation::modulators::PhasorStorage::Direction,
+            modulation::modulators::PhasorStorage::toStringDirection,
+            modulation::modulators::PhasorStorage::fromStringDirection);
+
 SC_STREAMDEF(modulation::modulators::PhasorStorage, SC_FROM({
                  v = tao::json::empty_object;
                  using ps = modulation::modulators::PhasorStorage;
                  addUnlessDefault<val_t>(v, "di", ps::Division::NOTE, from.division);
                  addUnlessDefault<val_t>(v, "sy", ps::SyncMode::VOICEPOS, from.syncMode);
+                 addUnlessDefault<val_t>(v, "a", ps::Direction::ASCENDING, from.direction);
                  addUnlessDefault<val_t>(v, "nu", 1, from.numerator);
                  addUnlessDefault<val_t>(v, "de", 4, from.denominator);
                  addUnlessDefault<val_t>(v, "ph", 0.f, from.phase);
@@ -153,6 +158,7 @@ SC_STREAMDEF(modulation::modulators::PhasorStorage, SC_FROM({
                  using ps = modulation::modulators::PhasorStorage;
                  findOrSet(v, "di", ps::Division::NOTE, to.division);
                  findOrSet(v, "sy", ps::SyncMode::VOICEPOS, to.syncMode);
+                 findOrSet(v, "a", ps::Direction::ASCENDING, to.direction);
                  findOrSet(v, "nu", 1, to.numerator);
                  findOrSet(v, "de", 4, to.denominator);
                  findOrSet(v, "ph", 0, to.phase);

@@ -94,10 +94,16 @@ struct PhasorStorage
         NOTE,
         TRIPLET,
         DOTTED,
-        OF_BPM,  // 1/1 is a quarter note
-        OF_BEAT, // 1/1 is a denominator
+        X_BPM, // 1/1 is a quarter note
     } division{NOTE};
     DECLARE_ENUM_STRING(Division);
+
+    enum Direction
+    {
+        ASCENDING,
+        DESCENDING
+    } direction{ASCENDING};
+    DECLARE_ENUM_STRING(Direction);
 
     float phase{0.f};
 
