@@ -156,26 +156,25 @@ SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
                  findOrSet(v, "region", -1, to.region);
              }));
 
-SC_STREAMDEF(scxt::sample::SampleManager, SC_FROM({
-                 v = {{"sampleAddresses", from.getSampleAddressesAndIDs()}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::sample::SampleManager,
+             SC_FROM({ v = {{"sampleAddresses", from.getSampleAddressesAndIDs()}}; }), SC_TO({
                  to.reset();
                  sample::SampleManager::sampleAddressesAndIds_t res;
                  findIf(v, "sampleAddresses", res);
                  to.restoreFromSampleAddressesAndIDs(res);
              }));
 
-SC_STREAMDEF(
-    scxt::sample::compound::CompoundElement, SC_FROM({
-        v = {{"type", (int32_t)from.type}, {"name", from.name}, {"addr", from.sampleAddress}};
-    }),
-    SC_TO({
-        int t;
-        findOrSet(v, "type", 0, t);
-        to.type = (scxt::sample::compound::CompoundElement::Type)t;
-        findIf(v, "name", to.name);
-        findIf(v, "addr", to.sampleAddress);
-    }));
+SC_STREAMDEF(scxt::sample::compound::CompoundElement, SC_FROM({
+                 v = {{"type", (int32_t)from.type},
+                      {"name", from.name},
+                      {"addr", from.sampleAddress}};
+             }),
+             SC_TO({
+                 int t;
+                 findOrSet(v, "type", 0, t);
+                 to.type = (scxt::sample::compound::CompoundElement::Type)t;
+                 findIf(v, "name", to.name);
+                 findIf(v, "addr", to.sampleAddress);
+             }));
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_SAMPLE_TRAITS_H

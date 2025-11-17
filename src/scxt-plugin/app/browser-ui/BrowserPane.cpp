@@ -154,7 +154,7 @@ struct DriveArea : juce::Component, HasEditor
             p.addSeparator();
             for (auto &idx :
 #if SHOW_INDEX_MENUS
-                 {false, true}
+                 { false, true }
 #else
                  {false}
 #endif

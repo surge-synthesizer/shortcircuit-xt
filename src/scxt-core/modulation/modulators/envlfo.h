@@ -68,5 +68,5 @@ struct EnvLFO : SampleRateSupport
                timeTakenBy(release);
     }
 };
-};     // namespace scxt::modulation::modulators
+} // namespace scxt::modulation::modulators
 #endif // SHORTCIRCUITXT_ENVLFO_H

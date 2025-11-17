@@ -59,5 +59,5 @@ struct KeyBindings : HasEditor
 
     std::unique_ptr<manager_t> manager;
 };
-};     // namespace scxt::ui::app
+} // namespace scxt::ui::app
 #endif // KEYBINDINGS_H

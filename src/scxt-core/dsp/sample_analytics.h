@@ -54,6 +54,6 @@ float computeRMS(const std::shared_ptr<sample::Sample> &s);
  * @return The largest RMS in a 64 sample block
  */
 float computeMaxRMSInBlock(const std::shared_ptr<sample::Sample> &s);
-}; // namespace scxt::dsp::sample_analytics
+} // namespace scxt::dsp::sample_analytics
 
 #endif // SCXT_SRC_DSP_SAMPLE_ANALYTICS_H
