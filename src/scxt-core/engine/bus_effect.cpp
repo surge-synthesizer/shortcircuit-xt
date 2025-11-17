@@ -144,9 +144,7 @@ HAS_MEMFN(remapParametersForStreamingVersion);
 
 template <typename T>
 concept HasSilentSamplesLength = requires(T obj) {
-    {
-        obj.silentSamplesLength()
-    } -> std::same_as<size_t>;
+    { obj.silentSamplesLength() } -> std::same_as<size_t>;
 };
 
 template <typename T> struct Impl : T

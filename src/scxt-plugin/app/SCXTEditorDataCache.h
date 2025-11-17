@@ -85,18 +85,18 @@ struct SCXTEditorDataCache
     struct CListener : sst::jucegui::data::Continuous::DataListener
     {
         SCXTEditorDataCache &cache;
-        CListener(SCXTEditorDataCache &dc) : cache(dc){};
+        CListener(SCXTEditorDataCache &dc) : cache(dc) {}
         virtual ~CListener() = default;
-        void dataChanged() override{};
+        void dataChanged() override {}
         void sourceVanished(sst::jucegui::data::Continuous *c) override;
     } clistener{*this};
 
     struct DListener : sst::jucegui::data::Discrete::DataListener
     {
         SCXTEditorDataCache &cache;
-        DListener(SCXTEditorDataCache &dc) : cache(dc){};
+        DListener(SCXTEditorDataCache &dc) : cache(dc) {}
         virtual ~DListener() = default;
-        void dataChanged() override{};
+        void dataChanged() override {}
         void sourceVanished(sst::jucegui::data::Discrete *c) override;
     } dlistener{*this};
 };

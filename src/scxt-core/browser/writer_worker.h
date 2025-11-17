@@ -588,5 +588,5 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
     sqlite3 *dbh{nullptr};
 };
 
-};     // namespace scxt::browser
+} // namespace scxt::browser
 #endif // WRITER_WORKER_H

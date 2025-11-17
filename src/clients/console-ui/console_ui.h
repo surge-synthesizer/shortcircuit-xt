@@ -128,7 +128,7 @@ struct ConsoleUI
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;
     void drainQueue();
-}; // namespace scxt::tests
+};
 
 } // namespace scxt::clients::console_ui
 

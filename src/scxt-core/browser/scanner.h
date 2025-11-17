@@ -49,5 +49,5 @@ struct Scanner
     messaging::MessageController &mc;
     std::unique_ptr<ScanWorker> scanWorker;
 };
-};     // namespace scxt::browser
+} // namespace scxt::browser
 #endif // BROWSER_SCANNER_H

@@ -277,7 +277,7 @@ struct StepLFOPane : juce::Component, app::HasEditor
                 }
             }
         }
-    }; // namespace juce::Component
+    };
 
     std::unique_ptr<StepRender> stepRender;
 

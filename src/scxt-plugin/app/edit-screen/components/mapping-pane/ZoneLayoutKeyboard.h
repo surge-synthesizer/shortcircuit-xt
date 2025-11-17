@@ -65,5 +65,5 @@ struct ZoneLayoutKeyboard : juce::Component, HasEditor
     }
 };
 
-};     // namespace scxt::ui::app::edit_screen
+} // namespace scxt::ui::app::edit_screen
 #endif // SHORTCIRCUITXT_ZONELAYOUTKEYBOARD_H

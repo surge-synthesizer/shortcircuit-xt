@@ -40,7 +40,7 @@ KeyBindings::KeyBindings(SCXTEditor *e) : HasEditor(e)
 
     manager->unstreamFromXML();
 }
-KeyBindings::~KeyBindings(){};
+KeyBindings::~KeyBindings() {}
 
 void KeyBindings::setupKeyBindings()
 {
