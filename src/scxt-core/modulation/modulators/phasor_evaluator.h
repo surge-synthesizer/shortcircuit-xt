@@ -63,18 +63,15 @@ struct PhasorEvaluator
             switch (ps.division)
             {
             case PhasorStorage::TRIPLET:
-                rat *= 3.0 / 2.0; // 1/8 node triplet is 1/3 of a beta not 1/2 a beat
+                rat *= 3.0 / 2.0; // an eighth note triplet is 1/3 of a beat not 1/2
                 break;
             case PhasorStorage::DOTTED:
                 rat *= 2.0 / 3.0;
                 break;
             case PhasorStorage::NOTE:
                 break;
-            case PhasorStorage::OF_BPM:
+            case PhasorStorage::X_BPM:
                 rat *= 4.0; // since its always a quarter note
-                break;
-            case PhasorStorage::OF_BEAT:
-                rat *= transport.signature.denominator;
                 break;
             }
             auto tm = transport.timeInBeats;
@@ -86,8 +83,17 @@ struct PhasorEvaluator
             if (ph > 0.99)
                 ph = rphase[i];
 
-            auto pr = (tm + ph) * rat;
-            outputs[i] = pr - std::floor(pr);
+            switch (ps.direction)
+            {
+            case PhasorStorage::ASCENDING:
+                auto pr = (tm + ph) * rat;
+                outputs[i] = pr - std::floor(pr);
+                break;
+            case PhasorStorage::DESCENDING:
+                auto pr = (tm - ph) * rat;
+                outputs[i] = pr - std::ceil(pr);
+                break;
+            }
         }
     }
 };

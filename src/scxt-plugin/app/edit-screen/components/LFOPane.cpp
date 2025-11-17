@@ -1185,7 +1185,7 @@ struct MiscPanel : juce::Component, HasEditor
     void showSyncMenu(int i)
     {
         auto p = juce::PopupMenu();
-        p.addSectionHeader("Phasor Synch Mode");
+        p.addSectionHeader("Phasor Mode");
         p.addSeparator();
         auto gen = [&p, i, this](auto v, auto l) {
             auto that = this; // grrrr msvc
@@ -1221,6 +1221,21 @@ struct MiscPanel : juce::Component, HasEditor
         genP(0.75, u8"270° phase");
         genP(1.f, u8"Random phase");
 
+        p.addSeparator();
+        auto genD = [&p, i, this](auto d, auto l) {
+            auto that = this; // grrrr msvc
+            p.addItem(l, true, ms.phasors[i].direction == d,
+                      [i, w = juce::Component::SafePointer(that), d] {
+                          if (!w)
+                              return;
+                          w->ms.phasors[i].direction = d;
+                          w->repushData();
+                          w->updateFromValues();
+                      });
+        };
+        genD(modulation::modulators::PhasorStorage::Direction::ASCENDING, "Ascending");
+        genD(modulation::modulators::PhasorStorage::Direction::DESCENDING, "Descending");
+
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
     void showDivisionMenu(int i)
@@ -1244,8 +1259,7 @@ struct MiscPanel : juce::Component, HasEditor
         gen(modulation::modulators::PhasorStorage::Division::NOTE, "Note");
         gen(modulation::modulators::PhasorStorage::Division::DOTTED, "Dotted");
         gen(modulation::modulators::PhasorStorage::Division::TRIPLET, "Triplet");
-        gen(modulation::modulators::PhasorStorage::Division::OF_BPM, "Of BPM");
-        gen(modulation::modulators::PhasorStorage::Division::OF_BEAT, "Of Beat");
+        gen(modulation::modulators::PhasorStorage::Division::X_BPM, "x BPM");
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
@@ -1340,13 +1354,8 @@ struct MiscPanel : juce::Component, HasEditor
                 divButtons[i]->setLabel("DOT");
                 showNOverD[i] = false;
                 break;
-
-            case modulation::modulators::PhasorStorage::OF_BPM:
-                divButtons[i]->setLabel("OF BPM");
-                showNOverD[i] = true;
-                break;
-            case modulation::modulators::PhasorStorage::OF_BEAT:
-                divButtons[i]->setLabel("OF BEAT");
+            case modulation::modulators::PhasorStorage::X_BPM:
+                divButtons[i]->setLabel("x BPM");
                 showNOverD[i] = true;
                 break;
             }

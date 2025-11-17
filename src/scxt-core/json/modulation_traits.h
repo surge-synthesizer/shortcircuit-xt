@@ -140,11 +140,16 @@ STREAM_ENUM(modulation::modulators::PhasorStorage::SyncMode,
             modulation::modulators::PhasorStorage::toStringSyncMode,
             modulation::modulators::PhasorStorage::fromStringSyncMode);
 
+STREAM_ENUM(modulation::modulators::PhasorStorage::Direction,
+            modulation::modulators::PhasorStorage::toStringDirection,
+            modulation::modulators::PhasorStorage::fromStringDirection);
+
 SC_STREAMDEF(modulation::modulators::PhasorStorage, SC_FROM({
                  v = tao::json::empty_object;
                  using ps = modulation::modulators::PhasorStorage;
                  addUnlessDefault<val_t>(v, "di", ps::Division::NOTE, from.division);
                  addUnlessDefault<val_t>(v, "sy", ps::SyncMode::VOICEPOS, from.syncMode);
+                 addUnlessDefault<val_t>(v, "a", ps::Direction::ASCENDING, from.direction);
                  addUnlessDefault<val_t>(v, "nu", 1, from.numerator);
                  addUnlessDefault<val_t>(v, "de", 4, from.denominator);
                  addUnlessDefault<val_t>(v, "ph", 0.f, from.phase);
@@ -153,6 +158,7 @@ SC_STREAMDEF(modulation::modulators::PhasorStorage, SC_FROM({
                  using ps = modulation::modulators::PhasorStorage;
                  findOrSet(v, "di", ps::Division::NOTE, to.division);
                  findOrSet(v, "sy", ps::SyncMode::VOICEPOS, to.syncMode);
+                 findOrSet(v, "a", ps::Direction::ASCENDING, to.direction);
                  findOrSet(v, "nu", 1, to.numerator);
                  findOrSet(v, "de", 4, to.denominator);
                  findOrSet(v, "ph", 0, to.phase);
@@ -172,10 +178,8 @@ SC_STREAMDEF(modulation::modulators::RandomStorage, SC_FROM({
                            to.style);
              }));
 
-SC_STREAMDEF(modulation::MiscSourceStorage, SC_FROM({
-                 v = {{"rs", t.randoms}, {"ps", t.phasors}};
-             }),
-             SC_TO({
+SC_STREAMDEF(modulation::MiscSourceStorage,
+             SC_FROM({ v = {{"rs", t.randoms}, {"ps", t.phasors}}; }), SC_TO({
                  findIfArray(v, "rs", to.randoms);
                  findIfArray(v, "ps", to.phasors);
              }));
@@ -216,19 +220,15 @@ SC_STREAMDEF(scxt::modulation::ModulatorStorage, SC_FROM({
                  result.configureCalculatedState();
              }))
 
-SC_STREAMDEF(scxt::modulation::shared::TargetIdentifier, SC_FROM({
-                 v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::modulation::shared::TargetIdentifier,
+             SC_FROM({ v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}}; }), SC_TO({
                  findIf(v, "g", result.gid);
                  findIf(v, "t", result.tid);
                  findIf(v, "i", result.index);
              }));
 
-SC_STREAMDEF(scxt::modulation::shared::SourceIdentifier, SC_FROM({
-                 v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::modulation::shared::SourceIdentifier,
+             SC_FROM({ v = {{"g", t.gid}, {"t", t.tid}, {"i", t.index}}; }), SC_TO({
                  findIf(v, "g", result.gid);
                  findIf(v, "t", result.tid);
                  findIf(v, "i", result.index);
@@ -280,10 +280,8 @@ SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable::Routing, SC_FROM({
                  findOrSet(v, "appm", 0, result.applicationMode);
              }));
 
-SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable, SC_FROM({
-                 v = {{"routes", t.routes}};
-             }),
-             SC_TO({
+SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable,
+             SC_FROM({ v = {{"routes", t.routes}}; }), SC_TO({
                  const auto &object = v.get_object();
 
                  std::fill(result.routes.begin(), result.routes.end(), rt_t::Routing());
@@ -326,9 +324,7 @@ SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable::Routing, SC_FROM({
                  findIf(v, "extraPayload", result.extraPayload);
              }));
 
-SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable, SC_FROM({
-                 v = {{"routes", t.routes}};
-             }),
+SC_STREAMDEF(scxt::modulation::GroupMatrix::RoutingTable, SC_FROM({ v = {{"routes", t.routes}}; }),
              SC_TO({
                  const auto &object = v.get_object();
 

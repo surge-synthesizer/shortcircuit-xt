@@ -42,10 +42,8 @@ std::string PhasorStorage::toStringDivision(const Division &s)
         return "t";
     case Division::DOTTED:
         return "d";
-    case Division::OF_BPM:
+    case Division::X_BPM:
         return "op";
-    case Division::OF_BEAT:
-        return "ob";
     }
     return "ERR";
 }
@@ -53,7 +51,7 @@ std::string PhasorStorage::toStringDivision(const Division &s)
 PhasorStorage::Division PhasorStorage::fromStringDivision(const std::string &s)
 {
     static auto inverse = makeEnumInverse<PhasorStorage::Division, PhasorStorage::toStringDivision>(
-        PhasorStorage::Division::NOTE, PhasorStorage::Division::OF_BEAT);
+        PhasorStorage::Division::NOTE, PhasorStorage::Division::X_BPM);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return PhasorStorage::Division::NOTE;
@@ -79,6 +77,28 @@ PhasorStorage::SyncMode PhasorStorage::fromStringSyncMode(const std::string &s)
     auto p = inverse.find(s);
     if (p == inverse.end())
         return PhasorStorage::SyncMode::VOICEPOS;
+    return p->second;
+}
+
+std::string PhasorStorage::toStringDirection(const Direction &d)
+{
+    switch (d)
+    {
+    case ASCENDING:
+        return "a";
+    case DESCENDING:
+        return "d";
+    }
+    return "ERR";
+}
+
+PhasorStorage::Direction PhasorStorage::fromStringDirection(const std::string &d)
+{
+    static auto inverse = makeEnumInverse<Direction, PhasorStorage::toStringDirection>(
+        PhasorStorage::Direction::ASCENDING, PhasorStorage::Direction::DESCENDING);
+    auto p = inverse.find(d);
+    if (p == inverse.end())
+        return PhasorStorage::Direction::ASCENDING;
     return p->second;
 }
 
