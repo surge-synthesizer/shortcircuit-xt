@@ -83,6 +83,8 @@ struct PhasorEvaluator
             if (ph > 0.99)
                 ph = rphase[i];
 
+            auto pr{0.f};
+
             switch (ps.direction)
             {
             case PhasorStorage::ASCENDING:
