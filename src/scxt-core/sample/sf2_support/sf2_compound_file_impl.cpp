@@ -26,6 +26,7 @@
  */
 
 #include "sample/compound_file.h"
+#include "sst/plugininfra/strnatcmp.h"
 
 namespace scxt::sample::compound
 {
@@ -69,6 +70,13 @@ std::vector<CompoundElement> getSF2InstrumentAddresses(const fs::path &p)
     std::sort(presets.begin(), presets.end(), [](const auto &aa, const auto &bb) {
         auto a = aa.first;
         auto b = bb.first;
+        auto na = a->GetName();
+        auto nb = b->GetName();
+
+        auto abc = strnatcmp(na.c_str(), nb.c_str());
+        if (abc != 0)
+            return abc < 0;
+
         if (a->Bank != b->Bank)
             return a->Bank < b->Bank;
         return a->PresetNum < b->PresetNum;
