@@ -799,11 +799,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
                 SCLOG(emsg);
                 editor->displayError(
                     "Unable to convert modulation type-in",
-                    "Modulation type in '" + s + "' did not convert to a valid moduation " +
-                        "from base value " + std::to_string(ep->targetBaseValue) +
-                        ". Please report " + "this to developers. Internal error is [" + emsg +
-                        "] and param is [" + md.name + "]");
-                v = 0;
+                    "Modulation type in '" + s + "' did not convert to a valid modulation " +
+                        "from base value " + std::to_string(ep->targetBaseValue) + " on control " +
+                        md.name + ". \n\nInternal error is [" + emsg + "]");
+                v = dv;
             }
 
             row->depthAttachment->setValueFromGUI(*v / (md.maxVal - md.minVal));
