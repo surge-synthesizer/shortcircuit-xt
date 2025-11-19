@@ -32,6 +32,7 @@
 #include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/ToggleButton.h"
+#include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/Viewport.h"
 #include "sst/jucegui/component-adapters/ThrowRescaler.h"
@@ -56,8 +57,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
     std::unique_ptr<jcad::CubicThrowRescaler<attachment_t>> depthRescaler;
     std::unique_ptr<jcmp::ToggleButton> power;
     std::unique_ptr<jcmp::MenuButton> source, sourceVia, curve, target;
-    std::unique_ptr<jcmp::GlyphPainter> x1, x2, a1, a2;
+    std::unique_ptr<jcmp::GlyphPainter> x1, x2, a1, plusMulMod;
     std::unique_ptr<jcmp::TextPushButton> consistentButton;
+    std::unique_ptr<jcmp::GlyphButton> modStyleButton;
 
     std::unique_ptr<jcmp::HSliderFilled> depth;
 
@@ -175,7 +177,24 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         x1 = mg(jcmp::GlyphPainter::CLOSE);
         x2 = mg(jcmp::GlyphPainter::CLOSE);
         a1 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
-        a2 = mg(jcmp::GlyphPainter::MODULATION_ADDITIVE);
+        plusMulMod = mg(jcmp::GlyphPainter::MODULATION_ADDITIVE);
+        modStyleButton = std::make_unique<jcmp::GlyphButton>(
+            sst::jucegui::components::GlyphPainter::MODULATION_MULTIPLICATIVE);
+        modStyleButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &row = w->parent->routingTable.routes[w->index];
+
+            auto am = row.applicationMode;
+            if (am == sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE)
+                row.applicationMode = sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
+            else
+                row.applicationMode =
+                    sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE;
+
+            w->pushRowUpdate(true);
+        });
+        addChildComponent(*modStyleButton);
 
         refreshRow();
     }
@@ -210,7 +229,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         depth->verticalReduction = 3; // retain the hit zone just shrink the paint
         sqr(a1, 12);
         map(curve, 60);
-        sqr(a2, 12);
+        sqr(plusMulMod, 12);
+        b = b.translated(-12 - 2, 0);
+        sqr(modStyleButton, 12);
         map(target, getWidth() - b.getX());
     }
     void refreshRow()
@@ -231,7 +252,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         x1->setVisible(sc);
         x2->setVisible(sc);
         a1->setVisible(sc);
-        a2->setVisible(sc);
+        plusMulMod->setVisible(sc);
         consistentButton->setVisible(!sc);
         if (!sc)
         {
@@ -318,14 +339,26 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
             }
         }
 
-        if (allowsMultiplicative &&
-            row.applicationMode == sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE)
+        if (allowsMultiplicative)
         {
-            a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_MULTIPLICATIVE;
+            if (row.applicationMode ==
+                sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE)
+            {
+                modStyleButton->glyph =
+                    sst::jucegui::components::GlyphPainter::MODULATION_MULTIPLICATIVE;
+            }
+            else
+            {
+                modStyleButton->glyph = sst::jucegui::components::GlyphPainter::MODULATION_ADDITIVE;
+            }
+            plusMulMod->setVisible(false);
+            modStyleButton->setVisible(true);
         }
         else
         {
-            a2->glyph = sst::jucegui::components::GlyphPainter::MODULATION_ADDITIVE;
+            modStyleButton->setVisible(false);
+            plusMulMod->setVisible(true);
+            plusMulMod->glyph = sst::jucegui::components::GlyphPainter::MODULATION_ADDITIVE;
         }
 
         repaint();
