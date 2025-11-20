@@ -153,10 +153,9 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
 
                     using namespace std;
                     auto s = sfsamp;
-                    auto reg = region;
 
-                    zn->mapping.pitchOffset +=
-                        reg->GetCoarseTune(presetRegion) + reg->GetFineTune(presetRegion) * 0.01;
+                    zn->mapping.pitchOffset += region->GetCoarseTune(presetRegion) +
+                                               region->GetFineTune(presetRegion) * 0.01;
 
                     auto s2a = scxt::modulation::secondsToNormalizedEnvTime;
 
@@ -165,12 +164,12 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         return pow(10.0, db * 0.05);
                     };
 
-                    zn->egStorage[0].dly = s2a(reg->GetEG1PreAttackDelay(presetRegion));
-                    zn->egStorage[0].a = s2a(reg->GetEG1Attack(presetRegion));
-                    zn->egStorage[0].h = s2a(reg->GetEG1Hold(presetRegion));
-                    zn->egStorage[0].d = s2a(reg->GetEG1Decay(presetRegion));
-                    zn->egStorage[0].s = sus2l(reg->GetEG1Sustain(presetRegion));
-                    zn->egStorage[0].r = s2a(reg->GetEG1Release(presetRegion));
+                    zn->egStorage[0].dly = s2a(region->GetEG1PreAttackDelay(presetRegion));
+                    zn->egStorage[0].a = s2a(region->GetEG1Attack(presetRegion));
+                    zn->egStorage[0].h = s2a(region->GetEG1Hold(presetRegion));
+                    zn->egStorage[0].d = s2a(region->GetEG1Decay(presetRegion));
+                    zn->egStorage[0].s = sus2l(region->GetEG1Sustain(presetRegion));
+                    zn->egStorage[0].r = s2a(region->GetEG1Release(presetRegion));
 
                     auto GetValue = [](const auto &val) {
                         if (val == sf2::NONE)
@@ -178,18 +177,18 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         return ToString(val);
                     };
 
-                    zn->egStorage[1].dly = s2a(reg->GetEG2PreAttackDelay(presetRegion));
-                    zn->egStorage[1].a = s2a(reg->GetEG2Attack(presetRegion));
-                    zn->egStorage[1].h = s2a(reg->GetEG2Hold(presetRegion));
-                    zn->egStorage[1].d = s2a(reg->GetEG2Decay(presetRegion));
-                    zn->egStorage[1].s = sus2l(reg->GetEG2Sustain(presetRegion));
-                    zn->egStorage[1].r = s2a(reg->GetEG2Release(presetRegion));
+                    zn->egStorage[1].dly = s2a(region->GetEG2PreAttackDelay(presetRegion));
+                    zn->egStorage[1].a = s2a(region->GetEG2Attack(presetRegion));
+                    zn->egStorage[1].h = s2a(region->GetEG2Hold(presetRegion));
+                    zn->egStorage[1].d = s2a(region->GetEG2Decay(presetRegion));
+                    zn->egStorage[1].s = sus2l(region->GetEG2Sustain(presetRegion));
+                    zn->egStorage[1].r = s2a(region->GetEG2Release(presetRegion));
 
-                    if (reg->HasLoop)
+                    if (region->HasLoop)
                     {
                         znSD.loopActive = true;
-                        znSD.startLoop = reg->LoopStart;
-                        znSD.endLoop = reg->LoopEnd;
+                        znSD.startLoop = region->LoopStart;
+                        znSD.endLoop = region->LoopEnd;
                     }
                     else if (presetRegion->HasLoop)
                     {
@@ -204,51 +203,63 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                      * 100 * midi key in 12TET). That's a midi key between 135 and 136,
                      * so lets be safe a shave a touch
                      */
-                    if (reg->initialFilterFc >= 0 && reg->initialFilterFc < 134 * 100)
+                    auto fc = region->GetInitialFilterFc(presetRegion);
+                    auto fq = region->GetInitialFilterQ(presetRegion);
+                    if (fc >= 0 && fc < 134 * 100)
                     {
                         // This only runs with audio thread stopped
                         e.getMessageController()->threadingChecker.bypassThreadChecks = true;
                         zn->setProcessorType(0, dsp::processor::ProcessorType::proct_CytomicSVF);
-                        zn->processorStorage[0].floatParams[0] =
-                            (reg->initialFilterFc / 100.0) - 69.0;
-                        zn->processorStorage[0].floatParams[2] =
-                            std::clamp((reg->initialFilterQ / 100.0), 0., 1.);
+                        zn->processorStorage[0].floatParams[0] = (fc / 100.0) - 69.0;
+                        zn->processorStorage[0].floatParams[2] = std::clamp((fq / 100.0), 0., 1.);
                         e.getMessageController()->threadingChecker.bypassThreadChecks = false;
+                    }
+
+                    auto pan = region->GetPan(presetRegion);
+                    if (pan != 0)
+                    {
+                        if (pan < 0)
+                            pan = pan / 64.0;
+                        else
+                            pan = pan / 63.0;
+                        zn->outputInfo.pan = pan;
                     }
 
                     int currentModRow{0};
                     // SCLOG("Unimplemented SF2 Features Follow: " )
-                    if (reg->modEnvToPitch != 0)
+                    auto me2p = region->GetModEnvToPitch(presetRegion);
+                    if (me2p != 0)
                     {
                         zn->routingTable.routes[currentModRow].source =
                             voice::modulation::MatrixEndpoints::Sources::eg2A;
                         zn->routingTable.routes[currentModRow].target =
                             voice::modulation::MatrixEndpoints::MappingTarget::pitchOffsetA;
-                        zn->routingTable.routes[currentModRow].depth =
-                            1.0 * reg->modEnvToPitch / 19200;
+                        zn->routingTable.routes[currentModRow].depth = 1.0 * me2p / 19200;
                         zn->onRoutingChanged();
                         currentModRow++;
                     }
-                    if (reg->modEnvToFilterFc != 0)
+                    auto me2f = region->GetModEnvToFilterFc(presetRegion);
+                    if (me2f != 0)
                     {
                         zn->routingTable.routes[currentModRow].source =
                             voice::modulation::MatrixEndpoints::Sources::eg2A;
                         zn->routingTable.routes[currentModRow].target =
                             voice::modulation::MatrixEndpoints::ProcessorTarget::floatParam(0, 0);
                         zn->routingTable.routes[currentModRow].depth =
-                            1.0 * reg->modEnvToFilterFc / 100 / 130; // cents, and range -60->70
+                            1.0 * me2f / 100 / 130; // cents, and range -60->70
                         zn->onRoutingChanged();
                     }
 
-                    if (reg->vibLfoToPitch > 0)
+                    auto v2p = region->GetVibLfoToPitch(presetRegion);
+                    if (v2p > 0)
                     {
                         // Use LFO1 as the vibrato LFO
                         zn->modulatorStorage[0].modulatorShape =
                             modulation::ModulatorStorage::LFO_SINE;
                         zn->modulatorStorage[0].rate =
-                            (reg->freqVibLfo + 3637.63165623) * 0.01 / 12.0;
+                            (region->GetFreqVibLfo(presetRegion) + 3637.63165623) * 0.01 / 12.0;
 
-                        if (reg->delayVibLfo > -11999)
+                        if (region->GetDelayVibLfo() > -11999)
                         {
                             SCLOG("Unimplemented: Curve Delay");
                             // zn->modulatorStorage[0].curveLfoStorage.useenv = true;
@@ -261,43 +272,41 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         zn->routingTable.routes[currentModRow].source = {'znlf', 'outp', 0};
                         zn->routingTable.routes[currentModRow].target =
                             voice::modulation::MatrixEndpoints::MappingTarget::pitchOffsetA;
-                        zn->routingTable.routes[currentModRow].depth =
-                            1.0 * reg->vibLfoToPitch / 19200;
+                        zn->routingTable.routes[currentModRow].depth = 1.0 * v2p / 19200;
                         zn->onRoutingChanged();
                         currentModRow++;
                     }
 
-                    if (reg->modulators.size() > 0)
+                    if (region->modulators.size() > 0)
                     {
                         SCLOG("Unsupported Modulators present in : " << instr->GetName()
                                                                      << " region " << i);
-                        SCLOG("\tCount =" << reg->modulators.size() << "");
+                        SCLOG("\tCount =" << region->modulators.size() << "");
 
-                        for (int mi = 0; mi < reg->modulators.size(); mi++)
+                        for (int mi = 0; mi < region->modulators.size(); mi++)
                         {
-                            auto m = reg->modulators[mi];
+                            auto m = region->modulators[mi];
                             SCLOG("\tsrc=" << m.ModSrcOper.Type << " target=" << m.ModDestOper
                                            << " depth=" << m.ModAmount << " trans="
                                            << m.ModTransOper << " srcamt=" << m.ModAmtSrcOper.Type);
-                            // PrintModulatorItem(&reg->modulators[i]);
+                            // PrintModulatorItem(&region->modulators[i]);
                         }
                     }
 
-                    if (reg->modLfoToFilterFc != 0 || reg->modLfoToPitch != 0)
+                    if (region->modLfoToFilterFc != 0 || region->modLfoToPitch != 0)
                     {
                         SCLOG("Unsupported: Modulation LFO: Delay="
-                              << ::sf2::ToSeconds(reg->delayModLfo)
-                              << "s, Frequency=" << ::sf2::ToHz(reg->freqModLfo)
-                              << "Hz, LFO to Volume=" << (reg->modLfoToVolume / 10) << "dB"
-                              << ", LFO to Filter Cutoff=" << reg->modLfoToFilterFc
-                              << ", LFO to Pitch=" << reg->modLfoToPitch);
+                              << ::sf2::ToSeconds(region->delayModLfo)
+                              << "s, Frequency=" << ::sf2::ToHz(region->freqModLfo)
+                              << "Hz, LFO to Volume=" << (region->modLfoToVolume / 10) << "dB"
+                              << ", LFO to Filter Cutoff=" << region->modLfoToFilterFc
+                              << ", LFO to Pitch=" << region->modLfoToPitch);
                     }
 
-                    if (reg->exclusiveClass)
-                        SCLOG("Unsupported: Exclusive Class : " << reg->exclusiveClass << " in "
+                    if (region->exclusiveClass)
+                        SCLOG("Unsupported: Exclusive Class : " << region->exclusiveClass << " in "
                                                                 << instr->GetName() << " region "
                                                                 << i);
-                    ;
 
                     grp->addZone(zn);
                 }
