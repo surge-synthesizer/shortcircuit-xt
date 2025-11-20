@@ -318,17 +318,13 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 };
 } // namespace scxt::engine
 
-SC_DESCRIBE(scxt::engine::Part::PartConfiguration,
-            SC_FIELD(channel, pmd().asInt().withRange(-1, 15));
-            SC_FIELD(level, pmd().asCubicDecibelAttenuation().withName("Level"));
-            SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));
-            SC_FIELD(tuning, pmd()
-                                 .asFloat()
-                                 .withRange(-36, 36)
-                                 .withLinearScaleFormatting("semitones")
-                                 .withName("Tuning"));
-            SC_FIELD(transpose,
-                     pmd().asInt().withRange(-36, 36).withLinearScaleFormatting("keys").withName(
-                         "Transpose")););
+SC_DESCRIBE(
+    scxt::engine::Part::PartConfiguration, SC_FIELD(channel, pmd().asInt().withRange(-1, 15));
+    SC_FIELD(level, pmd().asCubicDecibelAttenuation().withName("Level"));
+    SC_FIELD(pan, pmd().asPercentBipolar().withName("Pan"));
+    SC_FIELD(tuning,
+             pmd().asFloat().withRange(-36, 36).withSemitoneFormatting().withName("Tuning"));
+    SC_FIELD(transpose, pmd().asInt().withRange(-36, 36).withLinearScaleFormatting("keys").withName(
+                            "Transpose")););
 
 #endif
