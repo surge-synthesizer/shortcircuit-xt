@@ -145,4 +145,17 @@ std::vector<sample::compound::CompoundElement> Browser::expandForBrowser(const f
     }
     return {};
 }
+
+std::vector<sample::compound::CompoundElement>
+Browser::getMultiInstrumentElements(const fs::path &p)
+{
+    if (extensionMatches(p, ".sf2"))
+    {
+        auto inst = sample::compound::getSF2InstrumentAddresses(p);
+        if (inst.size() > 1)
+            return inst;
+    }
+    return {};
+}
+
 } // namespace scxt::browser
