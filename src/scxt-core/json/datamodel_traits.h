@@ -64,6 +64,7 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                       {"cval", t.customValueLabelsWithAccuracy},
                       {"discv", dvStream},
                       {"dep", t.decimalPlaces},
+                      {"ftr", t.features},
                       {"svA", t.svA},
                       {"svB", t.svB},
                       {"svC", t.svC},
@@ -79,6 +80,7 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                  findIf(v, "de", to.canDeactivate);
                  findIf(v, "ex", to.canExtend);
                  findIf(v, "ab", to.canAbsolute);
+                 findIf(v, "ftr", to.features);
                  findOrSet(v, "enb", true, to.enabled);
                  findIf(v, "tsm", to.temposyncMultiplier);
                  findIf(v, "ssc", to.supportsStringConversion);

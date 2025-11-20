@@ -313,12 +313,9 @@ struct Group : MoveableOnly<Group>,
 SC_DESCRIBE(
     scxt::engine::Group::GroupOutputInfo,
     SC_FIELD(amplitude, pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
-    SC_FIELD(tuning, pmd()
-                         .asFloat()
-                         .withRange(-24, 24)
-                         .withLinearScaleFormatting("semitones")
-                         .withDefault(0.f)
-                         .withName("Tuning"));
+    SC_FIELD(tuning,
+             pmd().asFloat().withRange(-24, 24).withSemitoneFormatting().withDefault(0.f).withName(
+                 "Tuning"));
     SC_FIELD(pan, pmd().asPan().withName("Pan")); SC_FIELD(
         pbUp,
         pmd().asInt().withName("Pitch Bend Up").withRange(0, 48).withLinearScaleFormatting("keys"));
