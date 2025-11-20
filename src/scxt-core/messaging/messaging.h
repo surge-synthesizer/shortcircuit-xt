@@ -297,7 +297,7 @@ struct MessageController : MoveableOnly<MessageController>
     };
 
     // The engine has direct access to the audio queues
-    friend class engine::Engine;
+    friend struct engine::Engine;
 
     /*
      * Various utilitues

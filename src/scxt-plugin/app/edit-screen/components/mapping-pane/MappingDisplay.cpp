@@ -466,7 +466,8 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
         auto inst = browser::Browser::getMultiInstrumentElements(p);
         if (inst.empty())
         {
-            sendToSerialization(cmsg::AddSampleWithRange({p, r[0], r[1], r[2], 0, 127}));
+            sendToSerialization(
+                cmsg::AddSampleWithRange({f.toStdString(), r[0], r[1], r[2], 0, 127}));
         }
         else
         {
