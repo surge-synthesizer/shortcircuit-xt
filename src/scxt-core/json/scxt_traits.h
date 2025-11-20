@@ -189,13 +189,13 @@ void addUnlessDefault(V &v, const std::string &key, const R &defVal, const R &va
         static void assign(tao::json::basic_value<Traits> &v, const rt_t &from)                    \
         {                                                                                          \
             using val_t = tao::json::basic_value<Traits>;                                          \
-            auto &t = from;                                                                        \
+            [[maybe_unused]] auto &t = from;                                                       \
             assignBlock                                                                            \
         }                                                                                          \
         template <template <typename...> class Traits>                                             \
         static void to(const tao::json::basic_value<Traits> &v, rt_t &to)                          \
         {                                                                                          \
-            auto &result = to;                                                                     \
+            [[maybe_unused]] auto &result = to;                                                    \
             toBlock                                                                                \
         }                                                                                          \
     };
