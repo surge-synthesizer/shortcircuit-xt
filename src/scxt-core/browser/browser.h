@@ -97,6 +97,14 @@ struct Browser
     static bool isExpandableInBrowser(const fs::path &p) { return isLoadableMultiSample(p); }
     static std::vector<sample::compound::CompoundElement> expandForBrowser(const fs::path &p);
 
+    /*
+     * If this item contains more than one instrument, present a list of them. If the resulting
+     * vector is empty then the file contains zero or 1 instruments. Basicaly this is how you build
+     * the pick-one-on-drop-of-an-sf2 UI
+     */
+    static std::vector<sample::compound::CompoundElement>
+    getMultiInstrumentElements(const fs::path &);
+
     struct LoadableFile
     {
         static const std::vector<std::string> singleSample;

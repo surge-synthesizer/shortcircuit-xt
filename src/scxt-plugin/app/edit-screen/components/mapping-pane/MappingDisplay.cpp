@@ -28,6 +28,7 @@
 #include "MappingDisplay.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/browser-ui/BrowserPaneInterfaces.h"
+#include "sst/jucegui/screens/ModalBase.h"
 #include "ZoneLayoutDisplay.h"
 #include "ZoneLayoutKeyboard.h"
 
@@ -390,8 +391,14 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
         }
         else if (wsi->getDirEnt().has_value())
         {
-            sendToSerialization(cmsg::AddSampleWithRange(
-                {wsi->getDirEnt()->path().u8string(), r[0], r[1], r[2], 0, 127}));
+            auto inst = browser::Browser::getMultiInstrumentElements(wsi->getDirEnt()->path());
+            if (inst.empty())
+                sendToSerialization(cmsg::AddSampleWithRange(
+                    {wsi->getDirEnt()->path().u8string(), r[0], r[1], r[2], 0, 127}));
+            else
+            {
+                promptForMultiInstrument(inst);
+            }
         }
     }
     isUndertakingDrop = false;
@@ -455,10 +462,118 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
     auto r = mappingZones->rootAndRangeForPosition({x, y});
     for (auto f : files)
     {
-        sendToSerialization(cmsg::AddSampleWithRange({f.toStdString(), r[0], r[1], r[2], 0, 127}));
+        auto p = fs::path{(const char *)(f.toUTF8())};
+        auto inst = browser::Browser::getMultiInstrumentElements(p);
+        if (inst.empty())
+        {
+            sendToSerialization(
+                cmsg::AddSampleWithRange({f.toStdString(), r[0], r[1], r[2], 0, 127}));
+        }
+        else
+        {
+            promptForMultiInstrument(inst);
+        }
     }
     isUndertakingDrop = false;
     repaint();
+}
+
+struct InstrumentPrompt : sst::jucegui::screens::ModalBase
+{
+    MappingDisplay *display{nullptr};
+    std::vector<sample::compound::CompoundElement> instruments;
+    std::unique_ptr<jcmp::TextPushButton> ok, cancel;
+    std::unique_ptr<jcmp::MenuButton> multiInst;
+    int selInstrument{0};
+    InstrumentPrompt(MappingDisplay *d, const std::vector<sample::compound::CompoundElement> &i)
+        : instruments(i), display(d)
+    {
+        ok = std::make_unique<jcmp::TextPushButton>();
+        ok->setLabel("OK");
+        ok->setOnCallback([this]() {
+            sendSelection();
+            setVisible(false);
+        });
+        cancel = std::make_unique<jcmp::TextPushButton>();
+        cancel->setLabel("Cancel");
+        cancel->setOnCallback([this]() { setVisible(false); });
+
+        selInstrument = 0;
+        multiInst = std::make_unique<jcmp::MenuButton>();
+        multiInst->setLabel(instruments[0].name);
+        multiInst->setOnCallback([this]() { showMenu(); });
+        addAndMakeVisible(*ok);
+        addAndMakeVisible(*cancel);
+        addAndMakeVisible(*multiInst);
+    }
+
+    void sendSelection()
+    {
+        display->sendToSerialization(
+            cmsg::AddCompoundElementWithRange({instruments[selInstrument], 60, 0, 127, 0, 127}));
+    }
+
+    void showMenu()
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Select Instrument");
+        p.addSeparator();
+        int idx{0};
+        for (auto &i : instruments)
+        {
+            p.addItem(instruments[idx].name, [this, ci = idx]() {
+                selInstrument = ci;
+                multiInst->setLabel(instruments[ci].name);
+            });
+            idx++;
+        }
+        p.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(multiInst.get()));
+    }
+
+    static constexpr int titleSize{18}, margin{4}, buttonWidth{80};
+
+    void paintContents(juce::Graphics &g) override
+    {
+        auto p = getContentArea().reduced(4);
+
+        g.setColour(getColour(Styles::brightoutline));
+        g.drawHorizontalLine(p.getY() + titleSize + margin, p.getX(), p.getRight());
+        g.setFont(
+            style()->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont));
+        g.setColour(
+            style()->getColour(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelcolor));
+        g.drawText("Select Instrument", p.withHeight(titleSize), juce::Justification::centredLeft);
+    }
+    juce::Point<int> innerContentSize() override { return {300, 150}; }
+
+    void resized() override
+    {
+        ModalBase::resized();
+        auto p = getContentArea().reduced(4);
+
+        auto buttonBox = p.withTrimmedTop(p.getHeight() - titleSize)
+                             .withWidth(buttonWidth)
+                             .translated(p.getWidth() - buttonWidth, 0);
+
+        multiInst->setBounds(
+            p.withHeight(titleSize + margin).translated(0, titleSize * 2).reduced(10, 0));
+        if (cancel)
+        {
+            cancel->setBounds(buttonBox);
+            buttonBox = buttonBox.translated(-buttonWidth - margin, 0);
+        }
+        if (ok)
+        {
+            ok->setBounds(buttonBox);
+        }
+    }
+};
+
+void MappingDisplay::promptForMultiInstrument(
+    const std::vector<sample::compound::CompoundElement> &inst)
+{
+    SCLOG("promptForMultimple with size " << inst.size());
+    editor->displayModalOverlay(std::make_unique<InstrumentPrompt>(this, inst));
 }
 
 void MappingDisplay::doZoneRename(const selection::SelectionManager::ZoneAddress &z)

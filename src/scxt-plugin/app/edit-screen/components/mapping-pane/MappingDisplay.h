@@ -185,6 +185,8 @@ struct MappingDisplay : juce::Component,
     void fileDragExit(const juce::StringArray &files) override;
     void filesDropped(const juce::StringArray &files, int x, int y) override;
 
+    void promptForMultiInstrument(const std::vector<sample::compound::CompoundElement> &);
+
     void doZoneRename(const selection::SelectionManager::ZoneAddress &z);
 
     bool keyPressed(const juce::KeyPress &key) override;
