@@ -157,7 +157,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                 part->configuration.active && part->respondsToMIDIChannel(channel))
             {
                 auto prex = part->respondsToMIDIChannelExcludingGroupMask(channel);
-                auto kt = part->configuration.transpose;
+                auto kt =
+                    part->configuration.transpose + part->getChannelBasedTransposition(channel);
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
                     if (!group->respondsToChannelOrUsesPartChannel(channel, prex))

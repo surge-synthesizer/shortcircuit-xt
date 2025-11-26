@@ -66,6 +66,26 @@ float MidikeyRetuner::offsetKeyBy(int channel, int key)
     return 0.f;
 }
 
+int MidikeyRetuner::getRepetitionInterval() const
+{
+    switch (tuningMode)
+    {
+    case TWELVE_TET:
+        return 12;
+    case MTS_ESP:
+    {
+        if (!mtsClient)
+            return 12;
+        auto tmp = MTS_GetMapSize(mtsClient);
+        if (tmp < 0)
+            return 12;
+        else
+            return tmp;
+    }
+    }
+    return 12;
+}
+
 void MidikeyRetuner::setTuningMode(TuningMode tm) { tuningMode = tm; }
 
 int MidikeyRetuner::remapKeyTo(int channel, int key)

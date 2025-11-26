@@ -316,4 +316,24 @@ void Part::rebuildGroupChannelMask()
     }
 }
 
+int Part::getChannelBasedTransposition(int16_t channel) const
+
+{
+    if (configuration.channel == PartConfiguration::chPerOctaveChannel)
+    {
+        float shift = 0;
+        if (channel > 7)
+        {
+            shift = channel - 16;
+        }
+        else
+        {
+            shift = channel;
+        }
+        auto ri = parentPatch->parentEngine->midikeyRetuner.getRepetitionInterval();
+        return shift * ri;
+    }
+    return 0;
+}
+
 } // namespace scxt::engine
