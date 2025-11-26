@@ -1,9 +1,9 @@
 {
   "comment": "linear: 1 -> 2 -> 3 -> 4; area is 190x107",
-  "include": "shared-layouts/shared-classes.json",
+  "include": "procrouting-layouts/procrouting-classes.json",
   "controls": {
     "c0": {
-      "class": "knob30",
+      "class": "routing-box",
       "label": "1",
       "binding": {
         "type": "float",
@@ -11,42 +11,42 @@
       },
       "position": {
         "x": 30,
-        "y": 0
+        "y": -2
       }
     },
     "c1": {
-      "class": "knob30",
+      "class": "routing-box",
       "label": "2",
       "binding": {
         "type": "float",
         "index": 1
       },
       "position": {
-        "x": 65,
-        "y": 21
+        "x": 60,
+        "y": 22
       }
     },
     "c2": {
-      "class": "knob30",
+      "class": "routing-box",
       "label": "3",
       "binding": {
         "type": "float",
         "index": 2
       },
       "position": {
-        "x": 95,
-        "y": 45
+        "x": 89,
+        "y": 46
       }
     },
     "c3": {
-      "class": "knob30",
+      "class": "routing-box",
       "label": "4",
       "binding": {
         "type": "float",
         "index": 3
       },
       "position": {
-        "x": 125,
+        "x": 117,
         "y": 70
       }
     }

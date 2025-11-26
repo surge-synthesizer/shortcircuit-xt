@@ -37,6 +37,8 @@
 #include "app/edit-screen/EditScreen.h"
 #include "connectors/JsonLayoutEngineSupport.h"
 
+#include <xpc/xpc.h>
+
 namespace scxt::ui::app::edit_screen
 {
 
@@ -203,6 +205,13 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
             levelA[i] = std::move(at);
 
             auto ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls);
+            if (!ed && cls.controlType == "routing-box")
+            {
+                auto rb = std::make_unique<RoutingBox>(editor);
+                if (ctrl.label.has_value())
+                    rb->setBoxLabel(*ctrl.label);
+                ed = std::move(rb);
+            }
             if (!ed)
             {
                 onError("Could not create widget for " + ctrl.name + " with unknown control type " +
@@ -218,7 +227,7 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
 
             jsonComponents.push_back(std::move(ed));
 
-            if (outputPane->style())
+            if (outputPane->style() && cls.controlType != "routing-box")
             {
                 if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *outputPane))
                 {
@@ -301,6 +310,68 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
     static constexpr int nOuts{scxt::processorsPerZoneAndGroup};
     std::array<std::unique_ptr<ProcessorPane::attachment_t>, nOuts> levelA;
     std::vector<std::unique_ptr<juce::Component>> jsonComponents;
+
+    struct RoutingBox : sst::jucegui::components::Knob, HasEditor
+    {
+        RoutingBox(SCXTEditor *e) : HasEditor(e) {}
+        void paint(juce::Graphics &g)
+        {
+            if (!isHovered || !isEnabled())
+            {
+                juce::Colour boxOutline, boxFill, labelC, valueC;
+                if (isEnabled())
+                {
+                    boxOutline = editor->themeColor(theme::ColorMap::generic_content_medium);
+                    boxFill = juce::Colours::black.withAlpha(0.f);
+                    labelC = editor->themeColor(theme::ColorMap::generic_content_high);
+                    valueC = editor->themeColor(theme::ColorMap::accent_1b);
+                }
+                else
+                {
+                    boxOutline =
+                        editor->themeColor(theme::ColorMap::generic_content_medium).withAlpha(0.5f);
+                    boxFill = editor->themeColor(theme::ColorMap::generic_content_lowest);
+                    labelC =
+                        editor->themeColor(theme::ColorMap::generic_content_medium).withAlpha(0.5f);
+                    valueC = editor->themeColor(theme::ColorMap::accent_1b).withAlpha(0.5f);
+                }
+                auto bx = getLocalBounds().reduced(4);
+                g.setColour(boxFill);
+                g.fillRoundedRectangle(bx.toFloat(), 2);
+
+                {
+                    juce::Graphics::ScopedSaveState gs(g);
+                    g.setColour(valueC);
+                    auto v = continuous()->getValue01();
+                    g.reduceClipRegion(bx.withTrimmedTop(bx.getHeight() - 4)
+                                           .withTrimmedRight(bx.getWidth() * (1 - v)));
+                    g.fillRoundedRectangle(bx.toFloat(), 2);
+                }
+
+                g.setColour(boxOutline);
+                g.drawRoundedRectangle(bx.toFloat(), 2, 1);
+                auto cy = bx.getCentreY();
+                g.fillRect(0, cy - 2, 4, 4);
+                g.fillRect(getWidth() - 4, cy - 2, 4, 5);
+
+                g.setColour(labelC);
+                g.setFont(editor->themeApplier.interMediumFor(11));
+                g.drawText(boxLabel, bx.withTrimmedBottom(8), juce::Justification::centred);
+                ;
+            }
+            else
+            {
+                sst::jucegui::components::Knob::paint(g);
+            }
+        }
+
+        void setBoxLabel(const std::string &s)
+        {
+            boxLabel = s;
+            repaint();
+        }
+        std::string boxLabel;
+    };
 
     struct SvgPaths : juce::Component
     {

@@ -1,0 +1,11 @@
+{
+  "comment": "Just defines the routing box",
+  "include": "shared-layouts/shared-classes.json",
+  "classes": {
+    "routing-box": {
+      "control-type": "routing-box",
+      "w": 30,
+      "h": 30
+    }
+  }
+}
