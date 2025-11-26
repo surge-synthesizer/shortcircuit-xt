@@ -140,6 +140,12 @@ void SCXTEditor::showMainMenu()
             []() { SCLOG("Cancel Pressed"); });
     });
     dp.addSeparator();
+    dp.addItem("Toggle Focus Debugger", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->focusDebugger->setDoFocusDebug(!w->focusDebugger->doFocusDebug);
+    });
+    dp.addSeparator();
 
 #if HAS_MELATONIN_INSPECTOR
     if (melatoninInspector)
