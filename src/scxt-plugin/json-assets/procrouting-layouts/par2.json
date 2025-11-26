@@ -2,24 +2,6 @@
   "comment": "linear: 1 -> 2 -> 3 -> 4; area is 190x107",
   "include": "shared-layouts/shared-classes.json",
   "controls": {
-    "li0": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 0,
-        "y0": 47,
-        "x1": 38,
-        "y1": 20
-      }
-    },
-    "li1": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 0,
-        "y0": 47,
-        "x1": 38,
-        "y1": 75
-      }
-    },
     "c0": {
       "class": "knob30",
       "label": "1",
@@ -28,8 +10,8 @@
         "index": 0
       },
       "position": {
-        "x": 40,
-        "y": 5
+        "x": 53,
+        "y": 15
       }
     },
     "c1": {
@@ -40,26 +22,8 @@
         "index": 1
       },
       "position": {
-        "x": 125,
-        "y": 5
-      }
-    },
-    "lo1": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 68,
-        "y0": 20,
-        "x1": 123,
-        "y1": 20
-      }
-    },
-    "lo2": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 68,
-        "y0": 75,
-        "x1": 123,
-        "y1": 75
+        "x": 97,
+        "y": 15
       }
     },
     "c2": {
@@ -70,7 +34,7 @@
         "index": 2
       },
       "position": {
-        "x": 40,
+        "x": 53,
         "y": 60
       }
     },
@@ -82,26 +46,8 @@
         "index": 3
       },
       "position": {
-        "x": 125,
+        "x": 97,
         "y": 60
-      }
-    },
-    "lo3": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 158,
-        "y0": 20,
-        "x1": 190,
-        "y1": 47
-      }
-    },
-    "lo4": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 158,
-        "y0": 75,
-        "x1": 190,
-        "y1": 47
       }
     }
   }

@@ -62,7 +62,7 @@ message(STATUS "Globbing json-assets directory for cmrc")
 file(GLOB_RECURSE scxt_json_sources
         LIST_DIRECTORIES false
         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-        json-assets/*.json
+        json-assets/*
 )
 cmrc_add_resource_library(scxtui_json_layouts
         NAMESPACE scxtui_json_layouts

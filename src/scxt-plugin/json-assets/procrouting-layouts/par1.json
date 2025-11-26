@@ -10,7 +10,7 @@
         "index": 0
       },
       "position": {
-        "x": 14,
+        "x": 30,
         "y": 0
       }
     },
@@ -22,8 +22,8 @@
         "index": 1
       },
       "position": {
-        "x": 59,
-        "y": 20
+        "x": 65,
+        "y": 21
       }
     },
     "c2": {
@@ -34,8 +34,8 @@
         "index": 2
       },
       "position": {
-        "x": 102,
-        "y": 40
+        "x": 95,
+        "y": 45
       }
     },
     "c3": {
@@ -46,53 +46,8 @@
         "index": 3
       },
       "position": {
-        "x": 147,
-        "y": 60
-      }
-    },
-    "li0": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 0,
-        "y0": 50,
-        "x1": 10,
-        "y1": 15
-      }
-    },
-    "li2": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 0,
-        "y0": 50,
-        "x1": 55,
-        "y1": 35
-      }
-    },
-    "li3": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 0,
-        "y0": 50,
-        "x1": 100,
-        "y1": 55
-      }
-    },
-    "li4": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 0,
-        "y0": 50,
-        "x1": 140,
-        "y1": 75
-      }
-    },
-    "lo4": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 179,
-        "y0": 75,
-        "x1": 188,
-        "y1": 50
+        "x": 125,
+        "y": 70
       }
     }
   }
