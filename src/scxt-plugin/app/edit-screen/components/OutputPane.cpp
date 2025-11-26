@@ -136,6 +136,10 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
                 w->selectNewRouting();
         });
         addAndMakeVisible(*outputRouting);
+
+        svgPaths = std::make_unique<SvgPaths>(this);
+        addAndMakeVisible(*svgPaths);
+        svgPaths->toBack();
     }
 
     std::string resolveJsonPath(const std::string &path) const override
@@ -238,6 +242,8 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
     void resized() override
     {
         multiW->setBounds(getLocalBounds().reduced(0, 2).withHeight(22).withTrimmedRight(140));
+        svgPaths->setBounds(getLocalBounds().reduced(0, 2).withTrimmedRight(140));
+
         consistentLabel->setBounds(multiW->getBounds());
         consistentButton->setBounds(multiW->getBounds().translated(0, 30));
         routingLayoutComp->setBounds(getLocalBounds().withTrimmedTop(25));
@@ -296,6 +302,38 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
     std::array<std::unique_ptr<ProcessorPane::attachment_t>, nOuts> levelA;
     std::vector<std::unique_ptr<juce::Component>> jsonComponents;
 
+    struct SvgPaths : juce::Component
+    {
+        SvgPaths(ProcTab *pt) : owner(pt) {}
+        void paint(juce::Graphics &g)
+        {
+            if (drawable)
+                drawable->drawAt(g, 0, 0, 1.0);
+        }
+
+        std::unique_ptr<juce::Drawable> drawable;
+        void setSvg(const std::string &s)
+        {
+            drawable.reset();
+            if (!s.empty())
+            {
+                std::unique_ptr<juce::XmlElement> svgXml = juce::XmlDocument::parse(s);
+                if (svgXml)
+                {
+                    drawable = juce::Drawable::createFromSVG(*svgXml);
+                    if (drawable)
+                    {
+                        drawable->replaceColour(
+                            juce::Colour(0x77, 0x77, 0x77),
+                            owner->editor->themeColor(theme::ColorMap::generic_content_low));
+                    }
+                }
+            }
+        }
+        ProcTab *owner{nullptr};
+    };
+    std::unique_ptr<SvgPaths> svgPaths;
+
     void updateFromProcessorPanes()
     {
         routingLayoutComp->removeAllChildren();
@@ -341,6 +379,20 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         {
             editor->displayError("JSON Path Error", *parseRes.error + "\nWhile parsing " + path);
             return;
+        }
+
+        auto fn = path.find(".json");
+        if (fn == std::string::npos)
+            return;
+        path = path.substr(0, fn) + "_path.svg";
+        auto svg = scxt::ui::connectors::jsonlayout::resolveJsonFile(path);
+        if (svg.has_value())
+        {
+            svgPaths->setSvg(*svg);
+        }
+        else
+        {
+            svgPaths->setSvg("");
         }
     }
 
