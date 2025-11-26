@@ -312,57 +312,81 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
     struct RoutingBox : sst::jucegui::components::Knob, HasEditor
     {
         RoutingBox(SCXTEditor *e) : HasEditor(e) {}
-        void paint(juce::Graphics &g)
+        void paint(juce::Graphics &g) override
         {
-            if (!isHovered || !isEnabled())
+            juce::Colour boxOutline, boxFill, labelC, valueC, gutterC;
+            gutterC = juce::Colours::black.withAlpha(0.0f);
+            if (isEnabled())
             {
-                juce::Colour boxOutline, boxFill, labelC, valueC;
-                if (isEnabled())
-                {
-                    boxOutline = editor->themeColor(theme::ColorMap::generic_content_medium);
-                    boxFill = juce::Colours::black.withAlpha(0.f);
-                    labelC = editor->themeColor(theme::ColorMap::generic_content_high);
-                    valueC = editor->themeColor(theme::ColorMap::accent_1b);
-                }
-                else
-                {
-                    boxOutline =
-                        editor->themeColor(theme::ColorMap::generic_content_medium).withAlpha(0.5f);
-                    boxFill = editor->themeColor(theme::ColorMap::generic_content_lowest);
-                    labelC =
-                        editor->themeColor(theme::ColorMap::generic_content_medium).withAlpha(0.5f);
-                    valueC = editor->themeColor(theme::ColorMap::accent_1b).withAlpha(0.5f);
-                }
-                auto bx = getLocalBounds().reduced(4);
-                g.setColour(boxFill);
-                g.fillRoundedRectangle(bx.toFloat(), 2);
-
-                {
-                    juce::Graphics::ScopedSaveState gs(g);
-                    g.setColour(valueC);
-                    auto v = continuous()->getValue01();
-                    g.reduceClipRegion(bx.withTrimmedTop(bx.getHeight() - 4)
-                                           .withTrimmedRight(bx.getWidth() * (1 - v)));
-                    g.fillRoundedRectangle(bx.toFloat(), 2);
-                }
-
-                g.setColour(boxOutline);
-                g.drawRoundedRectangle(bx.toFloat(), 2, 1);
-                auto cy = bx.getCentreY();
-                g.fillRect(0, cy - 2, 4, 4);
-                g.fillRect(getWidth() - 4, cy - 2, 4, 5);
-
-                g.setColour(labelC);
-                g.setFont(editor->themeApplier.interMediumFor(11));
-                g.drawText(boxLabel, bx.withTrimmedBottom(8), juce::Justification::centred);
-                ;
+                boxOutline = editor->themeColor(theme::ColorMap::generic_content_medium);
+                boxFill = juce::Colours::black.withAlpha(0.f);
+                labelC = editor->themeColor(theme::ColorMap::generic_content_high);
+                if (isHovered)
+                    labelC = editor->themeColor(theme::ColorMap::generic_content_highest);
+                valueC = editor->themeColor(theme::ColorMap::accent_1b);
+                gutterC = style()->getColour(
+                    Styles::styleClass, sst::jucegui::components::base_styles::ValueGutter::gutter);
+                if (isHovered)
+                    gutterC = style()->getColour(
+                        Styles::styleClass,
+                        sst::jucegui::components::base_styles::ValueGutter::gutter_hover);
             }
             else
             {
-                sst::jucegui::components::Knob::paint(g);
+                boxOutline =
+                    editor->themeColor(theme::ColorMap::generic_content_medium).withAlpha(0.5f);
+                boxFill = editor->themeColor(theme::ColorMap::generic_content_lowest);
+                labelC =
+                    editor->themeColor(theme::ColorMap::generic_content_medium).withAlpha(0.5f);
+                valueC = editor->themeColor(theme::ColorMap::accent_1b).withAlpha(0.5f);
             }
+            auto bx = getLocalBounds().reduced(4);
+            auto lbx = bx.withTrimmedRight(7);
+            auto sbx = bx.withTrimmedLeft(bx.getWidth() - 6);
+
+            g.setColour(boxFill);
+            g.fillRoundedRectangle(bx.toFloat(), 2);
+
+            {
+                juce::Graphics::ScopedSaveState gs(g);
+                auto dbx = sbx.withTrimmedLeft(-3);
+                g.reduceClipRegion(sbx);
+                g.setColour(gutterC);
+                g.fillRoundedRectangle(dbx.toFloat(), 2);
+                auto v = continuous()->getValue01();
+                g.reduceClipRegion(sbx.withTrimmedTop(sbx.getHeight() * (1 - v)));
+                g.setColour(valueC);
+                g.fillRoundedRectangle(dbx.toFloat(), 2);
+            }
+
+            g.setColour(boxOutline);
+            g.drawRoundedRectangle(bx.toFloat(), 2, 1);
+            g.drawVerticalLine(sbx.getX(), sbx.getY(), sbx.getBottom());
+            // g.drawRoundedRectangle(sbx.toFloat(), 2, 1);
+
+            auto cy = bx.getCentreY();
+            g.fillRect(0, cy - 2, 4, 4);
+            g.fillRect(getWidth() - 4, cy - 2, 4, 5);
+
+            g.setColour(labelC);
+            g.setFont(editor->themeApplier.interMediumFor(11));
+            g.drawText(boxLabel, lbx, juce::Justification::centred);
         }
 
+        void mouseDoubleClick(const juce::MouseEvent &e) override
+        {
+            auto bx = getLocalBounds().reduced(4);
+            auto lbx = bx.withTrimmedRight(7);
+
+            if (lbx.contains(e.getPosition()))
+            {
+                SCLOG("Would disable proc");
+            }
+            else
+            {
+                sst::jucegui::components::Knob::mouseDoubleClick(e);
+            }
+        }
         void setBoxLabel(const std::string &s)
         {
             boxLabel = s;
