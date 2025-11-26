@@ -245,15 +245,15 @@ void HeaderRegion::resized()
     multiMenuButton->setBounds(b.withTrimmedLeft(421).withWidth(330));
     activityDisplay->setBounds(multiMenuButton->getBounds());
 
-    scMenu->setBounds(b.withTrimmedLeft(1148).withWidth(24));
+    scMenu->setBounds(b.withTrimmedLeft(1248).withWidth(24));
 
-    cpuLabel->setBounds(b.withTrimmedLeft(962).withWidth(25).withHeight(14));
-    ramLabel->setBounds(b.withTrimmedLeft(962).withWidth(25).withHeight(14).translated(0, 14));
+    cpuLabel->setBounds(b.withTrimmedLeft(1022).withWidth(25).withHeight(14));
+    ramLabel->setBounds(b.withTrimmedLeft(1022).withWidth(25).withHeight(14).translated(0, 14));
 
-    cpuLevel->setBounds(b.withTrimmedLeft(992).withWidth(48).withHeight(14));
-    ramLevel->setBounds(b.withTrimmedLeft(992).withWidth(48).withHeight(14).translated(0, 14));
+    cpuLevel->setBounds(b.withTrimmedLeft(1052).withWidth(48).withHeight(14));
+    ramLevel->setBounds(b.withTrimmedLeft(1052).withWidth(48).withHeight(14).translated(0, 14));
 
-    vuMeter->setBounds(b.withTrimmedLeft(1048).withWidth(96).withHeight(28));
+    vuMeter->setBounds(b.withTrimmedLeft(1108).withWidth(136).withHeight(28));
 }
 
 void HeaderRegion::setVULevel(float L, float R)

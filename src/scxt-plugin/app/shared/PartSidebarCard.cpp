@@ -308,6 +308,9 @@ void PartSidebarCard::showMidiModeMenu()
               makeMenuCallback(engine::Part::PartConfiguration::omniChannel));
     p.addItem("MPE", true, ch == engine::Part::PartConfiguration::mpeChannel,
               makeMenuCallback(engine::Part::PartConfiguration::mpeChannel));
+    p.addItem("Channel/Oct", editor->makeComingSoon("Channel per Octave"));
+    // p.addItem("Channel/Oct", true, ch == engine::Part::PartConfiguration::mpeChannel,
+    //          makeMenuCallback(engine::Part::PartConfiguration::mpeChannel));
     p.addSeparator();
     for (int i = 0; i < 16; ++i)
     {
