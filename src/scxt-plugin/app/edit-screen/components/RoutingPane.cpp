@@ -317,7 +317,10 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
     struct RoutingBox : sst::jucegui::components::Knob, HasEditor
     {
 
-        RoutingBox(int idx, SCXTEditor *e, RoutingPaneContents *par) : index(idx), HasEditor(e), parent(par) {}
+        RoutingBox(int idx, SCXTEditor *e, RoutingPaneContents *par)
+            : index(idx), HasEditor(e), parent(par)
+        {
+        }
         void paint(juce::Graphics &g) override
         {
             juce::Colour boxOutline, boxFill, labelC, valueC, gutterC;
