@@ -105,10 +105,11 @@ void PartEditScreen::resized()
     // HACK
     auto b = getLocalBounds().withTrimmedTop(280);
     auto w = shared::PartEffectsPane<false>::width;
+    auto pad = (b.getWidth() - w * 4) / 4;
     b = b.withWidth(w).withHeight(shared::PartEffectsPane<false>::height);
     for (int i = 0; i < maxEffectsPerPart; ++i)
     {
-        partPanes[i]->setBounds(b.withX(i * w));
+        partPanes[i]->setBounds(b.withX(i * (w + pad) + pad / 2));
     }
 }
 

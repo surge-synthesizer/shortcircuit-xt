@@ -142,7 +142,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     sst::basic_blocks::dsp::RNG rng;
 
-    static constexpr int edWidth{1186}, edHeight{816};
+    static constexpr int edWidth{1286}, edHeight{816};
 
     std::unique_ptr<sst::jucegui::style::LookAndFeelManager> lnf;
     void onStyleChanged() override;

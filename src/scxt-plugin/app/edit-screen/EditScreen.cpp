@@ -236,9 +236,9 @@ void EditScreen::ZoneOrGroupElements<ZGTrait>::layoutInto(const juce::Rectangle<
     }
 
     auto modRect = mainRect.withTrimmedTop(wavHeight + fxHeight).withHeight(modHeight);
-    auto mw = modRect.getWidth() * 0.750;
+    auto mw = modRect.getWidth() * 0.625;
     modPane->setBounds(modRect.withWidth(mw));
-    auto xw = modRect.getWidth() * 0.250;
+    auto xw = modRect.getWidth() * 0.375;
     outPane->setBounds(modRect.withWidth(xw).translated(mw, 0));
 
     auto envRect = mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);

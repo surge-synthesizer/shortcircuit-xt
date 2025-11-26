@@ -67,6 +67,18 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
     std::unique_ptr<int_attachment_t> routingA;
     std::unique_ptr<jcmp::MultiSwitch> multiW;
 
+    typedef connectors::PayloadDataAttachment<typename OTTraits::info_t> attachment_t;
+    typedef connectors::BooleanPayloadDataAttachment<typename OTTraits::info_t> bool_attachment_t;
+
+    std::unique_ptr<attachment_t> outputAttachment, panAttachment, velocitySensitivityAttachment;
+    std::unique_ptr<jcmp::MenuButton> outputRouting;
+    std::unique_ptr<jcmp::Knob> outputKnob, panKnob;
+    std::unique_ptr<jcmp::HSliderFilled> velocitySensitivitySlider;
+    std::unique_ptr<jcmp::Label> velocitySensitivityLabel;
+
+    std::unique_ptr<bool_attachment_t> oversampleAttachment;
+    std::unique_ptr<jcmp::ToggleButton> oversampleButton;
+
     std::unique_ptr<juce::Component> routingLayoutComp;
     struct RC : juce::Component
     {
@@ -97,6 +109,33 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
             }
         });
         addChildComponent(*consistentButton);
+
+        using ofac = connectors::SingleValueFactory<attachment_t, typename OTTraits::floatMsg_t>;
+
+        ofac::attachAndAdd(info, info.amplitude, this, outputAttachment, outputKnob);
+        ofac::attachAndAdd(info, info.pan, this, panAttachment, panKnob);
+
+        if constexpr (!OTTraits::forZone)
+        {
+            ofac::attachAndAdd(info, info.velocitySensitivity, this, velocitySensitivityAttachment,
+                               velocitySensitivitySlider);
+            velocitySensitivityLabel = std::make_unique<jcmp::Label>();
+            velocitySensitivityLabel->setText("Vel");
+            addAndMakeVisible(*velocitySensitivityLabel);
+            using bfac = connectors::BooleanSingleValueFactory<
+                bool_attachment_t, scxt::messaging::client::UpdateGroupOutputBoolValue>;
+            bfac::attachAndAdd(info, info.oversample, this, oversampleAttachment, oversampleButton);
+            oversampleButton->setLabel("o/s");
+        }
+
+        outputRouting = std::make_unique<jcmp::MenuButton>();
+        outputRouting->setLabel(OTTraits::defaultRoutingLocationName);
+        updateRoutingLabel();
+        outputRouting->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->selectNewRouting();
+        });
+        addAndMakeVisible(*outputRouting);
     }
 
     std::string resolveJsonPath(const std::string &path) const override
@@ -106,6 +145,33 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
             return *res;
         editor->displayError("JSON Path Error", "Could not resolve path '" + path + "'");
         return {};
+    }
+
+    std::string getRoutingLabel(scxt::engine::BusAddress rt)
+    {
+        return engine::getBusAddressLabel(rt, OTTraits::defaultRoutingLocationName);
+    }
+
+    void selectNewRouting()
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Zone Routing");
+        p.addSeparator();
+        for (int rt = scxt::engine::BusAddress::DEFAULT_BUS;
+             rt < scxt::engine::BusAddress::AUX_0 + numAux; ++rt)
+        {
+            p.addItem(getRoutingLabel((scxt::engine::BusAddress)rt),
+                      [w = juce::Component::SafePointer(this), rt]() {
+                          if (w)
+                          {
+                              w->info.routeTo = (scxt::engine::BusAddress)rt;
+                              w->template sendSingleToSerialization<typename OTTraits::int16Msg_t>(
+                                  w->info, w->info.routeTo);
+                              w->updateRoutingLabel();
+                          }
+                      });
+        }
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 
     void createBindAndPosition(const sst::jucegui::layouts::json_document::Control &ctrl,
@@ -171,10 +237,32 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
 
     void resized() override
     {
-        multiW->setBounds(getLocalBounds().reduced(0, 2).withHeight(22));
+        multiW->setBounds(getLocalBounds().reduced(0, 2).withHeight(22).withTrimmedRight(140));
         consistentLabel->setBounds(multiW->getBounds());
         consistentButton->setBounds(multiW->getBounds().translated(0, 30));
         routingLayoutComp->setBounds(getLocalBounds().withTrimmedTop(25));
+
+        auto rside = getLocalBounds().reduced(0, 2).withTrimmedLeft(getWidth() - 134);
+
+        auto outb = rside.withHeight(22);
+        outputRouting->setBounds(outb.withHeight(22));
+        rside = rside.withTrimmedTop(30);
+
+        auto ok = rside.withWidth(55).withHeight(75).translated(8, 0);
+        outputKnob->setBounds(ok);
+        ok = ok.translated(65, 0);
+        panKnob->setBounds(ok);
+
+        auto nb = rside.withTrimmedTop(75);
+        if constexpr (!OTTraits::forZone)
+        {
+            nb = nb.withHeight(22);
+            velocitySensitivityLabel->setBounds(nb.withWidth(25));
+            velocitySensitivityLabel->setText("vel");
+            velocitySensitivitySlider->setBounds(
+                nb.withTrimmedLeft(28).withWidth(60).reduced(0, 3));
+            oversampleButton->setBounds(nb.withTrimmedLeft(90).withWidth(45));
+        }
     }
 
     std::string getRoutingName(typename OTTraits::route_t r)
@@ -256,91 +344,6 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         }
     }
 
-    typename OTTraits::info_t &info;
-};
-
-template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
-{
-    typedef connectors::PayloadDataAttachment<typename OTTraits::info_t> attachment_t;
-    typedef connectors::BooleanPayloadDataAttachment<typename OTTraits::info_t> bool_attachment_t;
-
-    std::unique_ptr<attachment_t> outputAttachment, panAttachment, velocitySensitivityAttachment;
-    std::unique_ptr<jcmp::MenuButton> outputRouting;
-    OutputPane<OTTraits> *parent{nullptr};
-    std::unique_ptr<jcmp::Knob> outputKnob, panKnob;
-    std::unique_ptr<jcmp::HSliderFilled> velocitySensitivitySlider;
-    std::unique_ptr<jcmp::Label> velocitySensitivityLabel;
-
-    std::unique_ptr<bool_attachment_t> oversampleAttachment;
-    std::unique_ptr<jcmp::ToggleButton> oversampleButton;
-
-    OutputTab(SCXTEditor *e, OutputPane<OTTraits> *p)
-        : HasEditor(e), parent(p), info(OTTraits::outputInfo(e))
-    {
-        using fac = connectors::SingleValueFactory<attachment_t, typename OTTraits::floatMsg_t>;
-
-        fac::attachAndAdd(info, info.amplitude, this, outputAttachment, outputKnob);
-        fac::attachAndAdd(info, info.pan, this, panAttachment, panKnob);
-
-        if constexpr (!OTTraits::forZone)
-        {
-            fac::attachAndAdd(info, info.velocitySensitivity, this, velocitySensitivityAttachment,
-                              velocitySensitivitySlider);
-            velocitySensitivityLabel = std::make_unique<jcmp::Label>();
-            velocitySensitivityLabel->setText("Vel");
-            addAndMakeVisible(*velocitySensitivityLabel);
-            using bfac = connectors::BooleanSingleValueFactory<
-                bool_attachment_t, scxt::messaging::client::UpdateGroupOutputBoolValue>;
-            bfac::attachAndAdd(info, info.oversample, this, oversampleAttachment, oversampleButton);
-            oversampleButton->setLabel("o/s");
-        }
-
-        outputRouting = std::make_unique<jcmp::MenuButton>();
-        outputRouting->setLabel(OTTraits::defaultRoutingLocationName);
-        updateRoutingLabel();
-        outputRouting->setOnCallback([w = juce::Component::SafePointer(this)]() {
-            if (w)
-                w->selectNewRouting();
-        });
-        addAndMakeVisible(*outputRouting);
-    }
-
-    void resized()
-    {
-        auto kb = getLocalBounds().reduced(20, 0);
-        auto w = kb.getWidth() / 2;
-        auto c1 = kb.getX() + w / 2;
-        auto c2 = kb.getX() + 3 * w / 2;
-
-        auto ks{55};
-        outputKnob->setBounds(c1 - ks / 2, 10, ks, ks + 20);
-        panKnob->setBounds(c2 - ks / 2, 10, ks, ks + 20);
-
-        if (!OTTraits::forZone && velocitySensitivitySlider)
-        {
-            auto b = getLocalBounds();
-            auto op = b.withTop(b.getBottom() - 20).translated(0, -27).reduced(30, 4);
-            velocitySensitivitySlider->setBounds(op.withTrimmedLeft(30));
-            velocitySensitivityLabel->setBounds(op.withWidth(30));
-        }
-
-        if (!OTTraits::forZone && oversampleButton)
-        {
-            auto b = getLocalBounds();
-            oversampleButton->setBounds(
-                b.withTrimmedLeft(b.getWidth() - 30).withTrimmedBottom(b.getHeight() - 18));
-        }
-
-        auto b = getLocalBounds();
-        auto op = b.withTop(b.getBottom() - 20).translated(0, -5).reduced(10, 0);
-        outputRouting->setBounds(op);
-    }
-
-    std::string getRoutingLabel(scxt::engine::BusAddress rt)
-    {
-        return engine::getBusAddressLabel(rt, OTTraits::defaultRoutingLocationName);
-    }
-
     void updateRoutingLabel()
     {
         auto rt = info.routeTo;
@@ -348,96 +351,28 @@ template <typename OTTraits> struct OutputTab : juce::Component, HasEditor
         outputRouting->repaint();
     }
 
-    void selectNewRouting()
-    {
-        auto p = juce::PopupMenu();
-        p.addSectionHeader("Zone Routing");
-        p.addSeparator();
-        for (int rt = scxt::engine::BusAddress::DEFAULT_BUS;
-             rt < scxt::engine::BusAddress::AUX_0 + numAux; ++rt)
-        {
-            p.addItem(getRoutingLabel((scxt::engine::BusAddress)rt),
-                      [w = juce::Component::SafePointer(this), rt]() {
-                          if (w)
-                          {
-                              w->info.routeTo = (scxt::engine::BusAddress)rt;
-                              w->template sendSingleToSerialization<typename OTTraits::int16Msg_t>(
-                                  w->info, w->info.routeTo);
-                              w->updateRoutingLabel();
-                          }
-                      });
-        }
-        p.showMenuAsync(editor->defaultPopupMenuOptions());
-    }
     typename OTTraits::info_t &info;
 };
 
 template <typename OTTraits>
-OutputPane<OTTraits>::OutputPane(SCXTEditor *e) : jcmp::NamedPanel(""), HasEditor(e)
+OutputPane<OTTraits>::OutputPane(SCXTEditor *e) : jcmp::NamedPanel("ROUTING"), HasEditor(e)
 {
     hasHamburger = false;
-    isTabbed = true;
-    if (OTTraits::forZone)
-        tabNames = {"PROC ROUTING", "OUTPUT"};
-    else
-        tabNames = {
-            "OUTPUT",
-            "PROC ROUTING",
-        };
-
-    output = std::make_unique<OutputTab<OTTraits>>(editor, this);
-    addAndMakeVisible(*output);
     proc = std::make_unique<ProcTab<OTTraits>>(editor, this);
-    addChildComponent(*proc);
-
-    resetTabState();
-
-    onTabSelected = [wt = juce::Component::SafePointer(this)](int i) {
-        if (!wt)
-            return;
-        wt->setSelectedTab(i);
-    };
-    onTabSelected(selectedTab);
+    addAndMakeVisible(*proc);
 }
 
 template <typename OTTraits> OutputPane<OTTraits>::~OutputPane() {}
 
-template <typename OTTraits> void OutputPane<OTTraits>::setSelectedTab(int i)
-{
-    if ((OTTraits::forZone && i == 1) || (!OTTraits::forZone && i == 0))
-    {
-        output->setVisible(active);
-        proc->setVisible(false);
-    }
-    else
-    {
-        output->setVisible(false);
-        proc->setVisible(active);
-    }
-    if (editor->editScreen)
-    {
-        auto kn = std::string("multi") + (OTTraits::forZone ? ".zone.output" : ".group.output");
-        editor->setTabSelection(editor->editScreen->tabKey(kn), std::to_string(i));
-    }
-}
-
 template <typename OTTraits> void OutputPane<OTTraits>::resized()
 {
-    output->setBounds(getContentArea());
     proc->setBounds(getContentArea());
 }
 
-template <typename OTTraits> void OutputPane<OTTraits>::setActive(bool b)
-{
-    active = b;
-    onTabSelected(selectedTab);
-}
+template <typename OTTraits> void OutputPane<OTTraits>::setActive(bool b) { active = b; }
 
 template <typename OTTraits> void OutputPane<OTTraits>::updateFromOutputInfo()
 {
-    output->updateRoutingLabel();
-    output->repaint();
-
     proc->updateProcRoutingFromInfo();
     proc->repaint();
 }

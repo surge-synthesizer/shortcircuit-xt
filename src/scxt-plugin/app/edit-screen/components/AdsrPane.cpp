@@ -191,7 +191,7 @@ void AdsrPane::resized()
     auto h = r.getHeight() - lh - kh;
     auto x = 0;  // r.getX() * 1.f;
     auto y = kh; // r.getY() + kh;
-    auto w = 31.f;
+    auto w = 35.f;
     x = x + (r.getWidth() - w * 6) * 0.5;
 
     sliders.dly->setBounds(x, y, w, h);

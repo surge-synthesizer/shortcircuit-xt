@@ -427,7 +427,7 @@ struct StepLFOPane : juce::Component, app::HasEditor
         auto nKnobs = 4;
         auto allKnobsStartX = b.getWidth() / 4 + MG * 2;
         auto allKnobsStartY = 0;
-        auto allKnobsWidth = b.getWidth() - allKnobsStartX;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX - 40;
         auto allKnobsHeight = b.getHeight() / 2 - MG;
 
         auto knobMg = 15;
@@ -553,6 +553,10 @@ struct CurveLFOPane : juce::Component, HasEditor
         aux(ms.start_phase, phaseA, phaseK, phaseL);
         aux(ms.curveLfoStorage.angle, angleA, angleK, angleL);
 
+        rateK->setDrawLabel(false);
+        deformK->setDrawLabel(false);
+        phaseK->setDrawLabel(false);
+
         aux(ms.curveLfoStorage.delay, envA[0], envS[0], envL[0], "D");
         aux(ms.curveLfoStorage.attack, envA[1], envS[1], envL[1], "A");
         aux(ms.curveLfoStorage.release, envA[2], envS[2], envL[2], "R");
@@ -581,7 +585,7 @@ struct CurveLFOPane : juce::Component, HasEditor
         auto nKnobs = 4;
         auto allKnobsStartX = b.getWidth() / 4 + MG * 2;
         auto allKnobsStartY = 0;
-        auto allKnobsWidth = b.getWidth() - allKnobsStartX;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX - 40;
         auto allKnobsHeight = b.getHeight() / 2 - MG;
 
         auto knobMg = 15;
@@ -791,7 +795,7 @@ struct ENVLFOPane : juce::Component, HasEditor
         auto nKnobs = 4;
         auto allKnobsStartX = b.getWidth() / 4 + MG * 2;
         auto allKnobsStartY = 0;
-        auto allKnobsWidth = b.getWidth() - allKnobsStartX;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX - 40;
         auto allKnobsHeight = b.getHeight() / 2 - MG;
 
         auto knobMg = 15;

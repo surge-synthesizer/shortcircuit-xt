@@ -225,10 +225,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         sqr(x1, 12);
         map(sourceVia, 90);
         sqr(x2, 12);
-        map(depth, 120, 0);
+        map(depth, 105, 0);
         depth->verticalReduction = 3; // retain the hit zone just shrink the paint
         sqr(a1, 12);
-        map(curve, 60);
+        map(curve, 55);
         sqr(plusMulMod, 12);
         b = b.translated(-12 - 2, 0);
         sqr(modStyleButton, 12);

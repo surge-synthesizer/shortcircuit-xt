@@ -574,6 +574,12 @@ void PartGroupSidebar::showHamburgerMenu()
                           w->partSidebar->resetParts();
                       }
                   });
+        p.addSeparator();
+        p.addItem("Set All to Omni", editor->makeComingSoon("Set All to Omni"));
+        p.addItem("Set All to MPE", editor->makeComingSoon("Set All to MPE"));
+        p.addItem("Set All to Ch/Oct", editor->makeComingSoon("Set All to Ch/Oct"));
+        p.addItem("Set to Incremental MIDI Channels",
+                  editor->makeComingSoon("Set to Incremental MIDI Channels"));
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
     else

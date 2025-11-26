@@ -65,7 +65,6 @@ struct OutPaneGroupTraits
 
     static engine::Group::GroupOutputInfo &outputInfo(SCXTEditor *e);
 };
-template <typename OTTraits> struct OutputTab;
 template <typename OTTraits> struct ProcTab;
 
 template <typename OTTraits> struct OutputPane : sst::jucegui::components::NamedPanel, HasEditor
@@ -78,7 +77,6 @@ template <typename OTTraits> struct OutputPane : sst::jucegui::components::Named
 
     void updateFromOutputInfo();
 
-    std::unique_ptr<OutputTab<OTTraits>> output;
     std::unique_ptr<ProcTab<OTTraits>> proc;
     bool active{false};
 
@@ -94,8 +92,6 @@ template <typename OTTraits> struct OutputPane : sst::jucegui::components::Named
     void updateFromProcessorPanes();
     std::array<juce::Component::SafePointer<ProcessorPane>, scxt::processorsPerZoneAndGroup>
         procWeakRefs;
-
-    void setSelectedTab(int i);
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
