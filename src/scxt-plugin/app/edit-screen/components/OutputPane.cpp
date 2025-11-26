@@ -365,7 +365,7 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
             // g.drawRoundedRectangle(sbx.toFloat(), 2, 1);
 
             auto cy = bx.getCentreY();
-            g.fillRect(0, cy - 2, 4, 4);
+            g.fillRect(0, cy - 2, 4, 5);
             g.fillRect(getWidth() - 4, cy - 2, 4, 5);
 
             g.setColour(labelC);
