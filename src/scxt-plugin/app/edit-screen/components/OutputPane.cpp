@@ -37,8 +37,6 @@
 #include "app/edit-screen/EditScreen.h"
 #include "connectors/JsonLayoutEngineSupport.h"
 
-#include <xpc/xpc.h>
-
 namespace scxt::ui::app::edit_screen
 {
 
