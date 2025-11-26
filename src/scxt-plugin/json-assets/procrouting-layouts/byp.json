@@ -1,80 +1,53 @@
 {
   "comment": "linear: 1 -> 2 -> 3 -> 4; area is 190x107",
-  "include": "shared-layouts/shared-classes.json",
+  "include": "procrouting-layouts/procrouting-classes.json",
   "controls": {
-    "li0": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 0,
-        "y0": 40,
-        "x1": 20,
-        "y1": 80
-      }
-    },
-    "li1": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 168,
-        "y0": 80,
-        "x1": 188,
-        "y1": 40
-      }
-    },
-    "li3": {
-      "class": "bezier-segment",
-      "line-segment": {
-        "x0": 20,
-        "y0": 80,
-        "x1": 168,
-        "y1": 80
-      }
-    },
     "c0": {
-      "class": "knob30",
+      "class": "routing-box",
       "label": "1",
       "binding": {
         "type": "float",
         "index": 0
       },
       "position": {
-        "x": 14,
-        "y": 25
+        "x": 8,
+        "y": 34
       }
     },
     "c1": {
-      "class": "knob30",
+      "class": "routing-box",
       "label": "2",
       "binding": {
         "type": "float",
         "index": 1
       },
       "position": {
-        "x": 59,
-        "y": 25
+        "x": 52,
+        "y": 34
       }
     },
     "c2": {
-      "class": "knob30",
+      "class": "routing-box",
       "label": "3",
       "binding": {
         "type": "float",
         "index": 2
       },
       "position": {
-        "x": 102,
-        "y": 25
+        "x": 96,
+        "y": 34
       }
     },
     "c3": {
-      "class": "knob30",
+      "class": "routing-box",
       "label": "4",
       "binding": {
         "type": "float",
         "index": 3
       },
       "position": {
-        "x": 147,
-        "y": 25
+        "x": 140,
+        "y": 34
       }
     }
   }
