@@ -42,7 +42,9 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
                                float input[2][N], float output[2][N])
 {
     if (processors[i]->bypassAnyway)
+    {
         return;
+    }
 
     namespace mech = sst::basic_blocks::mechanics;
 
@@ -157,14 +159,14 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     float tmpbuf alignas(16)[2][2][N];
     bool isMute[2]{true, true};
 
-    if (processors[A])
+    if (processors[A] && !processors[A]->bypassAnyway)
     {
         isMute[0] = false;
         runSingleProcessor<OS, forceStereo>(A, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, m1, output, tmpbuf[0]);
     }
 
-    if (processors[B])
+    if (processors[B] && !processors[B]->bypassAnyway)
     {
         isMute[1] = false;
         runSingleProcessor<OS, forceStereo>(B, fpitch, processors, processorConsumesMono, mix,
@@ -173,7 +175,12 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
 
     chainIsMono = m1 && m2;
 
-    assert(!isMute[0] || !isMute[1]);
+    if (isMute[0] && isMute[1])
+    {
+        // Both bypassed. Leave output unchanged
+        return;
+    }
+
     auto scale = 1.0 / (!isMute[0] + !isMute[1]);
     if (forceStereo || !m1 || !m2)
     {
