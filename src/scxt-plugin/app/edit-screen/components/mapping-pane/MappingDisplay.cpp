@@ -174,6 +174,11 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     fAdd(mappingView.tracking, floatAttachments.Tracking, textEds.Tracking);
     makeLabel(labels.Tracking, "KT");
     labels.Tracking->setJustification(juce::Justification::centredLeft);
+
+    setAccessible(true);
+    setTitle("Mapping");
+    setDescription("Mapping");
+    setWantsKeyboardFocus(true);
 }
 
 MappingDisplay::~MappingDisplay() = default;
