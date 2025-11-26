@@ -104,7 +104,8 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
         }
         const auto &[path, variantIndex] = voiceCreationWorkingBuffer[idx];
         auto &z = engine.zoneByPath(path);
-        auto key = inkey + z->parentGroup->parentPart->configuration.transpose;
+        auto key = inkey + z->parentGroup->parentPart->configuration.transpose +
+                   z->parentGroup->parentPart->getChannelBasedTransposition(channel);
         auto nbSampleLoadedInZone = z->getNumSampleLoaded();
 
         if (nbSampleLoadedInZone == 0)

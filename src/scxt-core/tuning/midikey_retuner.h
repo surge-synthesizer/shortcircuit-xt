@@ -45,6 +45,8 @@ struct MidikeyRetuner
 
     void setTuningMode(TuningMode);
 
+    size_t getRepetitionInterval() const;
+
     /*
      * Return the number of 12-tet smitones to retune by
      */

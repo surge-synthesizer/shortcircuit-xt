@@ -308,9 +308,8 @@ void PartSidebarCard::showMidiModeMenu()
               makeMenuCallback(engine::Part::PartConfiguration::omniChannel));
     p.addItem("MPE", true, ch == engine::Part::PartConfiguration::mpeChannel,
               makeMenuCallback(engine::Part::PartConfiguration::mpeChannel));
-    p.addItem("Channel/Oct", editor->makeComingSoon("Channel per Octave"));
-    // p.addItem("Channel/Oct", true, ch == engine::Part::PartConfiguration::mpeChannel,
-    //          makeMenuCallback(engine::Part::PartConfiguration::mpeChannel));
+    p.addItem("Channel/Oct", true, ch == engine::Part::PartConfiguration::chPerOctaveChannel,
+              makeMenuCallback(engine::Part::PartConfiguration::chPerOctaveChannel));
     p.addSeparator();
     for (int i = 0; i < 16; ++i)
     {
@@ -418,6 +417,10 @@ void PartSidebarCard::resetFromEditorCache()
     else if (mc == engine::Part::PartConfiguration::mpeChannel)
     {
         midiMode->setLabel("MPE");
+    }
+    else if (mc == engine::Part::PartConfiguration::chPerOctaveChannel)
+    {
+        midiMode->setLabel("C/OCT");
     }
     else
     {

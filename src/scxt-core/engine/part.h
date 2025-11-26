@@ -82,6 +82,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     {
         return channel < 0 || configuration.channel == PartConfiguration::omniChannel ||
                configuration.channel == PartConfiguration::mpeChannel ||
+               configuration.channel == PartConfiguration::chPerOctaveChannel ||
                channel == configuration.channel;
     }
 
@@ -94,6 +95,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         return configuration.channel == PartConfiguration::mpeChannel &&
                channel != configuration.mpeGlobalChannel;
     }
+    int getChannelBasedTransposition(int16_t channel) const;
     void rebuildGroupChannelMask();
 
     struct PartConfiguration
@@ -101,6 +103,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         static constexpr size_t maxName{256};
         static constexpr int16_t omniChannel{-1};
         static constexpr int16_t mpeChannel{-2};
+        static constexpr int16_t chPerOctaveChannel{-3};
 
         char name[maxName]{0};
         int mpePitchBendRange{24};
