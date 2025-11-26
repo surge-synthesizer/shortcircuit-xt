@@ -66,7 +66,7 @@ float MidikeyRetuner::offsetKeyBy(int channel, int key)
     return 0.f;
 }
 
-intgit add MidikeyRetuner::getRepetitionInterval() const
+int MidikeyRetuner::getRepetitionInterval() const
 {
     switch (tuningMode)
     {
