@@ -48,9 +48,9 @@ namespace edit_screen
 {
 struct AdsrPane;
 
-struct OutPaneZoneTraits;
-struct OutPaneGroupTraits;
-template <typename T> struct OutputPane;
+struct RoutingPaneZoneTraits;
+struct RoutingPaneGroupTraits;
+template <typename T> struct RoutingPane;
 
 struct PartGroupSidebar;
 struct MacroMappingVariantPane;
@@ -80,13 +80,13 @@ struct EditScreen : juce::Component, HasEditor
 
     struct ZoneTraits
     {
-        using OutPaneTraits = OutPaneZoneTraits;
+        using RoutingPaneTraits = RoutingPaneZoneTraits;
         using ModPaneTraits = ModPaneZoneTraits;
         static constexpr bool forZone{true};
     };
     struct GroupTraits
     {
-        using OutPaneTraits = OutPaneGroupTraits;
+        using RoutingPaneTraits = RoutingPaneGroupTraits;
         using ModPaneTraits = ModPaneGroupTraits;
         static constexpr bool forZone{false};
     };
@@ -97,7 +97,7 @@ struct EditScreen : juce::Component, HasEditor
         static constexpr bool forGroup{!ZGTrait::forZone};
         ZoneOrGroupElements(EditScreen *parent);
         ~ZoneOrGroupElements();
-        std::unique_ptr<OutputPane<typename ZGTrait::OutPaneTraits>> outPane;
+        std::unique_ptr<RoutingPane<typename ZGTrait::RoutingPaneTraits>> routingPane;
         std::unique_ptr<LfoPane> lfo;
         std::array<std::unique_ptr<AdsrPane>, 2> eg;
 

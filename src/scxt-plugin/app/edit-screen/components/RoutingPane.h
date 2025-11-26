@@ -25,8 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_OUTPUTPANE_H
-#define SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_OUTPUTPANE_H
+#ifndef SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_ROUTINGPANE_H
+#define SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_ROUTINGPANE_H
 
 #include "sst/jucegui/components/NamedPanel.h"
 #include "app/HasEditor.h"
@@ -38,7 +38,7 @@ namespace scxt::ui::app::edit_screen
 {
 
 struct ProcessorPane;
-struct OutPaneZoneTraits
+struct RoutingPaneZoneTraits
 {
     static constexpr bool forZone{true};
     static constexpr const char *defaultRoutingLocationName{"Group Output"};
@@ -52,7 +52,7 @@ struct OutPaneZoneTraits
     static engine::Zone::ZoneOutputInfo &outputInfo(SCXTEditor *e);
 };
 
-struct OutPaneGroupTraits
+struct RoutingPaneGroupTraits
 {
     static constexpr bool forZone{false};
     static constexpr const char *defaultRoutingLocationName{"Part Output"};
@@ -65,19 +65,20 @@ struct OutPaneGroupTraits
 
     static engine::Group::GroupOutputInfo &outputInfo(SCXTEditor *e);
 };
-template <typename OTTraits> struct ProcTab;
 
-template <typename OTTraits> struct OutputPane : sst::jucegui::components::NamedPanel, HasEditor
+template <typename RPTraits> struct RoutingPaneContents;
+
+template <typename RPTraits> struct RoutingPane : sst::jucegui::components::NamedPanel, HasEditor
 {
-    OutputPane(SCXTEditor *e);
-    ~OutputPane();
+    RoutingPane(SCXTEditor *e);
+    ~RoutingPane();
 
     void resized() override;
     void setActive(bool);
 
     void updateFromOutputInfo();
 
-    std::unique_ptr<ProcTab<OTTraits>> proc;
+    std::unique_ptr<RoutingPaneContents<RPTraits>> contents;
     bool active{false};
 
     /* Since we contain the processor output info here, we need

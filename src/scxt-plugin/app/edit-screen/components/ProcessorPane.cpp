@@ -367,6 +367,13 @@ void ProcessorPane::rebuildControlsFromDescription()
     repaint();
 }
 
+void ProcessorPane::toggleBypass()
+{
+    if (!bypassAttachment)
+        return;
+    bypassAttachment->setValueFromGUI(!bypassAttachment->getValue());
+}
+
 void ProcessorPane::layoutControls()
 {
     auto labelHeight = 18;

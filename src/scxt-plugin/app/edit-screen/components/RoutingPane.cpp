@@ -25,7 +25,7 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "OutputPane.h"
+#include "RoutingPane.h"
 #include "ProcessorPane.h"
 #include "app/SCXTEditor.h"
 #include "sst/jucegui/components/Label.h"
@@ -43,32 +43,32 @@ namespace scxt::ui::app::edit_screen
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
-engine::Zone::ZoneOutputInfo &OutPaneZoneTraits::outputInfo(SCXTEditor *e)
+engine::Zone::ZoneOutputInfo &RoutingPaneZoneTraits::outputInfo(SCXTEditor *e)
 {
     return e->editorDataCache.zoneOutputInfo;
 }
 
-engine::Group::GroupOutputInfo &OutPaneGroupTraits::outputInfo(SCXTEditor *e)
+engine::Group::GroupOutputInfo &RoutingPaneGroupTraits::outputInfo(SCXTEditor *e)
 {
     return e->editorDataCache.groupOutputInfo;
 }
 
-template <typename OTTraits>
-struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHost
+template <typename RPTraits>
+struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHost
 {
-    typedef connectors::DiscretePayloadDataAttachment<typename OTTraits::info_t,
-                                                      typename OTTraits::route_t>
+    typedef connectors::DiscretePayloadDataAttachment<typename RPTraits::info_t,
+                                                      typename RPTraits::route_t>
         int_attachment_t;
 
-    OutputPane<OTTraits> *outputPane{nullptr};
+    RoutingPane<RPTraits> *outputPane{nullptr};
     std::unique_ptr<jcmp::TextPushButton> consistentButton;
     std::unique_ptr<jcmp::Label> consistentLabel;
 
     std::unique_ptr<int_attachment_t> routingA;
     std::unique_ptr<jcmp::MultiSwitch> multiW;
 
-    typedef connectors::PayloadDataAttachment<typename OTTraits::info_t> attachment_t;
-    typedef connectors::BooleanPayloadDataAttachment<typename OTTraits::info_t> bool_attachment_t;
+    typedef connectors::PayloadDataAttachment<typename RPTraits::info_t> attachment_t;
+    typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t> bool_attachment_t;
 
     std::unique_ptr<attachment_t> outputAttachment, panAttachment, velocitySensitivityAttachment;
     std::unique_ptr<jcmp::MenuButton> outputRouting;
@@ -84,10 +84,10 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
     {
     };
 
-    ProcTab(SCXTEditor *e, OutputPane<OTTraits> *pane)
-        : HasEditor(e), outputPane(pane), info(OTTraits::outputInfo(e))
+    RoutingPaneContents(SCXTEditor *e, RoutingPane<RPTraits> *pane)
+        : HasEditor(e), outputPane(pane), info(RPTraits::outputInfo(e))
     {
-        using fac = connectors::SingleValueFactory<int_attachment_t, typename OTTraits::int16Msg_t>;
+        using fac = connectors::SingleValueFactory<int_attachment_t, typename RPTraits::int16Msg_t>;
         fac::attachAndAdd(info, info.procRouting, this, routingA, multiW);
         multiW->direction = jcmp::MultiSwitch::Direction::HORIZONTAL;
         addAndMakeVisible(*multiW);
@@ -104,18 +104,18 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         consistentButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
             {
-                w->template sendSingleToSerialization<typename OTTraits::int16RefreshMsg_t>(
+                w->template sendSingleToSerialization<typename RPTraits::int16RefreshMsg_t>(
                     w->info, w->info.procRouting);
             }
         });
         addChildComponent(*consistentButton);
 
-        using ofac = connectors::SingleValueFactory<attachment_t, typename OTTraits::floatMsg_t>;
+        using ofac = connectors::SingleValueFactory<attachment_t, typename RPTraits::floatMsg_t>;
 
         ofac::attachAndAdd(info, info.amplitude, this, outputAttachment, outputKnob);
         ofac::attachAndAdd(info, info.pan, this, panAttachment, panKnob);
 
-        if constexpr (!OTTraits::forZone)
+        if constexpr (!RPTraits::forZone)
         {
             ofac::attachAndAdd(info, info.velocitySensitivity, this, velocitySensitivityAttachment,
                                velocitySensitivitySlider);
@@ -129,7 +129,7 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         }
 
         outputRouting = std::make_unique<jcmp::MenuButton>();
-        outputRouting->setLabel(OTTraits::defaultRoutingLocationName);
+        outputRouting->setLabel(RPTraits::defaultRoutingLocationName);
         updateRoutingLabel();
         outputRouting->setOnCallback([w = juce::Component::SafePointer(this)]() {
             if (w)
@@ -153,7 +153,7 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
 
     std::string getRoutingLabel(scxt::engine::BusAddress rt)
     {
-        return engine::getBusAddressLabel(rt, OTTraits::defaultRoutingLocationName);
+        return engine::getBusAddressLabel(rt, RPTraits::defaultRoutingLocationName);
     }
 
     void selectNewRouting()
@@ -169,7 +169,7 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
                           if (w)
                           {
                               w->info.routeTo = (scxt::engine::BusAddress)rt;
-                              w->template sendSingleToSerialization<typename OTTraits::int16Msg_t>(
+                              w->template sendSingleToSerialization<typename RPTraits::int16Msg_t>(
                                   w->info, w->info.routeTo);
                               w->updateRoutingLabel();
                           }
@@ -193,19 +193,24 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
                 return;
             }
             auto w = outputPane->procWeakRefs[i];
+            if (!w)
+            {
+                SCLOG("Software Error - why is there no w here?");
+                return;
+            }
 
             auto at = std::make_unique<ProcessorPane::attachment_t>(
                 datamodel::describeValue(w->processorView, w->processorView.outputCubAmp),
                 w->processorView.outputCubAmp);
             connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue,
                                          ProcessorPane::attachment_t>(*at, w->processorView, w,
-                                                                      OTTraits::forZone, i);
+                                                                      RPTraits::forZone, i);
             levelA[i] = std::move(at);
 
             auto ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls);
             if (!ed && cls.controlType == "routing-box")
             {
-                auto rb = std::make_unique<RoutingBox>(editor);
+                auto rb = std::make_unique<RoutingBox>(i, editor, this);
                 if (ctrl.label.has_value())
                     rb->setBoxLabel(*ctrl.label);
                 ed = std::move(rb);
@@ -267,7 +272,7 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         panKnob->setBounds(ok);
 
         auto nb = rside.withTrimmedTop(75);
-        if constexpr (!OTTraits::forZone)
+        if constexpr (!RPTraits::forZone)
         {
             nb = nb.withHeight(22);
             velocitySensitivityLabel->setBounds(nb.withWidth(25));
@@ -278,10 +283,10 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         }
     }
 
-    std::string getRoutingName(typename OTTraits::route_t r)
+    std::string getRoutingName(typename RPTraits::route_t r)
     {
         auto zn = std::string();
-        if constexpr (OTTraits::forZone)
+        if constexpr (RPTraits::forZone)
             zn = scxt::engine::Zone::getProcRoutingPathDisplayName(r);
         else
             zn = scxt::engine::Group::getProcRoutingPathDisplayName(r);
@@ -311,7 +316,8 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
 
     struct RoutingBox : sst::jucegui::components::Knob, HasEditor
     {
-        RoutingBox(SCXTEditor *e) : HasEditor(e) {}
+
+        RoutingBox(int idx, SCXTEditor *e, RoutingPaneContents *par) : index(idx), HasEditor(e), parent(par) {}
         void paint(juce::Graphics &g) override
         {
             juce::Colour boxOutline, boxFill, labelC, valueC, gutterC;
@@ -380,7 +386,11 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
 
             if (lbx.contains(e.getPosition()))
             {
-                SCLOG("Would disable proc");
+                auto w = parent->outputPane->procWeakRefs[index];
+                if (w)
+                {
+                    w->toggleBypass();
+                }
             }
             else
             {
@@ -392,12 +402,14 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
             boxLabel = s;
             repaint();
         }
+        int index;
         std::string boxLabel;
+        RoutingPaneContents *parent{nullptr};
     };
 
     struct SvgPaths : juce::Component
     {
-        SvgPaths(ProcTab *pt) : owner(pt) {}
+        SvgPaths(RoutingPaneContents *pt) : owner(pt) {}
         void paint(juce::Graphics &g)
         {
             if (drawable)
@@ -423,7 +435,7 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
                 }
             }
         }
-        ProcTab *owner{nullptr};
+        RoutingPaneContents *owner{nullptr};
     };
     std::unique_ptr<SvgPaths> svgPaths;
 
@@ -435,31 +447,31 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         std::string path = "procrouting-layouts/linear.json";
         switch (info.procRouting)
         {
-        case OTTraits::route_t::procRoute_linear:
+        case RPTraits::route_t::procRoute_linear:
             path = "procrouting-layouts/linear.json";
             break;
 
-        case OTTraits::route_t::procRoute_ser2:
+        case RPTraits::route_t::procRoute_ser2:
             path = "procrouting-layouts/ser2.json";
             break;
 
-        case OTTraits::route_t::procRoute_ser3:
+        case RPTraits::route_t::procRoute_ser3:
             path = "procrouting-layouts/ser3.json";
             break;
 
-        case OTTraits::route_t::procRoute_par1:
+        case RPTraits::route_t::procRoute_par1:
             path = "procrouting-layouts/par1.json";
             break;
 
-        case OTTraits::route_t::procRoute_par2:
+        case RPTraits::route_t::procRoute_par2:
             path = "procrouting-layouts/par2.json";
             break;
 
-        case OTTraits::route_t::procRoute_par3:
+        case RPTraits::route_t::procRoute_par3:
             path = "procrouting-layouts/par3.json";
             break;
 
-        case OTTraits::route_t::procRoute_bypass:
+        case RPTraits::route_t::procRoute_bypass:
             path = "procrouting-layouts/byp.json";
             break;
         }
@@ -496,37 +508,37 @@ struct ProcTab : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHo
         outputRouting->repaint();
     }
 
-    typename OTTraits::info_t &info;
+    typename RPTraits::info_t &info;
 };
 
-template <typename OTTraits>
-OutputPane<OTTraits>::OutputPane(SCXTEditor *e) : jcmp::NamedPanel("ROUTING"), HasEditor(e)
+template <typename RPTraits>
+RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e) : jcmp::NamedPanel("ROUTING"), HasEditor(e)
 {
     hasHamburger = false;
-    proc = std::make_unique<ProcTab<OTTraits>>(editor, this);
-    addAndMakeVisible(*proc);
+    contents = std::make_unique<RoutingPaneContents<RPTraits>>(editor, this);
+    addAndMakeVisible(*contents);
 }
 
-template <typename OTTraits> OutputPane<OTTraits>::~OutputPane() {}
+template <typename RPTraits> RoutingPane<RPTraits>::~RoutingPane() {}
 
-template <typename OTTraits> void OutputPane<OTTraits>::resized()
+template <typename RPTraits> void RoutingPane<RPTraits>::resized()
 {
-    proc->setBounds(getContentArea());
+    contents->setBounds(getContentArea());
 }
 
-template <typename OTTraits> void OutputPane<OTTraits>::setActive(bool b) { active = b; }
+template <typename RPTraits> void RoutingPane<RPTraits>::setActive(bool b) { active = b; }
 
-template <typename OTTraits> void OutputPane<OTTraits>::updateFromOutputInfo()
+template <typename RPTraits> void RoutingPane<RPTraits>::updateFromOutputInfo()
 {
-    proc->updateProcRoutingFromInfo();
-    proc->repaint();
+    contents->updateProcRoutingFromInfo();
+    contents->repaint();
 }
 
-template <typename OTTraits> void OutputPane<OTTraits>::updateFromProcessorPanes()
+template <typename RPTraits> void RoutingPane<RPTraits>::updateFromProcessorPanes()
 {
-    proc->updateFromProcessorPanes();
+    contents->updateFromProcessorPanes();
 }
 
-template struct OutputPane<OutPaneGroupTraits>;
-template struct OutputPane<OutPaneZoneTraits>;
+template struct RoutingPane<RoutingPaneGroupTraits>;
+template struct RoutingPane<RoutingPaneZoneTraits>;
 } // namespace scxt::ui::app::edit_screen

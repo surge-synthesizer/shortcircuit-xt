@@ -15,7 +15,7 @@ add_library(${PROJECT_NAME} STATIC
         app/edit-screen/components/LFOPane.cpp
         app/edit-screen/components/MacroMappingVariantPane.cpp
         app/edit-screen/components/ModPane.cpp
-        app/edit-screen/components/OutputPane.cpp
+        app/edit-screen/components/RoutingPane.cpp
         app/edit-screen/components/PartEditScreen.cpp
         app/edit-screen/components/PartGroupSidebar.cpp
         app/edit-screen/components/ProcessorPane.cpp
