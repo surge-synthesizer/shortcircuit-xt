@@ -31,7 +31,7 @@
 #include "app/edit-screen/components/LFOPane.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/edit-screen/components/ModPane.h"
-#include "app/edit-screen/components/OutputPane.h"
+#include "app/edit-screen/components/RoutingPane.h"
 #include "app/edit-screen/components/ProcessorPane.h"
 #include "app/edit-screen/components/PartGroupSidebar.h"
 #include "app/edit-screen/components/PartEditScreen.h"
@@ -160,16 +160,16 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(EditScreen *parent
     }
     modPane = std::make_unique<edit_screen::ModPane<typename ZGTrait::ModPaneTraits>>(
         parent->editor, forZone);
-    outPane =
-        std::make_unique<edit_screen::OutputPane<typename ZGTrait::OutPaneTraits>>(parent->editor);
+    routingPane = std::make_unique<edit_screen::RoutingPane<typename ZGTrait::RoutingPaneTraits>>(
+        parent->editor);
     for (int i = 0; i < scxt::processorsPerZoneAndGroup; ++i)
     {
-        outPane->addWeakProcessorPaneReference(i,
-                                               juce::Component::SafePointer(processors[i].get()));
+        routingPane->addWeakProcessorPaneReference(
+            i, juce::Component::SafePointer(processors[i].get()));
     }
-    outPane->updateFromProcessorPanes();
+    routingPane->updateFromProcessorPanes();
     parent->addChildComponent(*modPane);
-    parent->addChildComponent(*outPane);
+    parent->addChildComponent(*routingPane);
 
     for (int i = 0; i < scxt::egsPerGroup; ++i)
     {
@@ -183,7 +183,7 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(EditScreen *parent
     auto &theme = parent->editor->themeApplier;
     if (forZone)
     {
-        theme.applyZoneMultiScreenTheme(outPane.get());
+        theme.applyZoneMultiScreenTheme(routingPane.get());
         for (const auto &p : processors)
             theme.applyZoneMultiScreenTheme(p.get());
         theme.applyZoneMultiScreenModulationTheme(modPane.get());
@@ -197,7 +197,7 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(EditScreen *parent
         eg[0]->setName("GRP EG1");
         eg[1]->setName("GRP EG2");
 
-        theme.applyGroupMultiScreenTheme(outPane.get());
+        theme.applyGroupMultiScreenTheme(routingPane.get());
         for (const auto &p : processors)
             theme.applyGroupMultiScreenTheme(p.get());
         theme.applyGroupMultiScreenModulationTheme(modPane.get());
@@ -212,7 +212,7 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::~ZoneOrGroupElements() = default;
 
 template <typename ZGTrait> void EditScreen::ZoneOrGroupElements<ZGTrait>::setVisible(bool b)
 {
-    outPane->setVisible(b);
+    routingPane->setVisible(b);
     lfo->setVisible(b);
     modPane->setVisible(b);
     for (auto &e : eg)
@@ -239,7 +239,7 @@ void EditScreen::ZoneOrGroupElements<ZGTrait>::layoutInto(const juce::Rectangle<
     auto mw = modRect.getWidth() * 0.625;
     modPane->setBounds(modRect.withWidth(mw));
     auto xw = modRect.getWidth() * 0.375;
-    outPane->setBounds(modRect.withWidth(xw).translated(mw, 0));
+    routingPane->setBounds(modRect.withWidth(xw).translated(mw, 0));
 
     auto envRect = mainRect.withTrimmedTop(wavHeight + fxHeight + modHeight).withHeight(envHeight);
     auto ew = envRect.getWidth() * 0.25;
@@ -283,14 +283,14 @@ void EditScreen::onOtherTabSelection()
     {
         auto gt = std::atoi(gts.c_str());
         if (gt >= 0 && gt < 2)
-            groupElements->outPane->selectTab(gt);
+            groupElements->routingPane->selectTab(gt);
     }
     zts = editor->queryTabSelection(tabKey("multi.zone.output"));
     if (!zts.empty())
     {
         auto zt = std::atoi(zts.c_str());
         if (zt >= 0 && zt < 2)
-            zoneElements->outPane->selectTab(zt);
+            zoneElements->routingPane->selectTab(zt);
     }
     auto mts = editor->queryTabSelection(tabKey("multi.mapping"));
     if (!mts.empty())

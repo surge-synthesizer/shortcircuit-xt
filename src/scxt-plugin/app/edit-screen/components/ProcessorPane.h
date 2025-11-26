@@ -196,6 +196,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void itemDragExit(const SourceDetails &dragSourceDetails) override;
     void reapplyStyle();
 
+    void toggleBypass();
+
     bool multiZone{false};
 
     using floatEditor_t = theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>;

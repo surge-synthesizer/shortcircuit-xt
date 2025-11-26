@@ -33,7 +33,7 @@
 #include "app/edit-screen/components/ProcessorPane.h"
 #include "app/edit-screen/components/PartEditScreen.h"
 #include "app/edit-screen/components/PartGroupSidebar.h"
-#include "app/edit-screen/components/OutputPane.h"
+#include "app/edit-screen/components/RoutingPane.h"
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/shared/HeaderRegion.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
@@ -140,14 +140,14 @@ void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(
         editScreen->getZoneElements()->processors[which]->setEnabled(enabled);
         editScreen->getZoneElements()->processors[which]->setProcessorControlDescriptionAndStorage(
             control, storage);
-        editScreen->getZoneElements()->outPane->updateFromProcessorPanes();
+        editScreen->getZoneElements()->routingPane->updateFromProcessorPanes();
     }
     else
     {
         editScreen->getGroupElements()->processors[which]->setEnabled(enabled);
         editScreen->getGroupElements()->processors[which]->setProcessorControlDescriptionAndStorage(
             control, storage);
-        editScreen->getZoneElements()->outPane->updateFromProcessorPanes();
+        editScreen->getZoneElements()->routingPane->updateFromProcessorPanes();
     }
 }
 
@@ -226,10 +226,10 @@ void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutp
     auto [active, inf] = p;
     editorDataCache.zoneOutputInfo = inf;
     editorDataCache.fireAllNotificationsFor(editorDataCache.zoneOutputInfo);
-    editScreen->getZoneElements()->outPane->setActive(active);
+    editScreen->getZoneElements()->routingPane->setActive(active);
     if (active)
     {
-        editScreen->getZoneElements()->outPane->updateFromOutputInfo();
+        editScreen->getZoneElements()->routingPane->updateFromOutputInfo();
     }
 }
 
@@ -238,10 +238,10 @@ void SCXTEditor::onGroupOutputInfoUpdated(const scxt::messaging::client::groupOu
     auto [active, inf] = p;
     editorDataCache.groupOutputInfo = inf;
     editorDataCache.fireAllNotificationsFor(editorDataCache.groupOutputInfo);
-    editScreen->getGroupElements()->outPane->setActive(active);
+    editScreen->getGroupElements()->routingPane->setActive(active);
     if (active)
     {
-        editScreen->getGroupElements()->outPane->updateFromOutputInfo();
+        editScreen->getGroupElements()->routingPane->updateFromOutputInfo();
     }
 }
 

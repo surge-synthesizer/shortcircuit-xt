@@ -25,7 +25,6 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "app/edit-screen/components/OutputPane.h"
 #if HAS_MELATONIN_INSPECTOR
 // this has to go first because otherwise windows defines 'small' on me.
 #include "melatonin_inspector/melatonin_inspector.h"
@@ -45,6 +44,8 @@
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/LogScreen.h"
 #include "app/other-screens/WelcomeScreen.h"
+#include "app/edit-screen/components/RoutingPane.h"
+
 #include "app/missing-resolution/MissingResolutionScreen.h"
 #include "sst/jucegui/components/ToolTip.h"
 #include "sst/jucegui/screens/AlertOrPrompt.h"
@@ -589,13 +590,13 @@ void SCXTEditor::switchGroupOrZoneFocus()
 
 void SCXTEditor::processorBypassToggled(int which)
 {
-    if (editScreen && editScreen->getZoneElements() && editScreen->getZoneElements()->outPane)
+    if (editScreen && editScreen->getZoneElements() && editScreen->getZoneElements()->routingPane)
     {
-        editScreen->getZoneElements()->outPane->updateFromProcessorPanes();
+        editScreen->getZoneElements()->routingPane->updateFromProcessorPanes();
     }
-    if (editScreen && editScreen->getGroupElements() && editScreen->getGroupElements()->outPane)
+    if (editScreen && editScreen->getGroupElements() && editScreen->getGroupElements()->routingPane)
     {
-        editScreen->getGroupElements()->outPane->updateFromProcessorPanes();
+        editScreen->getGroupElements()->routingPane->updateFromProcessorPanes();
     }
 }
 
