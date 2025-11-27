@@ -586,6 +586,7 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
     // Update across selections here to see if the routing is consistent
     auto rt = zp->outputInfo.procRouting;
     zp->outputInfo.procRoutingConsistent = acrossSelectionConsistency(true, PROC_ROUTING, 0);
+    zp->outputInfo.busRoutingConsistent = acrossSelectionConsistency(true, OUTPUT_ROUTING, 0);
 
     serializationSendToClient(cms::s2c_update_zone_output_info,
                               cms::zoneOutputInfoUpdate_t{true, zp->outputInfo},
@@ -883,7 +884,7 @@ void SelectionManager::clearAllSelections()
 bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck,
                                                   int index)
 {
-    auto doCheck = [forZone, whichCheck, index](const auto &lz, const auto &it) {
+    auto doCheck = [whichCheck, index](const auto &lz, const auto &it) {
         switch (whichCheck)
         {
         case PROCESSOR_TYPE:
@@ -910,6 +911,12 @@ bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck
             if (lz->outputInfo.procRouting != it->outputInfo.procRouting)
                 return false;
             break;
+        case OUTPUT_ROUTING:
+        {
+            if (lz->outputInfo.routeTo != it->outputInfo.routeTo)
+                return false;
+            break;
+        }
         }
         return true;
     };

@@ -168,6 +168,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         ProcRoutingPath procRouting{procRoute_linear};
         bool procRoutingConsistent{true};
         BusAddress routeTo{DEFAULT_BUS};
+        bool busRoutingConsistent{true};
     } outputInfo;
     static_assert(std::is_standard_layout<ZoneOutputInfo>::value);
 
