@@ -297,6 +297,7 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
         auto c = info.procRoutingConsistent;
         multiW->setVisible(c);
         routingLayoutComp->setVisible(c);
+        svgPaths->setVisible(c);
         consistentButton->setVisible(!c);
         consistentLabel->setVisible(!c);
 
@@ -307,6 +308,15 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
         else
         {
             updateFromProcessorPanes();
+        }
+
+        if (info.busRoutingConsistent)
+        {
+            outputRouting->setLabel(getRoutingLabel(info.routeTo));
+        }
+        else
+        {
+            outputRouting->setLabel("Varied Outputs");
         }
     }
 

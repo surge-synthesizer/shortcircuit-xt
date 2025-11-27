@@ -163,6 +163,7 @@ struct SelectionManager
         PROCESSOR_TYPE,
         MATRIX_ROW,
         PROC_ROUTING,
+        OUTPUT_ROUTING,
         LFO_SHAPE
     };
     bool acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck, int index);

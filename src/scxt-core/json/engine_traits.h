@@ -382,6 +382,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"muted", t.muted},
                       {"procRouting", t.procRouting},
                       {"prCon", t.procRoutingConsistent},
+                      {"buCon", t.busRoutingConsistent},
                       {"routeTo", (int)t.routeTo},
                       {"hip", t.hasIndependentPolyLimit},
                       {"pl", t.polyLimit},
@@ -404,6 +405,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "hip", result.hasIndependentPolyLimit);
                  findIf(v, "pl", result.polyLimit);
                  findOrSet(v, "prCon", true, result.procRoutingConsistent);
+                 findOrSet(v, "buCon", true, result.busRoutingConsistent);
                  findOrSet(v, "mc", -1, result.midiChannel);
                  findOrSet(v, "pbu", 2, result.pbUp);
                  findOrSet(v, "pbd", 2, result.pbDown);
@@ -471,6 +473,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
 SC_STREAMDEF(scxt::engine::Zone::ZoneOutputInfo, SC_FROM({
                  v = {{"amp", t.amplitude}, {"pan", t.pan}, {"to", (int)t.routeTo}};
                  addUnlessDefault<val_t>(v, "prc", true, t.procRoutingConsistent);
+                 addUnlessDefault<val_t>(v, "brc", true, t.busRoutingConsistent);
                  addUnlessDefault<val_t>(v, "prt", engine::Zone::ProcRoutingPath::procRoute_linear,
                                          t.procRouting);
                  addUnlessDefault<val_t>(v, "muted", false, t.muted);
@@ -485,6 +488,7 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneOutputInfo, SC_FROM({
                            engine::Zone::ProcRoutingPath::procRoute_linear, zo.procRouting);
                  int rt{engine::BusAddress::DEFAULT_BUS};
                  findIf(v, {"to", "routeTo"}, rt);
+                 findOrSet(v, "brc", true, zo.busRoutingConsistent);
 
                  // There was an error which streamed garbage for a while.
                  // Might as well be defensive hereon out even though I
