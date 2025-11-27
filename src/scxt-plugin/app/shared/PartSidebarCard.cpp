@@ -288,16 +288,20 @@ void PartSidebarCard::showPolyMenu()
     p.showMenuAsync(editor->defaultPopupMenuOptions(outBus.get()));
 }
 
+void PartSidebarCard::setMidiChannel(int c)
+{
+    editor->partConfigurations[part].channel = c;
+    resetFromEditorCache();
+    sendToSerialization(cmsg::UpdatePartFullConfig({part, editor->partConfigurations[part]}));
+}
+
 void PartSidebarCard::showMidiModeMenu()
 {
     auto makeMenuCallback = [w = juce::Component::SafePointer(this)](int ch) {
         return [w, ch]() {
             if (!w)
                 return;
-            w->editor->partConfigurations[w->part].channel = ch;
-            w->resetFromEditorCache();
-            w->sendToSerialization(
-                cmsg::UpdatePartFullConfig({w->part, w->editor->partConfigurations[w->part]}));
+            w->setMidiChannel(ch);
         };
     };
     auto p = juce::PopupMenu();
