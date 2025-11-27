@@ -575,11 +575,42 @@ void PartGroupSidebar::showHamburgerMenu()
                       }
                   });
         p.addSeparator();
-        p.addItem("Set All to Omni", editor->makeComingSoon("Set All to Omni"));
-        p.addItem("Set All to MPE", editor->makeComingSoon("Set All to MPE"));
-        p.addItem("Set All to Ch/Oct", editor->makeComingSoon("Set All to Ch/Oct"));
-        p.addItem("Set to Incremental MIDI Channels",
-                  editor->makeComingSoon("Set to Incremental MIDI Channels"));
+        p.addItem("Set All to Omni", [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &psb = w->partSidebar;
+            for (int i = 0; i < scxt::numParts; ++i)
+            {
+                psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::omniChannel);
+            }
+        });
+        p.addItem("Set All to MPE", [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &psb = w->partSidebar;
+            for (int i = 0; i < scxt::numParts; ++i)
+            {
+                psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::mpeChannel);
+            }
+        });
+        p.addItem("Set All to Ch/Oct", [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &psb = w->partSidebar;
+            for (int i = 0; i < scxt::numParts; ++i)
+            {
+                psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::chPerOctaveChannel);
+            }
+        });
+        p.addItem("Set to Incremental MIDI Channels", [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            auto &psb = w->partSidebar;
+            for (int i = 0; i < scxt::numParts; ++i)
+            {
+                psb->parts[i]->setMidiChannel(i);
+            }
+        });
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
     else

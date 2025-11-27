@@ -88,6 +88,8 @@ struct PartSidebarCard : juce::Component,
         partBlurb->setVisible(tallMode);
     }
 
+    void setMidiChannel(int c);
+
     void showPartBlurbTooltip();
     void hidePartBlurbTooltip();
 
