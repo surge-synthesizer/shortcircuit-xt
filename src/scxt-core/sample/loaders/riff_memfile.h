@@ -320,16 +320,30 @@ class RIFFMemFile
 
     // NEW Start
 
+    /*
+     * This exists because the old code of *(int *)(ptr) threw correct int alignment
+     * errors on mac arm etc...
+     */
+    int32_t int32FromPointer(const char *ptr)
+    {
+        static_assert(sizeof(int32_t) == 4, "int32_t must be 4 bytes");
+        int32_t tmp;
+        memcpy(&tmp, ptr, sizeof(int32_t));
+        return tmp;
+    }
+
     bool RIFFPeekChunk(int *Tag = nullptr, size_t *DataSize = nullptr, bool *HasSubchunks = nullptr,
                        int *LISTTag = nullptr) // Get the Tag & size without affecting the locator
     {
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
             return false;
-        int ChunkTag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
+        int ChunkTag =
+            sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + loc));
         if (Tag)
             *Tag = ChunkTag;
-        size_t dataSize = readWaveEndianLittle(*(int *)(data + loc + 4));
+
+        size_t dataSize = readWaveEndianLittle(int32FromPointer(data + loc + 4));
         if (DataSize)
             *DataSize = dataSize;
         bool hasSubchunks = (ChunkTag == 'RIFF') || (ChunkTag == 'LIST');
@@ -338,8 +352,8 @@ class RIFFMemFile
         if (LISTTag)
         {
             if (hasSubchunks)
-                *LISTTag =
-                    sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc + 8));
+                *LISTTag = sst::basic_blocks::mechanics::endian_read_int32BE(
+                    int32FromPointer(data + loc + 8));
             else
                 *LISTTag = 0;
         }
@@ -365,7 +379,8 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
             return false;
-        int ChunkTag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
+        int ChunkTag =
+            sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + loc));
         return (ChunkTag == 'RIFF') || (ChunkTag == 'LIST');
     }
 
@@ -375,9 +390,9 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
             return nullptr;
-        size_t chunksize = readWaveEndianLittle(*(int *)(data + loc + 4));
+        size_t chunksize = readWaveEndianLittle(int32FromPointer(data + loc + 4));
         if (Tag)
-            *Tag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
+            *Tag = sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + loc));
         if (DataSize)
             *DataSize = size;
         void *dataptr = data + loc + 8;
@@ -397,9 +412,9 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 8) > EndStack.front())
             return false;
-        size_t ChunkSize = readWaveEndianLittle(*(int *)(data + loc + 4));
+        size_t ChunkSize = readWaveEndianLittle(int32FromPointer(data + loc + 4));
         if (Tag)
-            *Tag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
+            *Tag = sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + loc));
         if (DataSize)
             *DataSize = ChunkSize;
         if ((loc + 8 + ChunkSize) > EndStack.front())
@@ -437,11 +452,12 @@ class RIFFMemFile
         assert((loc & 1) == 0); // assure block unsigned short alignment (2-bytes)
         if ((loc + 12) > EndStack.front())
             return false;
-        int Tag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc));
+        int Tag = sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + loc));
         if ((Tag != 'LIST') && (Tag != 'RIFF'))
             return false;
-        size_t chunksize = readWaveEndianLittle(*(int *)(data + loc + 4));
-        int LISTTag = sst::basic_blocks::mechanics::endian_read_int32BE(*(int *)(data + loc + 8));
+        size_t chunksize = readWaveEndianLittle(int32FromPointer(data + loc + 4));
+        int LISTTag =
+            sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + loc + 8));
         loc += 12;
 
         StartStack.push_front(loc);
