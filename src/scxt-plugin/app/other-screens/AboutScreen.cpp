@@ -40,6 +40,7 @@ struct AboutLink : juce::Component, HasEditor
     AboutLink(SCXTEditor *e, const std::string &url, const std::string tx)
         : HasEditor(e), url(url), txt(tx)
     {
+        font = editor->themeApplier.interLightFor(11);
     }
     bool isHovered{false};
     void mouseEnter(const juce::MouseEvent &event) override
@@ -54,28 +55,40 @@ struct AboutLink : juce::Component, HasEditor
     }
     void mouseDown(const juce::MouseEvent &event) override
     {
+        if (onClick)
+        {
+            onClick();
+            return;
+        }
+
         juce::URL(url).launchInDefaultBrowser();
     }
     void paint(juce::Graphics &g) override
     {
         if (isHovered)
         {
-            g.setColour(editor->themeColor(theme::ColorMap::accent_2a));
+            g.setColour(editor->themeColor(hoverColor));
         }
         else
         {
-            g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+            g.setColour(editor->themeColor(displayColor));
         }
-        g.setFont(editor->themeApplier.interLightFor(11));
+        g.setFont(font);
         g.drawText(txt, getLocalBounds(), juce::Justification::centredLeft);
     }
+
+    juce::Font font{juce::FontOptions()};
+    theme::ColorMap::Colors hoverColor{theme::ColorMap::accent_2a},
+        displayColor{theme::ColorMap::generic_content_medium};
+    std::function<void()> onClick{nullptr};
 };
 
 AboutScreen::AboutScreen(SCXTEditor *e) : HasEditor(e)
 {
-    icon = connectors::resources::loadImageDrawable("images/SCicon.svg");
+    icon = connectors::resources::loadImageDrawable("images/SCAppIcon.svg");
+    aboutLinkIcons = connectors::resources::loadImageDrawable("images/about-icons.svg");
     titleFont = editor->themeApplier.interMediumFor(70);
-    subtitleFont = editor->themeApplier.interMediumFor(30);
+    subtitleFont = editor->themeApplier.interMediumFor(20);
     infoFont = editor->themeApplier.interMediumFor(12);
     aboutFont = editor->themeApplier.interMediumFor(18);
 
@@ -96,9 +109,11 @@ void AboutScreen::resetInfo()
 
     std::string platform = juce::SystemStats::getOperatingSystemName().toStdString();
 
-    copyButton = std::make_unique<sst::jucegui::components::TextPushButton>();
-    copyButton->setLabel("Copy Version Info");
-    copyButton->setOnCallback([this]() { copyInfo(); });
+    copyButton = std::make_unique<AboutLink>(editor, "", "Copy Version Info");
+    copyButton->onClick = [this]() { copyInfo(); };
+    copyButton->displayColor = theme::ColorMap::accent_2a;
+    copyButton->hoverColor = theme::ColorMap::generic_content_high;
+    copyButton->font = aboutFont;
     addAndMakeVisible(*copyButton);
 
     platform += " on " + sst::plugininfra::cpufeatures::brand();
@@ -149,41 +164,43 @@ void AboutScreen::resetInfo()
 }
 void AboutScreen::paint(juce::Graphics &g)
 {
-    g.fillAll(editor->themeColor(theme::ColorMap::bg_1));
-    float iconScale = 3.0;
+    g.fillAll(juce::Colours::black.withAlpha(0.9f));
+    float iconScale = 4.0;
     float iconHeight = 80; // iconHeight returns wrong thing?
     float iconWidth = 78;  // iconHeight returns wrong thing?
     float iconTransX = 00;
     float iconTransY = -10;
+    auto cp = getLocalBounds().getCentre();
+    cp.y -= 50;
+
     {
         auto gs = juce::Graphics::ScopedSaveState(g);
         auto c = (getHeight() - iconHeight * iconScale) / 2.0;
 
-        g.addTransform(
-            juce::AffineTransform().scaled(iconScale).translated(iconTransX, iconTransY));
+        g.addTransform(juce::AffineTransform().scaled(iconScale).translated(
+            cp.x - iconWidth * iconScale / 2, cp.y - iconHeight * iconScale / 2));
+
         icon->drawAt(g, 0, 0, 1.0);
     }
 
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
     g.setFont(titleFont);
-    g.drawText("ShortcircuitXT", 220, iconTransY + 25, getWidth(), getHeight(),
-               juce::Justification::topLeft);
+    auto tp = (int)(cp.y + iconHeight * iconScale / 2) - 40;
+    g.drawText("ShortcircuitXT", 0, tp, getWidth(), 50, juce::Justification::centred);
+    tp += 55;
+
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
     g.setFont(subtitleFont);
-    g.drawText("A personal creative sampler", 220, iconTransY + 90, getWidth(), getHeight(),
-               juce::Justification::topLeft);
-    g.drawText("From the Surge Synth Team", 220, iconTransY + 125, getWidth(), getHeight(),
-               juce::Justification::topLeft);
-
-    g.drawText("Logos and Stuff go here", 0, 5, getWidth() - 5, getHeight(),
-               juce::Justification::topRight);
+    g.drawText("A personal creative sampler", 0, tp, getWidth(), 20, juce::Justification::centred);
+    tp += 23;
+    g.drawText("From the Surge Synth Team", 0, tp, getWidth(), 20, juce::Justification::centred);
 
     g.setFont(aboutFont);
     auto r = getLocalBounds().withHeight(20).translated(0, 320);
     r = r.withY(getHeight() - (info.size()) * infoh - 5);
     for (const auto &q : info)
     {
-        g.setColour(editor->themeColor(theme::ColorMap::accent_1a));
+        g.setColour(editor->themeColor(theme::ColorMap::accent_1b));
         auto ra = r.withWidth(100).withTrimmedLeft(5);
         g.drawText(q.title, ra, juce::Justification::left);
         g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
@@ -195,6 +212,24 @@ void AboutScreen::paint(juce::Graphics &g)
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
     g.drawText("ShortcircuitXT uses the following open source libraries:", openSourceX,
                openSourceStartY - 25, getWidth(), 25, juce::Justification::centredLeft);
+
+    for (int i = 0; i < numButtons; i++)
+    {
+        {
+            juce::Graphics::ScopedSaveState gs(g);
+
+            auto r = buttonRects[i];
+            bool isHovered = buttonRects[i].toFloat().contains(mpos);
+            auto t = juce::AffineTransform();
+            auto imoff = i > 3 ? 1 : 0; // clap wrapper doesn't do lv2
+            t = t.translated(-iconSize * (i + imoff), -iconSize * isHovered)
+                    .scaled(1.f * buttonSize / iconSize)
+                    .translated(r.getX(), r.getY());
+            g.reduceClipRegion(r);
+
+            aboutLinkIcons->draw(g, 1.f, t);
+        }
+    }
 }
 
 void AboutScreen::copyInfo()
@@ -214,7 +249,7 @@ void AboutScreen::resized()
                  .withWidth(100)
                  .withY(getHeight() - (info.size() + 1.5) * infoh - 5)
                  .withTrimmedLeft(5);
-    copyButton->setBounds(r);
+    copyButton->setBounds(r.withWidth(400));
 
     auto wlh{15};
     auto wbox = getLocalBounds()
@@ -225,6 +260,19 @@ void AboutScreen::resized()
     {
         w->setBounds(wbox);
         wbox = wbox.translated(0, wlh);
+    }
+
+    int margin = 5;
+    auto ba = getLocalBounds().reduced(margin).withHeight(buttonSize).withWidth(buttonSize);
+
+    int x = 9; // number of iconized links
+
+    buttonRects[0] = ba.translated(getWidth() - (margin + buttonSize) * numButtons, 0);
+    SCLOG(buttonRects[0].toString());
+
+    for (int i = 1; i < numButtons; i++)
+    {
+        buttonRects[i] = buttonRects[i - 1].translated(margin + buttonSize, 0);
     }
 }
 void AboutScreen::visibilityChanged()

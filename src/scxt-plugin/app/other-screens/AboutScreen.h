@@ -50,7 +50,14 @@ struct AboutScreen : juce::Component, HasEditor
     void paint(juce::Graphics &g) override;
 
     std::unique_ptr<juce::Drawable> icon;
-    std::unique_ptr<sst::jucegui::components::TextPushButton> copyButton;
+    std::unique_ptr<juce::Drawable> aboutLinkIcons;
+    std::unique_ptr<AboutLink> copyButton;
+
+    static constexpr int numButtons{8};
+    static constexpr int buttonSize{50};
+    static constexpr int iconSize{36};
+
+    juce::Rectangle<int> buttonRects[numButtons];
 
 #if JUCE_VERSION >= 0x080000
 #define FT(x) x{juce::FontOptions(1)}
@@ -67,11 +74,55 @@ struct AboutScreen : juce::Component, HasEditor
 
     void visibilityChanged() override;
 
-    void mouseUp(const juce::MouseEvent &e) override { setVisible(false); }
+    void mouseUp(const juce::MouseEvent &e) override
+    {
+        for (int i = 0; i < numButtons; ++i)
+        {
+            if (buttonRects[i].toFloat().contains(e.position))
+            {
+                SCLOG("Clicked icon " << i);
+                buttonRectActions[i]();
+                return;
+            }
+        }
+        setVisible(false);
+    }
+
+    std::vector<std::function<void()>> buttonRectActions{
+        []() {
+            juce::URL("https://github.com/surge-synthesizer/shortcircuit-xt")
+                .launchInDefaultBrowser();
+        },
+        []() { juce::URL("https://discord.gg/aFQDdMV").launchInDefaultBrowser(); },
+        []() {
+            juce::URL("https://www.gnu.org/licenses/gpl-3.0-standalone.html")
+                .launchInDefaultBrowser();
+        },
+        []() { juce::URL("https://cleveraudio.org").launchInDefaultBrowser(); },
+        []() {
+            juce::URL("https://developer.apple.com/documentation/audiounit")
+                .launchInDefaultBrowser();
+        },
+        []() { juce::URL("https://www.steinberg.net/technology/").launchInDefaultBrowser(); },
+        []() { juce::URL("https://www.steinberg.net/technology/").launchInDefaultBrowser(); },
+        []() { juce::URL("https://juce.com").launchInDefaultBrowser(); }};
+
+    void mouseEnter(const juce::MouseEvent &event) override
+    {
+        mpos = event.position;
+        repaint();
+    }
+
+    void mouseMove(const juce::MouseEvent &event) override
+    {
+        mpos = event.position;
+        repaint();
+    }
+    juce::Point<float> mpos;
 
     static constexpr int infoh = 23;
 
-    static constexpr int openSourceStartY{210}, openSourceX{25};
+    static constexpr int openSourceStartY{30}, openSourceX{10};
     std::string openSourceText;
     std::vector<std::pair<std::string, std::string>> openSourceInfo;
     std::vector<std::unique_ptr<AboutLink>> openSourceLinkWidgets;
