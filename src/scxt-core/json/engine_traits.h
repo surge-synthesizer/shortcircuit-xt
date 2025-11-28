@@ -180,7 +180,16 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"nm", std::string(from.name)},
                           {"bl", std::string(from.blurb)}};),
              SC_TO({
-                 findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, to.channel);
+                 int chTmp;
+                 findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, chTmp);
+                 if (!(SC_STREAMING_FOR_PART))
+                 {
+                     to.channel = chTmp;
+                 }
+                 else
+                 {
+                     SCLOG("Unstreaming part: ignoring channel " << chTmp);
+                 }
                  findOrSet(v, "a", true, to.active);
                  findOrSet(v, "m", false, to.mute);
                  findOrSet(v, "s", false, to.solo);
