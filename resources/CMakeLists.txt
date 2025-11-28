@@ -8,7 +8,7 @@ cmrc_add_resource_library(${PROJECT_NAME}
         "fonts/Inter/static/Inter-Bold.ttf"
         "fonts/Anonymous_Pro/AnonymousPro-Regular.ttf"
         "images/SCAppIcon.svg"
-        "images/SCIcon.svg"
+        "images/SCicon.svg"
         "images/about-icons.svg"
         "opensource-credits.txt"
         )
