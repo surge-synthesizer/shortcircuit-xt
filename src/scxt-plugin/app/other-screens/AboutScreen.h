@@ -80,7 +80,6 @@ struct AboutScreen : juce::Component, HasEditor
         {
             if (buttonRects[i].toFloat().contains(e.position))
             {
-                SCLOG("Clicked icon " << i);
                 buttonRectActions[i]();
                 return;
             }
