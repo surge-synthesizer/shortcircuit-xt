@@ -85,6 +85,12 @@ MacroMappingVariantPane::MacroMappingVariantPane(SCXTEditor *e)
             wt->setSelectedTab(i);
         }
     };
+
+    onHamburger = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->showHamburgerMenu();
+    };
 }
 
 MacroMappingVariantPane::~MacroMappingVariantPane() {}
@@ -98,8 +104,29 @@ void MacroMappingVariantPane::setSelectedTab(int i)
     mappingDisplay->setVisible(i == 1);
     macroDisplay->setVisible(i == 0);
 
+    if (i == 2)
+    {
+        hasHamburger = true;
+    }
+    else
+    {
+        hasHamburger = false;
+    }
+
     repaint();
     editor->setTabSelection(editor->editScreen->tabKey("multi.mapping"), std::to_string(i));
+}
+
+void MacroMappingVariantPane::showHamburgerMenu()
+{
+    switch (selectedTab)
+    {
+    case 0:
+    case 1:
+        break;
+    case 2:
+        sampleDisplay->showHamburgerMenu();
+    }
 }
 
 void MacroMappingVariantPane::resized()

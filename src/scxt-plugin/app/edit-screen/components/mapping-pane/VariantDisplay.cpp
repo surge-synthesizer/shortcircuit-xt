@@ -755,6 +755,15 @@ void VariantDisplay::onSamplePointChangedFromGUI()
     repaint();
 }
 
+void VariantDisplay::showHamburgerMenu()
+{
+    juce::PopupMenu p;
+    p.addSectionHeader("Sample");
+    p.addSeparator();
+    p.addItem("Coming Soon", false, false, []() {});
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
 void VariantDisplay::showPlayModeMenu()
 {
     juce::PopupMenu p;
