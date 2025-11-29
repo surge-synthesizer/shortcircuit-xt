@@ -132,8 +132,15 @@ struct SelectionManager
         bool selecting{true};       // am i selecting (T) or deselecting (F) this zone
         bool distinct{true};        // Is this a single selection or a multi-selection gesture
         bool selectingAsLead{true}; // Should I force this selection to be lead?
+        bool forZone{true};         // does this target the zone selection set (T) or group (F)
 
-        bool forZone{true}; // does this target the zone selection set (T) or group (F)
+        static SelectActionContents deselectSentinel() { return {-1, -1, -1, true, true, false}; }
+
+        bool isDeselectSentinel() const
+        {
+            return part == -1 && group == -1 && zone == -1 && selecting && distinct &&
+                   !selectingAsLead;
+        }
 
         friend std::ostream &operator<<(std::ostream &os, const SelectActionContents &z)
         {
@@ -215,7 +222,8 @@ struct SelectionManager
   public:
     using otherTabSelection_t = std::unordered_map<std::string, std::string>;
     otherTabSelection_t otherTabSelection;
-    std::array<selectedZones_t, scxt::numParts> allSelectedZones, allSelectedGroups;
+    std::array<selectedZones_t, scxt::numParts> allSelectedZones, allSelectedGroups,
+        allDisplayGroups;
     std::array<ZoneAddress, scxt::numParts> leadZone, leadGroup;
 };
 } // namespace scxt::selection

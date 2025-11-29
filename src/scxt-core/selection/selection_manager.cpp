@@ -106,17 +106,32 @@ void SelectionManager::sendClientDataForLeadSelectionState()
 void SelectionManager::applySelectActions(const std::vector<SelectActionContents> &v)
 {
     auto r = transformSelectionActions(v);
-    for (const auto &z : r)
+    if (v.size() == 1 && v[0].isDeselectSentinel())
     {
-        if (!z.addr().isInWithPartials(engine))
+        for (auto &g : allSelectedGroups[selectedPart])
         {
-            // TODO - error message
-            SCLOG("Got an address outside partials " << z);
-            continue;
+            allDisplayGroups[selectedPart].insert(g);
         }
-        adjustInternalStateForAction(z);
+        allSelectedGroups[selectedPart].clear();
+        leadGroup[selectedPart] = {};
+        allSelectedZones[selectedPart].clear();
+        leadZone[selectedPart] = {};
     }
-    guaranteeSelectedLead();
+    else
+    {
+        allDisplayGroups[selectedPart].clear();
+        for (const auto &z : r)
+        {
+            if (!z.addr().isInWithPartials(engine))
+            {
+                // TODO - error message
+                SCLOG("Got an address outside partials " << z);
+                continue;
+            }
+            adjustInternalStateForAction(z);
+        }
+        guaranteeSelectedLead();
+    }
     sendClientDataForLeadSelectionState();
     sendSelectedZonesToClient();
     debugDumpSelectionState();
@@ -465,7 +480,8 @@ void SelectionManager::sendSelectedZonesToClient()
     serializationSendToClient(
         cms::s2c_send_selection_state,
         cms::selectedStateMessage_t{leadZone[selectedPart], allSelectedZones[selectedPart],
-                                    leadGroup[selectedPart], allSelectedGroups[selectedPart]},
+                                    leadGroup[selectedPart], allSelectedGroups[selectedPart],
+                                    allDisplayGroups[selectedPart]},
         *(engine.getMessageController()));
 }
 
