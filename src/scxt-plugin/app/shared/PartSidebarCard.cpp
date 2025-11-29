@@ -278,13 +278,15 @@ void PartSidebarCard::showPolyMenu()
     p.addSectionHeader("Part Voice Limit");
     p.addSeparator();
 
-    p.addItem("Unlimited", true, vc == 0, makeMenuCallback(0));
+    static_assert(maxVoices == 512);
+
     for (int i = 4; i <= 16; i += 4)
         p.addItem(std::to_string(i), true, vc == i, makeMenuCallback(i));
     for (int i = 32; i <= 128; i += 32)
         p.addItem(std::to_string(i), true, vc == i, makeMenuCallback(i));
     for (int i = 256; i <= 512; i += 256)
-        p.addItem(std::to_string(i), true, vc == i, makeMenuCallback(i));
+        p.addItem(std::to_string(i), true, (vc == i) || (vc == 0 && i == maxVoices),
+                  makeMenuCallback(i));
     p.showMenuAsync(editor->defaultPopupMenuOptions(outBus.get()));
 }
 
@@ -436,8 +438,10 @@ void PartSidebarCard::resetFromEditorCache()
     outBus->setLabel(st);
 
     auto pv = conf.polyLimitVoices;
+
+    static_assert(maxVoices == 512);
     if (pv == 0)
-        polyCount->setLabel("UNL");
+        polyCount->setLabel(std::to_string(maxVoices));
     else
         polyCount->setLabel(std::to_string(pv));
 
