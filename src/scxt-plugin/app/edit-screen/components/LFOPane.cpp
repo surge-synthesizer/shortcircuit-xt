@@ -903,7 +903,12 @@ struct MiscPanel : juce::Component, HasEditor
     struct NumDenQuantAtt : sst::jucegui::data::Continuous
     {
         intatt_t &num, &den;
-        NumDenQuantAtt(intatt_t &n, intatt_t &d) : num(n), den(d) {}
+        MiscPanel *parent{nullptr};
+        int idx{-1};
+        NumDenQuantAtt(intatt_t &n, intatt_t &d, MiscPanel *p, int i)
+            : num(n), den(d), parent(p), idx(i)
+        {
+        }
 
         float value{0};
         float getValue() const override { return value; }
@@ -993,14 +998,84 @@ struct MiscPanel : juce::Component, HasEditor
                     setValueFromGUI(cv);
                 }
             }
+
+            if (s.find("d") != std::string::npos || s.find("D") != std::string::npos)
+            {
+                parent->setDivision(idx, modulation::modulators::PhasorStorage::DOTTED);
+            }
+            else if (s.find("t") != std::string::npos || s.find("T") != std::string::npos)
+            {
+                parent->setDivision(idx, modulation::modulators::PhasorStorage::TRIPLET);
+            }
+            else if (s.find("n") != std::string::npos || s.find("N") != std::string::npos)
+            {
+                parent->setDivision(idx, modulation::modulators::PhasorStorage::NOTE);
+            }
         }
         float getMin() const override { return -6; }
         float getMax() const override { return 4; }
     };
 
+    struct CustomDTEV : public jcmp::DraggableTextEditableValue
+    {
+        void paint(juce::Graphics &g) override
+        {
+            std::string msg;
+            if (continuous())
+            {
+                msg = continuous()->getValueAsString();
+                if (!displayUnits)
+                    msg = continuous()->getValueAsStringWithoutUnits();
+            }
+            auto slp = msg.find("/");
+
+            if (underlyingEditor->isVisible())
+            {
+                g.setColour(getColour(Styles::background));
+                if (isHovered)
+                    g.setColour(getColour(Styles::background_hover));
+                g.fillRoundedRectangle(getLocalBounds().toFloat(), 3.f);
+
+                return;
+            }
+
+            g.setColour(getColour(Styles::background));
+            if (isHovered)
+                g.setColour(getColour(Styles::background_hover));
+
+            if (slp == std::string::npos)
+            {
+                g.fillRoundedRectangle(getLocalBounds().toFloat(), 3.f);
+                g.setFont(getFont(Styles::labelfont));
+                g.setColour(getColour(
+                    Styles::value)); // on Hover, the text colour is intensionally the same.
+                g.drawText(msg, getLocalBounds(), juce::Justification::centred);
+            }
+            else
+            {
+                // this matches resized below
+                auto ls = getLocalBounds().withWidth(20);
+                auto rs = getLocalBounds().withWidth(20).translated(getWidth() - 20, 0);
+
+                g.fillRoundedRectangle(ls.toFloat(), 3.f);
+                g.fillRoundedRectangle(rs.toFloat(), 3.f);
+
+                g.setFont(getFont(Styles::labelfont));
+                g.setColour(getColour(
+                    Styles::value)); // on Hover, the text colour is intensionally the same.
+                auto ns = msg.substr(0, slp);
+                auto ds = msg.substr(slp + 1);
+                g.drawText(ns, ls, juce::Justification::centred);
+                g.drawText(ds, rs, juce::Justification::centred);
+                g.setColour(style()->getColour(jcmp::Label::Styles::styleClass,
+                                               jcmp::Label::Styles::labelcolor));
+                g.drawText("/", getLocalBounds(), juce::Justification::centred);
+            }
+        }
+    };
+
     std::array<std::unique_ptr<NumDenQuantAtt>, scxt::phasorsPerGroupOrZone> numDenQuantA;
-    std::array<std::unique_ptr<jcmp::DraggableTextEditableValue>, scxt::phasorsPerGroupOrZone>
-        numDenQuantW;
+    std::array<std::unique_ptr<CustomDTEV>, scxt::phasorsPerGroupOrZone> numDenQuantW;
 
     std::unique_ptr<jcmp::NamedPanelDivider> phasorRandDiv;
 
@@ -1069,9 +1144,9 @@ struct MiscPanel : juce::Component, HasEditor
             phasorSlashes[i]->setText("/");
             addChildComponent(*phasorSlashes[i]);
 
-            numDenQuantA[i] = std::make_unique<NumDenQuantAtt>(*numTextA[i], *denTextA[i]);
+            numDenQuantA[i] = std::make_unique<NumDenQuantAtt>(*numTextA[i], *denTextA[i], this, i);
             numDenQuantA[i]->syncValue();
-            numDenQuantW[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
+            numDenQuantW[i] = std::make_unique<CustomDTEV>();
             numDenQuantW[i]->setSource(numDenQuantA[i].get());
             numDenQuantW[i]->onPopupMenu = [i, w = juce::Component::SafePointer(this)](auto &) {
                 if (w)
@@ -1125,13 +1200,14 @@ struct MiscPanel : juce::Component, HasEditor
             prlo.addGap(5);
             if (showNOverD[i])
             {
+                // this matches CustomDTEV::paint above
                 prlo.add(jlo::Component(*numText[i]).withWidth(20));
                 prlo.add(jlo::Component(*phasorSlashes[i]).withWidth(15));
                 prlo.add(jlo::Component(*denText[i]).withWidth(20));
             }
             else
             {
-                prlo.add(jlo::Component(*numDenQuantW[i]).withWidth(55));
+                prlo.add(jlo::Component(*numDenQuantW[i]).withWidth(55 + 2 * margin));
             }
             prlo.add(jlo::Component(*divButtons[i]).withWidth(60));
 
@@ -1253,10 +1329,7 @@ struct MiscPanel : juce::Component, HasEditor
                       [i, w = juce::Component::SafePointer(that), v] {
                           if (!w)
                               return;
-                          w->ms.phasors[i].division = v;
-                          w->quantizeForNTD(i);
-                          w->repushData();
-                          w->updateFromValues();
+                          w->setDivision(i, v);
                       });
         };
 
@@ -1266,6 +1339,14 @@ struct MiscPanel : juce::Component, HasEditor
         gen(modulation::modulators::PhasorStorage::Division::X_BPM, "x BPM");
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    void setDivision(int i, modulation::modulators::PhasorStorage::Division d)
+    {
+        ms.phasors[i].division = d;
+        quantizeForNTD(i);
+        repushData();
+        updateFromValues();
     }
 
     void quantizeForNTD(int i)
