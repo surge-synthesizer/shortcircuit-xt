@@ -183,6 +183,8 @@ struct VariantDisplay : juce::Component, HasEditor
 
     void showVariantTabMenu(int variantIdx);
 
+    void showHamburgerMenu();
+
     // Header section
     using boolToggle_t = sst::jucegui::component_adapters::DiscreteToValueReference<
         sst::jucegui::components::ToggleButton, bool>;

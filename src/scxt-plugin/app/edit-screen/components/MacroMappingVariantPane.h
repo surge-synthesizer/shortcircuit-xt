@@ -68,6 +68,8 @@ struct MacroMappingVariantPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void invertScroll(bool invert);
     bool invertScroll() const;
+
+    void showHamburgerMenu();
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
