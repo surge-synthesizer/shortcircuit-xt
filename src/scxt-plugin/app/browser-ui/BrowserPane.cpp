@@ -378,6 +378,7 @@ struct DriveFSArea : juce::Component, HasEditor
     {
         auto &ent = contents[row];
         assert(!ent.isExpanded);
+        ent.isExpanded = true;
         auto ct = browser::Browser::expandForBrowser(ent.dirent.path());
         if (!ct.empty())
         {
@@ -388,7 +389,6 @@ struct DriveFSArea : juce::Component, HasEditor
                 after++;
             }
         }
-        ent.isExpanded = true;
         listView->refresh();
         if (!ct.empty())
         {
