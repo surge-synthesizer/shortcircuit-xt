@@ -180,7 +180,7 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
         {
             f = description.snapToTemposync(f);
         }
-        if (f != prevValue)
+        if ((ValueType)f != value)
         {
             prevValue = value;
             value = (ValueType)f;
