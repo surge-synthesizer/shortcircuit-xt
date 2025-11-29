@@ -677,6 +677,7 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
     {
         auto rz = juce::Rectangle<float>(firstMousePos, e.position);
         bool selectedLead{false};
+        bool selectedAny{false};
         if (display->editor->currentLeadZoneSelection.has_value())
         {
             const auto &sel = *(display->editor->currentLeadZoneSelection);
@@ -685,7 +686,9 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
                 if (!(z.address == sel))
                     continue;
                 if (rz.intersects(rectangleForZone(z)))
+                {
                     selectedLead = true;
+                }
             }
         }
         bool firstAsLead = !selectedLead && !e.mods.isShiftDown();
@@ -700,7 +703,13 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
                 display->editor->doSelectionAction(z.address, true, first && firstAsLead,
                                                    first && firstAsLead);
                 first = false;
+                selectedAny = true;
             }
+        }
+        if (!selectedAny)
+        {
+            display->editor->doSelectionAction(
+                selection::SelectionManager::SelectActionContents::deselectSentinel());
         }
     }
     if (mouseState == CREATE_EMPTY_ZONE)

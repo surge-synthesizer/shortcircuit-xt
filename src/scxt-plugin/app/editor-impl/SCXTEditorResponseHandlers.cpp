@@ -269,6 +269,7 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
 {
     allZoneSelections = std::get<1>(a);
     allGroupSelections = std::get<3>(a);
+    auto allDisplays = std::get<4>(a);
 
     currentLeadZoneSelection = std::get<0>(a);
     currentLeadGroupSelection = std::get<2>(a);
@@ -279,6 +280,11 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
     {
         if (sel.group >= 0)
             groupsWithSelectedZones.insert(sel.group);
+    }
+    for (const auto &gz : allDisplays)
+    {
+        if (gz.group >= 0)
+            groupsWithSelectedZones.insert(gz.group);
     }
 
     editScreen->partSidebar->editorSelectionChanged();
