@@ -226,7 +226,11 @@ struct DriveArea : juce::Component, HasEditor
         g.drawRoundedRectangle(getLocalBounds().toFloat(), 2, 1);
     }
 
-    void resized() override { listView->setBounds(getLocalBounds().reduced(1)); }
+    void resized() override
+    {
+        listView->refresh();
+        listView->setBounds(getLocalBounds().reduced(1));
+    }
     std::unique_ptr<juce::Component> makeComponent()
     {
         return std::make_unique<DriveAreaRow>(this);
@@ -399,13 +403,13 @@ struct DriveFSArea : juce::Component, HasEditor
     {
         auto &ent = contents[row];
         assert(ent.isExpanded);
+        ent.isExpanded = false;
         auto after = contents.begin() + row + 1;
         while (after != contents.end() && after->expandableAddress.has_value() &&
                after->dirent.path() == ent.dirent.path())
         {
             after = contents.erase(after);
         }
-        ent.isExpanded = false;
         listView->rowSelected(row, true);
         listView->refresh();
     }
@@ -1022,7 +1026,9 @@ void BrowserPane::resetRoots()
 {
     roots = editor->browser.getRootPathsForDeviceView();
     if (devicesPane && devicesPane->driveArea && devicesPane->driveArea->listView)
+    {
         devicesPane->driveArea->listView->refresh();
+    }
     repaint();
 }
 
