@@ -4,8 +4,8 @@ add_library(simde INTERFACE)
 target_include_directories(simde INTERFACE simde)
 add_library(shortcircuit::simde ALIAS simde)
 
-add_subdirectory(clap/clap)
-add_subdirectory(clap/clap-helpers)
+add_subdirectory(clap/clap EXCLUDE_FROM_ALL)
+add_subdirectory(clap/clap-helpers EXCLUDE_FROM_ALL)
 
 set(CLAP_WRAPPER_DOWNLOAD_DEPENDENCIES TRUE CACHE BOOL "Get em")
 set(CLAP_WRAPPER_DONT_ADD_TARGETS TRUE CACHE BOOL "I'll targetize")
@@ -17,17 +17,17 @@ endif()
 if (WIN32)
     set(RTAUDIO_API_ASIO ON CACHE BOOL "Enable ASIO for Windows standalone" FORCE)
 endif()
-add_subdirectory(clap/clap-wrapper)
+add_subdirectory(clap/clap-wrapper EXCLUDE_FROM_ALL)
 
 add_subdirectory(sst/sst-clap-helpers)
 message("Including JUCE from ${SCXT_JUCE_PATH}")
 add_clap_juce_shim(JUCE_PATH ${SCXT_JUCE_PATH})
 
 
-add_subdirectory(fmt)
+add_subdirectory(fmt EXCLUDE_FROM_ALL)
 # Modify this basedon the outcome of https://github.com/taocpp/PEGTL/issues/347
 set(PEGTL_NO_STD_FILESYSTEM ON CACHE BOOL "Skip PEGTL FileSystem")
-add_subdirectory(taocpp_json)
+add_subdirectory(taocpp_json EXCLUDE_FROM_ALL)
 if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
     target_compile_definitions(taocpp-json INTERFACE -DRYU_ONLY_64_BIT_OPS)
 endif()

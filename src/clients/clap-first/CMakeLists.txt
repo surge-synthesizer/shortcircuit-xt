@@ -38,3 +38,44 @@ make_clapfirst_plugins(
 set_target_properties(${PROJECT_NAME}_all PROPERTIES ARTEFACT_DIRECTORY ${CMAKE_BINARY_DIR}/${PROJECT_NAME}_assets)
 
 target_compile_definitions(clap-wrapper-compile-options-public INTERFACE CLAP_WRAPPER_LOGLEVEL=0)
+
+if (UNIX AND NOT APPLE)
+    # For now I'm adding a set of cmake install rules only for linux
+    # The directories on windows and macos aren't run by the INSTALL dir
+    # and special casing them here vs using existing COPY_FROM_PLUGIN
+    # and installer/sign workflow seems silly.
+    #
+    # If you disagree fix it up and send in a PR!
+    include(GNUInstallDirs)
+
+    # Typical Linux/Unix locations under the installation prefix
+    set(SCXT_CLAP_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/clap")
+    set(SCXT_VST3_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/vst3")
+    set(SCXT_STANDALONE_INSTALL_DIR "${CMAKE_INSTALL_BINDIR}")
+
+    # CLAP plugin (.clap bundle or module)
+    if(TARGET scxt_clapfirst_clap)
+        install(TARGETS scxt_clapfirst_clap
+            BUNDLE  DESTINATION "${SCXT_CLAP_INSTALL_DIR}"
+            LIBRARY DESTINATION "${SCXT_CLAP_INSTALL_DIR}"
+            RUNTIME DESTINATION "${SCXT_CLAP_INSTALL_DIR}"
+        )
+    endif()
+
+    # VST3 plugin (.vst3 bundle)
+    if(TARGET scxt_clapfirst_vst3)
+        install(TARGETS scxt_clapfirst_vst3
+            BUNDLE  DESTINATION "${SCXT_VST3_INSTALL_DIR}"
+            LIBRARY DESTINATION "${SCXT_VST3_INSTALL_DIR}"
+            RUNTIME DESTINATION "${SCXT_VST3_INSTALL_DIR}"
+        )
+    endif()
+
+    # Standalone app/executable
+    if(TARGET scxt_clapfirst_standalone)
+        install(TARGETS scxt_clapfirst_standalone
+            BUNDLE  DESTINATION "${SCXT_STANDALONE_INSTALL_DIR}"
+            RUNTIME DESTINATION "${SCXT_STANDALONE_INSTALL_DIR}"
+        )
+    endif()
+endif()
