@@ -39,6 +39,8 @@ struct PreviewVoice::Details
     dsp::GeneratorIO GDIO;
     dsp::GeneratorFPtr Generator;
 
+    float amplitude{1.0};
+
     PreviewVoice *parent{nullptr};
     Details(PreviewVoice *p) : parent(p) {}
     std::shared_ptr<sample::Sample> sample;
@@ -86,7 +88,8 @@ struct PreviewVoice::Details
 PreviewVoice::PreviewVoice() { details = std::make_unique<Details>(this); }
 PreviewVoice::~PreviewVoice() {}
 
-bool PreviewVoice::attachAndStartUnlessPlaying(const std::shared_ptr<sample::Sample> &s)
+bool PreviewVoice::attachAndStartUnlessPlaying(const std::shared_ptr<sample::Sample> &s,
+                                               float amplitude)
 {
     if (isActive)
     {
@@ -101,6 +104,7 @@ bool PreviewVoice::attachAndStartUnlessPlaying(const std::shared_ptr<sample::Sam
     }
 
     details->sample = s;
+    details->amplitude = amplitude;
     details->initiateGD();
     isActive = true;
     return true;
@@ -127,6 +131,9 @@ void PreviewVoice::processBlock()
     {
         mech::copy_from_to<blockSize>(output[0], output[1]);
     }
+    auto a3 = details->amplitude;
+    a3 = a3 * a3 * a3;
+    mech::scale_by<blockSize>(a3, output[0], output[1]);
     // SCLOG(output[0][0] << " " << output[1][0]);
 }
 

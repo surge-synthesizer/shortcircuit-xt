@@ -48,7 +48,7 @@ struct alignas(16) PreviewVoice : SampleRateSupport
      * Given this sample, play it with this voice unless this vice is already playing
      * exactly this sample, in which case, stop and release the reference
      */
-    bool attachAndStartUnlessPlaying(const std::shared_ptr<sample::Sample> &);
+    bool attachAndStartUnlessPlaying(const std::shared_ptr<sample::Sample> &, float amplitude);
 
     /***
      * Stop playing the sample and release the reference to the sample

@@ -33,11 +33,14 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/ListView.h"
+#include "sst/jucegui/components/HSliderFilled.h"
+#include "sst/jucegui/component-adapters/ContinuousToReference.h"
 #include "sst/plugininfra/strnatcmp.h"
 
 #include <infrastructure/user_defaults.h>
 #include "BrowserPaneInterfaces.h"
 #include "app/shared/UIHelpers.h"
+#include "sst/jucegui/components/GlyphPainter.h"
 
 #define SHOW_INDEX_MENUS 0
 
@@ -507,6 +510,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
     {
         auto &data = browserPane->devicesPane->driveFSArea->contents;
         auto &entry = data[rowNumber];
+        browserPane->lastClickedPotentialSample = rowNumber;
 
         isMouseDownWithoutDrag = true;
         if (browser::Browser::isExpandableInBrowser(entry.dirent.path()))
@@ -535,7 +539,8 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 hasStartedPreview = true;
                 namespace cmsg = scxt::messaging::client;
                 scxt::messaging::client::clientSendToSerialization(
-                    cmsg::PreviewBrowserSample({true, entry.expandableAddress->sampleAddress}),
+                    cmsg::PreviewBrowserSample({true, browserPane->previewAmplitude,
+                                                entry.expandableAddress->sampleAddress}),
                     browserPane->editor->msgCont);
                 repaint();
             }
@@ -547,6 +552,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 scxt::messaging::client::clientSendToSerialization(
                     cmsg::PreviewBrowserSample(
                         {true,
+                         browserPane->previewAmplitude,
                          {sample::Sample::sourceTypeFromPath(data[rowNumber].dirent.path()), pth,
                           "", -1, -1, -1}}),
                     browserPane->editor->msgCont);
@@ -627,7 +633,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             namespace cmsg = scxt::messaging::client;
 
             scxt::messaging::client::clientSendToSerialization(
-                cmsg::PreviewBrowserSample({false, {}}), browserPane->editor->msgCont);
+                cmsg::PreviewBrowserSample({false, 1.0, {}}), browserPane->editor->msgCont);
         }
     }
 
@@ -887,10 +893,16 @@ struct BrowserPaneFooter : HasEditor, juce::Component
     BrowserPane *parent{nullptr};
     std::unique_ptr<jcmp::ToggleButton> autoPreview;
     std::unique_ptr<jcmp::GlyphButton> preview;
-    std::unique_ptr<jcmp::HSlider> previewLevel;
+    std::unique_ptr<
+        sst::jucegui::component_adapters::ContinuousToValueReference<jcmp::HSliderFilled>>
+        previewLevelConnector;
     std::unique_ptr<connectors::DirectBooleanPayloadDataAttachment> autoPreviewAtt;
 
-    BrowserPaneFooter(SCXTEditor *e, BrowserPane *p) : HasEditor(e), parent(p)
+    BrowserPaneFooter(SCXTEditor *e, BrowserPane *p)
+        : HasEditor(e), parent(p),
+          previewLevelConnector(
+              std::make_unique<sst::jucegui::component_adapters::ContinuousToValueReference<
+                  jcmp::HSliderFilled>>(parent->previewAmplitude))
     {
         autoPreview = std::make_unique<jcmp::ToggleButton>();
         autoPreview->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH_WITH_BG);
@@ -907,12 +919,58 @@ struct BrowserPaneFooter : HasEditor, juce::Component
             parent->autoPreviewEnabled);
         autoPreview->setSource(autoPreviewAtt.get());
         addAndMakeVisible(*autoPreview);
+
+        preview = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::JOG_RIGHT);
+        preview->setOnCallback([this]() { launchPreview(); });
+        addAndMakeVisible(*preview);
+
+        addAndMakeVisible(*previewLevelConnector->widget);
+        previewLevelConnector->widget->onEndEdit = [this]() {
+            auto amp = parent->previewAmplitude;
+            editor->defaultsProvider.updateUserDefaultValue(
+                infrastructure::DefaultKeys::browserPreviewAmplitude, (int)(amp * 100));
+        };
     }
     void resized() override
     {
         auto r = getLocalBounds();
         autoPreview->setBounds(r.withWidth(r.getHeight()));
         r = r.translated(r.getHeight() + 2, 0);
+        preview->setBounds(r.withWidth(r.getHeight()));
+        r = r.translated(r.getHeight() + 2, 0);
+        previewLevelConnector->widget->setBounds(r.withWidth(100).reduced(0, 4));
+    }
+
+    void launchPreview()
+    {
+        auto r = parent->devicesPane->driveFSArea->listView->getRowCount();
+        auto lsr = parent->lastClickedPotentialSample;
+        if (lsr >= 0 && lsr < r)
+        {
+            auto &entry = parent->devicesPane->driveFSArea->contents[lsr];
+            if (entry.expandableAddress.has_value() &&
+                entry.expandableAddress->type == sample::compound::CompoundElement::SAMPLE)
+            {
+                namespace cmsg = scxt::messaging::client;
+                scxt::messaging::client::clientSendToSerialization(
+                    cmsg::PreviewBrowserSample(
+                        {true, parent->previewAmplitude, entry.expandableAddress->sampleAddress}),
+                    parent->editor->msgCont);
+            }
+            else if (!entry.dirent.is_directory() &&
+                     browser::Browser::isLoadableSingleSample(entry.dirent.path()))
+            {
+                namespace cmsg = scxt::messaging::client;
+                auto pth = fs::path(fs::u8path(entry.dirent.path().u8string()));
+                scxt::messaging::client::clientSendToSerialization(
+                    cmsg::PreviewBrowserSample(
+                        {true,
+                         parent->previewAmplitude,
+                         {sample::Sample::sourceTypeFromPath(entry.dirent.path()), pth, "", -1, -1,
+                          -1}}),
+                    parent->editor->msgCont);
+            }
+        }
     }
 };
 
@@ -984,6 +1042,9 @@ BrowserPane::BrowserPane(SCXTEditor *e)
     hasHamburger = false;
     autoPreviewEnabled = editor->defaultsProvider.getUserDefaultValue(
         infrastructure::DefaultKeys::browserAutoPreviewEnabled, true);
+    previewAmplitude = editor->defaultsProvider.getUserDefaultValue(
+                           infrastructure::DefaultKeys::browserPreviewAmplitude, 100) /
+                       100.f;
 
     selectedFunction = std::make_unique<sst::jucegui::components::ToggleButtonRadioGroup>();
     selectedFunctionData = std::make_unique<sfData>(this);
