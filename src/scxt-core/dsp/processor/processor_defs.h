@@ -61,7 +61,6 @@
 
 #include "definition_helpers.h"
 #include "processor_defs.h"
-#include "processor_defs.h"
 #include "dsp/processor/processor_impl.h"
 
 #include "sst/voice-effects/delay/Widener.h"
@@ -78,15 +77,13 @@
 #include "sst/voice-effects/eq/MorphEQ.h"
 #include "sst/voice-effects/eq/TiltEQ.h"
 
-#include "sst/voice-effects/filter/SSTFilters.h"
 #include "sst/voice-effects/filter/StaticPhaser.h"
 
 #include "sst/voice-effects/generator/GenCorrelatedNoise.h"
 #include "sst/voice-effects/generator/TiltNoise.h"
-#include "sst/voice-effects/generator/GenVA.h"
 #include "sst/voice-effects/generator/EllipticBlepWaveforms.h"
 #include "sst/voice-effects/generator/SinePlus.h"
-#include "sst/voice-effects/delay/StringResonator.h"
+#include "sst/voice-effects/generator/StringResonator.h"
 
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
 #include "sst/voice-effects/modulation/RingMod.h"
@@ -96,7 +93,7 @@
 #include "sst/voice-effects/modulation/Phaser.h"
 #include "sst/voice-effects/modulation/ShepardPhaser.h"
 #include "sst/voice-effects/modulation/NoiseAM.h"
-#include "sst/voice-effects/delay/Chorus.h"
+#include "sst/voice-effects/modulation/Chorus.h"
 #include "sst/voice-effects/utilities/VolumeAndPan.h"
 #include "sst/voice-effects/utilities/StereoTool.h"
 #include "sst/voice-effects/utilities/GainMatrix.h"
@@ -124,7 +121,7 @@ PROC_DEFAULT_MIX(proct_fx_simple_delay, 0.3);
 
 DEFINE_PROC(MicroGate, sst::voice_effects::delay::MicroGate<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate, "MicroGate",
-            "Delay", "micro-gate-fx");
+            "Delay", "micro-gate-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(BitCrusher, sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<1>>,
             sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<2>>, proct_fx_bitcrusher,
@@ -276,11 +273,6 @@ DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::Widener<SCXTVFXConfig<2>>, proct_fx_widener, "Widener",
             "Utility", "fxstereo-fx", dsp::surgeSincTable);
 
-DEFINE_PROC(GenVA, sst::voice_effects::generator::GenVA<SCXTVFXConfig<1>>,
-            sst::voice_effects::generator::GenVA<SCXTVFXConfig<2>>, proct_osc_VA, "VA (Legacy)",
-            "Generators", "osc-va", dsp::sincTable);
-PROC_DEFAULT_MIX(proct_osc_VA, 0.5);
-
 DEFINE_PROC(EllipticBlepWaveforms,
             sst::voice_effects::generator::EllipticBlepWaveforms<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::EllipticBlepWaveforms<SCXTVFXConfig<2>>,
@@ -302,16 +294,13 @@ DEFINE_PROC(GenTiltNoise, sst::voice_effects::generator::TiltNoise<SCXTVFXConfig
             "Tilt Noise", "Generators", "osc-tilt-noise");
 PROC_DEFAULT_MIX(proct_osc_tiltnoise, 0.5);
 
-DEFINE_PROC(StringResonator, sst::voice_effects::delay::StringResonator<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
+DEFINE_PROC(StringResonator, sst::voice_effects::generator::StringResonator<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
             "String Resonator", "Generators", "stringex-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters",
             "eq-morph");
-DEFINE_PROC(SSTFilters, sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<1>>,
-            sst::voice_effects::filter::SSTFilters<SCXTVFXConfig<2>>, proct_SurgeFilters,
-            "SSTFilters (Deprecated)", "Filters", "filt-sstfilters");
 DEFINE_PROC(StaticPhaser, sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<1>>,
             sst::voice_effects::filter::StaticPhaser<SCXTVFXConfig<2>>, proct_StaticPhaser,
             "Static Phaser", "Filters", "filt-statph");
@@ -341,8 +330,8 @@ DEFINE_PROC(Phaser, sst::voice_effects::modulation::Phaser<SCXTVFXConfig<1>>,
 DEFINE_PROC(ShepardPhaser, sst::voice_effects::modulation::ShepardPhaser<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::ShepardPhaser<SCXTVFXConfig<2>>, proct_shepard,
             "Shepard Phaser", "Modulation", "shepard");
-DEFINE_PROC(Chorus, sst::voice_effects::delay::Chorus<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::Chorus<SCXTVFXConfig<2>>, proct_Chorus, "Chorus",
+DEFINE_PROC(Chorus, sst::voice_effects::modulation::Chorus<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::Chorus<SCXTVFXConfig<2>>, proct_Chorus, "Chorus",
             "Modulation", "voice-chorus", dsp::surgeSincTable);
 
 DEFINE_PROC(LiftedReverb1, sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<1>>,

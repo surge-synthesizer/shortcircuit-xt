@@ -89,12 +89,6 @@ void ProcessorPane::showHamburgerMenu()
         if (pd.groupOnly && forZone)
             continue;
 
-        if (pd.id == scxt::dsp::processor::proct_osc_VA)
-            continue;
-
-        if (pd.id == scxt::dsp::processor::proct_SurgeFilters)
-            continue;
-
 #if PRINT_MISSING_JSON
         if (jsonDefinitions.find(pd.id) == jsonDefinitions.end())
         {
@@ -164,6 +158,8 @@ void ProcessorPane::setupJsonTypeMap()
 
     a(dsp::processor::proct_osc_correlatednoise, "generators/correlated-noise.json");
     a(dsp::processor::proct_stringResonator, "generators/string-resonator.json");
+    a(dsp::processor::proct_osc_sineplus, "generators/sineplus.json");
+    a(dsp::processor::proct_osc_tiltnoise, "generators/tilt-noise.json");
 
     a(dsp::processor::proct_Tremolo, "modulation/tremolo.json");
     a(dsp::processor::proct_Chorus, "modulation/chorus.json");

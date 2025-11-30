@@ -1,0 +1,99 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "rt": {
+      "class": "knob40",
+      "label": "Root",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 10,
+        "y": 10
+      }
+    },
+    "oa": {
+      "class": "knob40",
+      "label": "Overtone A",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 70,
+        "y": 10
+      }
+    },
+    "ob": {
+      "class": "knob40",
+      "label": "Overtone B",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 130,
+        "y": 10
+      }
+    },
+    "ba1": {
+      "class": "knob40",
+      "label": "Root/OT Bal",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 10,
+        "y": 80
+      }
+    },
+    "ba2": {
+      "class": "knob40",
+      "label": "A/B Bal",
+      "binding": {
+        "type": "float",
+        "index": 4
+      },
+      "position": {
+        "x": 70,
+        "y": 80
+      }
+    },
+    "lev": {
+      "class": "knob40",
+      "label": "Level",
+      "binding": {
+        "type": "float",
+        "index": 5
+      },
+      "position": {
+        "x": 130,
+        "y": 80
+      }
+    },
+    "qa": {
+      "class": "power-switch",
+      "binding": {
+        "index": 0,
+        "type": "int"
+      },
+      "position": {
+        "x": 105,
+        "y": 5
+      }
+    },
+    "qb": {
+      "class": "power-switch",
+      "binding": {
+        "index": 1,
+        "type": "int"
+      },
+      "position": {
+        "x": 170,
+        "y": 5
+      }
+    }
+  }
+}
