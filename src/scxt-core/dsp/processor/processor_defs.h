@@ -121,7 +121,7 @@ PROC_DEFAULT_MIX(proct_fx_simple_delay, 0.3);
 
 DEFINE_PROC(MicroGate, sst::voice_effects::delay::MicroGate<SCXTVFXConfig<1>>,
             sst::voice_effects::delay::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate, "MicroGate",
-            "Delay", "micro-gate-fx");
+            "Delay", "micro-gate-fx", dsp::surgeSincTable);
 
 DEFINE_PROC(BitCrusher, sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<1>>,
             sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<2>>, proct_fx_bitcrusher,
