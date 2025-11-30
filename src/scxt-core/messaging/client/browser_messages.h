@@ -90,11 +90,11 @@ CLIENT_TO_SERIAL(BrowserQueueRefresh, c2s_browser_queue_refresh, browserQueueRef
 SERIAL_TO_CLIENT(SendBrowserQueueLength, s2c_send_browser_queuelength, browserQueueRefreshPayload_t,
                  onBrowserQueueLengthRefresh)
 
-using previewBrowserSamplePayload_t = std::tuple<bool, sample::Sample::SampleFileAddress>;
+using previewBrowserSamplePayload_t = std::tuple<bool, float, sample::Sample::SampleFileAddress>;
 inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
                                    const engine::Engine &engine, MessageController &cont)
 {
-    auto [startstop, sampleAddress] = p;
+    auto [startstop, amplitude, sampleAddress] = p;
 
     if (startstop)
     {
@@ -104,7 +104,9 @@ inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
         {
             auto smp = engine.getSampleManager()->getSample(*sid);
             cont.scheduleAudioThreadCallback(
-                [smp](auto &eng) { eng.previewVoice->attachAndStartUnlessPlaying(smp); },
+                [smp, amplitude](auto &eng) {
+                    eng.previewVoice->attachAndStartUnlessPlaying(smp, amplitude);
+                },
                 [](const auto &e) { e.getSampleManager()->purgeUnreferencedSamples(); });
         }
         else
