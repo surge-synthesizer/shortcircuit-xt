@@ -107,7 +107,6 @@ static constexpr size_t processorLabelSize{32};
 enum ProcessorType
 {
     proct_none = 0,
-    proct_SuperSVF, // First zone
     proct_CytomicSVF,
     proct_StaticPhaser,
     proct_SurgeBiquads,
@@ -120,6 +119,7 @@ enum ProcessorType
     proct_reswarp,
     proct_vintageladder,
     proct_snhfilter,
+    proct_comb,
     proct_utilfilt,
     proct_SurgeFilters,
     proct_Tremolo,
@@ -134,28 +134,21 @@ enum ProcessorType
 
     proct_stringResonator,
 
-    proct_moogLP4sat,
     proct_eq_3band_parametric_A,
     proct_eq_6band,
     proct_eq_morph,
     proct_eq_tilt,
-    proct_comb,
     proct_fx_bitcrusher,
-    proct_fx_distortion1,
-    proct_fx_clipper,
     proct_fx_slewer,
-    proct_fx_limiter,
-    proct_fx_gate,
     proct_fx_microgate,
     proct_fx_ringmod,
-    proct_fx_freqshift,
     proct_fx_waveshaper,
     proct_fx_freqshiftmod,
     proct_fx_widener,
     proct_fx_simple_delay,
     proct_fmfilter,
     proct_noise_am,
-    proct_osc_phasemod, // last part/fx
+    proct_osc_phasemod,
 
     proct_lifted_reverb1,
     proct_lifted_reverb2,
@@ -163,12 +156,10 @@ enum ProcessorType
     proct_lifted_flanger,
 
     proct_fx_treemonster,
-    proct_osc_VA,
     proct_osc_EBWaveforms,
-    proct_osc_saw,
     proct_osc_sineplus,
     proct_osc_tiltnoise,
-    proct_osc_correlatednoise, // last zone
+    proct_osc_correlatednoise,
     proct_num_types,
 };
 
