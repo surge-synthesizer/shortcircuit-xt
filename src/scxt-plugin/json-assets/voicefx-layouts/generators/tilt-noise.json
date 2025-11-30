@@ -5,13 +5,13 @@
             "class": "hamburger-stereo",
             "binding": {
                 "type": "int",
-                "index": 1
+                "index": 0
             },
             "position": {}
         },
         "threshold": {
             "class": "knob50",
-            "label": "Threshold",
+            "label": "Level",
             "binding": {
                 "type": "float",
                 "index": 0
@@ -23,7 +23,7 @@
         },
         "depth": {
             "class": "knob50",
-            "label": "Depth",
+            "label": "Tilt",
             "binding": {
                 "type": "float",
                 "index": 1
@@ -35,7 +35,7 @@
         },
         "tilt": {
             "class": "knob50",
-            "label": "Tilt",
+            "label": "Width",
             "binding": {
                 "type": "float",
                 "index": 2
@@ -43,20 +43,6 @@
             "position": {
                 "x": 130,
                 "y": 5
-            }
-        },
-        "envelope": {
-            "class": "vertical-multiswitch",
-            "label": "Envelope",
-            "binding": {
-                "type": "int",
-                "index": 0
-            },
-            "position": {
-                "x": 40,
-                "y": 80,
-                "w": 50,
-                "h": 40
             }
         }
     }
