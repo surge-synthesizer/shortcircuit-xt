@@ -11,7 +11,7 @@ if (${SCXT_USE_FLAC})
     set(WITH_OGG OFF CACHE BOOL "ogg support (default: test for libogg)" FORCE)
     set(WITH_AVX OFF CACHE BOOL "scxt is sse4.2 not ACXX" FORCE)
 
-    add_subdirectory(flac)
+    add_subdirectory(flac EXCLUDE_FROM_ALL)
     target_compile_definitions(FLAC++ PUBLIC SCXT_USE_FLAC=1)
 
 
