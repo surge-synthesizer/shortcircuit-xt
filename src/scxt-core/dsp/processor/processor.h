@@ -172,7 +172,7 @@ const char *getProcessorDisplayGroup(ProcessorType id);
 float getProcessorDefaultMix(ProcessorType id);
 bool getProcessorGroupOnly(ProcessorType id);
 int16_t getProcessorStreamingVersion(ProcessorType id);
-using remapFn_t = void (*)(int16_t, float *const, int *const);
+using remapFn_t = void (*)(int16_t, float *const, int *const, uint32_t *const);
 remapFn_t getProcessorRemapParametersFromStreamingVersion(ProcessorType id);
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s);
 

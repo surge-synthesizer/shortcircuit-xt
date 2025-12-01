@@ -136,12 +136,27 @@ template <size_t I> int16_t implGetStreamingVersion()
         return ProcessorImplementor<(ProcessorType)I>::T::streamingVersion;
 }
 
+template <typename T>
+concept HasThreeArgRemap = requires(int sv, float *fv, int *iv) {
+    { T::remapParametersForStreamingVersion(sv, fv, iv) } -> std::same_as<void>;
+};
+
+template <typename T>
+concept HasFourArgRemap = requires(int sv, float *fv, int *iv, uint32_t *featv) {
+    { T::remapParametersForStreamingVersion(sv, fv, iv, featv) } -> std::same_as<void>;
+};
+
 template <size_t I> remapFn_t implGetRemapFn()
 {
-    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
+    using PT = typename ProcessorImplementor<(ProcessorType)I>::T;
+
+    if constexpr (std::is_same<PT, unimpl_t>::value)
         return nullptr;
-    else
-        return ProcessorImplementor<(ProcessorType)I>::T::remapParametersForStreamingVersion;
+    else if constexpr (HasThreeArgRemap<PT>)
+        return
+            [](auto a, auto *b, auto *c, auto) { PT::remapParametersForStreamingVersion(a, b, c); };
+    else if constexpr (HasFourArgRemap<PT>)
+        return PT::remapParametersForStreamingVersion;
 }
 
 template <size_t... Is> auto getProcessorDisplayGroup(size_t ft, std::index_sequence<Is...>)
