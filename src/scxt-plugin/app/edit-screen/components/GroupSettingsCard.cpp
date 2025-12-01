@@ -87,9 +87,16 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     addAndMakeVisible(*polyModeMenu);
 
     prioGlyph = mkg(jcmp::GlyphPainter::GlyphType::NOTE_PRIORITY);
-    prioMenu = mkm("LAST", "Priority");
+    prioMenu = std::make_unique<jcmp::TextPushButton>();
+    prioMenu->setLabel("LAST");
+    prioMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showNotePrioMenu();
+    });
+    addAndMakeVisible(*prioMenu);
+
     glideGlpyh = mkg(jcmp::GlyphPainter::GlyphType::CURVE);
-    glideMenu = mkm("RATE", "Glide Rate Thingy");
+    glideMenu = mkm("RATE", "Glide Mode");
     glideDrag = mkd('gdrg', "Glide");
 
     volGlyph = mkg(jcmp::GlyphPainter::GlyphType::VOLUME);
@@ -177,6 +184,8 @@ void GroupSettingsCard::rebuildFromInfo()
     if (info.vmPlayModeInt == (int32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES)
     {
         polyMenu->setEnabled(false);
+        prioMenu->setEnabled(true);
+
         if (info.vmPlayModeFeaturesInt &
             (int32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::MONO_LEGATO)
         {
@@ -186,12 +195,14 @@ void GroupSettingsCard::rebuildFromInfo()
         {
             polyModeMenu->setLabel("MONO");
         }
-        repaint();
     }
     else
     {
         polyMenu->setEnabled(true);
+        prioMenu->setEnabled(false);
+
         polyModeMenu->setLabel("POLY");
+
         if (info.hasIndependentPolyLimit)
         {
             polyMenu->setLabel(std::to_string(info.polyLimit));
@@ -200,7 +211,6 @@ void GroupSettingsCard::rebuildFromInfo()
         {
             polyMenu->setLabel("PART");
         }
-        repaint();
     }
 
     if (info.midiChannel < 0)
@@ -211,13 +221,14 @@ void GroupSettingsCard::rebuildFromInfo()
     {
         midiMenu->setLabel(std::to_string(info.midiChannel + 1));
     }
+
     repaint();
 }
 
 void GroupSettingsCard::showPolyMenu()
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Group Voice Polyphony");
+    p.addSectionHeader("Polyphony");
     p.addSeparator();
     p.addItem(
         "Part", true, !info.hasIndependentPolyLimit, [w = juce::Component::SafePointer(this)]() {
@@ -249,7 +260,7 @@ void GroupSettingsCard::showPolyMenu()
 void GroupSettingsCard::showMidiChannelMenu()
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Group MIDI Channel");
+    p.addSectionHeader("MIDI Channel");
     p.addSeparator();
     for (int i = -1; i < 16; ++i)
     {
@@ -273,7 +284,7 @@ void GroupSettingsCard::showMidiChannelMenu()
 void GroupSettingsCard::showPolyModeMenu()
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Group Voice/Note Mode");
+    p.addSectionHeader("Play Mode");
     p.addSeparator();
 
     bool isAnyMono =
@@ -313,11 +324,18 @@ void GroupSettingsCard::showPolyModeMenu()
             w->rebuildFromInfo();
             w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
         });
-    p.addSeparator();
-    p.addSectionHeader("Mono Release Priority");
-    // I could ovciously structure this better
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void GroupSettingsCard::showNotePrioMenu()
+{
+    auto p = juce::PopupMenu();
+
+    p.addSectionHeader("Note Priority");
+
     p.addItem(
-        "Latest", isAnyMono,
+        "Latest", true,
         info.vmPlayModeFeaturesInt &
             (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LATEST,
         [w = juce::Component::SafePointer(this)]() {
@@ -336,7 +354,7 @@ void GroupSettingsCard::showPolyModeMenu()
             w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
         });
     p.addItem(
-        "Highest", isAnyMono,
+        "Highest", true,
         info.vmPlayModeFeaturesInt &
             (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_HIGHEST,
         [w = juce::Component::SafePointer(this)]() {
@@ -354,7 +372,7 @@ void GroupSettingsCard::showPolyModeMenu()
             w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
         });
     p.addItem(
-        "Lowest", isAnyMono,
+        "Lowest", true,
         info.vmPlayModeFeaturesInt &
             (uint32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST,
         [w = juce::Component::SafePointer(this)]() {
