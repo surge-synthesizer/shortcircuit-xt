@@ -1,5 +1,5 @@
 {
-  "comment": "Size of the display region is 190x148",
+  "comment": "Size of the display region is 215x148",
   "include": "shared-layouts/shared-classes.json",
   "classes": {
     "hamburger-stereo": {

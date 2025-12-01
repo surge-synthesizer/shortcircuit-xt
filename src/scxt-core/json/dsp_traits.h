@@ -33,6 +33,7 @@
 #include <tao/json/contrib/traits.hpp>
 
 #include "dsp/processor/processor.h"
+#include "sst/voice-effects/VoiceEffectCore.h"
 #include "scxt_traits.h"
 #include "extensions.h"
 
@@ -107,9 +108,24 @@ SC_STREAMDEF(
                         scxt::dsp::processor::getProcessorRemapParametersFromStreamingVersion(
                             result.type);
                     assert(remapFn);
+                    uint32_t features[maxProcessorFloatParams];
+                    for (int i = 0; i < maxProcessorFloatParams; ++i)
+                    {
+                        features[i] = 0;
+                        if (result.deactivated[i])
+                            features[i] |=
+                                (uint32_t)sst::voice_effects::core::StreamingFlags::IS_DEACTIVATED;
+                        if (result.isKeytracked)
+                            features[i] |=
+                                (uint32_t)sst::voice_effects::core::StreamingFlags::IS_KEYTRACKED;
+                        if (result.isTemposynced)
+                            features[i] |=
+                                (uint32_t)sst::voice_effects::core::StreamingFlags::IS_TEMPOSYNCED;
+                    }
                     if (remapFn)
                         remapFn(result.streamingVersion, result.floatParams.data(),
-                                result.intParams.data());
+                                result.intParams.data(), features);
+
                     result.streamingVersion = csv;
                 }
             }
