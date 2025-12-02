@@ -170,7 +170,8 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
         }
         else
         {
-            setValueFromGUI(f);
+            auto g = std::round((int)(f / 12) * 12);
+            setValueFromGUI(g);
         }
     }
     void setValueFromGUI(const float &ff) override
