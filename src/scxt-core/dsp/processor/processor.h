@@ -133,6 +133,7 @@ enum ProcessorType
     proct_autowah,
 
     proct_stringResonator,
+    proct_osc_3op,
 
     proct_eq_3band_parametric_A,
     proct_eq_6band,

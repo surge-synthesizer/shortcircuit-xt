@@ -34,4 +34,5 @@ SincTable sincTable;
 SurgeSincTable surgeSincTable;
 DbTable dbTable;
 TwoToTheXTable twoToTheXTable;
+PmSineTable pmSineTable{false};
 } // namespace scxt::dsp

@@ -35,6 +35,7 @@
 #include "sst/basic-blocks/tables/SincTableProvider.h"
 #include "sst/basic-blocks/tables/DbToLinearProvider.h"
 #include "sst/basic-blocks/tables/TwoToTheXProvider.h"
+#include "sst/basic-blocks/tables/SixSinesWaveProvider.h"
 #include "resampling.h"
 
 namespace scxt::dsp
@@ -54,6 +55,9 @@ extern DbTable dbTable;
 
 using TwoToTheXTable = sst::basic_blocks::tables::TwoToTheXProvider;
 extern TwoToTheXTable twoToTheXTable;
+
+using PmSineTable = sst::basic_blocks::tables::SixSinesWaveProvider;
+extern PmSineTable pmSineTable;
 } // namespace scxt::dsp
 
 #endif // __SCXT_DSP_SINC_TABLES_H

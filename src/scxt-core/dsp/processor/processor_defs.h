@@ -84,6 +84,7 @@
 #include "sst/voice-effects/generator/EllipticBlepWaveforms.h"
 #include "sst/voice-effects/generator/SinePlus.h"
 #include "sst/voice-effects/generator/StringResonator.h"
+#include "sst/voice-effects/generator/3opPhaseMod.h"
 
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
 #include "sst/voice-effects/modulation/RingMod.h"
@@ -297,6 +298,10 @@ PROC_DEFAULT_MIX(proct_osc_tiltnoise, 0.5);
 DEFINE_PROC(StringResonator, sst::voice_effects::generator::StringResonator<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
             "String Resonator", "Generators", "stringex-fx", dsp::surgeSincTable);
+
+DEFINE_PROC(ThreeOpPhaseMod, sst::voice_effects::generator::ThreeOpPhaseMod<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::ThreeOpPhaseMod<SCXTVFXConfig<2>>, proct_osc_3op,
+            "3op Phase Mod", "Generators", "3op-pm", dsp::twoToTheXTable, dsp::pmSineTable);
 
 DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters",

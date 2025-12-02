@@ -1045,6 +1045,7 @@ void Engine::onSampleRateChanged()
 {
     sst::basic_blocks::dsp::prepareEBOscillators(sampleRate);
     sst::basic_blocks::dsp::prepareEBOscillators(sampleRate * 2);
+    dsp::pmSineTable.setSampleRate(sampleRate);
     patch->setSampleRate(sampleRate);
     previewVoice->setSampleRate(sampleRate);
 

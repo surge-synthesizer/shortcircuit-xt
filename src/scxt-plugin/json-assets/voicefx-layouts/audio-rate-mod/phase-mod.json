@@ -1,29 +1,29 @@
 {
-  "include": "voicefx-layouts/voicefx-classes.json",
-  "controls": {
-    "transpose": {
-      "class": "knob70",
-      "label": "Frequency",
-      "position": {
-        "x": 25,
-        "y": 30
-      },
-      "binding": {
-        "type": "float",
-        "index": 0
-      }
-    },
-    "depth": {
-      "class": "knob70",
-      "label": "Depth",
-      "position": {
-        "x": 120,
-        "y": 30
-      },
-      "binding": {
-        "type": "float",
-        "index": 1
-      }
+    "include": "voicefx-layouts/voicefx-classes.json",
+    "controls": {
+        "transpose": {
+            "class": "knob70",
+            "label": "Frequency",
+            "position": {
+                "x": 25,
+                "y": 30
+            },
+            "binding": {
+                "type": "float",
+                "index": 0
+            }
+        },
+        "depth": {
+            "class": "knob70",
+            "label": "Depth",
+            "position": {
+                "x": 120,
+                "y": 30
+            },
+            "binding": {
+                "type": "float",
+                "index": 1
+            }
+        }
     }
-  }
 }
