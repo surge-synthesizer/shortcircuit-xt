@@ -1,54 +1,54 @@
 {
-  "comment": "linear: 1 -> 2 -> 3 -> 4; area is 190x107",
-  "include": "procrouting-layouts/procrouting-classes.json",
-  "controls": {
-    "c0": {
-      "class": "routing-box",
-      "label": "1",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 8,
-        "y": 34
-      }
-    },
-    "c1": {
-      "class": "routing-box",
-      "label": "2",
-      "binding": {
-        "type": "float",
-        "index": 1
-      },
-      "position": {
-        "x": 52,
-        "y": 34
-      }
-    },
-    "c2": {
-      "class": "routing-box",
-      "label": "3",
-      "binding": {
-        "type": "float",
-        "index": 2
-      },
-      "position": {
-        "x": 96,
-        "y": 34
-      }
-    },
-    "c3": {
-      "class": "routing-box",
-      "label": "4",
-      "binding": {
-        "type": "float",
-        "index": 3
-      },
-      "position": {
-        "x": 140,
-        "y": 34
-      }
+    "comment": "linear: 1 -> 2 -> 3 -> 4; area is 190x107",
+    "include": "procrouting-layouts/procrouting-classes.json",
+    "controls": {
+        "c0": {
+            "class": "routing-box",
+            "label": "1",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 8,
+                "y": 34
+            }
+        },
+        "c1": {
+            "class": "routing-box",
+            "label": "2",
+            "binding": {
+                "type": "float",
+                "index": 1
+            },
+            "position": {
+                "x": 52,
+                "y": 34
+            }
+        },
+        "c2": {
+            "class": "routing-box",
+            "label": "3",
+            "binding": {
+                "type": "float",
+                "index": 2
+            },
+            "position": {
+                "x": 96,
+                "y": 34
+            }
+        },
+        "c3": {
+            "class": "routing-box",
+            "label": "4",
+            "binding": {
+                "type": "float",
+                "index": 3
+            },
+            "position": {
+                "x": 140,
+                "y": 34
+            }
+        }
     }
-  }
 }
