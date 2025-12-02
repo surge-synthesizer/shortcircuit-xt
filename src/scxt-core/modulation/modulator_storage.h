@@ -270,6 +270,7 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                         .withRange(0, 2)
                                         .withDefault(0)
                                         .withLinearScaleFormatting("")
+                                        .withQuantizedInterval(0.25f)
                                         .withName("Deform"));
     SC_FIELD(stepLfoStorage.repeat,
              pmd()

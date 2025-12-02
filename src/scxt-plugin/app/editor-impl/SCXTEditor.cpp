@@ -509,7 +509,9 @@ std::function<void()> SCXTEditor::makeComingSoon(const std::string &feature)
     return [w = juce::Component::SafePointer(this), f = feature]() {
         if (w)
             w->displayModalOverlay(sst::jucegui::screens::AlertOrPrompt::Alert(
-                "Coming Soon", f + " is not yet implemented"));
+                "Coming Soon",
+                f + " is not yet implemented. "
+                    "We will either implement or remove this feature during the beta period."));
     };
 }
 
