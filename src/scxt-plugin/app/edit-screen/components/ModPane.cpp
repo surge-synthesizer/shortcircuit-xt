@@ -113,7 +113,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
         // The generic value tooltip doesn't work for this and only this control
         depthAttachment = std::make_unique<attachment_t>(
-            datamodel::pmd().asPercentBipolar().withName("Depth"),
+            datamodel::pmd().asPercentBipolar().withQuantizedInterval(0.05).withName("Depth"),
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                 {
