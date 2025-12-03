@@ -188,7 +188,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
 
-    void showHamburgerMenu();
+    void showProcessorTypeMenu();
+    void showPresetsMenu();
 
     bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
     void itemDropped(const SourceDetails &dragSourceDetails) override;
