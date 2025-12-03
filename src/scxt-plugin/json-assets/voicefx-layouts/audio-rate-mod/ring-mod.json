@@ -9,32 +9,8 @@
         "index": 0
       },
       "position": {
-        "x": 30,
-        "y": 15
-      }
-    },
-    "numerator": {
-      "class": "jog-updown",
-      "binding": {
-        "type": "int",
-        "index": 0
-      },
-      "position": {
-        "x": 130,
-        "y": 35,
-        "w": 50
-      }
-    },
-    "denominator": {
-      "class": "jog-updown",
-      "binding": {
-        "type": "int",
-        "index": 1
-      },
-      "position": {
-        "x": 130,
-        "y": 62,
-        "w": 50
+        "x": 60,
+        "y": 25
       }
     }
   }
