@@ -121,13 +121,15 @@ void Part::process(Engine &e)
         if (configuration.routeTo == DEFAULT_BUS)
             bi = (BusAddress)(PART_0 + partNumber);
 
+        int idx{0};
         for (auto &p : partEffects)
         {
-            if (p)
+            if (p && partEffectStorage[idx].isActive)
             {
                 p->process(defOut[0], defOut[1]);
                 silenceMax += p->silentSamplesLength();
             }
+            idx++;
         }
 
         auto &obus = e.getPatch()->getBusForOutput(bi);
