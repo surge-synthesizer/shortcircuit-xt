@@ -76,7 +76,11 @@ struct PartEffectsPane : public HasEditor,
             if (w)
                 w->showHamburger();
         };
-        hasHamburger = true;
+        nameIsSelector = true;
+        onNameSelected = [w = juce::Component::SafePointer(this)] {
+            if (w)
+                w->showNameSelect();
+        };
         setTogglable(true);
     }
     ~PartEffectsPane();
@@ -100,10 +104,15 @@ struct PartEffectsPane : public HasEditor,
             rebuild();
     }
 
-    void resized() override { rebuild(); }
+    void resized() override
+    {
+        rebuild();
+        NamedPanel::resized();
+    }
 
     void rebuild();
-    void showHamburger() { showFXSelectionMenu(parent, busAddressOrPart, fxSlot); };
+    void showHamburger();
+    void showNameSelect() { showFXSelectionMenu(parent, busAddressOrPart, fxSlot); };
     static void showFXSelectionMenu(parent_t *p, int b, int s);
 
     void paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into);

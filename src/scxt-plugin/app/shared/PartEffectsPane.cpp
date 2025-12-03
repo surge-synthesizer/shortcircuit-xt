@@ -205,6 +205,21 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
         addAdditionalHamburgerComponent(std::move(res));
     }
 
+    {
+        auto onGuiChange = [w = juce::Component::SafePointer(this)](auto &a) {
+            if (w)
+            {
+                // Fix this 0
+                w->busEffectStorageChangedFromGUI(a, 0);
+            }
+        };
+        auto at = std::make_unique<boolAttachment_t>("Active", onGuiChange,
+                                                     getPartFXStorage().second.isActive);
+        setToggleDataSource(at.get());
+        boolAttachments.insert(std::move(at));
+        addAndMakeVisible(*toggleButton);
+    }
+
     repaint();
 }
 
@@ -434,6 +449,15 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuildDefaultLayout()
         }
         idx++;
     }
+}
+
+template <bool forBus> void PartEffectsPane<forBus>::showHamburger()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Presets");
+    p.addSeparator();
+    p.addItem("Presets Coming Soon", []() {});
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
 template <bool forBus>
