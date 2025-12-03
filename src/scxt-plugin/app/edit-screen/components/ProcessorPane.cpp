@@ -56,10 +56,15 @@ ProcessorPane::ProcessorPane(SCXTEditor *e, int index, bool fz)
     setContentAreaComponent(std::make_unique<juce::Component>());
     setOptionalCursorForNameArea(juce::MouseCursor::DraggingHandCursor);
     hasHamburger = true;
+    nameIsSelector = true;
 
     onHamburger = [safeThis = juce::Component::SafePointer(this)]() {
         if (safeThis)
-            safeThis->showHamburgerMenu();
+            safeThis->showPresetsMenu();
+    };
+    onNameSelected = [safeThis = juce::Component::SafePointer(this)]() {
+        if (safeThis)
+            safeThis->showProcessorTypeMenu();
     };
 
     setTogglable(true);
@@ -74,7 +79,7 @@ void ProcessorPane::resized()
     rebuildControlsFromDescription();
 }
 
-void ProcessorPane::showHamburgerMenu()
+void ProcessorPane::showProcessorTypeMenu()
 {
     if (!isEnabled())
         return;
@@ -116,6 +121,20 @@ void ProcessorPane::showHamburgerMenu()
     }
     p.addSubMenu(priorGroup, subMenu);
 
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void ProcessorPane::showPresetsMenu()
+{
+    if (!isEnabled())
+        return;
+
+    juce::PopupMenu p;
+    p.addSectionHeader("Presets");
+    p.addSeparator();
+    p.addItem("Presets Coming Soon", []() {});
+    p.addItem("Click Effect Name", []() {});
+    p.addItem("To Change Type", []() {});
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
