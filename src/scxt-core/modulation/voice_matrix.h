@@ -171,10 +171,10 @@ struct MatrixEndpoints
         {
             if (e)
             {
-                registerVoiceModTarget(e, pitchOffsetT, "Mapping", "Pitch Offset");
-                registerVoiceModTarget(e, panT, "Mapping", "Pan");
-                registerVoiceModTarget(e, ampT, "Mapping", "Amplitude", true);
-                registerVoiceModTarget(e, playbackRatioT, "Mapping", "Playback Ratio");
+                registerVoiceModTarget(e, pitchOffsetT, "Zone", "Tune");
+                registerVoiceModTarget(e, panT, "Zone", "Pan");
+                registerVoiceModTarget(e, ampT, "Zone", "Amplitude", true);
+                registerVoiceModTarget(e, playbackRatioT, "Zone", "Playback Ratio");
             }
         }
         TG pitchOffsetT, panT, ampT, playbackRatioT;
@@ -206,7 +206,7 @@ struct MatrixEndpoints
 
     struct ProcessorTarget : scxt::modulation::shared::ProcessorTargetEndpointData<TG, 'proc'>
     {
-        // This is out of line since it creates a caluclation using zone
+        // This is out of line since it creates a calculation using zone
         // innards and we can't have an include cycle
         ProcessorTarget(engine::Engine *e, uint32_t p);
 
