@@ -167,6 +167,7 @@ SC_STREAMDEF(scxt::sample::SampleManager,
 SC_STREAMDEF(scxt::sample::compound::CompoundElement, SC_FROM({
                  v = {{"type", (int32_t)from.type},
                       {"name", from.name},
+                      {"emsg", from.emsg},
                       {"addr", from.sampleAddress}};
              }),
              SC_TO({
@@ -174,6 +175,7 @@ SC_STREAMDEF(scxt::sample::compound::CompoundElement, SC_FROM({
                  findOrSet(v, "type", 0, t);
                  to.type = (scxt::sample::compound::CompoundElement::Type)t;
                  findIf(v, "name", to.name);
+                 findIf(v, "emsg", to.emsg);
                  findIf(v, "addr", to.sampleAddress);
              }));
 } // namespace scxt::json

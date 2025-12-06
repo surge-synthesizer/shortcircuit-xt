@@ -577,6 +577,11 @@ struct InstrumentPrompt : sst::jucegui::screens::ModalBase
 void MappingDisplay::promptForMultiInstrument(
     const std::vector<sample::compound::CompoundElement> &inst)
 {
+    if (inst.size() == 1 && inst[0].type == sample::compound::CompoundElement::ERROR)
+    {
+        editor->displayError(inst[0].name, inst[0].emsg);
+        return;
+    }
     SCLOG("promptForMultimple with size " << inst.size());
     editor->displayModalOverlay(std::make_unique<InstrumentPrompt>(this, inst));
 }

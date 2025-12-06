@@ -32,67 +32,85 @@ namespace scxt::sample::compound
 {
 std::vector<CompoundElement> getSF2SampleAddresses(const fs::path &p)
 {
-    auto riff = std::make_unique<RIFF::File>(p.u8string());
-    auto sf = std::make_unique<sf2::File>(riff.get());
-
-    auto sc = sf->GetSampleCount();
-    std::vector<CompoundElement> result;
-    result.reserve(sc);
-    for (int i = 0; i < sc; ++i)
+    try
     {
-        auto s = sf->GetSample(i);
+        auto riff = std::make_unique<RIFF::File>(p.u8string());
+        auto sf = std::make_unique<sf2::File>(riff.get());
 
-        CompoundElement res;
-        res.type = CompoundElement::Type::SAMPLE;
-        res.name = s->GetName();
-        res.sampleAddress = {Sample::SF2_FILE, p, "", -1, -1, i};
-        result.push_back(res);
+        auto sc = sf->GetSampleCount();
+        std::vector<CompoundElement> result;
+        result.reserve(sc);
+        for (int i = 0; i < sc; ++i)
+        {
+            auto s = sf->GetSample(i);
+
+            CompoundElement res;
+            res.type = CompoundElement::Type::SAMPLE;
+            res.name = s->GetName();
+            res.sampleAddress = {Sample::SF2_FILE, p, "", -1, -1, i};
+            result.push_back(res);
+        }
+        return result;
     }
-    return result;
+    catch (RIFF::Exception e)
+    {
+        auto ce =
+            CompoundElement{CompoundElement::Type::ERROR, "Error loading SF2 file", e.Message};
+        return {ce};
+    }
 }
 
 std::vector<CompoundElement> getSF2InstrumentAddresses(const fs::path &p)
 {
-    auto riff = std::make_unique<RIFF::File>(p.u8string());
-    auto sf = std::make_unique<sf2::File>(riff.get());
-
-    auto ic = sf->GetPresetCount();
-    std::vector<CompoundElement> result;
-    result.reserve(ic);
-
-    std::vector<std::pair<sf2::Preset *, int>> presets;
-
-    for (int i = 0; i < ic; ++i)
+    try
     {
-        presets.push_back({sf->GetPreset(i), i});
+        auto riff = std::make_unique<RIFF::File>(p.u8string());
+        auto sf = std::make_unique<sf2::File>(riff.get());
+
+        auto ic = sf->GetPresetCount();
+        std::vector<CompoundElement> result;
+        result.reserve(ic);
+
+        std::vector<std::pair<sf2::Preset *, int>> presets;
+
+        for (int i = 0; i < ic; ++i)
+        {
+            presets.push_back({sf->GetPreset(i), i});
+        }
+
+        std::sort(presets.begin(), presets.end(), [](const auto &aa, const auto &bb) {
+            auto a = aa.first;
+            auto b = bb.first;
+            auto na = a->GetName();
+            auto nb = b->GetName();
+
+            auto abc = strnatcmp(na.c_str(), nb.c_str());
+            if (abc != 0)
+                return abc < 0;
+
+            if (a->Bank != b->Bank)
+                return a->Bank < b->Bank;
+            return a->PresetNum < b->PresetNum;
+        });
+
+        for (auto pr : presets)
+        {
+            auto in = pr.first;
+            auto i = pr.second;
+            CompoundElement res;
+            res.type = CompoundElement::Type::INSTRUMENT;
+            res.name = in->GetName();
+            res.sampleAddress = {Sample::SF2_FILE, p, "", i, -1, -1};
+            result.push_back(res);
+        }
+
+        return result;
     }
-
-    std::sort(presets.begin(), presets.end(), [](const auto &aa, const auto &bb) {
-        auto a = aa.first;
-        auto b = bb.first;
-        auto na = a->GetName();
-        auto nb = b->GetName();
-
-        auto abc = strnatcmp(na.c_str(), nb.c_str());
-        if (abc != 0)
-            return abc < 0;
-
-        if (a->Bank != b->Bank)
-            return a->Bank < b->Bank;
-        return a->PresetNum < b->PresetNum;
-    });
-
-    for (auto pr : presets)
+    catch (RIFF::Exception e)
     {
-        auto in = pr.first;
-        auto i = pr.second;
-        CompoundElement res;
-        res.type = CompoundElement::Type::INSTRUMENT;
-        res.name = in->GetName();
-        res.sampleAddress = {Sample::SF2_FILE, p, "", i, -1, -1};
-        result.push_back(res);
+        auto ce =
+            CompoundElement{CompoundElement::Type::ERROR, "Error loading SF2 file", e.Message};
+        return {ce};
     }
-
-    return result;
 }
 } // namespace scxt::sample::compound
