@@ -55,6 +55,12 @@ void Zone::process(Engine &e)
 
 template <bool OS> void Zone::processWithOS(scxt::engine::Engine &onto)
 {
+    if (terminateOnNextProcess)
+    {
+        terminateOnNextProcess = false;
+        terminateAllVoices();
+        return;
+    }
     constexpr size_t osBlock{blockSize << (OS ? 1 : 0)};
     namespace blk = sst::basic_blocks::mechanics;
     // TODO these memsets are probably gratuitous
@@ -479,6 +485,8 @@ int16_t Zone::missingSampleCount() const
 void Zone::deleteVariant(int idx)
 {
     assert(idx >= 0 && idx < maxVariantsPerZone);
+    terminateOnNextProcess = true;
+
     for (int nv = idx + 1; nv < maxVariantsPerZone; ++nv)
     {
         variantData.variants[nv - 1] = variantData.variants[nv];
