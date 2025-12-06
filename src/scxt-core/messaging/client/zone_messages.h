@@ -220,9 +220,9 @@ inline void doDeleteVariant(const deleteVariantPayload_t &payload, engine::Engin
             [p = ps, g = gs, z = zs, var = payload](auto &eng) {
                 const auto &zone = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
                 zone->deleteVariant(var);
-                eng.getSampleManager()->purgeUnreferencedSamples();
             },
             [p = ps, g = gs, z = zs](auto &e) {
+                e.getSampleManager()->purgeUnreferencedSamples();
                 SCLOG_ONCE("Delete variant could be optimized to not sending so much back");
                 e.sendFullRefreshToClient();
             });
