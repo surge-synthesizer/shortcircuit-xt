@@ -42,10 +42,12 @@ struct CompoundElement
     enum Type : int32_t
     {
         SAMPLE,
-        INSTRUMENT
+        INSTRUMENT,
+        ERROR_SENTINEL // because MSVC has a #define ERROR somewhere
     } type{SAMPLE};
 
     std::string name;
+    std::string emsg{};
     Sample::SampleFileAddress sampleAddress;
 };
 

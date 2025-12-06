@@ -214,6 +214,8 @@ struct SampleManager : MoveableOnly<SampleManager>
     sampleMap_t::const_iterator samplesBegin() const { return samples.cbegin(); }
     sampleMap_t::const_iterator samplesEnd() const { return samples.cend(); }
 
+    std::function<void(const std::string &, const std::string &)> raiseError = [](auto, auto) {};
+
   private:
     void updateSampleMemory();
     std::unordered_map<SampleID, SampleID> idAliases;

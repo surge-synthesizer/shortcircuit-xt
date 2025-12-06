@@ -785,7 +785,14 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             {
                 auto b = getLocalBounds().withTrimmedLeft(2 * glyphSize + 2);
                 auto gr = r.translated(glyphSize + 2, 0);
-                if (entry.expandableAddress->type == sample::compound::CompoundElement::SAMPLE)
+                if (entry.expandableAddress->type ==
+                    sample::compound::CompoundElement::ERROR_SENTINEL)
+                {
+                    jcmp::GlyphPainter::paintGlyph(
+                        g, gr, jcmp::GlyphPainter::SMALL_POWER_LIGHT_OFF,
+                        browserPane->editor->themeColor(theme::ColorMap::warning_1a));
+                }
+                else if (entry.expandableAddress->type == sample::compound::CompoundElement::SAMPLE)
                 {
                     jcmp::GlyphPainter::paintGlyph(g, gr, jcmp::GlyphPainter::SPEAKER,
                                                    textColor.withAlpha(isSelected ? 1.f : 0.5f));

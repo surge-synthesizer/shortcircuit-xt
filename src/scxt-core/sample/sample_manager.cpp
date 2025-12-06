@@ -175,6 +175,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2:
             }
             catch (RIFF::Exception e)
             {
+                raiseError("Unable to load SF2 File ", e.Message);
                 return {};
             }
         }

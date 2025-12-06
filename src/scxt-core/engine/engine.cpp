@@ -88,6 +88,9 @@ Engine::Engine()
     tuning::equalTuning.init();
 
     sampleManager = std::make_unique<sample::SampleManager>(messageController->threadingChecker);
+    sampleManager->raiseError = [this](auto a, auto b) {
+        messageController->reportErrorToClient(a, b);
+    };
     patch = std::make_unique<Patch>();
     patch->parentEngine = this;
 
@@ -551,6 +554,12 @@ void Engine::loadCompoundElementIntoZone(const sample::compound::CompoundElement
         return;
     }
 
+    if (p.type == sample::compound::CompoundElement::ERROR_SENTINEL)
+    {
+        messageController->reportErrorToClient(p.name, p.emsg);
+        return;
+    }
+
     assert((*sz).part == partID);
     assert((*sz).group == groupID);
     assert((*sz).zone == zoneID);
@@ -678,6 +687,12 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
             });
             return;
         }
+        return;
+    }
+
+    if (p.type == sample::compound::CompoundElement::ERROR_SENTINEL)
+    {
+        messageController->reportErrorToClient(p.name, p.emsg);
         return;
     }
 
