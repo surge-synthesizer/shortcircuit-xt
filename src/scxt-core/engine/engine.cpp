@@ -554,7 +554,7 @@ void Engine::loadCompoundElementIntoZone(const sample::compound::CompoundElement
         return;
     }
 
-    if (p.type == sample::compound::CompoundElement::ERROR)
+    if (p.type == sample::compound::CompoundElement::ERROR_SENTINEL)
     {
         messageController->reportErrorToClient(p.name, p.emsg);
         return;
@@ -690,7 +690,7 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
         return;
     }
 
-    if (p.type == sample::compound::CompoundElement::ERROR)
+    if (p.type == sample::compound::CompoundElement::ERROR_SENTINEL)
     {
         messageController->reportErrorToClient(p.name, p.emsg);
         return;

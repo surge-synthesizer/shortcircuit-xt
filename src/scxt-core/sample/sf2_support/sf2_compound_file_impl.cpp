@@ -54,8 +54,8 @@ std::vector<CompoundElement> getSF2SampleAddresses(const fs::path &p)
     }
     catch (RIFF::Exception e)
     {
-        auto ce =
-            CompoundElement{CompoundElement::Type::ERROR, "Error loading SF2 file", e.Message};
+        auto ce = CompoundElement{CompoundElement::Type::ERROR_SENTINEL, "Error loading SF2 file",
+                                  e.Message};
         return {ce};
     }
 }
@@ -108,8 +108,8 @@ std::vector<CompoundElement> getSF2InstrumentAddresses(const fs::path &p)
     }
     catch (RIFF::Exception e)
     {
-        auto ce =
-            CompoundElement{CompoundElement::Type::ERROR, "Error loading SF2 file", e.Message};
+        auto ce = CompoundElement{CompoundElement::Type::ERROR_SENTINEL, "Error loading SF2 file",
+                                  e.Message};
         return {ce};
     }
 }

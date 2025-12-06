@@ -43,7 +43,7 @@ struct CompoundElement
     {
         SAMPLE,
         INSTRUMENT,
-        ERROR
+        ERROR_SENTINEL // because MSVC has a #define ERROR somewhere
     } type{SAMPLE};
 
     std::string name;
