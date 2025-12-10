@@ -389,11 +389,6 @@ void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
     floatParameterCount = T::numFloatParams;
     intParameterCount = T::numIntParams;
 
-    if (needsMetadata)
-    {
-        resetMetadata();
-    }
-
     for (int i = 0; i < 16; ++i)
     {
         if (preReserveSize[i] > 0)
@@ -406,6 +401,11 @@ void Processor::setupProcessor(T *that, ProcessorType t, engine::MemoryPool *mp,
             assert(memoryPool);
             memoryPool->preReserveSingleInstancePool(preReserveSingleInstanceSize[i]);
         }
+    }
+
+    if (needsMetadata)
+    {
+        resetMetadata();
     }
 }
 
