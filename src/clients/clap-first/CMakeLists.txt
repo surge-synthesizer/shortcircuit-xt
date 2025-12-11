@@ -64,11 +64,9 @@ if (UNIX AND NOT APPLE)
 
     # VST3 plugin (.vst3 bundle)
     if(TARGET scxt_clapfirst_vst3)
-        install(TARGETS scxt_clapfirst_vst3
-            BUNDLE  DESTINATION "${SCXT_VST3_INSTALL_DIR}"
-            LIBRARY DESTINATION "${SCXT_VST3_INSTALL_DIR}"
-            RUNTIME DESTINATION "${SCXT_VST3_INSTALL_DIR}"
-        )
+        set(v3name "$<TARGET_PROPERTY:scxt_clapfirst_vst3,LIBRARY_OUTPUT_NAME>.vst3")
+        set(v3dir "$<TARGET_PROPERTY:scxt_clapfirst_vst3,LIBRARY_OUTPUT_DIRECTORY>/../../..")
+        install(DIRECTORY "${v3dir}/${v3name}" DESTINATION "${SCXT_VST3_INSTALL_DIR}")
     endif()
 
     # Standalone app/executable
