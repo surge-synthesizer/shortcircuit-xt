@@ -114,27 +114,42 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     scxt::sample::loaders::RIFFMemFile mf(data, filesize);
     mf.useWaveEndian = false;
     if (!mf.iff_descend_FORM('AIFF', &datasize))
+    {
+        addError("Unable to locate 'AIFF' chunk in file");
         return false;
+    }
     off_t wr = mf.TellI();
 
     if (!mf.iff_descend('COMM', &datasize))
+    {
+        addError("Unable to locate 'COMM' chunk in file");
         return false;
+    }
     aiff_CommonChunk cc;
     // read header
     mf.Read(&cc, sizeof(cc));
     channels = sst::basic_blocks::mechanics::swap_endian_16(cc.numChannels);
     if (channels > 2)
+    {
+        addError("Unable to load aif with " + std::to_string(channels) + " channels");
         return false;
+    }
     int nsamples = sst::basic_blocks::mechanics::swap_endian_32(cc.numSampleFrames);
     int bitdepth = sst::basic_blocks::mechanics::swap_endian_16(cc.sampleSize);
 
     if (!SetMeta(channels, ConvertFromIeeeExtended(cc.sampleRate), nsamples))
+    {
+        addError("Unable to setup meta data");
         return false;
+    }
 
     // load sample data
     mf.SeekI(wr);
     if (!mf.iff_descend('SSND', &datasize))
+    {
+        addError("AIFF file is missing 'SSND' chunk");
         return false;
+    }
     uint32_t offset = sst::basic_blocks::mechanics::swap_endian_32(mf.ReadDWORD());
     uint32_t blocksize = sst::basic_blocks::mechanics::swap_endian_32(mf.ReadDWORD());
     mf.SeekI(offset, scxt::sample::loaders::mf_FromCurrent); // skip comment
@@ -185,6 +200,8 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     this->sample_loaded = (sampleData[0] != 0);
     if (!sample_loaded)
     {
+        addError("Failed to load sample data - no supported sample/bitdepth combo found bd=" +
+                 std::to_string(bitdepth));
         clear_data();
         return false;
     }

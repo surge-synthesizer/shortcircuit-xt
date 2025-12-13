@@ -49,8 +49,12 @@ Sample::~Sample()
 
 bool Sample::load(const fs::path &path)
 {
+    resetErrorString();
     if (!fs::exists(path))
+    {
+        addError("File " + path.u8string() + " does not exist.");
         return false;
+    }
 
     md5Sum = infrastructure::createMD5SumFromFile(path);
     id.setPathHash(path.u8string().c_str());
@@ -66,7 +70,10 @@ bool Sample::load(const fs::path &path)
 
         bool r = parse_riff_wave(data, datasize);
         if (!r)
+        {
+            addError("Unable to parse RIFF");
             return false;
+        }
 
         sample_loaded = true;
         mFileName = path;
@@ -90,6 +97,10 @@ bool Sample::load(const fs::path &path)
 
             return true;
         }
+        else
+        {
+            addError("Unable to parse FLAC");
+        }
     }
     else if (extensionMatches(path, ".mp3"))
     {
@@ -104,6 +115,10 @@ bool Sample::load(const fs::path &path)
 
             return true;
         }
+        else
+        {
+            addError("Unable to parse FLAC");
+        }
     }
     else if (extensionMatches(path, ".aif") || extensionMatches(path, ".aiff"))
     {
@@ -114,7 +129,12 @@ bool Sample::load(const fs::path &path)
         clear_data(); // clear to a more predictable state
 
         bool r = parse_aiff(data, datasize);
-        // TODO deal with return value
+        if (!r)
+        {
+            addError("Unable to parse AIF");
+            return false;
+        }
+
         type = AIFF_FILE;
         sample_loaded = true;
         mFileName = path;
@@ -138,7 +158,10 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
 
     auto sfsample = f->GetSample(sampleIndex);
     if (!sfsample)
+    {
+        addError("Unable to load sample " + std::to_string(sampleIndex) + " of " + p.u8string());
         return false;
+    }
 
     auto frameSize = sfsample->GetFrameSize();
     channels = sfsample->GetChannelCount();
@@ -191,7 +214,7 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
     std::ostringstream oss;
     oss << "Unable to load sample from SF2. " << SCD(sfsample->GetFrameSize())
         << SCD(sfsample->GetChannelCount());
-    throw SCXTError(oss.str());
+    addError(oss.str());
     return false;
 }
 
@@ -205,7 +228,10 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
 
     auto sfsample = f->GetSample(sampleIndex);
     if (!sfsample)
+    {
+        addError("Unable to load sample " + std::to_string(sampleIndex) + " of " + p.u8string());
         return false;
+    }
 
     auto frameSize = sfsample->FrameSize;
     channels = sfsample->Channels;
@@ -245,6 +271,8 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
         return true;
     }
 
+    addError("Cant load frameSize/channels from gig " + std::to_string(frameSize) + "/" +
+             std::to_string(channels));
     return false;
 }
 
@@ -262,6 +290,8 @@ bool Sample::loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampl
     patch_io::SCMonolithSampleReader::SampleData dat;
     if (!reader.getSampleData(sampleIndex, dat))
     {
+        addError(reader.getErrorString());
+        addError("Failed to get sample data from reader");
         return false;
     }
 
@@ -273,16 +303,22 @@ bool Sample::loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampl
     if (extensionMatches(fnP, ".wav"))
     {
         auto res = parse_riff_wave(dat.data.data(), dat.data.size());
+        if (!res)
+            addError("Unable to parse embedded wav");
         return res;
     }
     else if (extensionMatches(fnP, ".aif") || extensionMatches(fnP, ".aiff"))
     {
         auto res = parse_aiff(dat.data.data(), dat.data.size());
+        if (!res)
+            addError("Unable to parse embedded aif");
         return res;
     }
     else if (extensionMatches(fnP, ".flac"))
     {
         auto res = parseFlac(dat.data.data(), dat.data.size());
+        if (!res)
+            addError("Unable to parse embedded FLAC");
 
         mFileName = path;
         preset = -1;
@@ -295,6 +331,8 @@ bool Sample::loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampl
     else if (extensionMatches(fnP, ".mp3"))
     {
         auto res = parseMP3(dat.data.data(), dat.data.size());
+        if (!res)
+            addError("Unable to parse embedded MP3");
 
         mFileName = path;
         preset = -1;
@@ -306,6 +344,7 @@ bool Sample::loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampl
     }
     else
     {
+        addError("Unknown embedded sample format " + fnP.extension().u8string());
         return false;
     }
 
@@ -500,7 +539,10 @@ bool Sample::load_data_f64(int channel, void *data, unsigned int samplesize, uns
 bool Sample::SetMeta(unsigned int Channels, unsigned int SampleRate, unsigned int SampleLength)
 {
     if (Channels > 2)
+    {
+        addError("Channel count " + std::to_string(Channels) + " is not supported");
         return false; // not supported
+    }
 
     channels = Channels;
     sample_length = SampleLength;

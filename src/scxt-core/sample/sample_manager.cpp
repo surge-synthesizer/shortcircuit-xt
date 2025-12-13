@@ -120,7 +120,7 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
     break;
     case Sample::SFZ_FILE:
     {
-        SCLOG("How did this happen?");
+        raiseError("Software Error", "Single Sample SFZ load called for. Softare error");
     }
     break;
         // add something here? don't forget to add it in the multi resolver too in
@@ -146,7 +146,8 @@ std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 
     if (!sp->load(p))
     {
-        SCLOG("Failed to load sample from '" << p.u8string() << "'");
+        raiseError("Sample Load Failed",
+                   "Unable to load sample file " + p.u8string() + "\n" + sp->getErrorString());
         return std::nullopt;
     }
 
@@ -485,7 +486,8 @@ SampleManager::getSampleAddressesFor(const std::vector<SampleID> &sids) const
         auto smp = getSample(sid);
         if (!smp)
         {
-            SCLOG("WARNING: Requested non-existant sample at " << sid.to_string());
+            raiseError("GetSampleAddress Error",
+                       "WARNING: Requested non-existant sample at " + sid.to_string());
         }
         else
         {

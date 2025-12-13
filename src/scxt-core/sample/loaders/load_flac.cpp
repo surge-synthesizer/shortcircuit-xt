@@ -233,6 +233,7 @@ bool Sample::parseFlac(const fs::path &p)
     auto status = dec.init(p.u8string());
     if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
     {
+        addError("Unable to initiate flac streamer " + std::to_string(status));
         return false;
     }
 
@@ -244,6 +245,7 @@ bool Sample::parseFlac(const fs::path &p)
         auto status = dec2.init(p.u8string());
         if (status != FLAC__STREAM_DECODER_INIT_STATUS_OK)
         {
+            addError("Unable to initiate flac streamer " + std::to_string(status));
             return false;
         }
 
@@ -252,7 +254,6 @@ bool Sample::parseFlac(const fs::path &p)
     }
     else
     {
-
         res = res && dec.isValid;
     }
 
@@ -346,6 +347,10 @@ bool Sample::parseFlac(const fs::path &p)
 
             go = si->next();
         }
+    }
+    else
+    {
+        addError("Unable to decode flac stream");
     }
     return res;
 }

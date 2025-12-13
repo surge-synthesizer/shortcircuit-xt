@@ -35,6 +35,13 @@
 #include <cassert>
 #include <cstdint>
 
+#define ADD_ERROR_MESSAGE(...)                                                                     \
+    {                                                                                              \
+        std::ostringstream oss;                                                                    \
+        oss << __VA_ARGS__;                                                                        \
+        addError(oss.str());                                                                       \
+    }
+
 namespace scxt::sample
 {
 // TODO [prior] parse INAM etc etc metadata
@@ -44,7 +51,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
     scxt::sample::loaders::RIFFMemFile mf(data, filesize);
     if (!skip_riffchunk && !mf.riff_descend_RIFF_or_LIST('WAVE', &datasize))
     {
-        SCLOG("Failed to load wave: not a WAVE LIST");
+        ADD_ERROR_MESSAGE("Failed to load wave: not a WAVE LIST");
         return false;
     }
 
@@ -52,7 +59,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
     off_t wr = mf.TellI();
     if (!mf.riff_descend('fmt ', &datasize))
     {
-        SCLOG("Failed to load wav: No 'fmt ' chunk found");
+        ADD_ERROR_MESSAGE("Failed to load wav: No 'fmt ' chunk found");
         return false;
     }
 
@@ -61,31 +68,31 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
 
     if (!wh.nSamplesPerSec)
     {
-        SCLOG("Failed to load wav: header samples per second == 0");
+        ADD_ERROR_MESSAGE("Failed to load wav: header samples per second == 0");
         return false;
     }
     if (!wh.nChannels)
     {
-        SCLOG("Failed to load wav: channels == 0");
+        ADD_ERROR_MESSAGE("Failed to load wav: channels == 0");
         return false;
     }
     if (!wh.wBitsPerSample)
     {
-        SCLOG("Failed to load wav: bits per sample == 0");
+        ADD_ERROR_MESSAGE("Failed to load wav: bits per sample == 0");
         return false;
     }
 
     mf.SeekI(wr);
     if (!mf.riff_descend('data', &datasize))
     {
-        SCLOG("Failed to load wav: no 'data' chunk");
+        ADD_ERROR_MESSAGE("Failed to load wav: no 'data' chunk");
         return false;
     }
 
     int32_t WaveDataSize = datasize;
     if (!WaveDataSize)
     {
-        SCLOG("Failed to load wav: datasize is zero");
+        ADD_ERROR_MESSAGE("Failed to load wav: datasize is zero");
         return false;
     }
     int32_t WaveDataSamples = 8 * WaveDataSize / (wh.wBitsPerSample * wh.nChannels);
@@ -98,13 +105,13 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
     unsigned char *loaddata = (unsigned char *)mf.ReadPtr(WaveDataSize);
     if (!loaddata)
     {
-        SCLOG("Failed to load wav: read of " << WaveDataSize << " returned a null");
+        ADD_ERROR_MESSAGE("Failed to load wav: read of " << WaveDataSize << " returned a null");
         return false;
     }
     if (!SetMeta(wh.nChannels, wh.nSamplesPerSec, WaveDataSamples))
     {
-        SCLOG("Failed to load wav: setMeta failed with "
-              << SCD(wh.nChannels) << SCD(wh.nSamplesPerSec) << SCD(WaveDataSamples));
+        ADD_ERROR_MESSAGE("Failed to load wav: setMeta failed with "
+                          << SCD(wh.nChannels) << SCD(wh.nSamplesPerSec) << SCD(WaveDataSamples));
         return false;
     }
 
@@ -152,8 +159,8 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         }
         else
         {
-            SCLOG("Failed to load: " << SCD(wh.wBitsPerSample)
-                                     << " must be 8, 16, 24 or 32 for PCM");
+            ADD_ERROR_MESSAGE("Failed to load: " << SCD(wh.wBitsPerSample)
+                                                 << " must be 8, 16, 24 or 32 for PCM");
             return false;
         }
     }
@@ -181,18 +188,19 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         }
         else
         {
-            SCLOG("Failed to load wav: " << SCD(wh.wBitsPerSample)
-                                         << " must be 32 or 64 for FLOAT wav");
+            ADD_ERROR_MESSAGE("Failed to load wav: " << SCD(wh.wBitsPerSample)
+                                                     << " must be 32 or 64 for FLOAT wav");
             return false;
         }
     }
     else
     {
-        SCLOG("Failed to load wav: Format Tag 0x"
-              << std::hex << std::setw(4) << std::setfill('0') << wh.wFormatTag
-              << " must be IEEE FLOAT (0x" << std::hex << std::setw(4) << std::setfill('0')
-              << WAVE_FORMAT_IEEE_FLOAT << ") or PCM (0x" << std::hex << std::setw(4)
-              << std::setfill('0') << WAVE_FORMAT_PCM << ")");
+        ADD_ERROR_MESSAGE("Failed to load wav: Format Tag 0x"
+                          << std::hex << std::setw(4) << std::setfill('0') << wh.wFormatTag
+                          << " must be IEEE FLOAT (0x" << std::hex << std::setw(4)
+                          << std::setfill('0') << WAVE_FORMAT_IEEE_FLOAT << ") or PCM (0x"
+                          << std::hex << std::setw(4) << std::setfill('0') << WAVE_FORMAT_PCM
+                          << ")");
         return false;
     }
     this->sample_loaded = true;
