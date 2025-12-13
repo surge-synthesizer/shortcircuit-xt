@@ -126,6 +126,10 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     float *GetSamplePtrF32(int Channel);
     char *GetName();
 
+    void resetErrorString() { errStack.clear(); }
+    void addError(const std::string &msg) { errStack += msg + "\n"; }
+    [[nodiscard]] std::string getErrorString() const { return errStack; }
+
   public:
     // TODO: Consistent Names here for goodness sake
     // public data
@@ -241,6 +245,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     bool SetMeta(unsigned int channels, unsigned int SampleRate, unsigned int SampleLength);
     fs::path mFileName{};
+
+    std::string errStack{};
 
   public:
     SampleID id;

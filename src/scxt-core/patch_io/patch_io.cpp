@@ -907,7 +907,7 @@ bool SCMonolithSampleReader::getSampleData(size_t index, SampleData &data)
 
     if (ck->GetChunkID() != sampleFilenameChunk)
     {
-        SCLOG("didn't count forward to filename chunk");
+        addError("didn't count forward to filename chunk");
         return false;
     }
 
@@ -919,7 +919,7 @@ bool SCMonolithSampleReader::getSampleData(size_t index, SampleData &data)
         return false;
     if (ck->GetChunkID() != sampleDatChunk)
     {
-        SCLOG("didn't get data chunk id");
+        addError("didn't get data chunk id");
         return false;
     }
     auto sd = ck->LoadChunkData();

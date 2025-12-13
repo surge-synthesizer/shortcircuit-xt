@@ -80,19 +80,22 @@ bool Sample::parseMP3(const fs::path &p)
     MultiByteToWideChar(CP_UTF8, 0, p.u8string().c_str(), p.u8string().length(), &wstr[0], count);
     if (mp3dec_load_w(&mp3d, &wstr[0], &info, nullptr, nullptr))
     {
-        SCLOG("Failed to parse MP3");
+        addError("Failed to parse MP3");
         return false;
     }
 #else
     if (mp3dec_load(&mp3d, p.u8string().c_str(), &info, nullptr, nullptr))
     {
-        SCLOG("Failed to parse MP3");
+        addError("Failed to parse MP3");
         return false;
     }
 #endif
 
     if (info.channels < 1 || info.channels > 2)
+    {
+        addError("Unable to load " + std::to_string(info.channels) + " channel MP3");
         return false;
+    }
 
     sample_rate = info.hz;
     channels = info.channels;
@@ -129,7 +132,15 @@ bool Sample::parseMP3(const fs::path &p)
 #else
 namespace scxt::sample
 {
-bool Sample::parseMP3(const fs::path &p) { return false; }
-bool Sample::parseMP3(const uint8_t *data, size_t len) { return false; }
+bool Sample::parseMP3(const fs::path &p)
+{
+    addError("This version of ShortCircuit has no MP3 support");
+    return false;
+}
+bool Sample::parseMP3(const uint8_t *data, size_t len)
+{
+    addError("This version of ShortCircuit has no MP3 support");
+    return false;
+}
 } // namespace scxt::sample
 #endif

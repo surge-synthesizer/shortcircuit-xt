@@ -61,11 +61,16 @@ struct SCMonolithSampleReader
     // Lets avoid copying around that data vector; return bool and populate the ref
     bool getSampleData(size_t index, SampleData &data);
 
+    void resetErrorString() { errStack.clear(); }
+    void addError(const std::string &msg) { errStack += msg + "\n"; }
+    [[nodiscard]] std::string getErrorString() const { return errStack; }
+
   private:
     RIFF::File *file;
     int version;
     size_t cacheSampleCount{0};
     bool cacheSampleCountDone{false};
+    std::string errStack;
 };
 } // namespace scxt::patch_io
 
