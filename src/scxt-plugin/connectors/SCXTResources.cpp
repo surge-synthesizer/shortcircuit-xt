@@ -27,6 +27,7 @@
 
 #include "SCXTResources.h"
 #include "utils.h"
+#include "configuration.h"
 #include "cmrc/cmrc.hpp"
 
 CMRC_DECLARE(scxt_resources);
