@@ -268,7 +268,6 @@ void AboutScreen::resized()
     int x = 9; // number of iconized links
 
     buttonRects[0] = ba.translated(getWidth() - (margin + buttonSize) * numButtons, 0);
-    SCLOG(buttonRects[0].toString());
 
     for (int i = 1; i < numButtons; i++)
     {

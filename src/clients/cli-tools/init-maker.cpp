@@ -44,27 +44,27 @@ int main(int argc, char **argv)
         auto outp = fs::path(argv[2]);
         auto inp = fs::path(argv[1]);
 
-        SCLOG("Loading multi " << inp.u8string());
+        SCLOG_IF(cliTools, "Loading multi " << inp.u8string());
 
         scxt::patch_io::loadMulti(inp, *e);
 
         auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_MULTI);
         auto msg = tao::json::msgpack::to_string(scxt::json::scxt_value(*e));
 
-        SCLOG("Message is of size " << msg.size());
+        SCLOG_IF(cliTools, "Message is of size " << msg.size());
 
-        SCLOG("Writing to file " << outp.u8string());
+        SCLOG_IF(cliTools, "Writing to file " << outp.u8string());
 
         std::ofstream f(outp, std::ios::binary);
         if (!f.is_open())
         {
-            SCLOG("Unable to open file");
+            SCLOG_IF(cliTools, "Unable to open file");
             exit(2);
         }
 
         f.write(msg.c_str(), msg.size());
 
-        SCLOG("Output complete");
+        SCLOG_IF(cliTools, "Output complete");
     }
     else if (argc == 2)
     {
@@ -72,27 +72,27 @@ int main(int argc, char **argv)
         auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_MULTI);
         auto msg = tao::json::msgpack::to_string(scxt::json::scxt_value(*e));
 
-        SCLOG("Message is of size " << msg.size());
+        SCLOG_IF(cliTools, "Message is of size " << msg.size());
 
         auto p = fs::path(argv[1]);
 
-        SCLOG("Writing to file " << p.u8string());
+        SCLOG_IF(cliTools, "Writing to file " << p.u8string());
 
         std::ofstream f(p, std::ios::binary);
         if (!f.is_open())
         {
-            SCLOG("Unable to open file");
+            SCLOG_IF(cliTools, "Unable to open file");
             exit(2);
         }
 
         f.write(msg.c_str(), msg.size());
 
-        SCLOG("Output complete");
+        SCLOG_IF(cliTools, "Output complete");
     }
     else
     {
-        SCLOG("Usage: init-maker <output-file> for default or");
-        SCLOG("Usage: init-maker <input-scm> <output-file> for scm conversion");
+        SCLOG_IF(cliTools, "Usage: init-maker <output-file> for default or");
+        SCLOG_IF(cliTools, "Usage: init-maker <input-scm> <output-file> for scm conversion");
         exit(1);
     }
     exit(0);

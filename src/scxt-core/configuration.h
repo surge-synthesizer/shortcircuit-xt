@@ -102,10 +102,20 @@ static constexpr bool voiceResponder{false};
 static constexpr bool voiceLifecycle{false};
 static constexpr bool generatorInitialization{false};
 static constexpr bool sampleLoadAndPurge{false};
+static constexpr bool sampleCompoundParsers{false};
 static constexpr bool missingResolution{false};
+static constexpr bool ringout{false};
+static constexpr bool streaming{false};
+static constexpr bool sqlDb{false};
+
 static constexpr bool patchIO{false};
 static constexpr bool jsonUI{false};
-static constexpr bool ringout{false};
+static constexpr bool uiTheme{false};
+
+static constexpr bool plugin{false};
+
+static constexpr bool warnings{true}; // make sure warnigns go to log
+static constexpr bool cliTools{true}; // allow cli tools to use the log
 } // namespace log
 
 // The wireframe implies features beyond what we have. I started coding up the UI elements

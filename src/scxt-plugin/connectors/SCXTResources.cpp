@@ -27,6 +27,7 @@
 
 #include "SCXTResources.h"
 #include "utils.h"
+#include "configuration.h"
 #include "cmrc/cmrc.hpp"
 
 CMRC_DECLARE(scxt_resources);
@@ -48,7 +49,7 @@ juce::Typeface::Ptr loadTypeface(const std::string &path)
     catch (std::exception &e)
     {
     }
-    SCLOG("Font '" << path << "' failed to load");
+    SCLOG_IF(uiTheme, "Font '" << path << "' failed to load");
     return nullptr;
 }
 
@@ -67,7 +68,7 @@ std::unique_ptr<juce::Drawable> loadImageDrawable(const std::string &path)
     catch (std::exception &e)
     {
     }
-    SCLOG("Image '" << path << "' failed to load");
+    SCLOG_IF(uiTheme, "Image '" << path << "' failed to load");
     return nullptr;
 }
 
@@ -84,7 +85,7 @@ std::string loadTextFile(const std::string &path)
     catch (std::exception &e)
     {
     }
-    SCLOG("Text File '" << path << "' failed to load");
+    SCLOG_IF(uiTheme, "Text File '" << path << "' failed to load");
     return {};
 }
 

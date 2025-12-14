@@ -34,16 +34,17 @@
 
 int main(int argc, char **argv)
 {
-    SCLOG("EXS-DUMP");
-    SCLOG("    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
-                             << " / "
-                             << sst::plugininfra::VersionInformation::project_version_and_hash);
+    SCLOG_IF(cliTools, "EXS-DUMP");
+    SCLOG_IF(cliTools,
+             "    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
+                                << " / "
+                                << sst::plugininfra::VersionInformation::project_version_and_hash);
     if (argc < 2)
     {
-        SCLOG("Usage: " << argv[0] << " <exs-file>");
+        SCLOG_IF(cliTools, "Usage: " << argv[0] << " <exs-file>");
         return 1;
     }
-    SCLOG("Opening " << argv[1]);
+    SCLOG_IF(cliTools, "Opening " << argv[1]);
 
     scxt::exs_support::dumpEXSToLog(fs::path(argv[1]));
     return 0;

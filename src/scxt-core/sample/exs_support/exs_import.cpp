@@ -106,7 +106,7 @@ struct EXSBlock
 
         if (v1 != 1 && v2 != 0)
         {
-            SCLOG("Unknown EXS Version: " << v1 << " " << v2);
+            SCLOG_IF(sampleCompoundParsers, "Unknown EXS Version: " << v1 << " " << v2);
             return false;
         }
 
@@ -590,7 +590,7 @@ struct EXSInfo
 
 EXSInfo parseEXS(const fs::path &p)
 {
-    SCLOG("Importing EXS from " << p.u8string());
+    SCLOG_IF(sampleCompoundParsers, "Importing EXS from " << p.u8string());
     std::ifstream inputFile(p, std::ios_base::binary);
 
     auto block = EXSBlock();
@@ -630,7 +630,7 @@ EXSInfo parseEXS(const fs::path &p)
         break;
         default:
         {
-            // SCLOG("Un-parsed EXS block type " << block.type);
+            // SCLOG_IF(sampleCompoundParsers, "Un-parsed EXS block type " << block.type);
             break;
         }
         }
@@ -686,12 +686,13 @@ bool importEXS(const fs::path &p, engine::Engine &e)
 
         if (exsgi < 0 || exsgi >= groupIndexByOrder.size())
         {
-            SCLOG("Out-of-bounds group index : " << SCD(exsgi));
+            SCLOG_IF(sampleCompoundParsers, "Out-of-bounds group index : " << SCD(exsgi));
             continue;
         }
         if (exssi < 0 || exssi >= sampleIDByOrder.size())
         {
-            SCLOG("Out-of-bounds sample index " << SCD(exsgi) << SCD(exssi));
+            SCLOG_IF(sampleCompoundParsers,
+                     "Out-of-bounds sample index " << SCD(exsgi) << SCD(exssi));
             continue;
         }
         auto gi = groupIndexByOrder[exsgi];
@@ -718,27 +719,29 @@ void dumpEXSToLog(const fs::path &p)
 
     if (info.parameters.has_value())
     {
-        SCLOG("Parameters block found with " << info.parameters->params.size() << " parameters");
+        SCLOG_IF(sampleCompoundParsers,
+                 "Parameters block found with " << info.parameters->params.size() << " parameters");
     }
     else
     {
-        SCLOG("NO parameters block found");
+        SCLOG_IF(sampleCompoundParsers, "NO parameters block found");
     }
     for (auto &z : info.zones)
     {
-        SCLOG("Zone '" << z.within.name << "'");
-        SCLOG("  KeyRange " << z.keyLow << "-" << z.key << "-" << z.keyHigh);
-        SCLOG("  VelRange " << z.velocityLow << "-" << z.velocityHigh);
-        SCLOG("  Group");
-        SCLOG("    gidx=" << z.groupIndex);
+        SCLOG_IF(sampleCompoundParsers, "Zone '" << z.within.name << "'");
+        SCLOG_IF(sampleCompoundParsers,
+                 "  KeyRange " << z.keyLow << "-" << z.key << "-" << z.keyHigh);
+        SCLOG_IF(sampleCompoundParsers, "  VelRange " << z.velocityLow << "-" << z.velocityHigh);
+        SCLOG_IF(sampleCompoundParsers, "  Group");
+        SCLOG_IF(sampleCompoundParsers, "    gidx=" << z.groupIndex);
         const auto &grp = info.groups[z.groupIndex];
-        SCLOG("    gname='" << grp.within.name << "'");
-        SCLOG("  Sample");
-        SCLOG("    sidx=" << z.sampleIndex);
+        SCLOG_IF(sampleCompoundParsers, "    gname='" << grp.within.name << "'");
+        SCLOG_IF(sampleCompoundParsers, "  Sample");
+        SCLOG_IF(sampleCompoundParsers, "    sidx=" << z.sampleIndex);
         const auto &smp = info.samples[z.sampleIndex];
-        SCLOG("    sname=" << smp.within.name);
-        SCLOG("    spath=" << smp.filePath);
-        SCLOG("    sname=" << smp.fileName);
+        SCLOG_IF(sampleCompoundParsers, "    sname=" << smp.within.name);
+        SCLOG_IF(sampleCompoundParsers, "    spath=" << smp.filePath);
+        SCLOG_IF(sampleCompoundParsers, "    sname=" << smp.fileName);
     }
 }
 } // namespace scxt::exs_support

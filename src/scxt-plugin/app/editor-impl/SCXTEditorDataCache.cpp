@@ -47,7 +47,7 @@ void SCXTEditorDataCache::addSubscription(void *el, size_t soel, sst::jucegui::d
     {
         if (dsizes[el] != soel)
         {
-            SCLOG("ERROR: Configuration in add subscriptino varied size " << soel);
+            SCLOG_IF(warnings, "Configuration in add subscription varied size " << soel);
         }
     }
     dsizes[el] = soel;
@@ -130,7 +130,7 @@ void SCXTEditorDataCache::fireAllNotificationsBetween(void *st, void *end)
             size_t size{4};
             if (dsp == dsizes.end())
             {
-                SCLOG("Cant locate data size for " << da);
+                SCLOG_IF(warnings, "Cant locate data size for " << da);
             }
             else
             {

@@ -711,10 +711,6 @@ struct ENVLFOPane : juce::Component, HasEditor
             auto ds = (int)(obs / (500));
             auto relAfter = (int)std::floor(obs * gateTime / totalTime);
 
-            // SCLOG(SCD(totalTime) << SCD(gateTime) << SCD(dahd) << SCD(sustainTime));
-            // SCLOG("rateMuls " << rateMulLin << " " << rateMul);
-            // SCLOG("OBS are " << obs << " ds is " << ds << SCD(es.delay) << SCD(es.attack));
-
             envLfo.attack(es.delay, es.attack);
             for (int i = 1; i < obs; ++i)
             {
@@ -869,11 +865,7 @@ struct MSEGLFOPane : juce::Component
 {
     MSEGLFOPane(modulation::ModulatorStorage &s) {}
 
-    void paint(juce::Graphics &g) override
-    {
-        g.fillAll(juce::Colours::red);
-        SCLOG_ONCE("Why are you paiting an MSEG");
-    }
+    void paint(juce::Graphics &g) override { g.fillAll(juce::Colours::red); }
 };
 
 struct MiscPanel : juce::Component, HasEditor
@@ -1844,8 +1836,6 @@ std::optional<std::string> LfoPane::streamToJSON() const
     }
     catch (const std::exception &e)
     {
-        SCLOG("LFO Preset Streaming Error " << e.what());
-
         editor->displayError("LFO Preset Stream Error", e.what());
     }
     return std::nullopt;
@@ -1870,7 +1860,6 @@ void LfoPane::unstreamFromJSON(const std::string &json)
     }
     catch (const std::exception &e)
     {
-        SCLOG("LFO Preset Streaming Error " << e.what());
         editor->displayError("LFO Preset Unstream Error", e.what());
     }
 }

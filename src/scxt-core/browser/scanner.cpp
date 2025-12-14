@@ -140,8 +140,6 @@ struct ScanWorker
 
         void go(ScanWorker &w) override
         {
-            // SCLOG("Scanning path: " << path.string());
-
             auto files = fs::directory_iterator(path);
             std::vector<fs::path> toScan;
             for (auto &dirent : files)

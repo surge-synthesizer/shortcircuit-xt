@@ -71,7 +71,7 @@ std::string KeyBindings::commandToString(KeyCommands c)
     case FOCUS_MIXER:
         return "focusMixer";
     case numKeyCommands:
-        SCLOG("LOGIC ERROR Unstreaming Key Command");
+        SCLOG_IF(warnings, "LOGIC ERROR Unstreaming Key Command");
     }
     return "LOGIC ERROR";
 }

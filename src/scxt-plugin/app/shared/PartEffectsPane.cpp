@@ -429,7 +429,7 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuildDefaultLayout()
             }
             else
             {
-                SCLOG("No widget for type " << p.type << " / " << p.name);
+                SCLOG_IF(jsonUI, "No widget for type " << p.type << " / " << p.name);
             }
 
             if (p.canDeactivate)

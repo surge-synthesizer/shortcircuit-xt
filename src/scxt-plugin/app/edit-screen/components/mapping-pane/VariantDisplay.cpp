@@ -432,7 +432,7 @@ void VariantDisplay::resized()
     auto newRow = [&row, &p, padding](auto &s) {
         if (row.getX() != p.getRight() + padding)
         {
-            SCLOG(s << " Mismatched p layout " << row.getX() << " " << p.getRight());
+            SCLOG_IF(uiTheme, s << " Mismatched p layout " << row.getX() << " " << p.getRight());
         }
         p = p.translated(0, 23);
         row = p;
@@ -670,7 +670,7 @@ void VariantDisplay::selectNextFile(bool selectForward)
     }
     catch (const fs::filesystem_error &err)
     {
-        SCLOG("Filesystem error: " << err.what());
+        editor->displayError("Variant Load Filesystem Error", err.what());
         return;
     }
 

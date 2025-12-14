@@ -139,7 +139,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                     zn->mapping.pitchOffset = 1.0 * pcv / 100.0;
                     if (!zn->attachToSample(*(e.getSampleManager())))
                     {
-                        SCLOG("ERROR: Can't attach to sample");
+                        SCLOG_IF(warnings, "ERROR: Can't attach to sample");
                         return false;
                     }
                     auto &znSD = zn->variantData.variants[0];

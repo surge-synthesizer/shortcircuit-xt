@@ -451,7 +451,6 @@ void HeaderRegion::addResetMenuItems(juce::PopupMenu &menu)
     try
     {
         auto userTemplatesPath = editor->browser.patchIODirectory / "Templates";
-        SCLOG(userTemplatesPath.u8string());
         if (fs::exists(userTemplatesPath))
         {
             std::vector<fs::path> tempCands;
@@ -491,7 +490,8 @@ void HeaderRegion::addResetMenuItems(juce::PopupMenu &menu)
     }
     catch (fs::filesystem_error &e)
     {
-        SCLOG(e.what());
+        editor->displayError("Filesystem Error",
+                             std::string() + "Unable to traverse user templates " + e.what());
     }
     menu.addSubMenu("Reset Engine To", p);
 }

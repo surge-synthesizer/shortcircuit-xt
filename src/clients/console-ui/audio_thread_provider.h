@@ -55,8 +55,8 @@ struct AudioThreadProvider
         auto sr = engine.getSampleRate();
         if (sr < 44100)
         {
-            SCLOG("Engine sample rate is wrong at " << sr);
-            throw std::logic_error("Set sapmle rate to something realistic");
+            SCLOG_IF(warnings, "Engine sample rate is wrong at " << sr);
+            throw std::logic_error("Set sample rate to something realistic");
         }
         auto sleepTime = (uint32_t)(scxt::blockSize / sr * 1000000 * 0.5);
 

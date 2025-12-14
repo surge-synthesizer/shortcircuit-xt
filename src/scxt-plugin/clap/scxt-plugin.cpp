@@ -133,7 +133,7 @@ bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
     }
     catch (const std::runtime_error &err)
     {
-        SCLOG("Streaming exception [" << err.what() << "]");
+        SCLOG_IF(warnings, "Streaming exception [" << err.what() << "]");
         return false;
     }
     return true;
@@ -162,7 +162,7 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
     buffer[totalRd] = 0;
     if (totalRd == 0)
     {
-        SCLOG("Received stream size 0. Invalid state");
+        SCLOG_IF(warnings, "Received stream size 0. Invalid state");
         return false;
     }
 
@@ -339,7 +339,7 @@ clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
                 }
                 break;
                 default:
-                    SCLOG("Unexpected message " << msgopt->id);
+                    SCLOG_IF(plugin, "Unexpected message " << msgopt->id);
                     break;
                 }
             }

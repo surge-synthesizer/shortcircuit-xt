@@ -99,7 +99,7 @@ void unstreamPartState(engine::Engine &e, int part, const std::string &data, boo
         std::unique_ptr<engine::Engine::StreamGuard> sg;
         if (setStreamGuard)
         {
-            SCLOG("Activating stream guard for part unstream");
+            SCLOG_IF(streaming, "Activating stream guard for part unstream");
             sg = std::make_unique<engine::Engine::StreamGuard>(engine::Engine::FOR_PART);
         }
         if (msgPack)

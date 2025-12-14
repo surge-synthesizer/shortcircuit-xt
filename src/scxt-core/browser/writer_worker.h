@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
             }
             catch (SQL::Exception &e)
             {
-                SCLOG("Unable to insert into SampleInfo: " << e.what())
+                SCLOG_IF(warnings, "Unable to insert into SampleInfo: " << e.what())
             }
         }
     };
@@ -157,7 +157,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
     void openDb()
     {
 #if TRACE_DB
-        SCLOG(">>> Opening r/w DB");
+        SCLOG_IF(sqlDb, ">>> Opening r/w DB");
 #endif
         auto flag = SQLITE_OPEN_NOMUTEX; // basically lock
         flag |= SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
@@ -170,7 +170,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
             oss << "An error occurred opening sqlite file '" << dbname << "'. The error was '"
                 << sqlite3_errmsg(dbh) << "'.";
             // storage->reportError(oss.str(), "Surge Patch Database Error");
-            SCLOG(oss.str());
+            SCLOG_IF(sqlDb, oss.str());
             if (dbh)
             {
                 // even if opening fails we still need to close the database
@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
     void closeDb()
     {
 #if TRACE_DB
-        SCLOG("<<<< Closing r/w DB");
+        SCLOG_IF(sqlDb, "<<<< Closing r/w DB");
 #endif
         if (dbh)
             sqlite3_close(dbh);
@@ -208,7 +208,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         {
             w.setupDatabase();
 #if TRACE_DB
-            SCLOG("Done with EnQSetup");
+            SCLOG_IF(sqlDb, "Done with EnQSetup");
 #endif
         }
     };
@@ -228,7 +228,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
     void setupDatabase()
     {
 #if TRACE_DB
-        SCLOG("PatchDB : Setup Database " << dbname);
+        SCLOG_IF(sqlDb, "PatchDB : Setup Database " << dbname);
 #endif
         /*
          * OK check my version
@@ -243,13 +243,13 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
                 int id = st.col_int(0);
                 auto ver = st.col_charstar(1);
 #if TRACE_DB
-                SCLOG("        : schema check. DBVersion='" << ver << "' SchemaVersion='"
-                                                            << schema_version << "'");
+                SCLOG_IF(sqlDb, "        : schema check. DBVersion='" << ver << "' SchemaVersion='"
+                                                                      << schema_version << "'");
 #endif
                 if (strcmp(ver, schema_version) == 0)
                 {
 #if TRACE_DB
-                    SCLOG("        : Schema matches. Reusing database.");
+                    SCLOG_IF(sqlDb, "        : Schema matches. Reusing database.");
 #endif
                     rebuild = false;
                 }
@@ -271,7 +271,8 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         if (rebuild)
         {
 #if TRACE_DB
-            SCLOG("        : Schema missing or mismatched. Dropping and Rebuilding Database.");
+            SCLOG_IF(sqlDb,
+                     "        : Schema missing or mismatched. Dropping and Rebuilding Database.");
 #endif
             try
             {
@@ -283,7 +284,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
             catch (const SQL::Exception &e)
             {
                 // storage->reportError(e.what(), "PatchDB Setup Error");
-                SCLOG(e.what());
+                SCLOG_IF(sqlDb, e.what());
             }
         }
 
@@ -411,7 +412,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
                                "Please dismiss this error in the meantime!\n\n Attempt: "
                             << lock_retries;
                         // storage->reportError(oss.str(), "Patch Database Locked");
-                        SCLOG(oss.str());
+                        SCLOG_IF(sqlDb, oss.str());
                         // OK so in this case, we reload doThis onto the front of the queue and
                         // sleep
                         lock_retries++;
@@ -432,13 +433,13 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
                             /*storage->reportError(
                                 "Database is locked and unwritable after multiple attempts!",
                                 "Patch Database Locked");*/
-                            SCLOG("Database Locked");
+                            SCLOG_IF(sqlDb, "Database Locked");
                         }
                     }
                     catch (SQL::Exception &e)
                     {
                         // storage->reportError(e.what(), "Patch DB");
-                        SCLOG(e.what());
+                        SCLOG_IF(sqlDb, e.what());
                     }
                 }
             }
@@ -484,7 +485,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
             std::ostringstream oss;
             oss << std::put_time(&current_localtime, "%c");
 #if TRACE_DB
-            SCLOG("Writing Test Startup Sentinel : " << oss.str());
+            SCLOG_IF(sqlDb, "Writing Test Startup Sentinel : " << oss.str());
 #endif
             std::string res = oss.str();
             there.bind(1, res);
@@ -496,7 +497,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         catch (const SQL::Exception &e)
         {
             // storage->reportError(e.what(), "PatchDB - Junk gave Junk");
-            SCLOG(e.what());
+            SCLOG_IF(sqlDb, e.what());
         }
     }
 
@@ -530,7 +531,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         catch (const SQL::Exception &e)
         {
             // storage->reportError(e.what(), "PatchDB - Junk gave Junk");
-            SCLOG(e.what());
+            SCLOG_IF(sqlDb, e.what());
         }
     }
 
@@ -562,7 +563,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
             auto flag = SQLITE_OPEN_NOMUTEX; // basically lock
             flag |= SQLITE_OPEN_READONLY;
 
-            // SCLOG( ">>>RO> Opening r/o DB" );;
+            // SCLOG_IF(sqlDb,  ">>>RO> Opening r/o DB" );;
             auto ec = sqlite3_open_v2(dbname.c_str(), &rodbh, flag, nullptr);
 
             if (ec != SQLITE_OK)
@@ -573,7 +574,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
                     oss << "An error occurred opening r/o sqlite file '" << dbname
                         << "'. The error was '" << sqlite3_errmsg(dbh) << "'.";
                     // storage->reportError(oss.str(), "Surge Patch Database Error");
-                    SCLOG(oss.str());
+                    SCLOG_IF(sqlDb, oss.str());
                 }
                 if (rodbh)
                     sqlite3_close(rodbh);

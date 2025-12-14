@@ -40,7 +40,7 @@ void makeNbyN(int dc, const std::string &path)
     using abz = cmsg::AddBlankZone;
     for (int k = 0; k < 127; k += dc)
     {
-        SCLOG("Starting key " << k)
+        SCLOG_IF(cliTools, "Starting key " << k)
         for (int v = 0; v < 127; v += dc)
         {
             ch->sendToSerialization(abz({0, 0, k, k + dc - 1, v, v + dc - 1}));
@@ -65,7 +65,7 @@ void makeNbyNGroupPer(int dc, const std::string &path)
     int gi{0};
     for (int k = 0; k < 127; k += dc)
     {
-        SCLOG("Starting key " << k)
+        SCLOG_IF(cliTools, "Starting key " << k)
         for (int v = 0; v < 127; v += dc)
         {
             ch->sendToSerialization(cmsg::CreateGroup(0));

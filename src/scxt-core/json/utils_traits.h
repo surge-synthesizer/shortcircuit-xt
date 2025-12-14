@@ -88,10 +88,6 @@ SC_STREAMDEF(scxt::SampleID,
                            legID = "id";
                        }
 
-                       if (6 != v.at(legType).template as<int32_t>())
-                       {
-                           SCLOG("Unstreamed a non-6 type from legacy");
-                       }
                        int32_t id;
                        v.at(legID).to(id);
                        to.setAsLegacy(id);

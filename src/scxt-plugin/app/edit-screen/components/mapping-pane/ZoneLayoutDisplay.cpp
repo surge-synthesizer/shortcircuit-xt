@@ -340,7 +340,6 @@ void ZoneLayoutDisplay::createEmptyZoneAt(const juce::Point<int> &pos)
     };
     if (keyMax - keyMin > velMax - velMin)
     {
-        SCLOG("Key span fixed");
         velMin = velMax = cVel;
         while (velMax < 127 && !overlap(keyMin, keyMax, velMin, velMax))
             velMax++;
@@ -424,6 +423,9 @@ template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
 {
     int span{0};
 
+    static_assert(std::is_same_v<MAP, scxt::engine::KeyboardRange> ||
+                  std::is_same_v<MAP, scxt::engine::VelocityRange>);
+
     if constexpr (std::is_same_v<MAP, scxt::engine::KeyboardRange>)
     {
         span = kr.keyEnd - kr.keyStart;
@@ -431,11 +433,6 @@ template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
     else if constexpr (std::is_same_v<MAP, scxt::engine::VelocityRange>)
     {
         span = kr.velEnd - kr.velStart;
-    }
-    else
-    {
-        // Force a compile error
-        SCLOG("Unable to compile " << kr.notAMember);
     }
 
     auto fade = kr.fadeStart + kr.fadeEnd;

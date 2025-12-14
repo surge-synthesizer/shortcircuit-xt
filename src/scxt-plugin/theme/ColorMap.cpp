@@ -39,6 +39,7 @@
 #include "connectors/JsonLayoutEngineSupport.h"
 
 #include "utils.h"
+#include "configuration.h"
 
 namespace scxt::ui::theme
 {
@@ -122,19 +123,19 @@ struct StdMapColormap : ColorMap
                 }
                 else
                 {
-                    SCLOG("Warning: Key appears twice in colormap " << k);
+                    SCLOG_IF(uiTheme, "Warning: Key appears twice in colormap " << k);
                 }
             }
             else
             {
-                SCLOG("Error: Unable to resolve colormap key '" << k << "'gre");
+                SCLOG_IF(uiTheme, "Error: Unable to resolve colormap key '" << k << "'gre");
             }
         }
         for (auto &[k, i] : nameToIndex)
         {
             if (i >= 0)
             {
-                SCLOG("Error: Color map didn't contain key '" << k << "'");
+                SCLOG_IF(uiTheme, "Error: Color map didn't contain key '" << k << "'");
             }
         }
     }
@@ -246,7 +247,7 @@ std::unique_ptr<ColorMap> ColorMap::createColorMap(scxt::ui::theme::ColorMap::Bu
         }
         else
         {
-            SCLOG("Cant resolve wireframe JSON. This will probably crash");
+            SCLOG_IF(uiTheme, "Cant resolve wireframe JSON. This will probably crash");
         }
     }
     else
