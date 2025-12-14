@@ -72,7 +72,7 @@ std::string streamEngineState(const engine::Engine &e, bool pretty)
 
 void unstreamEngineState(engine::Engine &e, const std::string &data, bool msgPack)
 {
-    e.clearAll();
+    e.clearAll(false);
     if (msgPack)
     {
         tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
@@ -87,7 +87,7 @@ void unstreamEngineState(engine::Engine &e, const std::string &data, bool msgPac
         auto jv = std::move(consumer.value);
         jv.to(e);
     }
-
+    e.getSampleManager()->purgeUnreferencedSamples();
     e.sendFullRefreshToClient();
 }
 

@@ -532,7 +532,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      */
     void sendEngineStatusToClient() const;
 
-    void clearAll();
+    void clearAll(bool purgeSamples = true);
 
     struct EngineStatusMessage
     {

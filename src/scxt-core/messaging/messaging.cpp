@@ -184,13 +184,15 @@ void MessageController::stopAudioThreadThenRunOnSerial(
     std::function<void(const engine::Engine &)> f)
 {
     assert(threadingChecker.isSerialThread());
-    scheduleAudioThreadCallback([](engine::Engine &e) { e.stopEngineRequests++; }, f);
+    scheduleAudioThreadCallbackUnderStructureLock([](engine::Engine &e) { e.stopEngineRequests++; },
+                                                  f);
 }
 
 void MessageController::restartAudioThreadFromSerial()
 {
     assert(threadingChecker.isSerialThread());
-    scheduleAudioThreadCallback([](engine::Engine &e) { e.stopEngineRequests--; });
+    scheduleAudioThreadCallbackUnderStructureLock(
+        [](engine::Engine &e) { e.stopEngineRequests--; });
 }
 
 void MessageController::runSerialization()
