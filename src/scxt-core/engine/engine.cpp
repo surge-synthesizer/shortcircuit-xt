@@ -1254,7 +1254,7 @@ void Engine::sendFullRefreshToClient() const
                               *(getMessageController()));
 }
 
-void Engine::clearAll()
+void Engine::clearAll(bool alsoPurge)
 {
     selectionManager = std::make_unique<selection::SelectionManager>(*this);
     for (auto &part : *patch)
@@ -1279,7 +1279,8 @@ void Engine::clearAll()
         }
     }
 
-    sampleManager->purgeUnreferencedSamples();
+    if (alsoPurge)
+        sampleManager->purgeUnreferencedSamples();
 }
 
 void Engine::setMacro01ValueFromPlugin(int part, int index, float value01)
