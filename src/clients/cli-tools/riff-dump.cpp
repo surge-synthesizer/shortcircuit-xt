@@ -56,14 +56,14 @@ void dumpList(RIFF::List *list, const std::string &pfx = "+-- ")
             RIFF::List *l = (RIFF::List *)ck;
             oss << "(" << l->GetListTypeString() << ")->";
             oss << " (" << l->GetSize() << " Bytes)";
-            SCLOG(oss.str());
+            SCLOG_IF(cliTools, oss.str());
             dumpList(l);
             break;
         }
         default:
             oss << ";";
             oss << " (" << ck->GetSize() << " Bytes)";
-            SCLOG(oss.str());
+            SCLOG_IF(cliTools, oss.str());
             break;
         }
         ck = list->GetNextSubChunk();
@@ -72,27 +72,28 @@ void dumpList(RIFF::List *list, const std::string &pfx = "+-- ")
 
 int main(int argc, char **argv)
 {
-    SCLOG("RIFF-DUMP");
-    SCLOG("    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
-                             << " / "
-                             << sst::plugininfra::VersionInformation::project_version_and_hash);
+    SCLOG_IF(cliTools, "RIFF-DUMP");
+    SCLOG_IF(cliTools,
+             "    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
+                                << " / "
+                                << sst::plugininfra::VersionInformation::project_version_and_hash);
     if (argc < 2)
     {
-        SCLOG("Usage: " << argv[0] << " <exs-file>");
+        SCLOG_IF(cliTools, "Usage: " << argv[0] << " <exs-file>");
         return 1;
     }
-    SCLOG("Opening " << argv[1]);
+    SCLOG_IF(cliTools, "Opening " << argv[1]);
 
     try
     {
         auto rf = std::make_unique<RIFF::File>(argv[1]);
 
-        SCLOG("RIFF : " << rf->GetChunkIDString() << " " << rf->GetListTypeString());
+        SCLOG_IF(cliTools, "RIFF : " << rf->GetChunkIDString() << " " << rf->GetListTypeString());
         dumpList(rf.get());
     }
     catch (const RIFF::Exception &e)
     {
-        SCLOG("Exception: " << e.Message);
+        SCLOG_IF(cliTools, "Exception: " << e.Message);
     }
     return 0;
 }

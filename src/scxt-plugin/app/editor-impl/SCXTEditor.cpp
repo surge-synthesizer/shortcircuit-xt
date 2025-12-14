@@ -533,14 +533,14 @@ void SCXTEditor::promptOKCancel(const std::string &title, const std::string &mes
 
 void SCXTEditor::displayError(const std::string &title, const std::string &message)
 {
-
+    SCLOG_IF(warnings, "Displaying error: [" << title << "] " << message);
     displayModalOverlay(sst::jucegui::screens::AlertOrPrompt::Alert(title, message));
 }
 
 bool SCXTEditor::keyPressed(const juce::KeyPress &key)
 {
     auto m = keyBindings->manager->matches(key);
-    ;
+
     if (m.has_value())
     {
         switch (*m)

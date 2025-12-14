@@ -69,7 +69,7 @@ Voice::~Voice()
 #if BUILD_IS_DEBUG
     if (isVoiceAssigned)
     {
-        SCLOG("WARNING: Destroying assigned voice. (OK in shutdown)");
+        SCLOG_IF(warnings, "Destroying assigned voice. (OK in shutdown)");
     }
 #endif
     for (auto i = 0; i < engine::processorCount; ++i)
@@ -158,7 +158,7 @@ void Voice::voiceStarted()
         }
         else
         {
-            SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
+            SCLOG_IF(warnings, "Unimplemented modulator shape " << ms.modulatorShape);
         }
     }
 
@@ -257,7 +257,6 @@ template <bool OS> bool Voice::processWithOS()
                 curveLfos[i].attack(0, *lp.curve.delayP, zone->modulatorStorage[i].modulatorShape);
             }
 
-            // SCLOG(zone->modulatorStorage[0].curveLfoStorage.delay << " " << *lp.curveDelayP);
             curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
                                  *lp.curve.attackP, *lp.curve.releaseP,
                                  zone->modulatorStorage[i].curveLfoStorage.useenv,

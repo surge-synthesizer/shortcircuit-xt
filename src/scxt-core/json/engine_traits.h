@@ -74,7 +74,7 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                       * call your JSON conversion, unless its just a debug json
                       * dump, in which case this is OK
                       */
-                     SCLOG("Warning: Engine is streaming for state 'IN_PROCESS'");
+                     SCLOG_IF(warnings, "Engine is streaming for state 'IN_PROCESS'");
                  }
 
                  v = {{"streamingVersion", scxt::currentStreamingVersion},
@@ -89,8 +89,8 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  assert(to.getMessageController()->threadingChecker.isSerialThread());
                  auto sv{0};
                  findIf(v, "streamingVersion", sv);
-                 SCLOG("Unstreaming engine state. Stream version : "
-                       << scxt::humanReadableVersion(sv));
+                 SCLOG_IF(streaming, "Unstreaming engine state. Stream version : "
+                                         << scxt::humanReadableVersion(sv));
 
                  engine::Engine::UnstreamGuard sg(sv);
 
@@ -188,7 +188,7 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  }
                  else
                  {
-                     SCLOG("Unstreaming part: ignoring channel " << chTmp);
+                     SCLOG_IF(streaming, "Unstreaming part: ignoring channel " << chTmp);
                  }
                  findOrSet(v, "a", true, to.active);
                  findOrSet(v, "m", false, to.mute);
@@ -258,8 +258,8 @@ SC_STREAMDEF(scxt::engine::Part, SC_FROM({
                  {
                      uint64_t partStreamingVersion{0};
                      findIf(v, "streamingVersion", partStreamingVersion);
-                     SCLOG("Unstreaming part state. Stream version : "
-                           << scxt::humanReadableVersion(partStreamingVersion));
+                     SCLOG_IF(streaming, "Unstreaming part state. Stream version : "
+                                             << scxt::humanReadableVersion(partStreamingVersion));
 
                      scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
                      findIf(v, "samplesUsedByPart", samples);
@@ -656,7 +656,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  auto useGivenName = t.givenName;
                  if (useGivenName.empty() && !t.variantData.variants[0].active)
                  {
-                     SCLOG("Crystalizing given name on stream");
+                     SCLOG_IF(streaming, "Crystalizing given name on stream");
                      useGivenName = t.getName();
                  }
                  // but just that bit
@@ -693,7 +693,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  }
                  else
                  {
-                     SCLOG("Warning: No EG storage in zone");
+                     SCLOG_IF(warnings, "No EG storage in zone");
                  }
                  findOrSet(v, "givenName", "", zone.givenName);
                  zone.onRoutingChanged();

@@ -717,8 +717,6 @@ std::unique_ptr<T> makeConnectedToDummy(uint32_t index, const std::string &lab, 
             s += c;
             t = t << 8;
         }
-
-        // SCLOG("Incomplete UI bound to dummy source '" << s << "'");
     }
 
     res->setSource(thisWillLeak);

@@ -582,7 +582,6 @@ void MappingDisplay::promptForMultiInstrument(
         editor->displayError(inst[0].name, inst[0].emsg);
         return;
     }
-    SCLOG("promptForMultimple with size " << inst.size());
     editor->displayModalOverlay(std::make_unique<InstrumentPrompt>(this, inst));
 }
 

@@ -282,8 +282,9 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
                         sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE)
                     {
                         // In theory this should never happen
-                        SCLOG("Somehow you set up multiplicative on an additive only param "
-                              << tmd.name);
+                        SCLOG_IF(warnings,
+                                 "Somehow you set up multiplicative on an additive only param "
+                                     << tmd.name);
                         assert(false);
                     }
 #endif

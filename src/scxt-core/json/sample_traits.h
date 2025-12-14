@@ -120,8 +120,6 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                          to = sample::Sample::GIG_FILE;
                      if (k == "scxt")
                          to = sample::Sample::SCXT_FILE;
-
-                     // SCLOG("Unknown unstream type for format : " << k);
                  }
 
                  return;

@@ -134,7 +134,6 @@ void PreviewVoice::processBlock()
     auto a3 = details->amplitude;
     a3 = a3 * a3 * a3;
     mech::scale_by<blockSize>(a3, output[0], output[1]);
-    // SCLOG(output[0][0] << " " << output[1][0]);
 }
 
 } // namespace scxt::voice

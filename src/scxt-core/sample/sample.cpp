@@ -241,14 +241,14 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
     auto s = sfsample;
 
     auto fnp = fs::path(fs::u8path(f->GetRiffFile()->GetFileName()));
-    std::string name = "Gig Sample";
+    std::string sname = "Gig Sample";
     if (s->pInfo)
-        name = s->pInfo->Name;
-    displayName = fmt::format("{} - ({} @ {})", name, fnp.filename().u8string(), sampleIndex);
+        sname = s->pInfo->Name;
+    displayName = fmt::format("{} - ({} @ {})", sname, fnp.filename().u8string(), sampleIndex);
 
-    // SCLOG("GIG " << SCD((int)channels) << SCD(sample_length) << SCD(sample_rate) <<
-    // SCD(frameSize)
-    //              << " " << displayName);
+    SCLOG_IF(sampleLoadAndPurge, "GIG " << SCD((int)channels) << SCD(sample_length)
+                                        << SCD(sample_rate) << SCD(frameSize) << " "
+                                        << displayName);
     if (frameSize == 2 && channels == 1)
     {
         bitDepth = BD_I16;
@@ -554,41 +554,45 @@ bool Sample::SetMeta(unsigned int Channels, unsigned int SampleRate, unsigned in
 
 void Sample::dumpInformationToLog()
 {
-    SCLOG("Sample Dump for " << getDisplayName());
+    SCLOG_IF(sampleLoadAndPurge, "Sample Dump for " << getDisplayName());
     switch (type)
     {
     case WAV_FILE:
-        SCLOG("WAV File : " << getPath().u8string());
+        SCLOG_IF(sampleLoadAndPurge, "WAV File : " << getPath().u8string());
         break;
     case FLAC_FILE:
-        SCLOG("FLAC File : " << getPath().u8string());
+        SCLOG_IF(sampleLoadAndPurge, "FLAC File : " << getPath().u8string());
         break;
     case MP3_FILE:
-        SCLOG("MP3 File : " << getPath().u8string());
+        SCLOG_IF(sampleLoadAndPurge, "MP3 File : " << getPath().u8string());
         break;
     case AIFF_FILE:
-        SCLOG("AIFF File : " << getPath().u8string());
+        SCLOG_IF(sampleLoadAndPurge, "AIFF File : " << getPath().u8string());
         break;
     case SF2_FILE:
-        SCLOG("SF2 File : " << getPath().u8string() << " Instrument=" << getCompoundInstrument()
-                            << " Region=" << getCompoundRegion());
+        SCLOG_IF(sampleLoadAndPurge, "SF2 File : " << getPath().u8string()
+                                                   << " Instrument=" << getCompoundInstrument()
+                                                   << " Region=" << getCompoundRegion());
         break;
     case SFZ_FILE:
-        SCLOG("SFZ File : " << getPath().u8string());
+        SCLOG_IF(sampleLoadAndPurge, "SFZ File : " << getPath().u8string());
         break;
     case MULTISAMPLE_FILE:
-        SCLOG("Multisample File : " << getPath().u8string() << " at " << getCompoundRegion());
+        SCLOG_IF(sampleLoadAndPurge,
+                 "Multisample File : " << getPath().u8string() << " at " << getCompoundRegion());
         break;
     case GIG_FILE:
-        SCLOG("GIG File : " << getPath().u8string());
+        SCLOG_IF(sampleLoadAndPurge, "GIG File : " << getPath().u8string());
         break;
     case SCXT_FILE:
-        SCLOG("SCXT File : " << getPath().u8string());
+        SCLOG_IF(sampleLoadAndPurge, "SCXT File : " << getPath().u8string());
         break;
     }
 
-    SCLOG("BitDepth=" << bitDepthByteSize(bitDepth) * 8 << " Channels=" << (int)channels);
-    SCLOG("SampleRate=" << sample_rate << " sample_length=" << sample_length);
+    SCLOG_IF(sampleLoadAndPurge,
+             "BitDepth=" << bitDepthByteSize(bitDepth) * 8 << " Channels=" << (int)channels);
+    SCLOG_IF(sampleLoadAndPurge,
+             "SampleRate=" << sample_rate << " sample_length=" << sample_length);
 
     switch (bitDepth)
     {
@@ -604,17 +608,19 @@ void Sample::dumpInformationToLog()
                 mxv = std::max(mxv, dat[i]);
                 mnv = std::min(mnv, dat[i]);
             }
-            SCLOG("Min/Max = " << mxv << " " << mnv);
+            SCLOG_IF(sampleLoadAndPurge, "Min/Max = " << mxv << " " << mnv);
 
             const float I16InvScale = (1.f / (16384.f * 32768.f));
-            SCLOG("Min/Max Float Scaled = " << mxv / 32768.f << " " << mnv / 32768.f);
-            SCLOG("Min/Max Generator Scaled = " << mxv * I16InvScale << " " << mnv * I16InvScale);
+            SCLOG_IF(sampleLoadAndPurge,
+                     "Min/Max Float Scaled = " << mxv / 32768.f << " " << mnv / 32768.f);
+            SCLOG_IF(sampleLoadAndPurge, "Min/Max Generator Scaled = " << mxv * I16InvScale << " "
+                                                                       << mnv * I16InvScale);
         }
     }
     break;
     case BD_F32:
     {
-        SCLOG("TODO: Implement Sapmle Scan for F32");
+        SCLOG_IF(sampleLoadAndPurge, "TODO: Implement Sapmle Scan for F32");
     }
     break;
     }
@@ -654,7 +660,7 @@ Sample::SourceType Sample::sourceTypeFromPath(const fs::path &path)
     if (extensionMatches(path, ".gig"))
         return SourceType::GIG_FILE;
 
-    SCLOG("Unmatched extension : " << path.u8string());
+    SCLOG_IF(sampleLoadAndPurge, "Unmatched extension : " << path.u8string());
     return WAV_FILE;
 }
 

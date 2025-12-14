@@ -251,10 +251,10 @@ void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMapping
 
     if constexpr (scxt::log::uiStructure)
     {
-        SCLOG("Updated zone mapping summary");
+        SCLOG_IF(uiStructure, "Updated zone mapping summary");
         for (const auto &z : d)
         {
-            SCLOG("  " << z.address << " " << z.name);
+            SCLOG_IF(uiStructure, "  " << z.address << " " << z.name);
         }
     }
 }
@@ -274,7 +274,6 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
     currentLeadZoneSelection = std::get<0>(a);
     currentLeadGroupSelection = std::get<2>(a);
 
-    SCLOG_ONCE("TODO - this may not be needed in group multi world");
     groupsWithSelectedZones.clear();
     for (const auto &sel : allZoneSelections)
     {
@@ -294,24 +293,20 @@ void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMe
 
     if constexpr (scxt::log::selection)
     {
-        SCLOG("Selection State Update");
+        SCLOG_IF(selection, "Selection State Update");
         for (const auto &z : allZoneSelections)
         {
-            SCLOG("   z : " << z);
+            SCLOG_IF(selection, "   z : " << z);
         }
         for (const auto &z : allGroupSelections)
         {
-            SCLOG("   g : " << z);
+            SCLOG_IF(selection, "   g : " << z);
         }
     }
 }
 
 void SCXTEditor::onSelectedPart(const int16_t p)
 {
-    if constexpr (scxt::log::uiStructure)
-    {
-        SCLOG("Selected Part: " << p);
-    }
     selectedPart = p; // I presume I will shortly get structure messages so don't do anything else
     if (editScreen)
     {
@@ -355,10 +350,6 @@ void SCXTEditor::onBusOrPartSendData(const scxt::messaging::client::busSendData_
     {
         const auto &busd = std::get<2>(d);
         mixerScreen->onBusSendData(busi, busd);
-    }
-    if (parti >= 0 && editScreen)
-    {
-        SCLOG("Data Send for part");
     }
 }
 
@@ -427,7 +418,7 @@ void SCXTEditor::onOtherTabSelection(
     }
     else
     {
-        SCLOG("Unknown main screen " << mainScreen);
+        SCLOG_IF(warnings, "Unknown main screen " << mainScreen);
     }
 
     if (mixerScreen)
