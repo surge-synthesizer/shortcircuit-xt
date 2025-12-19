@@ -33,15 +33,42 @@
 #include "file_map_view.h"
 #include "md5.h"
 
+#if MAC
+#include <CommonCrypto/CommonDigest.h>
+#endif
+
 namespace scxt::infrastructure
 {
+
+inline std::string hexString(unsigned char *digest, int length)
+{
+    char buf[3];
+    std::ostringstream s;
+    for (int i = 0; i < length; ++i)
+    {
+        snprintf(buf, 3, "%02x", digest[i]);
+        buf[2] = 0;
+        s << buf;
+    }
+    return s.str();
+}
+
 inline std::string createMD5SumFromFile(const fs::path &path)
 {
     auto fmp = infrastructure::FileMapView(path);
     if (!fmp.isMapped())
         return {};
 
+#if MAC
+    unsigned char digest[CC_MD5_DIGEST_LENGTH]; // CC_MD5_DIGEST_LENGTH is 16 bytes
+
+    // Calculate the MD5 hash
+    CC_MD5(fmp.data(), fmp.dataSize(), digest);
+
+    return hexString(digest, CC_MD5_DIGEST_LENGTH);
+#else
     return md5::MD5::Hash(fmp.data(), fmp.dataSize());
+#endif
 }
 
 } // namespace scxt::infrastructure

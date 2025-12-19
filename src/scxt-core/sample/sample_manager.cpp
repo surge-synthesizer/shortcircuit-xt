@@ -99,7 +99,8 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
     break;
     case Sample::SF2_FILE:
     {
-        nid = loadSampleFromSF2(addr.path, nullptr, addr.preset, addr.instrument, addr.region);
+        nid = loadSampleFromSF2(addr.path, addr.md5sum, nullptr, addr.preset, addr.instrument,
+                                addr.region);
     }
     break;
     case Sample::MULTISAMPLE_FILE:
@@ -109,13 +110,14 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
     break;
     case Sample::GIG_FILE:
     {
-        nid = loadSampleFromGIG(addr.path, nullptr, addr.preset, addr.instrument, addr.region);
+        nid = loadSampleFromGIG(addr.path, addr.md5sum, nullptr, addr.preset, addr.instrument,
+                                addr.region);
     }
     break;
     case Sample::SCXT_FILE:
     {
-        nid = loadSampleFromSCXTMonolith(addr.path, nullptr, addr.preset, addr.instrument,
-                                         addr.region);
+        nid = loadSampleFromSCXTMonolith(addr.path, addr.md5sum, nullptr, addr.preset,
+                                         addr.instrument, addr.region);
     }
     break;
     case Sample::SFZ_FILE:
@@ -159,8 +161,9 @@ std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
     return sp->id;
 }
 
-std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2::File *f,
-                                                         int preset, int instrument, int region)
+std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, const std::string &omd5,
+                                                         sf2::File *f, int preset, int instrument,
+                                                         int region)
 {
     if (!f)
     {
@@ -183,8 +186,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, sf2:
         f = std::get<1>(sf2FilesByPath[p.u8string()]).get();
     }
 
-    if (sf2MD5ByPath.find(p.u8string()) == sf2MD5ByPath.end())
-        sf2MD5ByPath[p.u8string()] = infrastructure::createMD5SumFromFile(p);
+    setOrCalcMD5Cache(sf2MD5ByPath, p, omd5, "sf2");
 
     assert(f);
 
@@ -256,8 +258,35 @@ int SampleManager::findSF2SampleIndexFor(sf2::File *f, int presetNum, int instru
     return -1;
 }
 
-std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, gig::File *f,
-                                                         int preset, int instrument, int region)
+void SampleManager::setOrCalcMD5Cache(md5cache_t &cache, const fs::path &p, const std::string &omd5,
+                                      const std::string &flavor) const
+{
+    auto mptr = cache.find(p.u8string());
+    if (omd5.empty())
+    {
+        if (cache.find(p.u8string()) == cache.end())
+        {
+            SCLOG_IF(monoliths, "Creating MD5 for " << flavor << " monolith " << p.u8string());
+            cache[p.u8string()] = infrastructure::createMD5SumFromFile(p);
+            SCLOG_IF(monoliths, "Completed MD5 for monolith " << p.u8string());
+        }
+    }
+    else
+    {
+        if (mptr != cache.end() && omd5 != mptr->second)
+        {
+            raiseError("Inconsistent MD5 in " + flavor, "File " + p.u8string() + " has MD5 " +
+                                                            omd5 +
+                                                            " but the "
+                                                            "stored MD5 is " +
+                                                            mptr->second);
+        }
+        cache[p.u8string()] = omd5;
+    }
+}
+std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, const std::string &omd5,
+                                                         gig::File *f, int preset, int instrument,
+                                                         int region)
 {
     if (!f)
     {
@@ -279,8 +308,7 @@ std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, gig:
         f = std::get<1>(gigFilesByPath[p.u8string()]).get();
     }
 
-    if (gigMD5ByPath.find(p.u8string()) == gigMD5ByPath.end())
-        gigMD5ByPath[p.u8string()] = infrastructure::createMD5SumFromFile(p);
+    setOrCalcMD5Cache(gigMD5ByPath, p, omd5, "gig");
 
     assert(f);
 
@@ -318,17 +346,19 @@ std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, gig:
     return sp->id;
 }
 
-std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path &p, RIFF::File *f,
-                                                                  int preset, int instrument,
-                                                                  int region)
+std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path &p,
+                                                                  const std::string &omd5,
+                                                                  RIFF::File *f, int preset,
+                                                                  int instrument, int region)
 {
+    SCLOG_IF(monoliths, "Loading sample from monolith " << p.u8string() << " at region " << region);
     if (!f)
     {
         if (scxtMonolithFilesByPath.find(p.u8string()) == scxtMonolithFilesByPath.end())
         {
             try
             {
-                SCLOG_IF(sampleLoadAndPurge, "Opening gig : " << p.u8string());
+                SCLOG_IF(monoliths, "Opening monolith RIFF : " << p.u8string());
 
                 auto riff = std::make_unique<RIFF::File>(p.u8string());
                 scxtMonolithFilesByPath[p.u8string()] = std::move(riff);
@@ -341,8 +371,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path
         f = scxtMonolithFilesByPath[p.u8string()].get();
     }
 
-    if (scxtMonolithMD5ByPath.find(p.u8string()) == scxtMonolithMD5ByPath.end())
-        scxtMonolithMD5ByPath[p.u8string()] = infrastructure::createMD5SumFromFile(p);
+    setOrCalcMD5Cache(scxtMonolithMD5ByPath, p, omd5, "scxtmonolith");
 
     assert(f);
 
@@ -353,7 +382,10 @@ std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path
         if (sm->type == Sample::SCXT_FILE)
         {
             if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
+            {
+                SCLOG_IF(monoliths, "Sample already loaded");
                 return id;
+            }
         }
     }
 
@@ -367,9 +399,9 @@ std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path
     sp->id.setAsMD5WithAddress(sp->md5Sum, -1, -1, sidx);
     sp->id.setPathHash(p);
 
-    SCLOG_IF(sampleLoadAndPurge, "Loading : " << p.u8string());
-    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->displayName);
-    SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
+    SCLOG_IF(monoliths, "Loading : " << p.u8string());
+    SCLOG_IF(monoliths, "        : " << sp->displayName);
+    SCLOG_IF(monoliths, "        : " << sp->id.to_string());
 
     samples[sp->id] = sp;
     updateSampleMemory();

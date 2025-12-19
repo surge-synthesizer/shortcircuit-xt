@@ -126,7 +126,7 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
                 // messageController->updateClientActivityNotification("Loading " +
                 // p.filename().u8string()+ " sample " +
                 //                                                                     std::to_string(j));
-                auto sid = e.getSampleManager()->loadSampleFromGIG(p, gig.get(), -1, -1, sidx);
+                auto sid = e.getSampleManager()->loadSampleFromGIG(p, md5, gig.get(), -1, -1, sidx);
                 if (!sid.has_value())
                     continue;
                 e.getSampleManager()->getSample(*sid)->md5Sum = md5;

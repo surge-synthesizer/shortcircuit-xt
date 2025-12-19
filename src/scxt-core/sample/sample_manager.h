@@ -83,17 +83,17 @@ struct SampleManager : MoveableOnly<SampleManager>
 
     std::optional<SampleID> loadSampleByPath(const fs::path &);
 
-    std::optional<SampleID> loadSampleFromSF2(const fs::path &,
+    std::optional<SampleID> loadSampleFromSF2(const fs::path &, const std::string &omd5,
                                               sf2::File *f, // if this is null I will re-open it
                                               int preset, int instrument, int region);
     int findSF2SampleIndexFor(sf2::File *, int preset, int instrument, int region);
 
-    std::optional<SampleID> loadSampleFromGIG(const fs::path &,
+    std::optional<SampleID> loadSampleFromGIG(const fs::path &, const std::string &omd5,
                                               gig::File *f, // if this is null I will re-open it
                                               int preset, int instrument, int region);
 
     std::optional<SampleID>
-    loadSampleFromSCXTMonolith(const fs::path &,
+    loadSampleFromSCXTMonolith(const fs::path &, const std::string &md5,
                                RIFF::File *f, // if this is null I will re-open it
                                int preset, int instrument, int region);
 
@@ -223,18 +223,22 @@ struct SampleManager : MoveableOnly<SampleManager>
 
     sampleMap_t samples;
 
+    using md5cache_t = std::unordered_map<std::string, std::string>;
     std::unordered_map<std::string, std::tuple<std::unique_ptr<RIFF::File>,
                                                std::unique_ptr<sf2::File>>>
         sf2FilesByPath; // last is the md5sum
-    std::unordered_map<std::string, std::string> sf2MD5ByPath;
+    md5cache_t sf2MD5ByPath;
     std::unordered_map<std::string, std::tuple<std::unique_ptr<RIFF::File>,
                                                std::unique_ptr<gig::File>>>
         gigFilesByPath; // last is the md5sum
-    std::unordered_map<std::string, std::string> gigMD5ByPath;
+    md5cache_t gigMD5ByPath;
 
     std::unordered_map<std::string, std::unique_ptr<RIFF::File>>
         scxtMonolithFilesByPath; // last is the md5sum
-    std::unordered_map<std::string, std::string> scxtMonolithMD5ByPath;
+    md5cache_t scxtMonolithMD5ByPath;
+
+    void setOrCalcMD5Cache(md5cache_t &, const fs::path &, const std::string &m,
+                           const std::string &flavor) const;
 
     std::unordered_map<std::string, std::unique_ptr<ZipArchiveHolder>> zipArchives;
 };

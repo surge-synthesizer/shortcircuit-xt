@@ -135,8 +135,8 @@ void resolveMultiFileMissingWorkItem(engine::Engine &e, const MissingResolutionW
                         if (isSF2)
                         {
                             nid = e.getSampleManager()->loadSampleFromSF2(
-                                p, nullptr, v.sampleID.multiAddress[0], v.sampleID.multiAddress[1],
-                                v.sampleID.multiAddress[2]);
+                                p, v.sampleID.md5, nullptr, v.sampleID.multiAddress[0],
+                                v.sampleID.multiAddress[1], v.sampleID.multiAddress[2]);
                         }
                         if (isMultiSample)
                         {

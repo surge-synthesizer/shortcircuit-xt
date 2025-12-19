@@ -141,6 +141,7 @@ bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
 
 bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
 {
+    SCLOG_IF(plugin, "Loading state");
     static constexpr uint32_t initSize = 1 << 16, chunkSize = 1 << 8;
     std::vector<char> buffer;
     buffer.resize(initSize);
@@ -169,7 +170,10 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
     auto data = std::string(buffer.data());
 
     engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
+    SCLOG_IF(plugin, "State has size " << buffer.size());
+
     synchronousEngineUnstream(engine, data);
+    SCLOG_IF(plugin, "Back from unstream");
 
     scxt::messaging::client::clientSendToSerialization(
         scxt::messaging::client::RequestHostCallback{(uint64_t)RESCAN_PARAM_IVT},
