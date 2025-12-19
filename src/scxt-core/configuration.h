@@ -103,6 +103,7 @@ static constexpr bool voiceLifecycle{false};
 static constexpr bool generatorInitialization{false};
 static constexpr bool sampleLoadAndPurge{false};
 static constexpr bool sampleCompoundParsers{false};
+static constexpr bool monoliths{sampleLoadAndPurge || false};
 static constexpr bool missingResolution{false};
 static constexpr bool ringout{false};
 static constexpr bool streaming{false};

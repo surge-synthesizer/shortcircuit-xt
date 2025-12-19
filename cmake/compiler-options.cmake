@@ -67,6 +67,7 @@ if (APPLE)
 
     set(OS_LINK_LIBRARIES
             "-framework CoreServices"
+            "-framework Security" # for MD5
             )
 elseif (UNIX AND NOT APPLE)
     set(OS_COMPILE_OPTIONS

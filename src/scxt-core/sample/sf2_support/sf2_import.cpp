@@ -99,7 +99,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                     if (sfsamp == nullptr)
                         continue;
 
-                    auto sid = e.getSampleManager()->loadSampleFromSF2(p, sf.get(), pc, i, j);
+                    auto sid = e.getSampleManager()->loadSampleFromSF2(p, md5, sf.get(), pc, i, j);
                     if (!sid.has_value())
                         continue;
                     e.getSampleManager()->getSample(*sid)->md5Sum = md5;
