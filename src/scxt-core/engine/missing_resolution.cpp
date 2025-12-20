@@ -34,6 +34,7 @@ std::vector<MissingResolutionWorkItem> collectMissingResolutionWorkItems(const E
 {
     std::vector<MissingResolutionWorkItem> res;
     const auto &sm = e.getSampleManager();
+    auto lk = sm->acquireMapLock();
     auto it = sm->samplesBegin();
     while (it != sm->samplesEnd())
     {
@@ -44,6 +45,7 @@ std::vector<MissingResolutionWorkItem> collectMissingResolutionWorkItems(const E
         }
         it++;
     }
+    lk.unlock();
 
     std::sort(res.begin(), res.end(),
               [](const auto &a, const auto &b) { return a.path.u8string() < b.path.u8string(); });

@@ -204,12 +204,15 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, cons
     {
         return std::nullopt;
     }
-    for (const auto &[id, sm] : samples)
     {
-        if (sm->type == Sample::SF2_FILE)
+        auto lk = acquireMapLock();
+        for (const auto &[id, sm] : samples)
         {
-            if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
-                return id;
+            if (sm->type == Sample::SF2_FILE)
+            {
+                if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
+                    return id;
+            }
         }
     }
 
@@ -227,7 +230,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, cons
     SCLOG_IF(sampleLoadAndPurge, "        : " << sp->displayName);
     SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
 
-    samples[sp->id] = sp;
+    storeSample(sp);
     updateSampleMemory();
     return sp->id;
 }
@@ -318,12 +321,15 @@ std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, cons
     {
         return std::nullopt;
     }
-    for (const auto &[id, sm] : samples)
     {
-        if (sm->type == Sample::GIG_FILE)
+        auto lk = acquireMapLock();
+        for (const auto &[id, sm] : samples)
         {
-            if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
-                return id;
+            if (sm->type == Sample::GIG_FILE)
+            {
+                if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
+                    return id;
+            }
         }
     }
 
@@ -341,7 +347,7 @@ std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, cons
     SCLOG_IF(sampleLoadAndPurge, "        : " << sp->displayName);
     SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
 
-    samples[sp->id] = sp;
+    storeSample(sp);
     updateSampleMemory();
     return sp->id;
 }
@@ -377,14 +383,17 @@ std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path
 
     auto sidx = region;
 
-    for (const auto &[id, sm] : samples)
     {
-        if (sm->type == Sample::SCXT_FILE)
+        auto lk = acquireMapLock();
+        for (const auto &[id, sm] : samples)
         {
-            if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
+            if (sm->type == Sample::SCXT_FILE)
             {
-                SCLOG_IF(monoliths, "Sample already loaded");
-                return id;
+                if (sm->getPath() == p && sm->getCompoundRegion() == sidx)
+                {
+                    SCLOG_IF(monoliths, "Sample already loaded");
+                    return id;
+                }
             }
         }
     }
@@ -403,7 +412,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path
     SCLOG_IF(monoliths, "        : " << sp->displayName);
     SCLOG_IF(monoliths, "        : " << sp->id.to_string());
 
-    samples[sp->id] = sp;
+    storeSample(sp);
     updateSampleMemory();
     return sp->id;
 }
@@ -420,7 +429,7 @@ std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &
     sp->type = Sample::MULTISAMPLE_FILE;
     sp->region = idx;
     sp->mFileName = p;
-    samples[sp->id] = sp;
+    storeSample(sp);
     updateSampleMemory();
     return sp->id;
 }
@@ -449,7 +458,7 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
     sp->region = idx;
     sp->mFileName = p;
     sp->md5Sum = md5;
-    samples[sp->id] = sp;
+    storeSample(sp);
 
     mz_zip_archive_file_stat file_stat;
     mz_zip_reader_file_stat(&za->zip_archive, idx, &file_stat);
@@ -469,6 +478,7 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
 
 void SampleManager::purgeUnreferencedSamples()
 {
+    auto lk = acquireMapLock();
     auto preSize{samples.size()};
     auto b = samples.begin();
     while (b != samples.end())
@@ -496,11 +506,14 @@ void SampleManager::purgeUnreferencedSamples()
         SCLOG_IF(sampleLoadAndPurge, "PostPurge : Purged " << (preSize - samples.size())
                                                            << " Remaining " << samples.size());
     }
+    lk.unlock();
+
     updateSampleMemory();
 }
 
 void SampleManager::updateSampleMemory()
 {
+    auto lk = acquireMapLock();
     uint64_t res = 0;
     for (const auto &[id, smp] : samples)
     {
@@ -531,6 +544,7 @@ SampleManager::getSampleAddressesFor(const std::vector<SampleID> &sids) const
 
 void SampleManager::addSampleAsMissing(const SampleID &id, const Sample::SampleFileAddress &f)
 {
+    auto lk = acquireMapLock();
     if (samples.find(id) == samples.end())
     {
         auto ms = Sample::createMissingPlaceholder(f);
