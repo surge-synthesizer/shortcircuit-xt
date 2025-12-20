@@ -742,6 +742,10 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
             [payload, multiPath = p, monolithBinaryIndex, &nonconste = engine](auto &e) {
                 try
                 {
+                    auto g = messaging::MessageController::ClientActivityNotificationGuard(
+                        "Loading Multi from " + multiPath.filename().u8string(),
+                        *nonconste.getMessageController());
+
                     nonconste.getSampleManager()->setRelativeRoot(multiPath.parent_path());
                     nonconste.getSampleManager()->setMonolithBinaryIndex(multiPath,
                                                                          monolithBinaryIndex);
@@ -806,6 +810,10 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
                                               &nonconste = engine](auto &e) {
             try
             {
+                auto pg = messaging::MessageController::ClientActivityNotificationGuard(
+                    "Loading Part from " + multiPath.filename().u8string(),
+                    *nonconste.getMessageController());
+
                 nonconste.getSampleManager()->setRelativeRoot(relP);
                 nonconste.getSampleManager()->setMonolithBinaryIndex(multiPath,
                                                                      monolithBinaryIndex);
