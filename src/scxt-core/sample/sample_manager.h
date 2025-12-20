@@ -38,6 +38,7 @@
 #include <optional>
 #include <vector>
 #include <utility>
+#include <mutex>
 #include "SF.h"
 #include "gig.h"
 #include <miniz.h>
@@ -104,6 +105,7 @@ struct SampleManager : MoveableOnly<SampleManager>
 
     std::shared_ptr<Sample> getSample(const SampleID &id) const
     {
+        auto lk = acquireMapLock();
         auto p = samples.find(id);
         if (p != samples.end())
             return p->second;
@@ -153,6 +155,7 @@ struct SampleManager : MoveableOnly<SampleManager>
     typedef std::vector<std::pair<SampleID, Sample::SampleFileAddress>> sampleAddressesAndIds_t;
     sampleAddressesAndIds_t getSampleAddressesAndIDs() const
     {
+        auto lk = acquireMapLock();
         sampleAddressesAndIds_t res;
         for (const auto &[k, v] : samples)
         {
@@ -186,7 +189,10 @@ struct SampleManager : MoveableOnly<SampleManager>
 
     void reset()
     {
-        samples.clear();
+        {
+            auto lk = acquireMapLock();
+            samples.clear();
+        }
         sf2FilesByPath.clear();
         streamingVersion = 0x2112'01'01;
         updateSampleMemory();
@@ -212,14 +218,24 @@ struct SampleManager : MoveableOnly<SampleManager>
     using sampleMap_t = std::unordered_map<SampleID, std::shared_ptr<Sample>>;
 
     // You can do a const interation but not a non-const one
+    // Make sure to be holding the map lock if you are using these
     sampleMap_t::const_iterator samplesBegin() const { return samples.cbegin(); }
     sampleMap_t::const_iterator samplesEnd() const { return samples.cend(); }
 
+    std::unique_lock<std::mutex> acquireMapLock() const { return std::unique_lock(mapMutex); }
+    void storeSample(const std::shared_ptr<Sample> &sp)
+    {
+        auto lk = acquireMapLock();
+        samples[sp->id] = sp;
+    }
     std::function<void(const std::string &, const std::string &)> raiseError = [](auto, auto) {};
 
   private:
     void updateSampleMemory();
     std::unordered_map<SampleID, SampleID> idAliases;
+
+    // A sign of great design.
+    mutable std::mutex mapMutex;
 
     sampleMap_t samples;
 

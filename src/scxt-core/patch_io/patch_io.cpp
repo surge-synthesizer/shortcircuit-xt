@@ -374,6 +374,7 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
 
     if (part < 0)
     {
+        auto lk = e.getSampleManager()->acquireMapLock();
         for (auto curr = e.getSampleManager()->samplesBegin();
              curr != e.getSampleManager()->samplesEnd(); ++curr)
         {
