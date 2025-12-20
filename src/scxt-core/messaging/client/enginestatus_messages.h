@@ -37,6 +37,12 @@
 
 namespace scxt::messaging::client
 {
+
+// First in here is: -1 -> show if open, 0 -> close, 1 -> show and open
+using activityNotificationPayload_t = std::pair<int, std::string>;
+SERIAL_TO_CLIENT(SendActivityNotification, s2c_send_activity_notification,
+                 activityNotificationPayload_t, onActivityNotification);
+
 SERIAL_TO_CLIENT(EngineStatusUpdate, s2c_engine_status, engine::Engine::EngineStatusMessage,
                  onEngineStatus);
 
@@ -44,6 +50,8 @@ using unstreamEngineStatePayload_t = std::string;
 inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
                                   engine::Engine &engine, MessageController &cont)
 {
+    auto mc = messaging::MessageController::ClientActivityNotificationGuard(
+        "Unstreaming Engine State", cont);
     if (cont.isAudioRunning)
     {
         cont.stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
@@ -65,8 +73,10 @@ inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
     {
         try
         {
+            engine.stopEngineRequests++;
             engine.immediatelyTerminateAllVoices();
             scxt::json::unstreamEngineState(engine, payload);
+            engine.stopEngineRequests--;
             cont.sendStreamCompleteNotification();
         }
         catch (std::exception &err)
@@ -89,11 +99,6 @@ inline void stopSoundsMessage(const stopSounds_t &payload, messaging::MessageCon
     });
 }
 CLIENT_TO_SERIAL(StopSounds, c2s_silence_engine, stopSounds_t, stopSoundsMessage(payload, cont));
-
-// First in here is: -1, show if open, 0, close, 1, show and open
-using activityNotificationPayload_t = std::pair<int, std::string>;
-SERIAL_TO_CLIENT(SendActivityNotification, s2c_send_activity_notification,
-                 activityNotificationPayload_t, onActivityNotification);
 
 using tuningStatusPayload_t =
     std::pair<engine::Engine::TuningMode, engine::Engine::TuningZoneResolution>;

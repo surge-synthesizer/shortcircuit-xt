@@ -459,7 +459,9 @@ void SCXTEditor::onActivityNotification(
 {
     auto [idx, msg] = payload;
     if (headerRegion)
+    {
         headerRegion->onActivityNotification(idx, msg);
+    }
 }
 
 void SCXTEditor::onMissingResolutionWorkItemList(

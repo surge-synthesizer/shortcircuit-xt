@@ -567,7 +567,7 @@ bool SCXTPlugin::synchronousEngineUnstream(const std::unique_ptr<scxt::engine::E
     scxt::messaging::client::clientSendToSerialization(
         scxt::messaging::client::UnstreamEngineState{payload}, *engine->getMessageController());
 
-    auto secondsBeforeTimeout{5.0};
+    auto secondsBeforeTimeout{30.0};
     auto waitDuration = std::chrono::milliseconds(100);
     auto maxIterations = secondsBeforeTimeout / 100;
 
@@ -578,6 +578,8 @@ bool SCXTPlugin::synchronousEngineUnstream(const std::unique_ptr<scxt::engine::E
         iterations++;
     }
 
+    if (iterations >= maxIterations)
+        SCLOG_IF(plugin, "State restore took longer than 30 seconds");
     return iterations < maxIterations;
 }
 

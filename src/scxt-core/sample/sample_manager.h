@@ -229,6 +229,7 @@ struct SampleManager : MoveableOnly<SampleManager>
         samples[sp->id] = sp;
     }
     std::function<void(const std::string &, const std::string &)> raiseError = [](auto, auto) {};
+    std::function<void(const std::string &)> informUI = [](auto) {};
 
   private:
     void updateSampleMemory();

@@ -91,6 +91,10 @@ Engine::Engine()
     sampleManager->raiseError = [this](auto a, auto b) {
         messageController->reportErrorToClient(a, b);
     };
+    sampleManager->informUI = [this](const auto &a) {
+        messageController->updateClientActivityNotification(a);
+    };
+
     patch = std::make_unique<Patch>();
     patch->parentEngine = this;
 

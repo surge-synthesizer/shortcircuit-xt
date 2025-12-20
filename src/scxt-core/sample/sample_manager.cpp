@@ -36,8 +36,10 @@ namespace scxt::sample
 void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds_t &r)
 {
     fs::path relativeMarker{relativeSentinel};
+    int idx{0};
     for (const auto &[id, origAddr] : r)
     {
+        idx++;
         Sample::SampleFileAddress addr = origAddr;
         // Handle relative paths
         if (!addr.path.empty())
@@ -58,16 +60,21 @@ void SampleManager::restoreFromSampleAddressesAndIDs(const sampleAddressesAndIds
         if (mit != monolithIndex.end())
         {
             assert(!monolithPath.empty());
-            SCLOG_IF(sampleLoadAndPurge, "Restoring monolith at " << addr.path.u8string());
+            SCLOG_IF(sampleLoadAndPurge,
+                     "Restoring monolith at " << addr.path.u8string() << " " << addr.md5sum);
             addr = {Sample::SourceType::SCXT_FILE, monolithPath, "", -1, -1, mit->second};
         }
 
         if (!fs::exists(addr.path))
         {
+            informUI("Missing sample " + std::to_string(idx) + " " +
+                     addr.path.filename().u8string());
             addSampleAsMissing(id, addr);
         }
         else
         {
+            informUI("Restoring sample " + std::to_string(idx) + " " +
+                     addr.path.filename().u8string());
             auto nid = loadSampleByFileAddress(addr, id);
 
             if (nid.has_value())
