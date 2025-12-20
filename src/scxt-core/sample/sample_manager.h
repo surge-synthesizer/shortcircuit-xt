@@ -38,6 +38,7 @@
 #include <optional>
 #include <vector>
 #include <utility>
+#include <mutex>
 #include "SF.h"
 #include "gig.h"
 #include <miniz.h>
