@@ -39,6 +39,9 @@ enum SaveStyles
     COLLECT_SAMPLES,
     AS_MONOLITH
 };
+
+std::optional<std::pair<std::string, std::string>> retrieveSCManifestAndPayload(const fs::path &);
+
 bool saveMulti(const fs::path &toFile, scxt::engine::Engine &, SaveStyles saveStyle);
 bool loadMulti(const fs::path &fromFile, scxt::engine::Engine &);
 bool savePart(const fs::path &toFile, scxt::engine::Engine &, int part, SaveStyles saveStyles);
