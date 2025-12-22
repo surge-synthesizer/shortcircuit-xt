@@ -366,7 +366,7 @@ clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
                 if (pout)
                 {
                     pout[0][s] = engine->getPatch()->busses.pluginNonMainOutputs[i][0][blockPos];
-                    pout[1][s] = engine->getPatch()->busses.pluginNonMainOutputs[i][0][blockPos];
+                    pout[1][s] = engine->getPatch()->busses.pluginNonMainOutputs[i][1][blockPos];
                 }
             }
         }
