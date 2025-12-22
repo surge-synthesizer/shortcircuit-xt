@@ -234,12 +234,13 @@ std::vector<fs::path> readMonolithBinaryIndex(const std::unique_ptr<RIFF::File> 
     return res;
 }
 
-std::tuple<fs::path, fs::path, std::string> setupForCollection(const fs::path &path)
+std::tuple<fs::path, fs::path, std::string, std::string> setupForCollection(const fs::path &path)
 {
-    auto collectDir = path;
-    collectDir.replace_extension("");
-    auto riffPath = collectDir / path.filename();
-    collectDir /= "samples";
+    auto re = path.filename().replace_extension("");
+    auto riffPath = path;
+    auto sampleDir = (re.u8string() + " Samples");
+    auto collectDir = path.parent_path() / sampleDir;
+
     try
     {
         fs::create_directories(collectDir);
@@ -248,10 +249,13 @@ std::tuple<fs::path, fs::path, std::string> setupForCollection(const fs::path &p
     {
         return {{},
                 {},
+                {},
                 std::string("Unable to create collect directory: " + collectDir.u8string() + " " +
                             fse.what())};
     }
-    return {riffPath, collectDir, ""};
+    SCLOG_IF(patchIO, "Saving collected '" << path.u8string() << "' with sample dir '"
+                                           << collectDir.u8string() << "'")
+    return {riffPath, collectDir, sampleDir + "/", ""};
 }
 
 fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap_t &toCollect,
@@ -492,13 +496,15 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
     e.getSampleManager()->remapIds.clear();
     e.prepareToStream();
 
+    std::string reparentInto;
     if (style == SaveStyles::COLLECT_SAMPLES)
     {
-        auto [r, c, emsg] = setupForCollection(p);
+        auto [r, c, rp, emsg] = setupForCollection(p);
         if (emsg.empty())
         {
             riffPath = r;
             collectDir = c;
+            reparentInto = rp;
         }
         else
         {
@@ -511,7 +517,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
         if (style == SaveStyles::COLLECT_SAMPLES)
         {
             collectSamplesInto(collectDir, e, -1);
-            e.getSampleManager()->reparentSamplesOnStreamToRelative("samples/");
+            e.getSampleManager()->reparentSamplesOnStreamToRelative(reparentInto);
         }
 
         auto f = std::make_unique<RIFF::File>(scxtRIFFHeader);
@@ -564,16 +570,18 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
 {
     fs::path riffPath = p;
     fs::path collectDir;
+    std::string reparentInto;
 
     e.getSampleManager()->remapIds.clear();
     e.prepareToStream();
     if (style == SaveStyles::COLLECT_SAMPLES)
     {
-        auto [r, c, emsg] = setupForCollection(p);
+        auto [r, c, rp, emsg] = setupForCollection(p);
         if (emsg.empty())
         {
             riffPath = r;
             collectDir = c;
+            reparentInto = rp;
         }
         else
         {
@@ -586,7 +594,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
         if (style == SaveStyles::COLLECT_SAMPLES)
         {
             collectSamplesInto(collectDir, e, part);
-            e.getSampleManager()->reparentSamplesOnStreamToRelative("samples/");
+            e.getSampleManager()->reparentSamplesOnStreamToRelative(reparentInto);
         }
 
         auto f = std::make_unique<RIFF::File>(scxtRIFFHeader);
