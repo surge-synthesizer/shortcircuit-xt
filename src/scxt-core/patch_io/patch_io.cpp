@@ -74,6 +74,14 @@ void addSCManifest(const std::unique_ptr<RIFF::File> &f, const std::string &type
     memcpy(d, mmsg.data(), mmsg.size());
 }
 
+std::string readSCManifestString(RIFF::File *f)
+{
+    auto c1 = f->GetSubChunk(manifestChunk);
+    std::string s((char *)c1->LoadChunkData(), c1->GetSize());
+    c1->ReleaseChunkData();
+    return s;
+}
+
 std::unordered_map<std::string, std::string> readSCManifest(RIFF::File *f)
 {
     auto c1 = f->GetSubChunk(manifestChunk);
@@ -711,6 +719,24 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
         }
     }
     return true;
+}
+
+std::optional<std::pair<std::string, std::string>> retrieveSCManifestAndPayload(const fs::path &p)
+{
+    try
+    {
+        auto f = std::make_unique<RIFF::File>(p.u8string());
+        if (!f)
+            return std::nullopt;
+        auto manifest = readSCManifestString(f.get());
+        auto pl = readSCDataChunk(f);
+        return std::make_pair(manifest, pl);
+    }
+    catch (const RIFF::Exception &e)
+    {
+        SCLOG("RIFF::Exception " << e.Message);
+        return std::nullopt;
+    }
 }
 
 bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
