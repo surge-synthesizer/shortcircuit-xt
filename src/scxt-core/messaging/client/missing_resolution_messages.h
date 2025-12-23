@@ -62,5 +62,30 @@ inline void doResolveSample(const resolveSamplePayload_t &payload, engine::Engin
 CLIENT_TO_SERIAL(ResolveSample, c2s_resolve_sample, resolveSamplePayload_t,
                  doResolveSample(payload, engine, cont));
 
+inline void doResolveMultiSample(const std::vector<resolveSamplePayload_t> &payloadVector,
+                                 engine::Engine &e, messaging::MessageController &cont)
+{
+    auto g = messaging::MessageController::ClientActivityNotificationGuard(
+        "Applying missing resolution", cont);
+    for (auto &payload : payloadVector)
+    {
+        auto mwi = std::get<0>(payload);
+        auto p = fs::path(fs::u8path(std::get<1>(payload)));
+
+        if (mwi.isMultiUsed)
+        {
+            engine::resolveMultiFileMissingWorkItem(e, mwi, p);
+        }
+        else
+        {
+            engine::resolveSingleFileMissingWorkItem(e, mwi, p);
+        }
+    }
+    e.getSampleManager()->purgeUnreferencedSamples();
+    e.sendFullRefreshToClient();
+}
+CLIENT_TO_SERIAL(ResolveMultiSample, c2s_resolve_multiple_samples,
+                 std::vector<resolveSamplePayload_t>, doResolveMultiSample(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // MISSING_RESOLUTION_MESSAGES_H

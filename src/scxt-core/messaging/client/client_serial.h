@@ -183,6 +183,7 @@ enum ClientToSerializationMessagesIds
     c2s_send_full_part_config,
 
     c2s_resolve_sample,
+    c2s_resolve_multiple_samples,
 
     c2s_initiate_midizone_action, // the buttons at the top
 
