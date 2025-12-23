@@ -195,7 +195,7 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
             auto w = outputPane->procWeakRefs[i];
             if (!w)
             {
-                SCLOG("Software Error - why is there no w here?");
+                SCLOG_IF(warnings, "Software Error - why is there no w in RoutingPane?");
                 return;
             }
 

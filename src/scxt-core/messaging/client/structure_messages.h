@@ -341,7 +341,7 @@ inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &
     {
         auto sz = engine.getSelectionManager()->currentlySelectedZones();
         src = std::set<selection::SelectionManager::ZoneAddress>(sz.begin(), sz.end());
-        SCLOG("Empty src so we populated it with " << src.size() << " zones");
+        SCLOG_IF(groupZoneMutation, "Empty src so we populated it with " << src.size() << " zones");
     }
     assert(src.begin()->part == tgt.part);
 

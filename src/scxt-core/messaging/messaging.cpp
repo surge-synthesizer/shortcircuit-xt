@@ -228,10 +228,13 @@ void MessageController::runSerialization()
                 std::lock_guard<std::mutex> g(engine.modifyStructureMutex);
                 client::serializationThreadExecuteClientMessage(inbound, engine, *this);
                 inboundClientMessageCount++;
+#if BUILD_IS_DEBUG
                 if (inboundClientMessageCount % 1000 == 0)
                 {
-                    SCLOG("Client -> Serial Message Count: " << inboundClientMessageCount);
+                    SCLOG_IF(debug,
+                             "Client -> Serial Message Count: " << inboundClientMessageCount);
                 }
+#endif
             }
 
             if (audioStateChanged && isClientConnected)
@@ -345,9 +348,9 @@ void MessageController::sendRawFromClient(const clientToSerializationMessage_t &
         c2sMessageBytes += s.size();
         if (c2sMessageCount % 100 == 0)
         {
-            SCLOG("Client -> Serial Message Count : " << c2sMessageCount << " size "
-                                                      << c2sMessageBytes << " avgmsg: "
-                                                      << 1.f * c2sMessageBytes / c2sMessageCount);
+            SCLOG_IF(debug, "Client -> Serial Message Count : "
+                                << c2sMessageCount << " size " << c2sMessageBytes
+                                << " avgmsg: " << 1.f * c2sMessageBytes / c2sMessageCount);
         }
 #endif
     }
@@ -356,14 +359,14 @@ void MessageController::sendRawFromClient(const clientToSerializationMessage_t &
 
 void MessageController::reportErrorToClient(const std::string &title, const std::string &body)
 {
-    SCLOG("Error: [" << title << "]");
+    SCLOG_IF(warnings, "Error: [" << title << "]");
     auto blog = body;
     auto pos{0};
     while ((pos = blog.find("\n", pos)) != std::string::npos)
     {
         blog[pos] = ' ';
     }
-    SCLOG(blog);
+    SCLOG_IF(warnings, blog);
     client::serializationSendToClient(client::s2c_report_error, client::s2cError_t{title, body},
                                       *(this));
 }

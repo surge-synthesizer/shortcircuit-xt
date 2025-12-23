@@ -32,6 +32,7 @@
 #include "engine/engine.h"
 #include "messaging/messaging.h"
 #include "infrastructure/md5support.h"
+#include "configuration.h"
 
 namespace scxt::gig_support
 {
@@ -40,7 +41,7 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
     auto &messageController = e.getMessageController();
     assert(messageController->threadingChecker.isSerialThread());
 
-    SCLOG("Loading " << p.u8string() << " ps=" << preset);
+    SCLOG_IF(sampleCompoundParsers, "Loading " << p.u8string() << " ps=" << preset);
 
     auto cng = messaging::MessageController::ClientActivityNotificationGuard(
         "Loading GIG '" + p.filename().u8string() + "'", *(messageController));
@@ -97,13 +98,13 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
             {
                 if (region->pInfo && !region->pInfo->Name.empty())
                 {
-                    SCLOG(region->pInfo->Name);
+                    SCLOG_IF(sampleCompoundParsers, region->pInfo->Name);
                 }
                 else
                 {
-                    SCLOG("Unnamed region");
+                    SCLOG_IF(sampleCompoundParsers, "Unnamed region");
                 }
-                SCLOG("Dimension Count " << region->Dimensions);
+                SCLOG_IF(sampleCompoundParsers, "Dimension Count " << region->Dimensions);
                 if (region->Dimensions != 1)
                 {
                     messageController->reportErrorToClient(
@@ -112,8 +113,9 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
                     return false;
                 }
 
-                SCLOG(region->KeyGroup);
-                SCLOG(region->KeyRange.high << " " << region->KeyRange.low);
+                SCLOG_IF(sampleCompoundParsers, region->KeyGroup);
+                SCLOG_IF(sampleCompoundParsers,
+                         region->KeyRange.high << " " << region->KeyRange.low);
                 auto dim = region->pDimensionRegions[0];
 
                 auto sfsamp = region->GetSample();

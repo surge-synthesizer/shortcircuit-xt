@@ -66,13 +66,17 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         fileToIndex[file_stat.m_filename] = i;
     }
 
-    SCLOG("Read multisample '" << p.filename().u8string() << "' with "
-                               << (int)mz_zip_reader_get_num_files(&zip_archive) << " components");
+    SCLOG_IF(sampleCompoundParsers, "Read multisample '"
+                                        << p.filename().u8string() << "' with "
+                                        << (int)mz_zip_reader_get_num_files(&zip_archive)
+                                        << " components");
 
     // Step two grab the multisample.xml
     if (fileToIndex.find("multisample.xml") == fileToIndex.end())
     {
-        SCLOG("No Multisapmle.xml");
+        SCLOG_IF(sampleCompoundParsers, "No Multisapmle.xml");
+        engine.getMessageController()->reportErrorToClient("Multisample Error",
+                                                           "Mo XML file in Multisample");
         return false;
     }
 
@@ -82,13 +86,15 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
     std::string xml((const char *)data, rsize);
     free(data);
 
-    // SCLOG(xml);
+    // SCLOG_IF(sampleCompoundParsers,xml);
     auto doc = TiXmlDocument();
     if (!doc.Parse(xml.c_str()))
     {
-        SCLOG("XML Parse Fail");
+        SCLOG_IF(sampleCompoundParsers, "XML Parse Fail");
         mz_zip_reader_end(&zip_archive);
 
+        engine.getMessageController()->reportErrorToClient("Multisample Error",
+                                                           "XML Failed to parse");
         return false;
     }
 
@@ -100,8 +106,9 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
     auto rt = doc.RootElement();
     if (rt->ValueStr() != "multisample")
     {
-        SCLOG("XML is not a multisample document");
+        SCLOG_IF(sampleCompoundParsers, "XML is not a multisample document");
         mz_zip_reader_end(&zip_archive);
+        engine.getMessageController()->reportErrorToClient("Multisample Error", "XML invalid");
         return false;
     }
 
@@ -117,7 +124,9 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
          */
         if (!fc->Attribute("file"))
         {
-            SCLOG("Sample is not a file");
+            SCLOG_IF(sampleCompoundParsers, "Sample is not a file");
+            engine.getMessageController()->reportErrorToClient("Multisample Error",
+                                                               "Sample is not a file");
             return false;
         }
 
@@ -131,7 +140,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
 
         if (!lsid.has_value())
         {
-            SCLOG("Wierd - no lsid value");
+            SCLOG_IF(sampleCompoundParsers, "Wierd - no lsid value");
             return false;
         }
 
@@ -179,7 +188,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
                 }
                 else
                 {
-                    SCLOG("Ignoring loop mode " << md);
+                    SCLOG_IF(sampleCompoundParsers, "Ignoring loop mode " << md);
                 }
             }
         }
@@ -192,7 +201,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
 
             if (group < 0 || group > addedGroupIndices.size())
             {
-                SCLOG("Bad group : " << group);
+                SCLOG_IF(sampleCompoundParsers, "Bad group : " << group);
                 return false;
             }
             group_id = addedGroupIndices[group];
@@ -275,7 +284,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         }
         else
         {
-            SCLOG("Ignored multisample field " << eln);
+            SCLOG_IF(sampleCompoundParsers, "Ignored multisample field " << eln);
         }
         fc = fc->NextSiblingElement();
     }

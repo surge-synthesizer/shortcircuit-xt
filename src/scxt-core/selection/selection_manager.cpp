@@ -42,7 +42,7 @@ void SelectionManager::sendClientDataForLeadSelectionState()
 {
     if constexpr (scxt::log::selection)
     {
-        SCLOG("Sending full selection data to client for part=" << selectedPart);
+        SCLOG_IF(selection, "Sending full selection data to client for part=" << selectedPart);
     }
     serializationSendToClient(cms::s2c_send_selected_part, selectedPart,
                               *(engine.getMessageController()));
@@ -125,7 +125,7 @@ void SelectionManager::applySelectActions(const std::vector<SelectActionContents
             if (!z.addr().isInWithPartials(engine))
             {
                 // TODO - error message
-                SCLOG("Got an address outside partials " << z);
+                SCLOG_IF(selection, "Got an address outside partials " << z);
                 continue;
             }
             adjustInternalStateForAction(z);
@@ -184,10 +184,7 @@ void SelectionManager::selectPart(int16_t part)
 {
     selectedPart = part;
 
-    if constexpr (scxt::log::selection)
-    {
-        SCLOG("SELECT PART " << part);
-    }
+    SCLOG_IF(selection, "SELECT PART " << part);
 
     guaranteeSelectedLead();
     sendClientDataForLeadSelectionState();
@@ -454,18 +451,18 @@ void SelectionManager::debugDumpSelectionState()
 {
     if constexpr (scxt::log::selection)
     {
-        SCLOG("---------------------------");
-        SCLOG("PART: " << selectedPart);
-        SCLOG("ZONES: Selected=" << allSelectedZones[selectedPart].size());
-        SCLOG("   LEAD ZONE : " << leadZone[selectedPart]);
+        SCLOG_IF(selection, "---------------------------");
+        SCLOG_IF(selection, "PART: " << selectedPart);
+        SCLOG_IF(selection, "ZONES: Selected=" << allSelectedZones[selectedPart].size());
+        SCLOG_IF(selection, "   LEAD ZONE : " << leadZone[selectedPart]);
         for (const auto &z : allSelectedZones[selectedPart])
-            SCLOG("      Z Selected : " << z);
+            SCLOG_IF(selection, "      Z Selected : " << z);
 
-        SCLOG("GROUPS: Selected=" << allSelectedGroups[selectedPart].size());
-        SCLOG("   LEAD GROUP : " << leadGroup[selectedPart]);
+        SCLOG_IF(selection, "GROUPS: Selected=" << allSelectedGroups[selectedPart].size());
+        SCLOG_IF(selection, "   LEAD GROUP : " << leadGroup[selectedPart]);
         for (const auto &z : allSelectedGroups[selectedPart])
-            SCLOG("      G Selected : " << z);
-        SCLOG("---------------------------");
+            SCLOG_IF(selection, "      G Selected : " << z);
+        SCLOG_IF(selection, "---------------------------");
     }
 }
 
@@ -473,7 +470,7 @@ void SelectionManager::sendSelectedZonesToClient()
 {
     if constexpr (scxt::log::selection)
     {
-        SCLOG("Sending selected zones to client");
+        SCLOG_IF(selection, "Sending selected zones to client");
         debugDumpSelectionState();
     }
 

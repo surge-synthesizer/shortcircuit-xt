@@ -88,7 +88,6 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             auto rc = dynamic_cast<rowTopComponent *>(c.get());
             if (rc && rc->gzRow)
             {
-                SCLOG("SELECTION STATE CHANGED " << rc->gzRow->rowNumber << " to " << isSel);
                 rc->gzRow->isSelected = isSel;
                 repaint();
             }
@@ -178,7 +177,6 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             if (!gsb)
                 return;
 
-            // SCLOG("paint " << this << " " << isDragging << " " << rowNumber);
             const auto &tgl = lbm->gzData;
             if (rowNumber < 0 || rowNumber >= tgl.size())
                 return;
@@ -453,10 +451,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             dragOverState = DRAG_OVER;
             repaint();
         }
-        void itemDragMove(const SourceDetails &dragSourceDetails) override
-        {
-            // SCLOG("Item Drag Move");
-        }
+        void itemDragMove(const SourceDetails &dragSourceDetails) override {}
         void itemDragExit(const SourceDetails &dragSourceDetails) override
         {
             dragOverState = NONE;
@@ -598,10 +593,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             isDroppingOn = true;
             repaint();
         }
-        void itemDragMove(const SourceDetails &dragSourceDetails) override
-        {
-            // SCLOG("Item Drag Move");
-        }
+        void itemDragMove(const SourceDetails &dragSourceDetails) override {}
         void itemDragExit(const SourceDetails &dragSourceDetails) override
         {
             isDroppingOn = false;
@@ -637,7 +629,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 }
                 else
                 {
-                    // SCLOG("Dropping group onto +");
+                    // Dragging group onto a + we can happily do nothing
                 }
             }
         }

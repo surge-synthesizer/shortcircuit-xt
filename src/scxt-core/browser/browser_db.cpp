@@ -89,9 +89,8 @@ std::vector<std::pair<fs::path, bool>> BrowserDB::getBrowserLocations()
     }
     catch (SQL::Exception &e)
     {
-        // storage->reportError(e.what(), "PatchDB - readFeatures");
-        SCLOG("Database Error");
-        SCLOG(e.what());
+        SCLOG_IF(sqlDb, e.what());
+        mc.reportErrorToClient("Database Error", e.what());
     }
     return res;
 }

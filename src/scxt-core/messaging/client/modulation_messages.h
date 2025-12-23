@@ -169,7 +169,7 @@ inline void doMiscmodUpdate(const gzMiscStorageUpdate_t &payload, const engine::
                 {
                     auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
                     grp->miscSourceStorage = storage;
-                    SCLOG("Probably need to restart something here");
+                    SCLOG_IF(warnings, "Probably need to restart something here");
                 }
             });
         }

@@ -62,7 +62,7 @@ template <typename P> sst::basic_blocks::params::ParamMetaData descFor(const P &
         static_assert(std::is_standard_layout_v<T>);                                               \
         __VA_ARGS__;                                                                               \
                                                                                                    \
-        SCLOG("Failed to bind " << pd << " position element of " << #T);                           \
+        SCLOG_IF(warning, "Failed to bind " << pd << " position element of " << #T);               \
         assert(false);                                                                             \
         return pmd();                                                                              \
     }

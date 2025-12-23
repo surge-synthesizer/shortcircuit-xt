@@ -128,7 +128,7 @@ inline void doNormalizeVariantAmplitude(const normalizeVariantAmplitudePayload_t
                 eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->setNormalizedSampleLevel(
                     use_peak, idx);
             },
-            [p = ps, g = gs, z = zs](auto &e) {
+            [](auto &e) {
                 SCLOG_ONCE("Normalize variant could be optimized to not sending so much back");
                 e.sendFullRefreshToClient();
             });
@@ -235,7 +235,8 @@ using initiateMidiZoneAction_t = int;
 inline void doInitiateMidiZoneAction(const initiateMidiZoneAction_t &payload,
                                      engine::Engine &engine, MessageController &cont)
 {
-    SCLOG("Initating midi zone action " << payload);
+    SCLOG_UNIMPL("Initating midi zone action " << payload);
+    // We need to trigger learn for edges and stuff
 }
 CLIENT_TO_SERIAL(InitiateMidiZoneAction, c2s_initiate_midizone_action, initiateMidiZoneAction_t,
                  doInitiateMidiZoneAction(payload, engine, cont));

@@ -94,13 +94,6 @@ void ProcessorPane::showProcessorTypeMenu()
         if (pd.groupOnly && forZone)
             continue;
 
-#if PRINT_MISSING_JSON
-        if (jsonDefinitions.find(pd.id) == jsonDefinitions.end())
-        {
-            SCLOG("No json def for " << pd.displayGroup << "/" << pd.displayName);
-        }
-#endif
-
         if (pd.displayGroup != priorGroup && priorGroup != "none")
         {
             p.addSubMenu(priorGroup, subMenu);
@@ -209,7 +202,7 @@ void ProcessorPane::setupJsonTypeMap()
         auto res = scxt::ui::connectors::jsonlayout::resolveJsonFile(s);
         if (!res.has_value())
         {
-            SCLOG("Unable to load JSON for " << s);
+            SCLOG_IF(debug, "Unable to load JSON for " << s);
         }
     }
 #endif
@@ -702,7 +695,7 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
     auto intAttI = [this](int is) {
         if (intAttachments[is])
             return intAttachments[is]->getValue();
-        SCLOG("Warning: Queried an unimplemented int attachment in intAttI");
+        SCLOG_IF(warnings, "Queried an unimplemented int attachment in intAttI");
         return 0;
     };
 

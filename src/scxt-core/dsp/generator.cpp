@@ -413,8 +413,8 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
         float above = space - ks.IO->waveSize + FIRipol_N;
 
         if (space < -(int64_t)FIRoffset || above > FIRoffset)
-            SCLOG(SCD(ks.IO->sampleDataL)
-                  << SCD(readSampleL) << SCD(space) << SCD(above) << SCD(ks.IO->waveSize));
+            SCLOG_IF(debug, SCD(ks.IO->sampleDataL) << SCD(readSampleL) << SCD(space) << SCD(above)
+                                                    << SCD(ks.IO->waveSize));
 
         assert(space >= -(int64_t)FIRoffset && above <= FIRoffset);
     }
@@ -904,7 +904,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             mnOut = std::min(OutputL[i], mnOut);
             if (printEvery == 1000)
             {
-                SCLOG("GENERATOR " << SCD(mxOut) << " " << SCD(mnOut));
+                SCLOG_IF(debug, "GENERATOR " << SCD(mxOut) << " " << SCD(mnOut));
                 printEvery = 0;
                 mxOut = std::numeric_limits<float>::min();
                 mnOut = std::numeric_limits<float>::max();

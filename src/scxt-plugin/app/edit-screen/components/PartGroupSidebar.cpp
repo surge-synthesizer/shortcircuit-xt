@@ -407,7 +407,7 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
         }
         else
         {
-            SCLOG("Selected row zone inconsistent " << rowZone);
+            SCLOG_IF(warnings, "Selected row zone inconsistent " << rowZone);
         }
         lastZoneClicked = rowZone;
     }
@@ -463,7 +463,7 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
 {
     pgzStructure = p;
 #if LOG_PART_GROUP_SIDEBAR
-    SCLOG("PartGroupZone in Sidebar: Showing Part0 Entries");
+    SCLOG_IF(debug, "PartGroupZone in Sidebar: Showing Part0 Entries");
     for (const auto &a : pgzStructure)
     {
         if (a.first.part == 0)
@@ -473,7 +473,7 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
                 pad = "|";
             else if (a.first.zone == -1)
                 pad = "|--|";
-            SCLOG("  " << pad << " " << a.second << " -> " << a.first);
+            SCLOG_IF(debug, "  " << pad << " " << a.second << " -> " << a.first);
         }
     }
 #endif
@@ -615,7 +615,7 @@ void PartGroupSidebar::showHamburgerMenu()
     }
     else
     {
-        SCLOG("Skipping PGZ Hamburger for tab " << selectedTab);
+        // No hamburger on this tab!
     }
 }
 

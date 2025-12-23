@@ -173,12 +173,6 @@ template <typename T> struct SSTVoiceEffectShim : T
                   HasMemFn_getMonoToStereoSetting<T>::value);
     template <class... Args> SSTVoiceEffectShim(Args &&...a) : T(std::forward<Args>(a)...)
     {
-#if DEBUG_LOG_CONFIG
-        SCLOG(T::effectName << " mono->mono=" << HasMemFn_processMonoToMono<T>::value
-                            << " mono->stereo=" << HasMemFn_processMonoToStereo<T>::value
-                            << " stereo->stereo=" << HasMemFn_processStereo<T>::value);
-#endif
-
         static_assert(T::streamingVersion > 0,
                       "All template processors need independent streaming version");
         static_assert(HasMemFn_remapParametersForStreamingVersion<T>::value,
@@ -304,9 +298,9 @@ template <typename T> struct SSTVoiceEffectShim : T
                 res.supportsTemposync || res.floatControlDescriptions[i].canTemposync;
             if (!res.floatControlDescriptions[i].supportsStringConversion)
             {
-                SCLOG("Warning: processor param " << i << " "
-                                                  << res.floatControlDescriptions[i].name
-                                                  << " does not support string conversion");
+                SCLOG_IF(warnings, "Warning: processor param "
+                                       << i << " " << res.floatControlDescriptions[i].name
+                                       << " does not support string conversion");
             }
         }
 

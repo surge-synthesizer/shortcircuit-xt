@@ -39,7 +39,6 @@ MidikeyRetuner::MidikeyRetuner()
     if (mtsClient && MTS_HasMaster(mtsClient))
     {
         tuningMode = MTS_ESP;
-        SCLOG("Found MTS with a Master");
     }
 }
 

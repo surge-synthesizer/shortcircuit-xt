@@ -99,7 +99,6 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 
             if (sr.id == engine::GroupTriggerID::NONE)
             {
-                SCLOG("NONE");
                 a1A.reset();
                 a2A.reset();
                 a1M.reset();

@@ -30,6 +30,7 @@
 #include "sfz_parse.h"
 #include "messaging/messaging.h"
 #include "engine/engine.h"
+#include "configuration.h"
 #include <cctype>
 
 namespace scxt::sfz_support
@@ -89,7 +90,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     {
         if (r.type != SFZParser::Header::region)
         {
-            SCLOG("Header ----- <" << r.name << "> (" << list.size() << " opcodes) -------");
+            SCLOG_IF(sampleCompoundParsers,
+                     "Header ----- <" << r.name << "> (" << list.size() << " opcodes) -------");
         }
         switch (r.type)
         {
@@ -107,7 +109,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 else
                 {
                     // We take a second shot at this below
-                    // SCLOG("     Skipped OpCode <group>: " << oc.name << " -> " << oc.value);
+                    // SCLOG_IF(sampleCompoundParsers,"     Skipped OpCode <group>: " << oc.name <<
+                    // " -> " << oc.value);
                 }
             }
         }
@@ -152,7 +155,10 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 }
                 else
                 {
-                    SCLOG("Cannot load Sample : " << samplePath.u8string());
+                    SCLOG_IF(sampleCompoundParsers,
+                             "Cannot load Sample : " << samplePath.u8string());
+                    e.getMessageController()->reportErrorToClient(
+                        "SFZ Import Error", "Cannot load sample '" + samplePath.u8string() + "'");
                     break;
                 }
             }
@@ -165,14 +171,20 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 }
                 else
                 {
-                    SCLOG("Cannot load Sample : " << sampleFile);
+                    SCLOG_IF(sampleCompoundParsers, "Cannot load Sample : " << sampleFile);
+                    e.getMessageController()->reportErrorToClient(
+                        "SFZ Import Error", "Cannot load sample '" + sampleFile.u8string() + "'");
                     return false;
                 }
             }
             else
             {
-                SCLOG("Unable to load either '" << samplePath.u8string() << "' or '"
-                                                << sampleFile.u8string() << "'");
+                SCLOG_IF(sampleCompoundParsers, "Unable to load either '"
+                                                    << samplePath.u8string() << "' or '"
+                                                    << sampleFile.u8string() << "'");
+                e.getMessageController()->reportErrorToClient(
+                    "SFZ Import Error", "Unable to load either '" + samplePath.u8string() +
+                                            "' or '" + sampleFile.u8string() + "'");
                 return false;
             }
 
@@ -276,7 +288,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                         }
                         else
                         {
-                            SCLOG("SFZ Unsupported loop_mode : " << oc.value);
+                            SCLOG_IF(sampleCompoundParsers,
+                                     "SFZ Unsupported loop_mode : " << oc.value);
                         }
                     }
                     else if (oc.name == "transpose")
@@ -300,8 +313,9 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     else
                     {
                         if (n != "Group")
-                            SCLOG("    Skipped " << n << "-originated OpCode for region: "
-                                                 << oc.name << " -> " << oc.value);
+                            SCLOG_IF(sampleCompoundParsers,
+                                     "    Skipped " << n << "-originated OpCode for region: "
+                                                    << oc.name << " -> " << oc.value);
                     }
                 }
             }
@@ -367,7 +381,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     auto vv = oc.value;
                     std::replace(vv.begin(), vv.end(), '\\', '/');
                     sampleDir = rootDir / vv;
-                    SCLOG("Control: Resetting sample dir to " << sampleDir);
+                    SCLOG_IF(sampleCompoundParsers,
+                             "Control: Resetting sample dir to " << sampleDir);
                 }
                 else if (oc.name == "octave_offset")
                 {
@@ -375,17 +390,19 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 }
                 else
                 {
-                    SCLOG("    Skipped OpCode <control>: " << oc.name << " -> " << oc.value);
+                    SCLOG_IF(sampleCompoundParsers,
+                             "    Skipped OpCode <control>: " << oc.name << " -> " << oc.value);
                 }
             }
         }
         break;
         default:
         {
-            SCLOG("Ignoring SFZ Header " << r.name << " with " << list.size() << " keywords");
+            SCLOG_IF(sampleCompoundParsers,
+                     "Ignoring SFZ Header " << r.name << " with " << list.size() << " keywords");
             for (const auto &oc : list)
             {
-                SCLOG("  " << oc.name << " -> |" << oc.value << "|");
+                SCLOG_IF(sampleCompoundParsers, "  " << oc.name << " -> |" << oc.value << "|");
             }
         }
         break;

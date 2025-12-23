@@ -261,7 +261,7 @@ void EditScreen::onOtherTabSelection()
     else if (pgz == "zone")
         partSidebar->setSelectedTab(2);
     else
-        SCLOG("Unknown multi.pgz key " << pgz);
+        partSidebar->setSelectedTab(2); // default to zone on unknown
 
     auto gts = editor->queryTabSelection(tabKey("multi.group.lfo"));
     if (!gts.empty())

@@ -189,7 +189,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
 
             if (!z->samplePointers[z->sampleIndex])
             {
-                // SCLOG( "Skipping voice with missing sample data" );
+                // Empty samples don't start a voice here
             }
             else
             {

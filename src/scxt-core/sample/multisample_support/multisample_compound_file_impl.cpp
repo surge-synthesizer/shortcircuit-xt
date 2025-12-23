@@ -34,8 +34,6 @@ namespace scxt::sample::compound
 {
 std::vector<CompoundElement> getMultisampleCompoundList(const fs::path &p)
 {
-    SCLOG("Multisample Compound");
-
     mz_zip_archive zip_archive;
     memset(&zip_archive, 0, sizeof(zip_archive));
 

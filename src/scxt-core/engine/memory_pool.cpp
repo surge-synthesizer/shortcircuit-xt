@@ -77,8 +77,7 @@ MemoryPool::data_t *MemoryPool::checkoutBlock(size_t requestBlockSize)
     auto res = cacheP->second.data.front();
     cacheP->second.data.pop();
 
-    // Please leave these in. Handy to debug
-    // SCLOG(blockSize << " : Post checkout size is " << cacheP->second.size());
+    SCLOG_IF(memoryPool, blockSize << " : Post checkout size is " << cacheP->second.data.size());
     return res;
 }
 void MemoryPool::returnBlock(data_t *block, size_t requestBlockSize)
@@ -97,7 +96,6 @@ void MemoryPool::growBlock(size_t requestBlockSize, bool initialize)
 {
     auto blockSize = nearestBlock(requestBlockSize);
     SCLOG_IF(memoryPool, "Growing block size " << blockSize << " init=" << initialize);
-    // SCLOG(blockSize << ": Growing pool " << blockSize);
     auto cacheP = cache.find(blockSize);
     assert(cacheP != cache.end()); // If you hit this you didn't pre-reserve
 

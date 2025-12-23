@@ -175,7 +175,7 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
 
             if (fstreamSz != fsz)
             {
-                SCLOG("Mismatched sizes " << fsz << " " << fstreamSz);
+                SCLOG_IF(patchIO, "Mismatched sizes " << fsz << " " << fstreamSz);
                 return false;
             };
 
@@ -261,7 +261,7 @@ std::tuple<fs::path, fs::path, std::string, std::string> setupForCollection(cons
 fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap_t &toCollect,
                        const SampleID &id, const std::shared_ptr<sample::Sample> &sp)
 {
-    SCLOG("Sample Collection from MultiThingy");
+    SCLOG_IF(patchIO, "Sample Collection from MultiThingy");
     auto writableDirectory = fs::temp_directory_path() / "scxt_multi_samples";
 
     fs::create_directories(writableDirectory);
@@ -280,7 +280,7 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
 
     auto nf = writableDirectory / (nm + ".wav");
 
-    SCLOG("Writing to " << nf.u8string());
+    SCLOG_IF(patchIO, "Writing to " << nf.u8string());
     auto ch = sp->channels;
     if (sp->bitDepth == sample::Sample::BD_F32)
     {
@@ -357,7 +357,7 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
     }
     else
     {
-        SCLOG("Unsupported bit depth " << sp->bitDepth);
+        SCLOG_IF(patchIO, "Unsupported bit depth " << sp->bitDepth);
         return {};
     }
 
@@ -366,13 +366,13 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
     {
         auto smp = e.getSampleManager()->getSample(*sid);
         toCollect.insert({*sid, smp});
-        SCLOG("Re-pointing " << id.to_string() << " to "
-                             << smp->getSampleFileAddress().path.u8string())
+        SCLOG_IF(patchIO, "Re-pointing " << id.to_string() << " to "
+                                         << smp->getSampleFileAddress().path.u8string())
         e.getSampleManager()->remapIds[id] = {*sid, smp->getSampleFileAddress()};
     }
     else
     {
-        SCLOG("Unable to load sample by path " << nf.u8string());
+        SCLOG_IF(patchIO, "Unable to load sample by path " << nf.u8string());
     }
     return nf;
 }
@@ -422,7 +422,7 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
             }
             else
             {
-                SCLOG("Unable to find sample " << sid.to_string());
+                SCLOG_IF(patchIO, "Unable to find sample " << sid.to_string());
             }
         }
     }
@@ -470,7 +470,7 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
         }
         catch (fs::filesystem_error &fse)
         {
-            SCLOG("Unable to copy " << c.u8string() << " " << fse.what());
+            SCLOG_IF(patchIO, "Unable to copy " << c.u8string() << " " << fse.what());
             e.getMessageController()->reportErrorToClient("Unable to copy sample", fse.what());
             return;
         }
@@ -483,7 +483,7 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
         }
         catch (fs::filesystem_error &fse)
         {
-            SCLOG("Unable to remove " << f.u8string() << " " << fse.what());
+            SCLOG_IF(patchIO, "Unable to remove " << f.u8string() << " " << fse.what());
         }
     }
 }
@@ -537,7 +537,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
                 }
                 catch (fs::filesystem_error &fse)
                 {
-                    SCLOG("Unable to remove " << f.u8string() << " " << fse.what());
+                    SCLOG_IF(patchIO, "Unable to remove " << f.u8string() << " " << fse.what());
                 }
             }
             if (!res)
@@ -561,7 +561,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
     }
     catch (const RIFF::Exception &e)
     {
-        SCLOG(e.Message);
+        SCLOG_IF(patchIO, e.Message);
     }
     return true;
 }
@@ -614,7 +614,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
                 }
                 catch (fs::filesystem_error &fse)
                 {
-                    SCLOG("Unable to remove " << f.u8string() << " " << fse.what());
+                    SCLOG_IF(patchIO, "Unable to remove " << f.u8string() << " " << fse.what());
                 }
             }
             if (!res)
@@ -676,7 +676,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
     }
     catch (const RIFF::Exception &e)
     {
-        SCLOG(e.Message);
+        SCLOG_IF(patchIO, e.Message);
     }
     return true;
 }
@@ -693,7 +693,7 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
     }
     catch (std::exception &e)
     {
-        SCLOG("Exception opening payload");
+        SCLOG_IF(patchIO, "Exception opening payload");
         return false;
     }
 
@@ -710,7 +710,7 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
             }
             catch (std::exception &err)
             {
-                SCLOG("Unable to load [" << err.what() << "]");
+                SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
             }
         });
     }
@@ -723,7 +723,7 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
         }
         catch (std::exception &err)
         {
-            SCLOG("Unable to load [" << err.what() << "]");
+            SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
         }
     }
     return true;
@@ -742,7 +742,7 @@ std::optional<std::pair<std::string, std::string>> retrieveSCManifestAndPayload(
     }
     catch (const RIFF::Exception &e)
     {
-        SCLOG("RIFF::Exception " << e.Message);
+        SCLOG_IF(patchIO, "RIFF::Exception " << e.Message);
         return std::nullopt;
     }
 }
@@ -765,7 +765,7 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
     }
     catch (const RIFF::Exception &e)
     {
-        SCLOG("RIFF::Exception " << e.Message);
+        SCLOG_IF(patchIO, "RIFF::Exception " << e.Message);
         return false;
     }
 
@@ -794,7 +794,7 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
                 }
                 catch (std::exception &err)
                 {
-                    SCLOG("Unable to load [" << err.what() << "]");
+                    SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
                 }
             });
     }
@@ -807,7 +807,7 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
         }
         catch (std::exception &err)
         {
-            SCLOG("Unable to load [" << err.what() << "]");
+            SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
         }
     }
     return true;
@@ -832,7 +832,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
     }
     catch (const RIFF::Exception &e)
     {
-        SCLOG("RIFF::Exception " << e.Message);
+        SCLOG_IF(patchIO, "RIFF::Exception " << e.Message);
         return false;
     }
 
@@ -868,7 +868,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
             }
             catch (std::exception &err)
             {
-                SCLOG("Unable to load [" << err.what() << "]");
+                SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
             }
         });
     }
@@ -881,7 +881,7 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
         }
         catch (std::exception &err)
         {
-            SCLOG("Unable to load [" << err.what() << "]");
+            SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
         }
     }
 

@@ -64,7 +64,7 @@ bool Sample::parseMP3(const uint8_t *data, size_t len)
     }
     catch (fs::filesystem_error &e)
     {
-        SCLOG("mp3 temp blew up " << e.what());
+        SCLOG_IF(warnings, "Unable to load MP# temp file " << e.what());
         return false;
     }
 }
