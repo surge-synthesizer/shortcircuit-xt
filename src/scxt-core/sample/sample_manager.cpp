@@ -543,7 +543,15 @@ SampleManager::getSampleAddressesFor(const std::vector<SampleID> &sids) const
         }
         else
         {
-            res.emplace_back(sid, smp->getSampleFileAddress());
+            auto sfa = smp->getSampleFileAddress();
+            if (!reparentPath.empty())
+            {
+                auto prior = sfa.path;
+                sfa.path = reparentPath / sfa.path.filename();
+                SCLOG_IF(sampleLoadAndPurge, "SampleManager::getSampleAddressesFor: reparenting "
+                                                 << prior << " to " << sfa.path);
+            }
+            res.emplace_back(sid, sfa);
         }
     }
     return res;

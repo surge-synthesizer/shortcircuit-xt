@@ -171,12 +171,19 @@ struct SampleManager : MoveableOnly<SampleManager>
             {
                 SCLOG_IF(sampleLoadAndPurge,
                          "Remapping id " << k.to_string() << " to " << remapIds.at(k).second.path)
+#if 0
+                auto sfremap = remapIds.at(k).second;
+                if (!reparentPath.empty())
+                {
+                    auto prior = sfremap.path;
+                    sfremap.path = reparentPath / sfa.path.filename();
+                    SCLOG_IF(sampleLoadAndPurge, "SampleManager::getSampleAddressesAndIDs: remap + reparenting "
+                                                     << prior << " to " << sfremap.path);
+                }
+#endif
                 res.emplace_back(k, remapIds.at(k).second);
             }
-            else
-            {
-                res.emplace_back(k, sfa);
-            }
+            res.emplace_back(k, sfa);
         }
         return res;
     }
@@ -222,7 +229,10 @@ struct SampleManager : MoveableOnly<SampleManager>
     sampleMap_t::const_iterator samplesBegin() const { return samples.cbegin(); }
     sampleMap_t::const_iterator samplesEnd() const { return samples.cend(); }
 
-    std::unique_lock<std::mutex> acquireMapLock() const { return std::unique_lock(mapMutex); }
+    std::unique_lock<std::recursive_mutex> acquireMapLock() const
+    {
+        return std::unique_lock(mapMutex);
+    }
     void storeSample(const std::shared_ptr<Sample> &sp)
     {
         auto lk = acquireMapLock();
@@ -236,7 +246,7 @@ struct SampleManager : MoveableOnly<SampleManager>
     std::unordered_map<SampleID, SampleID> idAliases;
 
     // A sign of great design.
-    mutable std::mutex mapMutex;
+    mutable std::recursive_mutex mapMutex;
 
     sampleMap_t samples;
 
