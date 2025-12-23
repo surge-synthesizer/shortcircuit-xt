@@ -64,8 +64,9 @@ void MessageController::parseAudioMessageOnSerializationThread(
     break;
     case audio::a2s_processor_refresh:
     {
-        SCLOG_ONCE("Processor Refresh Requestioned. TODO: Minimize this message "
-                   << (as.payload.i[0] ? "Zone" : "Group") << " slot " << as.payload.i[1]);
+        SCLOG_ONCE_IF(debug, "Processor Refresh Requestioned. TODO: Minimize this message "
+                                 << (as.payload.i[0] ? "Zone" : "Group") << " slot "
+                                 << as.payload.i[1]);
         engine.getSelectionManager()->sendClientDataForLeadSelectionState();
         break;
     }

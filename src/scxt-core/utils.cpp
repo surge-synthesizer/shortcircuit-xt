@@ -37,6 +37,7 @@
 #include <iomanip>
 
 #include "sst/plugininfra/version_information.h"
+#include "configuration.h"
 
 #if MAC || LINUX
 #include <execinfo.h>
@@ -54,16 +55,16 @@ void printStackTrace(int depth)
     char **strs = backtrace_symbols(callstack, frames);
     if (depth < 0)
         depth = frames;
-    SCLOG("-------- Stack Trace (" << depth << " frames of " << frames
-                                   << " depth showing) --------");
+    SCLOG_IF(always, "-------- Stack Trace (" << depth << " frames of " << frames
+                                              << " depth showing) --------");
     for (i = 1; i < frames && i < depth; ++i)
     {
-        SCLOG("  [" << i << "]:  " << strs[i]);
+        SCLOG_IF(always, "  [" << i << "]:  " << strs[i]);
     }
     free(strs);
 }
 #else
-void printStackTrace(int fd) { SCLOG("printStackTrace unavailable on this platform"); }
+void printStackTrace(int fd) { SCLOG_IF(warnings, "printStackTrace unavailable on this platform"); }
 #endif
 
 std::mutex logMutex;

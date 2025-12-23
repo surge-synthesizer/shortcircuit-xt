@@ -33,6 +33,7 @@
 #include <atomic>
 
 #include "utils.h"
+#include "configuration.h"
 #include "engine/engine.h"
 #include "messaging/client/selection_messages.h"
 #include "messaging/messaging.h"
@@ -58,7 +59,7 @@ struct ConsoleUI
 #define ON_STUB                                                                                    \
     {                                                                                              \
         if (logMessages)                                                                           \
-            SCLOG_WFUNC("Message");                                                                \
+            SCLOG_WFUNC_IF(cliTools, "Message");                                                   \
     }
 
     // Serialization to Client Messages

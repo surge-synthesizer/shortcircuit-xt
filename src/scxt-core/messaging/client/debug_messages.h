@@ -78,10 +78,10 @@ inline void doDebugAction(const std::string &payload, const engine::Engine &engi
         }
         auto g = scxt::engine::Engine::StreamGuard(sr);
         auto res = scxt::json::streamEngineState(engine, true);
-        SCLOG(res);
+        SCLOG_IF(always, res);
 
         auto nopres = scxt::json::streamEngineState(engine, false);
-        SCLOG("Non-pretty engine state size " << nopres.size());
+        SCLOG_IF(always, "Non-pretty engine state size " << nopres.size());
     }
     else if (payload == DebugActions::pretty_json_part)
     {
@@ -90,12 +90,12 @@ inline void doDebugAction(const std::string &payload, const engine::Engine &engi
 
         std::ostringstream oss;
         dbto_pretty_stream(oss, json::scxt_value(p));
-        SCLOG("Dumping json for part " << pid);
-        SCLOG(oss.str());
+        SCLOG_IF(always, "Dumping json for part " << pid);
+        SCLOG_IF(always, oss.str());
     }
     else
     {
-        SCLOG("Unknown debug action " << payload);
+        SCLOG_IF(warnings, "Unknown debug action " << payload);
     }
 }
 CLIENT_TO_SERIAL(RequestDebugAction, c2s_request_debug_action, std::string,

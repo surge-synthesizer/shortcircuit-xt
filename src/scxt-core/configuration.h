@@ -121,6 +121,7 @@ static constexpr bool debug{true};
 static constexpr bool debug{true};
 #endif
 
+static constexpr bool always{true};   // use sparingly
 static constexpr bool warnings{true}; // make sure warnigns go to log
 static constexpr bool cliTools{true}; // allow cli tools to use the log
 } // namespace log
