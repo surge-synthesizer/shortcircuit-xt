@@ -71,11 +71,12 @@ namespace scxt::engine
 
 Engine::Engine()
 {
-    SCLOG("Shortcircuit XT : Constructing Engine");
-    SCLOG("    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
-                             << " / "
-                             << sst::plugininfra::VersionInformation::project_version_and_hash);
-    SCLOG("    Stream V  = " << humanReadableVersion(scxt::currentStreamingVersion));
+    SCLOG_IF(always, "Shortcircuit XT : Constructing Engine");
+    SCLOG_IF(always,
+             "    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
+                                << " / "
+                                << sst::plugininfra::VersionInformation::project_version_and_hash);
+    SCLOG_IF(always, "    Stream V  = " << humanReadableVersion(scxt::currentStreamingVersion));
 
     memset(cpuAverages, 0, sizeof(cpuAverages));
 
@@ -116,7 +117,9 @@ Engine::Engine()
     defaults = std::make_unique<infrastructure::DefaultsProvider>(
         useTDP, "ShortcircuitXT",
         [](auto e) { return scxt::infrastructure::defaultKeyToString(e); },
-        [](auto em, auto t) { SCLOG("Defaults Parse Error :" << em << " " << t << std::endl); });
+        [](auto em, auto t) {
+            SCLOG_IF(warnings, "Defaults Parse Error :" << em << " " << t << std::endl);
+        });
 
     browserDb = std::make_unique<browser::BrowserDB>(*tdp, *messageController);
     browser = std::make_unique<browser::Browser>(
@@ -255,7 +258,7 @@ void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t 
         {
             v->release();
 #if DEBUG_VOICE_LIFECYCLE
-            SCLOG("Release Voice at " << SCDBGV(key));
+            SCLOG_IF(voiceLifecycle "Release Voice at " << SCDBGV(key));
 #endif
         }
     }
@@ -265,7 +268,7 @@ void Engine::releaseVoice(int16_t channel, int16_t key, int32_t noteId, int32_t 
     {
         if (v && v->isVoiceAssigned)
         {
-            SCLOG("     PostRelease Voice at " << SCDBGV((int)v->key));
+            SCLOG_IF(voiceLifecycle "     PostRelease Voice at " << SCDBGV((int)v->key));
         }
     }
 #endif
@@ -534,10 +537,10 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
     }
     if constexpr (scxt::log::uiStructure)
     {
-        SCLOG("Returning partgroup structure size " << res.size());
+        SCLOG_IF(uiStructure, "Returning partgroup structure size " << res.size());
 
         for (const auto &pg : res)
-            SCLOG("   " << pg.address << " @ " << pg.name);
+            SCLOG_IF(uiStructure, "   " << pg.address << " @ " << pg.name);
     }
 
     return res;
@@ -1147,7 +1150,6 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
 
             if (fs::is_directory(portable))
             {
-                SCLOG("Using portable user directory: " << portable.u8string());
                 return portable;
             }
 
@@ -1171,7 +1173,6 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
         }
         if (fs::is_directory(res))
         {
-            SCLOG("Using system user directory: " << res.u8string());
             return res;
         }
     }
@@ -1186,12 +1187,10 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
         auto portable = installPath / portableName;
         if (!fs::is_directory(portable))
         {
-            SCLOG("Creating user portable directory :" << portable.u8string());
             fs::create_directories(portable);
         }
         if (fs::is_directory(portable))
         {
-            SCLOG("Using newly minted portable directory " << portable.u8string());
             messageController->reportErrorToClient(
                 "Creating default portable directory",
                 "Unable to find a user dir, short circuit created a portable directory at " +
@@ -1203,7 +1202,7 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
     {
     }
 
-    SCLOG("Unable to determine user directory");
+    SCLOG_IF(warnings, "Unable to determine user directory");
     messageController->reportErrorToClient(
         "Unable to make user directory",
         "Both regular and portable methods failed to make a user dir");

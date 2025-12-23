@@ -30,6 +30,7 @@
 
 #include <string>
 #include "utils.h"
+#include "configuration.h"
 #include <sst/jucegui/components/ContinuousParamEditor.h>
 #include <sst/jucegui/components/DiscreteParamEditor.h>
 #include <sst/jucegui/components/Knob.h>
@@ -103,7 +104,7 @@ createControlLabel(const sst::jucegui::layouts::json_document::Control &ctrl,
     {
         auto lab = std::make_unique<jcmp::Label>();
         // Always position below for now
-        SCLOG_ONCE("Assuming labels always below controls");
+        SCLOG_ONCE_IF(debug || scxt::log::jsonUI, "Assuming labels always below controls");
         auto ft =
             sc.style()->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont);
         auto wid = SST_STRING_WIDTH_FLOAT(ft, *ctrl.label);

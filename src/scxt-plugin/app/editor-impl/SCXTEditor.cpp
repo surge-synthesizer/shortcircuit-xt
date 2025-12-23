@@ -327,9 +327,9 @@ void SCXTEditor::drainCallbackQueue()
             inboundMessageBytes += queueMsg.size();
             if (inboundMessageCount % 500 == 0)
             {
-                SCLOG("Serial -> Client Message Count: "
-                      << inboundMessageCount << " size: " << inboundMessageBytes
-                      << " avg msg: " << inboundMessageBytes / inboundMessageCount);
+                SCLOG_IF(debug, "Serial -> Client Message Count: "
+                                    << inboundMessageCount << " size: " << inboundMessageBytes
+                                    << " avg msg: " << inboundMessageBytes / inboundMessageCount);
             }
 #endif
         }
@@ -416,7 +416,7 @@ void SCXTEditor::parentHierarchyChanged()
     {
         if (auto peer = getPeer())
         {
-            SCLOG("Enabling software rendering engine");
+            SCLOG_IF(debug, "Enabling software rendering engine");
             peer->setCurrentRenderingEngine(0); // 0 for software mode, 1 for Direct2D mode
         }
     }
@@ -425,7 +425,6 @@ void SCXTEditor::parentHierarchyChanged()
 
 void SCXTEditor::setZoomFactor(float zf)
 {
-    // SCLOG("Setting zoom factor to " << zf);
     zoomFactor = zf;
     setTransform(juce::AffineTransform().scaled(zoomFactor));
     defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::zoomLevel,
@@ -477,7 +476,7 @@ void SCXTEditor::resetColorsFromUserPreferences()
         }
         if (!cm)
         {
-            SCLOG("Attempted to load colormap from missing colormap file " << pt);
+            SCLOG_IF(warnings, "Attempted to load colormap from missing colormap file " << pt);
             cm = theme::ColorMap::createColorMap(theme::ColorMap::WIREFRAME);
         }
     }

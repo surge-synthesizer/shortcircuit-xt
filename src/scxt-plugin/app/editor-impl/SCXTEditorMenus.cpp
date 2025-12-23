@@ -125,7 +125,7 @@ void SCXTEditor::showMainMenu()
     });
     // dp.addItem("Focus Debugger Toggle", []() {});
     dp.addSeparator();
-    dp.addItem("Dump Colormap JSON", [this]() { SCLOG(themeApplier.colors->toJson()); });
+    dp.addItem("Dump Colormap JSON", [this]() { SCLOG_IF(always, themeApplier.colors->toJson()); });
     dp.addSeparator();
     dp.addItem("Raise Dummy Error", [w = juce::Component::SafePointer(this)]() {
         if (!w)
@@ -136,8 +136,8 @@ void SCXTEditor::showMainMenu()
         if (!w)
             return;
         w->promptOKCancel(
-            "Dummy OK Cancel", "This is the dummy OK Cancel Message", []() { SCLOG("OK Pressed"); },
-            []() { SCLOG("Cancel Pressed"); });
+            "Dummy OK Cancel", "This is the dummy OK Cancel Message",
+            []() { SCLOG_IF(always, "OK Pressed"); }, []() { SCLOG_IF(always, "Cancel Pressed"); });
     });
     dp.addSeparator();
     dp.addItem("Toggle Focus Debugger", [w = juce::Component::SafePointer(this)]() {
@@ -413,13 +413,12 @@ void SCXTEditor::popupMenuForContinuous(sst::jucegui::components::ContinuousPara
     auto data = e->continuous();
     if (!data)
     {
-        SCLOG("Continuous with no data - no popup to be had");
+        SCLOG_IF(warnings, "Continuous with no data - no popup to be had");
         return;
     }
 
     if (!e->isEnabled())
     {
-        SCLOG("No menu on non-enabled widget");
         return;
     }
 

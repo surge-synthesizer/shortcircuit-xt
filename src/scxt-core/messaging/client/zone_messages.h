@@ -129,7 +129,8 @@ inline void doNormalizeVariantAmplitude(const normalizeVariantAmplitudePayload_t
                     use_peak, idx);
             },
             [](auto &e) {
-                SCLOG_ONCE("Normalize variant could be optimized to not sending so much back");
+                SCLOG_ONCE_IF(debug,
+                              "Normalize variant could be optimized to not sending so much back");
                 e.sendFullRefreshToClient();
             });
     }
@@ -155,7 +156,8 @@ doClearVariantAmplitudeNormalization(const clearVariantAmplitudeNormalizationPay
                     idx);
             },
             [p = ps, g = gs, z = zs](auto &e) {
-                SCLOG_ONCE("Clear variant norm could be optimized to not sending so much back");
+                SCLOG_ONCE_IF(debug,
+                              "Clear variant norm could be optimized to not sending so much back");
                 e.sendFullRefreshToClient();
             });
     }
@@ -223,7 +225,8 @@ inline void doDeleteVariant(const deleteVariantPayload_t &payload, engine::Engin
             },
             [p = ps, g = gs, z = zs](auto &e) {
                 e.getSampleManager()->purgeUnreferencedSamples();
-                SCLOG_ONCE("Delete variant could be optimized to not sending so much back");
+                SCLOG_ONCE_IF(debug,
+                              "Delete variant could be optimized to not sending so much back");
                 e.sendFullRefreshToClient();
             });
     }
@@ -235,7 +238,7 @@ using initiateMidiZoneAction_t = int;
 inline void doInitiateMidiZoneAction(const initiateMidiZoneAction_t &payload,
                                      engine::Engine &engine, MessageController &cont)
 {
-    SCLOG_UNIMPL("Initating midi zone action " << payload);
+    SCLOG_IF(debug, "Initating midi zone action " << payload);
     // We need to trigger learn for edges and stuff
 }
 CLIENT_TO_SERIAL(InitiateMidiZoneAction, c2s_initiate_midizone_action, initiateMidiZoneAction_t,

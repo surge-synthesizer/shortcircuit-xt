@@ -371,7 +371,7 @@ void SCXTEditor::onDebugInfoGenerated(const scxt::messaging::client::debugRespon
 {
     for (const auto &[k, s] : resp)
     {
-        SCLOG(k << " " << s);
+        SCLOG_IF(debug, k << " " << s);
     }
 }
 

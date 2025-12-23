@@ -275,54 +275,33 @@ struct ThreadingChecker
 void postToLog(const std::string &s);
 std::string getFullLog();
 std::string logTimestamp();
-#define SCLOG(...)                                                                                 \
-    {                                                                                              \
-        std::ostringstream oss_macr;                                                               \
-        oss_macr << __FILE__ << ":" << __LINE__ << " [" << scxt::logTimestamp() << "] "            \
-                 << __VA_ARGS__ << "\n";                                                           \
-        scxt::postToLog(oss_macr.str());                                                           \
-    }
-
-#define SCLOG_ONCE(...)                                                                            \
-    {                                                                                              \
-        static bool x842132{false};                                                                \
-        if (!x842132)                                                                              \
-        {                                                                                          \
-            std::ostringstream oss_macr;                                                           \
-            oss_macr << __FILE__ << ":" << __LINE__ << " [" << scxt::logTimestamp() << "] "        \
-                     << __VA_ARGS__ << " (Message will only appear once)\n";                       \
-            scxt::postToLog(oss_macr.str());                                                       \
-        }                                                                                          \
-        x842132 = true;                                                                            \
-    }
 
 #define SCLOG_IF(x, ...)                                                                           \
     {                                                                                              \
         if constexpr (scxt::log::x)                                                                \
         {                                                                                          \
-            SCLOG("[" << #x << "] " << __VA_ARGS__);                                               \
+            std::ostringstream oss_macr;                                                           \
+            oss_macr << __FILE__ << ":" << __LINE__ << " [" << #x << " | " << scxt::logTimestamp() \
+                     << "] " << __VA_ARGS__ << "\n";                                               \
+            scxt::postToLog(oss_macr.str());                                                       \
         }                                                                                          \
     }
 
-#define SCLOG_WFUNC_IF(x, ...)                                                                     \
-    {                                                                                              \
-        if constexpr (scxt::log::x)                                                                \
-        {                                                                                          \
-            SCLOG_WFUNC("[" << #x << "] " << __VA_ARGS__);                                         \
-        }                                                                                          \
-    }
+#define SCLOG_WFUNC_IF(x, ...) {SCLOG_IF(x, __func__ << " " << __VA_ARGS__)}
 
 #define SCLOG_ONCE_IF(x, ...)                                                                      \
     {                                                                                              \
         if constexpr (scxt::log::x)                                                                \
         {                                                                                          \
-            SCLOG("[" << #x << "] " << __VA_ARGS__);                                               \
+            static bool x842132{false};                                                            \
+            if (!x842132)                                                                          \
+            {                                                                                      \
+                SCLOG_IF(x, __VA_ARGS__);                                                          \
+            }                                                                                      \
+            x842132 = true;                                                                        \
         }                                                                                          \
     }
 
-#define SCLOG_WFUNC(...) SCLOG(__func__ << " " << __VA_ARGS__)
-#define SCLOG_UNIMPL(...) SCLOG("\033[1;33mUnimpl [" << __func__ << "]\033[0m " << __VA_ARGS__);
-#define SCLOG_UNIMPL_ONCE(...) SCLOG_ONCE("Unimpl [" << __func__ << "] " << __VA_ARGS__);
 #define SCD(x) #x << "=" << (x) << " "
 
 struct DebugTimeGuard

@@ -146,7 +146,7 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
             }
             else
             {
-                SCLOG_UNIMPL("No midi CC for type " << (int)sr.id);
+                SCLOG_IF(debug, "No midi CC for type " << (int)sr.id);
             }
             resized();
         }

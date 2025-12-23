@@ -196,10 +196,7 @@ void SelectionManager::selectPart(int16_t part)
 void SelectionManager::adjustInternalStateForAction(
     const scxt::selection::SelectionManager::SelectActionContents &z)
 {
-    if constexpr (scxt::log::selection)
-    {
-        SCLOG_WFUNC(z);
-    }
+    SCLOG_WFUNC_IF(selection, z);
     auto za = (ZoneAddress)z;
 
     if (z.forZone)

@@ -110,9 +110,9 @@ typename PartEffectsPane<forBus>::partFXStorage_t &PartEffectsPane<forBus>::getP
     if (busAddressOrPart < 0 || fxSlot < 0)
     {
         // once you find this fix those maxes below
-        SCLOG_ONCE("Investigate: PartEffectsPane<"
-                   << forBus << "> busAddress or fxSlot misconfigured " << busAddressOrPart << " "
-                   << fxSlot << " - will use zero");
+        SCLOG_ONCE_IF(debug, "Investigate: PartEffectsPane<"
+                                 << forBus << "> busAddress or fxSlot misconfigured "
+                                 << busAddressOrPart << " " << fxSlot << " - will use zero");
     }
     if constexpr (forBus)
     {

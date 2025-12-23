@@ -385,7 +385,7 @@ void Zone::terminateAllVoices()
     {
         if (cleanupIdx)
         {
-            SCLOG("Early-terminating " << cleanupIdx << " voices");
+            SCLOG_IF(voiceLifecycle, "Early-terminating " << cleanupIdx << " voices");
         }
     }
 
@@ -470,7 +470,6 @@ int16_t Zone::missingSampleCount() const
         if (sv.active)
         {
             auto smp = samplePointers[idx];
-            // SCLOG("Checking missing sample at " << sv.sampleID.to_string() << " " << smp.get());
 
             if (smp && smp->isMissingPlaceholder)
             {

@@ -109,8 +109,9 @@ template <class T> class SampleFLACDecoderBase : public T
             return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         }
 
-        SCLOG("Unable to load flac; bitdepth ("
-              << bitDepth << " ) and sample bitdepth are not a supported combo. Aborting.");
+        SCLOG_IF(warnings, "Unable to load flac; bitdepth ("
+                               << bitDepth
+                               << " ) and sample bitdepth are not a supported combo. Aborting.");
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
     virtual void metadata_callback(const ::FLAC__StreamMetadata *metadata)
@@ -170,12 +171,13 @@ template <class T> class SampleFLACDecoderBase : public T
             }
             else
             {
-                SCLOG("Unsupported FLAC bit depth " << bps);
+                SCLOG_IF(warnings, "Unsupported FLAC bit depth " << bps);
             }
         }
         else
         {
-            SCLOG("Ignoring decode-time FLAC metadata chunk " << (int)(metadata->type));
+            SCLOG_IF(warnings,
+                     "Ignoring decode-time FLAC metadata chunk " << (int)(metadata->type));
         }
     }
     virtual void error_callback(::FLAC__StreamDecoderErrorStatus status) {}
@@ -222,7 +224,7 @@ bool Sample::parseFlac(const uint8_t *data, size_t len)
     }
     catch (fs::filesystem_error &e)
     {
-        SCLOG("flac temp blew up " << e.what());
+        SCLOG_IF(warnings, "flac temp blew up " << e.what());
         return false;
     }
 }
@@ -331,18 +333,15 @@ bool Sample::parseFlac(const fs::path &p)
                 {
                     continue;
                 }
-                // SCLOG("Vendor String: " << a->get_vendor_string());
 
                 for (int q = 0; q < a->get_num_comments(); ++q)
                 {
                     auto c = a->get_comment(q);
-                    // SCLOG("Field: " << c.get_field_name());
                 }
                 delete a;
             }
             else
             {
-                // SCLOG("Ignored metadata block type " << si->get_block_type());
             }
 
             go = si->next();

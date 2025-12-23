@@ -174,7 +174,7 @@ void MacroMappingVariantPane::editorSelectionChanged()
 
 void MacroMappingVariantPane::invertScroll(bool invert)
 {
-    SCLOG_UNIMPL("InvertScroll todo");
+    SCLOG_IF(debug, "InvertScroll todo");
     // mappingDisplay->mappingViewport->invertScroll(invert);
     for (auto &w : sampleDisplay->waveforms)
     {
