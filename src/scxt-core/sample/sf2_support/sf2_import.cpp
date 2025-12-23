@@ -33,6 +33,7 @@
 #include "engine/engine.h"
 #include "messaging/messaging.h"
 #include "infrastructure/md5support.h"
+#include "configuration.h"
 
 namespace scxt::sf2_support
 {
@@ -226,7 +227,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                     }
 
                     int currentModRow{0};
-                    // SCLOG("Unimplemented SF2 Features Follow: " )
+                    // SCLOG_IF(sampleCompoundParsers,"Unimplemented SF2 Features Follow: " )
                     auto me2p = region->GetModEnvToPitch(presetRegion);
                     if (me2p != 0)
                     {
@@ -261,7 +262,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
 
                         if (region->GetDelayVibLfo() > -11999)
                         {
-                            SCLOG("Unimplemented: Curve Delay");
+                            SCLOG_IF(sampleCompoundParsers, "Unimplemented: Curve Delay");
                             // zn->modulatorStorage[0].curveLfoStorage.useenv = true;
                             // zn->modulatorStorage[0].curveLfoStorage.delay = something;
                             // zn->modulatorStorage[0].curveLfoStorage.attack = 0.0;
@@ -279,34 +280,39 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
 
                     if (region->modulators.size() > 0)
                     {
-                        SCLOG("Unsupported Modulators present in : " << instr->GetName()
-                                                                     << " region " << i);
-                        SCLOG("\tCount =" << region->modulators.size() << "");
+                        SCLOG_IF(sampleCompoundParsers, "Unsupported Modulators present in : "
+                                                            << instr->GetName() << " region " << i);
+                        SCLOG_IF(sampleCompoundParsers,
+                                 "\tCount =" << region->modulators.size() << "");
 
                         for (int mi = 0; mi < region->modulators.size(); mi++)
                         {
                             auto m = region->modulators[mi];
-                            SCLOG("\tsrc=" << m.ModSrcOper.Type << " target=" << m.ModDestOper
-                                           << " depth=" << m.ModAmount << " trans="
-                                           << m.ModTransOper << " srcamt=" << m.ModAmtSrcOper.Type);
+                            SCLOG_IF(sampleCompoundParsers,
+                                     "\tsrc=" << m.ModSrcOper.Type << " target=" << m.ModDestOper
+                                              << " depth=" << m.ModAmount
+                                              << " trans=" << m.ModTransOper
+                                              << " srcamt=" << m.ModAmtSrcOper.Type);
                             // PrintModulatorItem(&region->modulators[i]);
                         }
                     }
 
                     if (region->modLfoToFilterFc != 0 || region->modLfoToPitch != 0)
                     {
-                        SCLOG("Unsupported: Modulation LFO: Delay="
-                              << ::sf2::ToSeconds(region->delayModLfo)
-                              << "s, Frequency=" << ::sf2::ToHz(region->freqModLfo)
-                              << "Hz, LFO to Volume=" << (region->modLfoToVolume / 10) << "dB"
-                              << ", LFO to Filter Cutoff=" << region->modLfoToFilterFc
-                              << ", LFO to Pitch=" << region->modLfoToPitch);
+                        SCLOG_IF(sampleCompoundParsers,
+                                 "Unsupported: Modulation LFO: Delay="
+                                     << ::sf2::ToSeconds(region->delayModLfo)
+                                     << "s, Frequency=" << ::sf2::ToHz(region->freqModLfo)
+                                     << "Hz, LFO to Volume=" << (region->modLfoToVolume / 10)
+                                     << "dB"
+                                     << ", LFO to Filter Cutoff=" << region->modLfoToFilterFc
+                                     << ", LFO to Pitch=" << region->modLfoToPitch);
                     }
 
                     if (region->exclusiveClass)
-                        SCLOG("Unsupported: Exclusive Class : " << region->exclusiveClass << " in "
-                                                                << instr->GetName() << " region "
-                                                                << i);
+                        SCLOG_IF(sampleCompoundParsers, "Unsupported: Exclusive Class : "
+                                                            << region->exclusiveClass << " in "
+                                                            << instr->GetName() << " region " << i);
 
                     grp->addZone(zn);
                 }

@@ -115,6 +115,12 @@ static constexpr bool uiTheme{false};
 
 static constexpr bool plugin{false};
 
+#if BUILD_IS_DEBUG
+static constexpr bool debug{true};
+#else
+static constexpr bool debug{true};
+#endif
+
 static constexpr bool warnings{true}; // make sure warnigns go to log
 static constexpr bool cliTools{true}; // allow cli tools to use the log
 } // namespace log

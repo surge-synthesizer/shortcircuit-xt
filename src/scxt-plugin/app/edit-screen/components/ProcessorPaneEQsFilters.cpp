@@ -108,7 +108,6 @@ struct EqDisplayBase : juce::Component
         static void setIntParam(BaseClass *, int, int) {}
         static int getIntParam(const BaseClass *bc, int idx)
         {
-            // SCLOG("Query Int Param " << idx << " " << bc->mStorage->intParams[idx]);
             return bc->mStorage->intParams[idx];
         }
 

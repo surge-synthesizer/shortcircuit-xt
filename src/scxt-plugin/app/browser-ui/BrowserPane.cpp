@@ -351,7 +351,7 @@ struct DriveFSArea : juce::Component, HasEditor
         }
         catch (const fs::filesystem_error &e)
         {
-            SCLOG(e.what());
+            editor->displayError("Browser Filesystem Error", e.what());
         }
         std::sort(lcontents.begin(), lcontents.end(), [](auto &a, auto &b) {
             auto ida = fs::is_directory(a.dirent.path());
@@ -497,7 +497,6 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
     std::set<WithSampleInfo *> getMultipleSampleInfos() const override
     {
         std::set<WithSampleInfo *> r;
-        SCLOG("Grab Multiple with " << browserPane->devicesPane->driveFSArea->selectedRows.size());
 
         for (auto q : browserPane->devicesPane->driveFSArea->selectedRows)
         {
@@ -1029,7 +1028,7 @@ struct sfData : sst::jucegui::data::Discrete
                 }
             }
         }
-        SCLOG("getValueAsStringFor with invalid value " << i);
+        SCLOG_IF(warnings, "getValueAsStringFor with invalid value " << i);
         assert(false);
         return "-error-";
     }

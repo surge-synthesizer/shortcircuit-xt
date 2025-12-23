@@ -63,8 +63,9 @@ struct KeyboardRange
         if (fadeStart + fadeEnd > keyEnd - keyStart + 1)
         {
             // TODO: Handle this case - but I thikn the semantic of the test is wrong
-            SCLOG("Potentially erroneous fade points in keyboard: "
-                  << SCD(fadeStart) << SCD(fadeEnd) << SCD(keyStart) << SCD(keyEnd));
+            SCLOG_IF(warnings, "Potentially erroneous fade points in keyboard: "
+                                   << SCD(fadeStart) << SCD(fadeEnd) << SCD(keyStart)
+                                   << SCD(keyEnd));
         }
     }
 
@@ -117,8 +118,9 @@ struct VelocityRange
         if (fadeStart + fadeEnd > velEnd - velStart)
         {
             // TODO: Handle this case - but I think the semantic of the test is wrong
-            SCLOG("Potentialy erroneous fade points in velocity: " << SCD(fadeStart) << SCD(fadeEnd)
-                                                                   << SCD(velStart) << SCD(velEnd));
+            SCLOG_IF(warnings, "Potentialy erroneous fade points in velocity: "
+                                   << SCD(fadeStart) << SCD(fadeEnd) << SCD(velStart)
+                                   << SCD(velEnd));
         }
     }
 

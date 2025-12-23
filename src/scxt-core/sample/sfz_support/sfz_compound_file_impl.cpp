@@ -34,7 +34,6 @@ namespace scxt::sample::compound
 {
 std::vector<CompoundElement> getSFZCompoundList(const fs::path &p)
 {
-    SCLOG("SFZ Compound");
     std::vector<CompoundElement> result;
     CompoundElement main;
     main.type = CompoundElement::INSTRUMENT;

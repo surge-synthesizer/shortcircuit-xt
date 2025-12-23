@@ -27,6 +27,7 @@
 
 #include "akai_import.h"
 #include <fstream>
+#include "configuration.h"
 
 namespace scxt::akai_support
 {
@@ -92,11 +93,11 @@ std::pair<std::string, uint32_t> fourCCSize(const char *c)
 }
 void dumpAkaiToLog(const fs::path &path)
 {
-    SCLOG("Dumping " << path.u8string());
+    SCLOG_IF(sampleCompoundParsers, "Dumping " << path.u8string());
     auto f = std::ifstream(path, std::ios::binary);
     if (!f.is_open())
     {
-        SCLOG("Failed to open file");
+        SCLOG_IF(sampleCompoundParsers, "Failed to open file");
         return;
     }
     f.seekg(0, std::ios::end);
@@ -104,21 +105,21 @@ void dumpAkaiToLog(const fs::path &path)
     f.seekg(0, std::ios::beg);
     std::vector<char> buffer(size);
     f.read(buffer.data(), size);
-    SCLOG("File size: " << size);
+    SCLOG_IF(sampleCompoundParsers, "File size: " << size);
 
     if (fourCC(buffer.data()) != "RIFF" || fourCC(buffer.data() + 8) != "APRG")
     {
-        SCLOG("Not an AKAI file");
+        SCLOG_IF(sampleCompoundParsers, "Not an AKAI file");
         return;
     }
 
-    SCLOG("Akai file identified. Dumping chunks");
+    SCLOG_IF(sampleCompoundParsers, "Akai file identified. Dumping chunks");
 
     auto pos = 12;
     while (pos < size)
     {
         auto [ss, s] = fourCCSize(buffer.data() + pos);
-        SCLOG("  '" << ss << "' size= " << s);
+        SCLOG_IF(sampleCompoundParsers, "  '" << ss << "' size= " << s);
 
         if (ss == "kgrp")
         {
@@ -127,13 +128,14 @@ void dumpAkaiToLog(const fs::path &path)
             while (subSz > 0)
             {
                 auto [ks, kz] = fourCCSize(buffer.data() + pos);
-                SCLOG("   -  '" << ks << "' size= " << kz);
+                SCLOG_IF(sampleCompoundParsers, "   -  '" << ks << "' size= " << kz);
                 if (ks == "kloc")
                 {
                     KLOC k;
                     k.load(buffer.data() + pos + 8);
-                    SCLOG("      range: " << k.lo << " " << k.hi << " tune:  " << k.semi << " "
-                                          << k.fine << " group: " << k.grp);
+                    SCLOG_IF(sampleCompoundParsers,
+                             "      range: " << k.lo << " " << k.hi << " tune:  " << k.semi << " "
+                                             << k.fine << " group: " << k.grp);
                 }
                 if (ks == "zone")
                 {
@@ -141,8 +143,9 @@ void dumpAkaiToLog(const fs::path &path)
                     z.load(buffer.data() + pos + 8);
                     if (z.mapped)
                     {
-                        SCLOG("      sample: '" << z.sample << "' vel range " << z.lov << "-"
-                                                << z.hiv);
+                        SCLOG_IF(sampleCompoundParsers, "      sample: '" << z.sample
+                                                                          << "' vel range " << z.lov
+                                                                          << "-" << z.hiv);
                     }
                 }
                 pos += 8 + kz;

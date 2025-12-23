@@ -464,14 +464,6 @@ void Group::addActiveZone(engine::Zone *zwp)
     // isActive to be accurate with processor ringout
     activeZones++;
     silenceTime = 0;
-
-    /*
-    SCLOG("addZone " << SCD(activeZones));
-    for (int i = 0; i < activeZones; ++i)
-    {
-        SCLOG("addZone " << activeZoneWeakRefs[i] << " " << activeZoneWeakRefs[i]->getName());
-    }
-     */
 }
 
 void Group::removeActiveZone(engine::Zone *zwp)
@@ -721,7 +713,7 @@ void Group::resetLFOs(int whichLFO)
         }
         else
         {
-            SCLOG("Unimplemented modulator shape " << ms.modulatorShape);
+            SCLOG_IF(warnings, "Unimplemented modulator shape " << ms.modulatorShape);
         }
     }
 

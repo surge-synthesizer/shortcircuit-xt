@@ -269,7 +269,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         void discardHostVoice(int32_t voiceId) {}
         void retriggerVoiceWithNewNoteID(voice::Voice *v, int32_t noteid, float velocity)
         {
-            SCLOG("Retrigger Voice Unimplemented");
+            SCLOG_IF(warnings, "Retrigger Voice Unimplemented");
             assert(false);
         }
         void moveVoice(typename VMConfig::voice_t *, uint16_t, uint16_t, uint16_t, float);

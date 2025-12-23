@@ -829,7 +829,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
             if (!v.has_value())
             {
-                SCLOG(emsg);
+                SCLOG_IF(warnings, "Modulation Conversion Error " << emsg);
                 editor->displayError(
                     "Unable to convert modulation type-in",
                     "Modulation type in '" + s + "' did not convert to a valid modulation " +

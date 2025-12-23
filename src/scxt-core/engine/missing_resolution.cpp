@@ -117,7 +117,7 @@ void resolveMultiFileMissingWorkItem(engine::Engine &e, const MissingResolutionW
 
     if (!isSF2 && !isMultiSample)
     {
-        SCLOG("Cant deteremine multi style for " << p.u8string());
+        SCLOG_IF(missingResolution, "Cant deteremine multi style for " << p.u8string());
         e.getMessageController()->reportErrorToClient(
             "Unable to resolve missing with multifile",
             "Can't determine the multifile type for path '" + p.u8string() + "''");
@@ -149,9 +149,10 @@ void resolveMultiFileMissingWorkItem(engine::Engine &e, const MissingResolutionW
                         }
                         if (nid.has_value())
                         {
-                            SCLOG("Re-attaching to multi in " << z->getName());
-                            SCLOG("      Was : " << v.sampleID.to_string());
-                            SCLOG("       To : " << nid->to_string());
+                            SCLOG_IF(missingResolution,
+                                     "Re-attaching to multi in " << z->getName());
+                            SCLOG_IF(missingResolution, "      Was : " << v.sampleID.to_string());
+                            SCLOG_IF(missingResolution, "       To : " << nid->to_string());
                             v.sampleID = *nid;
                             z->attachToSampleAtVariation(
                                 *(e.getSampleManager()), *nid, vidx,

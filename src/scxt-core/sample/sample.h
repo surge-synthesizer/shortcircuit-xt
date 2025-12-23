@@ -28,6 +28,7 @@
 #define SCXT_SRC_SCXT_CORE_SAMPLE_SAMPLE_H
 
 #include "utils.h"
+#include "configuration.h"
 #include "infrastructure/filesystem_import.h"
 #include "SF.h"
 #include "gig.h"
@@ -97,7 +98,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 #if BUILD_IS_DEBUG
         if (getMD5Sum().empty())
         {
-            SCLOG("Streaming empty MD5 sum for " << getPath().u8string());
+            SCLOG_IF(warnings, "Streaming empty MD5 sum for " << getPath().u8string());
         }
 #endif
         return {type,
