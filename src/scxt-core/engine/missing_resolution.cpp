@@ -74,9 +74,11 @@ void resolveSingleFileMissingWorkItem(engine::Engine &e, const MissingResolution
 {
 
     auto smp = e.getSampleManager()->loadSampleByPath(p);
-    SCLOG("Resolving : " << p.u8string());
-    SCLOG("      Was : " << mwi.missingID.to_string());
-    SCLOG("       To : " << smp->to_string());
+    e.getMessageController()->updateClientActivityNotification("Resolving " +
+                                                               p.filename().u8string());
+    SCLOG_IF(missingResolution, "Resolving : " << p.u8string());
+    SCLOG_IF(missingResolution, "      Was : " << mwi.missingID.to_string());
+    SCLOG_IF(missingResolution, "       To : " << smp->to_string());
     if (smp.has_value())
     {
         for (auto &p : *(e.getPatch()))
@@ -90,7 +92,7 @@ void resolveSingleFileMissingWorkItem(engine::Engine &e, const MissingResolution
                     {
                         if (v.active && v.sampleID == mwi.missingID)
                         {
-                            SCLOG("     Zone : " << z->getName());
+                            SCLOG_IF(missingResolution, "     Zone : " << z->getName());
                             v.sampleID = *smp;
                             z->attachToSampleAtVariation(
                                 *(e.getSampleManager()), *smp, vidx,

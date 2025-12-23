@@ -249,15 +249,18 @@ void MissingResolutionScreen::applyResolution(int idx, const fs::path &toThis)
 void MissingResolutionScreen::applyDirectoryResolution(
     std::vector<engine::MissingResolutionWorkItem> indexes, const fs::path &newParent)
 {
-    SCLOG("Resolving into " << newParent.u8string() << " with " << indexes.size() << " items");
+    SCLOG_IF(missingResolution,
+             "Resolving into " << newParent.u8string() << " with " << indexes.size() << " items");
 
+    std::vector<messaging::client::resolveSamplePayload_t> resolve;
     for (auto &wi : indexes)
     {
         auto toThis = newParent / wi.path.filename();
 
-        SCLOG("Resolving " << wi.path << " to " << toThis.u8string());
-        sendToSerialization(scxt::messaging::client::ResolveSample({wi, toThis.u8string()}));
+        SCLOG_IF(missingResolution, "Multi-Resolving " << wi.path << " to " << toThis.u8string());
+        resolve.emplace_back(wi, toThis.u8string());
     }
+    sendToSerialization(scxt::messaging::client::ResolveMultiSample(resolve));
 }
 
 } // namespace scxt::ui::app::missing_resolution
