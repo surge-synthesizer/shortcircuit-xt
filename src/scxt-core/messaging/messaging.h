@@ -198,6 +198,11 @@ struct MessageController : MoveableOnly<MessageController>
 
     typedef std::function<void(const serialToClientMessage_t &)> clientCallback_t;
     clientCallback_t clientCallback{nullptr};
+    mutable std::mutex clientCallbackMutex;
+    std::unique_lock<std::mutex> acquireClientCallbackMutex() const
+    {
+        return std::unique_lock<std::mutex>(clientCallbackMutex);
+    }
     std::vector<std::string> preClientConnectionCache;
 
     /**

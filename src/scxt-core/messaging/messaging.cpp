@@ -302,7 +302,7 @@ bool MessageController::updateAudioRunning()
 void MessageController::registerClient(const std::string &nm, clientCallback_t &&f)
 {
     {
-        std::lock_guard<std::mutex> g(clientToSerializationMutex);
+        auto lk = acquireClientCallbackMutex();
 
         assert(!clientCallback);
         clientCallback = std::move(f);
@@ -311,17 +311,22 @@ void MessageController::registerClient(const std::string &nm, clientCallback_t &
     threadingChecker.addAsAClientThread();
     client::clientSendToSerialization(client::RegisterClient(true), *this);
 
-    for (const auto &pcc : preClientConnectionCache)
     {
-        clientCallback(pcc);
+        auto lk = acquireClientCallbackMutex();
+
+        for (const auto &pcc : preClientConnectionCache)
+        {
+            clientCallback(pcc);
+        }
+
+        preClientConnectionCache.clear();
     }
-    preClientConnectionCache.clear();
 
     isClientConnected = true;
 }
 void MessageController::unregisterClient()
 {
-    std::lock_guard<std::mutex> g(clientToSerializationMutex);
+    auto lk = acquireClientCallbackMutex();
 
     threadingChecker.removeAsAClientThread();
 

@@ -131,12 +131,16 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
             std::lock_guard<std::mutex> g(callbackMutex);
             callbackQueue.push(s);
         }
-        juce::MessageManager::callAsync([this]() { drainCallbackQueue(); });
+        juce::MessageManager::callAsync([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->drainCallbackQueue();
+        });
     });
 }
 
 SCXTEditor::~SCXTEditor() noexcept
 {
+    juce::PopupMenu::dismissAllActiveMenus();
     idleTimer->stopTimer();
     msgCont.unregisterClient();
     setLookAndFeel(nullptr);
