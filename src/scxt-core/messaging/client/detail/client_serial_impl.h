@@ -178,6 +178,7 @@ inline void serializationSendToClient(SerializationToClientMessageIds id, const 
 
     try
     {
+        auto lk = mc.acquireClientCallbackMutex();
         // TODO - consider waht to do here. Dropping the message is probably best
         if (!mc.clientCallback)
         {
