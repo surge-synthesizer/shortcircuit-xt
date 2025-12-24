@@ -198,24 +198,6 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         znSD.endLoop = presetRegion->LoopEnd;
                     }
 
-                    /*
-                     * The SF2 spec says anything above 20khz is a flat response
-                     * and that the filter cutoff is specified in cents (so really
-                     * 100 * midi key in 12TET). That's a midi key between 135 and 136,
-                     * so lets be safe a shave a touch
-                     */
-                    auto fc = region->GetInitialFilterFc(presetRegion);
-                    auto fq = region->GetInitialFilterQ(presetRegion);
-                    if (fc >= 0 && fc < 134 * 100)
-                    {
-                        // This only runs with audio thread stopped
-                        e.getMessageController()->threadingChecker.bypassThreadChecks = true;
-                        zn->setProcessorType(0, dsp::processor::ProcessorType::proct_CytomicSVF);
-                        zn->processorStorage[0].floatParams[0] = (fc / 100.0) - 69.0;
-                        zn->processorStorage[0].floatParams[2] = std::clamp((fq / 100.0), 0., 1.);
-                        e.getMessageController()->threadingChecker.bypassThreadChecks = false;
-                    }
-
                     auto pan = region->GetPan(presetRegion);
                     if (pan != 0)
                     {
@@ -239,6 +221,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         zn->onRoutingChanged();
                         currentModRow++;
                     }
+                    bool makeFilter{false};
                     auto me2f = region->GetModEnvToFilterFc(presetRegion);
                     if (me2f != 0)
                     {
@@ -249,6 +232,25 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         zn->routingTable.routes[currentModRow].depth =
                             1.0 * me2f / 100 / 130; // cents, and range -60->70
                         zn->onRoutingChanged();
+                        makeFilter = true;
+                    }
+
+                    /*
+                     * The SF2 spec says anything above 20khz is a flat response
+                     * and that the filter cutoff is specified in cents (so really
+                     * 100 * midi key in 12TET). That's a midi key between 135 and 136,
+                     * so lets be safe a shave a touch
+                     */
+                    auto fc = region->GetInitialFilterFc(presetRegion);
+                    auto fq = region->GetInitialFilterQ(presetRegion);
+                    if (fc >= 0 && fc < 134 * 100 || makeFilter)
+                    {
+                        // This only runs with audio thread stopped
+                        e.getMessageController()->threadingChecker.bypassThreadChecks = true;
+                        zn->setProcessorType(0, dsp::processor::ProcessorType::proct_CytomicSVF);
+                        zn->processorStorage[0].floatParams[0] = (fc / 100.0) - 69.0;
+                        zn->processorStorage[0].floatParams[2] = std::clamp((fq / 100.0), 0., 1.);
+                        e.getMessageController()->threadingChecker.bypassThreadChecks = false;
                     }
 
                     auto v2p = region->GetVibLfoToPitch(presetRegion);
