@@ -33,15 +33,21 @@ OutputBaseFilename={#MyAppNameCondensed}-{#MyAppVersion}-Windows-64bit-setup
 SetupIconFile={#SCXT_SRC}\resources\installer_win\scxt.ico
 UninstallDisplayIcon={uninstallexe}
 UsePreviousAppDir=yes
-Compression=lzma
+Compression=lzma2/ultra64
+LZMAUseSeparateProcess=yes
+LZMANumFastBytes=273
+LZMADictionarySize=1048576
+LZMANumBlockThreads=6
 SolidCompression=yes
 UninstallFilesDir={autoappdata}\{#MyAppName}\uninstall
 CloseApplicationsFilter=*.exe,*.vst3
-WizardStyle=modern
+WizardStyle=modern dynamic
 WizardSizePercent=100
-WizardImageFile={#SCXT_SRC}\resources\installer_win\empty.bmp
-WizardSmallImageFile={#SCXT_SRC}\resources\installer_win\empty.bmp
 WizardImageAlphaFormat=defined
+WizardSmallImageFile={#SCXT_SRC}\resources\installer_win\blank.png
+WizardSmallImageFileDynamicDark={#SCXT_SRC}\resources\installer_win\blank.png
+WizardImageFile={#SCXT_SRC}\resources\installer_win\blank.png
+WizardImageFileDynamicDark={#SCXT_SRC}\resources\installer_win\blank.png
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
