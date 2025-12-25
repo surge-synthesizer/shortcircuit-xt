@@ -131,11 +131,23 @@ elseif (WIN32)
         if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
             message(STATUS "Zip only for now on arm64ec")
         else()
-            add_custom_command(TARGET shortcircuit-installer
+            cmake_path(REMOVE_EXTENSION SCXT_ZIP OUTPUT_VARIABLE SCXT_INSTALLER)
+            add_custom_command(
+                TARGET shortcircuit-installer
                 POST_BUILD
                 WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                COMMAND innosetup::compiler /O"installer" /DSCXT_SRC="${CMAKE_SOURCE_DIR}" /DSCXT_BIN="${CMAKE_BINARY_DIR}" /DMyAppVersion="${SCXT_DATE}-${VERSION_CHUNK}" "${CMAKE_SOURCE_DIR}/resources/installer_win/scxt${BITS}.iss"
-            )
+                COMMAND ${CMAKE_COMMAND} -E make_directory installer
+                COMMAND innosetup::compiler
+                /O"${CMAKE_BINARY_DIR}/installer" /F"${SCXT_INSTALLER}"
+                /DName="Shortcircuit XT" /DNameCondensed="ShortcircuitXT" /DVersion="${SCXT_DATE}-${VERSION_CHUNK}"
+                /DID="8BDBC849-F102-44A0-9BFA-B28556BDE40B"
+                /DCLAP /DVST3 /DSA
+                /DIcon="${CMAKE_SOURCE_DIR}/resources/images/scxt.ico"
+                /DArch=$<TARGET_PROPERTY:innosetup::compiler,ARCH_ID>
+                /DLicense="${CMAKE_SOURCE_DIR}/LICENSE"
+                /DStagedAssets="${SCXT_PRODUCT_DIR}"
+                "$<TARGET_PROPERTY:innosetup::compiler,INSTALL_SCRIPT>"
+        )
         endif()
     else()
         message(STATUS "Inno Setup Compiler not found!")
