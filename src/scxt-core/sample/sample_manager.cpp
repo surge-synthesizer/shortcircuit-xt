@@ -544,6 +544,13 @@ SampleManager::getSampleAddressesFor(const std::vector<SampleID> &sids) const
         else
         {
             auto sfa = smp->getSampleFileAddress();
+
+            if (remapIds.contains(sid))
+            {
+                SCLOG_IF(sampleLoadAndPurge,
+                         "Remapping id " << sid.to_string() << " to " << remapIds.at(sid).second.path)
+                sfa = remapIds.at(sid).second;
+            }
             if (!reparentPath.empty())
             {
                 auto prior = sfa.path;
