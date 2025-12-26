@@ -261,7 +261,7 @@ std::tuple<fs::path, fs::path, std::string, std::string> setupForCollection(cons
 fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap_t &toCollect,
                        const SampleID &id, const std::shared_ptr<sample::Sample> &sp)
 {
-    SCLOG_IF(patchIO, "Sample Collection from MultiThingy");
+    SCLOG_IF(patchIO, "Sample Collection from MultiThingy " << id.to_string());
     auto writableDirectory = fs::temp_directory_path() / "scxt_multi_samples";
 
     fs::create_directories(writableDirectory);
@@ -444,7 +444,7 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
     }
 
     std::set<fs::path> uniquePaths;
-    for (const auto &[_, sample] : toCollect)
+    for (const auto &[sid, sample] : toCollect)
     {
         uniquePaths.insert(sample->getPath());
     }

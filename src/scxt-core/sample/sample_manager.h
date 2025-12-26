@@ -160,30 +160,26 @@ struct SampleManager : MoveableOnly<SampleManager>
         for (const auto &[k, v] : samples)
         {
             auto sfa = v->getSampleFileAddress();
+
+            if (remapIds.contains(k))
+            {
+                SCLOG_IF(sampleLoadAndPurge,
+                         "Remapping id " << k.to_string() << " to " << remapIds.at(k).second.path)
+                sfa = remapIds.at(k).second;
+            }
+
             if (!reparentPath.empty())
             {
                 auto prior = sfa.path;
                 sfa.path = reparentPath / sfa.path.filename();
                 SCLOG_IF(sampleLoadAndPurge, "SampleManager::getSampleAddressesAndIDs: reparenting "
                                                  << prior << " to " << sfa.path);
+                res.emplace_back(k, sfa);
             }
-            if (remapIds.find(k) != remapIds.end())
+            else
             {
-                SCLOG_IF(sampleLoadAndPurge,
-                         "Remapping id " << k.to_string() << " to " << remapIds.at(k).second.path)
-#if 0
-                auto sfremap = remapIds.at(k).second;
-                if (!reparentPath.empty())
-                {
-                    auto prior = sfremap.path;
-                    sfremap.path = reparentPath / sfa.path.filename();
-                    SCLOG_IF(sampleLoadAndPurge, "SampleManager::getSampleAddressesAndIDs: remap + reparenting "
-                                                     << prior << " to " << sfremap.path);
-                }
-#endif
-                res.emplace_back(k, remapIds.at(k).second);
+                res.emplace_back(k, sfa);
             }
-            res.emplace_back(k, sfa);
         }
         return res;
     }
