@@ -547,8 +547,8 @@ SampleManager::getSampleAddressesFor(const std::vector<SampleID> &sids) const
 
             if (remapIds.contains(sid))
             {
-                SCLOG_IF(sampleLoadAndPurge,
-                         "Remapping id " << sid.to_string() << " to " << remapIds.at(sid).second.path)
+                SCLOG_IF(sampleLoadAndPurge, "Remapping id " << sid.to_string() << " to "
+                                                             << remapIds.at(sid).second.path)
                 sfa = remapIds.at(sid).second;
             }
             if (!reparentPath.empty())
