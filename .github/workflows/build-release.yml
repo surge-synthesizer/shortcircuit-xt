@@ -136,6 +136,37 @@ jobs:
           title: "A New Shortcircuit XT Nightly is Available"
           subtitle: "Shortcircuit XT is alpha software. Please use care."
 
+      - name: Checkout for git info
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 5
+
+      - name: Compute SCXT version components
+        id: scxt_version
+        shell: bash
+        run: |
+          SCXT_DATE=$(date -u +"%Y-%m-%d")
+          VERSION_CHUNK=$(git rev-parse --short HEAD 2>/dev/null || echo "unknownhash")
+          echo "scxt_date=$SCXT_DATE" >> "$GITHUB_OUTPUT"
+          echo "version_chunk=$VERSION_CHUNK" >> "$GITHUB_OUTPUT"
+
+      - name: Notify surge-synth-team.org
+        env:
+          GH_TOKEN: ${{ secrets.WEB }}
+        uses: surge-synthesizer/sst-githubactions/send-web-notification@main
+        with:
+          web_repo: "surge-synth-team.org"
+          event_type: "scxt-build-nightly"
+          name: "shortcircuit-xt"
+          version: ${{ github.ref_name }}
+          releases: |
+            {
+                "macos": "${{ github.server_url }}/surge-synthesizer/shortcircuit-xt/releases/download/Nightly/shortcircuit-xt-macOS-${{ steps.scxt_version.outputs.scxt_date }}-${{ steps.scxt_version.outputs.version_chunk }}.dmg",
+                "win64": "${{ github.server_url }}/surge-synthesizer/shortcircuit-xt/releases/download/Nightly/ShortcircuitXT-${{ steps.scxt_version.outputs.scxt_date }}-${{ steps.scxt_version.outputs.version_chunk }}-Windows-64bit.exe",
+                "win64zip": "${{ github.server_url }}/surge-synthesizer/shortcircuit-xt/releases/download/Nightly/ShortcircuitXT-${{ steps.scxt_version.outputs.scxt_date }}-${{ steps.scxt_version.outputs.version_chunk }}-Windows-64bit.zip",
+                "linux64": "${{ github.server_url }}/surge-synthesizer/shortcircuit-xt/releases/download/Nightly/ShortcircuitXT-${{ steps.scxt_version.outputs.scxt_date }}-${{ steps.scxt_version.outputs.version_chunk }}-Linux.zip",
+                "other": "${{ github.server_url }}/shortcircuit-xt/releases-xt/releases/tag/Nightly"
+            }
 
   publish-scxt-release:
     name: Publish scxt Release
@@ -158,4 +189,3 @@ jobs:
           tag: ${{ github.ref_name }}
           title: "A New ShortCircuit XT Release is Available"
           subtitle: "Release ${{ github.ref_name }}"
-
