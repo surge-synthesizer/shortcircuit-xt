@@ -196,9 +196,10 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
             }
         };
 
-        auto at = std::make_unique<boolAttachment_t>("Active", onGuiChange,
+        auto at = std::make_unique<boolAttachment_t>("Temposync", onGuiChange,
                                                      getPartFXStorage().second.isTemposync);
         res->setSource(at.get());
+        setupWidgetForValueTooltip(res.get(), at);
         addAndMakeVisible(*res);
 
         boolAttachments.insert(std::move(at));
@@ -213,9 +214,11 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
                 w->busEffectStorageChangedFromGUI(a, 0);
             }
         };
-        auto at = std::make_unique<boolAttachment_t>("Active", onGuiChange,
-                                                     getPartFXStorage().second.isActive);
+        auto at =
+            std::make_unique<boolAttachment_t>(effectDisplayName(t, true) + " Active", onGuiChange,
+                                               getPartFXStorage().second.isActive);
         setToggleDataSource(at.get());
+        setupWidgetForValueTooltip(toggleButton.get(), at);
         boolAttachments.insert(std::move(at));
         addAndMakeVisible(*toggleButton);
     }

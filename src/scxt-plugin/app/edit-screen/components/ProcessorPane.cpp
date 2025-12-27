@@ -344,6 +344,7 @@ void ProcessorPane::rebuildControlsFromDescription()
         kta->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
         kta->setGlyph(sst::jucegui::components::GlyphPainter::KEYBOARD);
         kta->setSource(keytrackAttackment.get());
+        setupWidgetForValueTooltip(kta.get(), keytrackAttackment);
         addAdditionalHamburgerComponent(std::move(kta));
     }
 
@@ -359,15 +360,18 @@ void ProcessorPane::rebuildControlsFromDescription()
         ts->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH);
         ts->setGlyph(sst::jucegui::components::GlyphPainter::METRONOME);
         ts->setSource(temposyncAttachment.get());
+        setupWidgetForValueTooltip(ts.get(), temposyncAttachment);
         addAdditionalHamburgerComponent(std::move(ts));
     }
 
     setToggleDataSource(nullptr);
-    bypassAttachment = std::make_unique<bool_attachment_t>("Bypass", processorView.isActive);
+    bypassAttachment = std::make_unique<bool_attachment_t>(
+        processorControlDescription.typeDisplayName + " Active", processorView.isActive);
     connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorBoolValue, bool_attachment_t,
                                  bool_attachment_t::onGui_t>(*bypassAttachment, processorView, this,
                                                              forZone, index);
     setToggleDataSource(bypassAttachment.get());
+    setupWidgetForValueTooltip(toggleButton.get(), bypassAttachment);
     connectors::addGuiStep(*bypassAttachment,
                            [this](auto &a) { editor->processorBypassToggled(index); });
 
@@ -554,6 +558,7 @@ void ProcessorPane::createHamburgerStereo(int attachmentId)
     stereo->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
     stereo->setGlyph(jcmp::GlyphPainter::STEREO);
     stereo->setOffGlyph(jcmp::GlyphPainter::MONO);
+    setupWidgetForValueTooltip(stereo.get(), intAttachments[attachmentId]);
     addAdditionalHamburgerComponent(std::move(stereo));
     attachRebuildToIntAttachment(attachmentId);
 }
