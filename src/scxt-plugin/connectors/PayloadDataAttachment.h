@@ -193,6 +193,7 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     }
 
     std::function<std::string(float)> valueToString{nullptr};
+
     std::string getValueAsStringFor(float f) const override
     {
         if (description.supportsStringConversion)
@@ -204,6 +205,16 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
         if (valueToString)
             return valueToString(f);
         return Continuous::getValueAsStringFor(f);
+    }
+
+    std::optional<std::string> getValueAlternateAsStringFor(const float f) const override
+    {
+        if (description.supportsStringConversion)
+        {
+            auto res = description.valueToAlternateString(f, getFeatureState());
+            return res;
+        }
+        return std::nullopt;
     }
 
     std::string getValueAsStringWithoutUnitsFor(float f) const override
