@@ -381,9 +381,28 @@ template <typename T> inline void HasEditor::sendToSerialization(const T &msg)
     editor->sendToSerialization(msg);
 }
 
+template <typename T>
+concept HasValueAlternate = requires(T a) {
+    { a.getValueAlternateAsString() } -> std::convertible_to<std::optional<std::string>>;
+};
+
 template <typename T> inline void HasEditor::updateValueTooltip(const T &at)
 {
-    editor->setTooltipContents(at.getLabel(), at.getValueAsString());
+    auto vas = at.getValueAsString();
+    if constexpr (HasValueAlternate<T>)
+    {
+        auto vasAlt = at.getValueAlternateAsString();
+
+        if (vasAlt.has_value())
+        {
+            auto rdata = sst::jucegui::components::ToolTip::Row();
+            rdata.leftAlignText = vas;
+            rdata.rightAlignText = "(" + *vasAlt + ")";
+            editor->setTooltipContents(at.getLabel(), {rdata});
+            return;
+        }
+    }
+    editor->setTooltipContents(at.getLabel(), vas);
 }
 
 template <typename W, typename A>
