@@ -1658,6 +1658,7 @@ void LfoPane::rebuildPanelComponents()
     tsfac::attach(ms, ms.temposync, this, tempoSyncA, tsb, forZone, selectedTab);
     tsb->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
     tsb->setGlyph(jcmp::GlyphPainter::METRONOME);
+    setupWidgetForValueTooltip(tsb.get(), tempoSyncA);
 
     clearAdditionalHamburgerComponents();
     addAdditionalHamburgerComponent(std::move(tsb));
