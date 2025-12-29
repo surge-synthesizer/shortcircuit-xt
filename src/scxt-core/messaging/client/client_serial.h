@@ -125,6 +125,7 @@ enum ClientToSerializationMessagesIds
     c2s_copy_processor_lead_to_all,
     c2s_swap_zone_processors,
     c2s_swap_group_processors,
+    c2s_send_full_processor_storage,
 
     c2s_swap_part_fx,
     c2s_swap_bus_fx,
