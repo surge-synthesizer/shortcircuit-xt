@@ -62,8 +62,15 @@ inline std::string createMD5SumFromFile(const fs::path &path)
 #if MAC
     unsigned char digest[CC_MD5_DIGEST_LENGTH]; // CC_MD5_DIGEST_LENGTH is 16 bytes
 
+    // macos has wisely deprecated CC_MD5 as cryptographically insecure but we are just using it
+    // for identity so turn off the warning
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
     // Calculate the MD5 hash
     CC_MD5(fmp.data(), fmp.dataSize(), digest);
+
+#pragma clang diagnostic pop
 
     return hexString(digest, CC_MD5_DIGEST_LENGTH);
 #else
