@@ -27,6 +27,7 @@
 
 #include "ProcessorPane.h"
 #include "app/SCXTEditor.h"
+#include "sst/plugininfra/strnatcmp.h"
 
 #include "connectors/JsonLayoutEngineSupport.h"
 #include "connectors/SCXTResources.h"
@@ -128,6 +129,28 @@ void ProcessorPane::showPresetsMenu()
 
     juce::PopupMenu p;
     p.addSectionHeader("Presets");
+
+    auto ps = sst::voice_effects::presets::factoryPresetPathsFor(
+        dsp::processor::getProcessorStreamingName(processorView.type));
+    if (!ps.empty())
+    {
+        p.addSeparator();
+        std::sort(ps.begin(), ps.end(),
+                  [](auto &a, auto &b) { return strnatcasecmp(a.c_str(), b.c_str()) < 0; });
+        for (auto &item : ps)
+        {
+            auto pt = fs::path(item);
+            auto mi = pt.filename().stem().u8string();
+            p.addItem(mi, [ic = item, w = juce::Component::SafePointer(this)]() {
+                if (!w)
+                    return;
+
+                auto xml = sst::voice_effects::presets::factoryPresetContentByPath(ic);
+                w->applyPresetXML(xml);
+            });
+        }
+    }
+
     p.addSeparator();
     p.addItem("Save Preset...", [w = juce::Component::SafePointer(this)] {
         if (w)
@@ -294,30 +317,32 @@ void ProcessorPane::loadPreset()
             {
                 return;
             }
-            auto pvcopy = w->processorView;
-            auto pra = PresetReceiverAdapter(*w);
             auto str = result[0].loadFileAsString().toStdString();
-            auto psv = sst::voice_effects::presets::fromPreset(str, pra);
-            if (psv)
-            {
-                // TODO : Streaming version
-                if (pra.streamingVersion !=
-                    dsp::processor::getProcessorStreamingVersion(w->processorView.type))
-                {
-                    w->editor->displayError("Preset Load Error",
-                                            "Preset version mismatch - code this!");
-                }
-                w->sendToSerialization(
-                    cmsg::SendFullProcessorStorage({w->forZone, w->index, w->processorView}));
-                w->rebuildControlsFromDescription();
-            }
-            else
-            {
-                w->processorView = pvcopy;
-            }
+            w->applyPresetXML(str);
         });
 }
 
+void ProcessorPane::applyPresetXML(const std::string &str)
+{
+    auto pvcopy = processorView;
+    auto pra = PresetReceiverAdapter(*this);
+    auto psv = sst::voice_effects::presets::fromPreset(str, pra);
+    if (psv)
+    {
+        // TODO : Streaming version
+        if (pra.streamingVersion !=
+            dsp::processor::getProcessorStreamingVersion(processorView.type))
+        {
+            editor->displayError("Preset Load Error", "Preset version mismatch - code this!");
+        }
+        sendToSerialization(cmsg::SendFullProcessorStorage({forZone, index, processorView}));
+        rebuildControlsFromDescription();
+    }
+    else
+    {
+        processorView = pvcopy;
+    }
+}
 void ProcessorPane::resetControls()
 {
     getContentAreaComponent()->removeAllChildren();
