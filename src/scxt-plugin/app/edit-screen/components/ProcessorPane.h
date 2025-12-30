@@ -192,6 +192,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void showPresetsMenu();
     void savePreset();
     void loadPreset();
+    void applyPresetXML(const std::string &);
 
     bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
     void itemDropped(const SourceDetails &dragSourceDetails) override;
