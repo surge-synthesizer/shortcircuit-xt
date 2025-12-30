@@ -170,9 +170,12 @@ bool isProcessorImplemented(ProcessorType id); // choice: return 'true' for none
 const char *getProcessorName(ProcessorType id);
 const char *getProcessorStreamingName(ProcessorType id);
 const char *getProcessorDisplayGroup(ProcessorType id);
+std::string getProcessorSSTVoiceDisplayName(ProcessorType id);
 float getProcessorDefaultMix(ProcessorType id);
 bool getProcessorGroupOnly(ProcessorType id);
 int16_t getProcessorStreamingVersion(ProcessorType id);
+int16_t getProcessorFloatParamCount(ProcessorType id);
+int16_t getProcessorIntParamCount(ProcessorType id);
 using remapFn_t = void (*)(int16_t, float *const, int *const, uint32_t *const);
 remapFn_t getProcessorRemapParametersFromStreamingVersion(ProcessorType id);
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s);

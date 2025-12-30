@@ -31,6 +31,8 @@
 #include "connectors/JsonLayoutEngineSupport.h"
 #include "connectors/SCXTResources.h"
 
+#include "app/shared/UIHelpers.h"
+
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
 #include "sst/jucegui/components/Label.h"
@@ -43,6 +45,8 @@
 #include <sst/jucegui/components/MenuButton.h>
 
 #include "theme/Layout.h"
+
+#include "sst/voice-effects/VoiceEffectsPresetSupport.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -125,10 +129,193 @@ void ProcessorPane::showPresetsMenu()
     juce::PopupMenu p;
     p.addSectionHeader("Presets");
     p.addSeparator();
-    p.addItem("Presets Coming Soon", []() {});
-    p.addItem("Click Effect Name", []() {});
-    p.addItem("To Change Type", []() {});
+    p.addItem("Save Preset...", [w = juce::Component::SafePointer(this)] {
+        if (w)
+            w->savePreset();
+    });
+    p.addItem("Load Preset...", [w = juce::Component::SafePointer(this)] {
+        if (w)
+            w->loadPreset();
+    });
     p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+struct PresetProviderAdapter
+{
+    const ProcessorPane &p;
+    PresetProviderAdapter(ProcessorPane &pn) : p(pn) {}
+
+    std::string provideStreamingName() const
+    {
+        return dsp::processor::getProcessorStreamingName(p.processorView.type);
+    }
+
+    int provideStreamingVersion() const
+    {
+        return dsp::processor::getProcessorStreamingVersion(p.processorView.type);
+    }
+    size_t provideFloatParamCount() const
+    {
+        return dsp::processor::getProcessorFloatParamCount(p.processorView.type);
+    }
+
+    size_t provideIntParamCount() const
+    {
+        return dsp::processor::getProcessorIntParamCount(p.processorView.type);
+    }
+
+    float provideFloatParam(size_t idx) const { return p.processorView.floatParams[idx]; }
+
+    bool provideDeactivated(size_t idx) const { return p.processorView.deactivated[idx]; }
+
+    int provideIntParam(size_t idx) const { return p.processorView.intParams[idx]; }
+
+    bool provideTemposync() const { return p.processorView.isTemposynced; }
+
+    bool provideKeytrack() const { return p.processorView.isKeytracked; }
+};
+
+struct PresetReceiverAdapter
+{
+    ProcessorPane &p;
+    int streamingVersion{-1};
+    PresetReceiverAdapter(ProcessorPane &pn) : p(pn) {}
+
+    bool canReceiveForStreamingName(const std::string &s)
+    {
+        auto sn = dsp::processor::getProcessorStreamingName(p.processorView.type);
+        return sn == s;
+    }
+
+    bool receiveStreamingVersion(int v)
+    {
+        streamingVersion = v;
+        return true;
+    }
+
+    bool receiveFloatParam(size_t idx, float f)
+    {
+        if (idx < 0 || idx >= maxProcessorFloatParams)
+            return false;
+        p.processorView.floatParams[idx] = f;
+        return true;
+    }
+    bool receiveDeactivated(size_t idx, bool b)
+    {
+        if (idx < 0 || idx >= maxProcessorFloatParams)
+            return false;
+        p.processorView.deactivated[idx] = b;
+
+        return true;
+    }
+    bool receiveIntParam(size_t idx, int i)
+    {
+        if (idx < 0 || idx >= maxProcessorIntParams)
+            return false;
+        p.processorView.intParams[idx] = i;
+
+        return true;
+    }
+    bool receiveTemposync(bool b)
+    {
+        p.processorView.isTemposynced = b;
+        return true;
+    }
+    bool receiveKeytrack(bool b)
+    {
+        p.processorView.isKeytracked = b;
+        return true;
+    }
+
+    void onError(const std::string &s) { p.editor->displayError("Preset Load Error", s); }
+};
+
+void ProcessorPane::savePreset()
+{
+    auto dir = editor->browser.voiceFxPresetDirectory;
+    auto sfx = dsp::processor::getProcessorName(processorView.type);
+    dir = dir / sfx;
+    try
+    {
+        fs::create_directories(dir);
+    }
+    catch (fs::filesystem_error &)
+    {
+    }
+    editor->fileChooser = std::make_unique<juce::FileChooser>("Save Voice Effect Preset",
+                                                              juce::File(dir.u8string()), "*.vcfx");
+
+    editor->fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
+            juce::FileBrowserComponent::warnAboutOverwriting,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            if (!w)
+                return;
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+            {
+                return;
+            }
+            auto ppa = PresetProviderAdapter(*w);
+            auto psv = sst::voice_effects::presets::toPreset(ppa);
+            if (!psv.empty())
+            {
+                if (!result[0].replaceWithText(psv))
+                {
+                    w->editor->displayError("File Save", "Unable to save file");
+                }
+            }
+        });
+}
+
+void ProcessorPane::loadPreset()
+{
+    auto dir = editor->browser.voiceFxPresetDirectory;
+    auto sfx = dsp::processor::getProcessorName(processorView.type);
+    dir = dir / sfx;
+    try
+    {
+        if (!fs::exists(dir))
+            dir = editor->browser.voiceFxPresetDirectory;
+    }
+    catch (fs::filesystem_error &)
+    {
+    }
+    editor->fileChooser = std::make_unique<juce::FileChooser>("Save Voice Effect Preset",
+                                                              juce::File(dir.u8string()), "*.vcfx");
+
+    editor->fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            if (!w)
+                return;
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+            {
+                return;
+            }
+            auto pvcopy = w->processorView;
+            auto pra = PresetReceiverAdapter(*w);
+            auto str = result[0].loadFileAsString().toStdString();
+            auto psv = sst::voice_effects::presets::fromPreset(str, pra);
+            if (psv)
+            {
+                // TODO : Streaming version
+                if (pra.streamingVersion !=
+                    dsp::processor::getProcessorStreamingVersion(w->processorView.type))
+                {
+                    w->editor->displayError("Preset Load Error",
+                                            "Preset version mismatch - code this!");
+                }
+                w->sendToSerialization(
+                    cmsg::SendFullProcessorStorage({w->forZone, w->index, w->processorView}));
+                w->rebuildControlsFromDescription();
+            }
+            else
+            {
+                w->processorView = pvcopy;
+            }
+        });
 }
 
 void ProcessorPane::resetControls()

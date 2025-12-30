@@ -45,14 +45,15 @@ namespace detail
 {
 
 /**
- * Booleans
+ * Generic wrapper to eliminate duplication between impl* and wrapper functions.
+ * Takes a return type and variadic function pointers, then indexes into them.
+ * Each wrapper function explicitly passes its impl function instantiations.
  */
-
-using boolOp_t = bool (*)();
-using constCharOp_t = const char *(*)();
-using floatOp_t = float (*)();
-using int16Op_t = int16_t (*)();
-using reampFnOp_t = remapFn_t (*)();
+template <typename ReturnType, ReturnType (*...Funcs)()> auto genericWrapper(size_t ft)
+{
+    constexpr ReturnType (*fnc[])() = {Funcs...};
+    return fnc[ft]();
+}
 
 template <size_t I> bool implIsProcessorImplemented()
 {
@@ -67,12 +68,6 @@ template <size_t I> bool implIsProcessorImplemented()
     }
 }
 
-template <size_t... Is> auto isProcessorImplemented(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr boolOp_t fnc[] = {detail::implIsProcessorImplemented<Is>...};
-    return fnc[ft]();
-}
-
 template <size_t I> const char *implGetProcessorName()
 {
     if constexpr (I == ProcessorType::proct_none)
@@ -82,12 +77,6 @@ template <size_t I> const char *implGetProcessorName()
         return "error";
     else
         return ProcessorImplementor<(ProcessorType)I>::T::processorName;
-}
-
-template <size_t... Is> auto getProcessorName(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr constCharOp_t fnc[] = {detail::implGetProcessorName<Is>...};
-    return fnc[ft]();
 }
 
 template <size_t I> const char *implGetProcessorStreamingName()
@@ -101,10 +90,37 @@ template <size_t I> const char *implGetProcessorStreamingName()
         return ProcessorImplementor<(ProcessorType)I>::T::processorStreamingName;
 }
 
-template <size_t... Is> auto getProcessorStreamingName(size_t ft, std::index_sequence<Is...>)
+template <size_t I> std::string implGetProcessorSSTDisplayName()
 {
-    constexpr constCharOp_t fnc[] = {detail::implGetProcessorStreamingName<Is>...};
-    return fnc[ft]();
+    if constexpr (I == ProcessorType::proct_none)
+        return "None";
+
+    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
+        return "";
+    else
+        return ProcessorImplementor<(ProcessorType)I>::T::displayName;
+}
+
+template <size_t I> int16_t implGetProcessorFloatParamCount()
+{
+    if constexpr (I == ProcessorType::proct_none)
+        return 0;
+
+    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
+        return 0;
+    else
+        return ProcessorImplementor<(ProcessorType)I>::T::numFloatParams;
+}
+
+template <size_t I> int16_t implGetProcessorIntParamCount()
+{
+    if constexpr (I == ProcessorType::proct_none)
+        return 0;
+
+    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
+        return 0;
+    else
+        return ProcessorImplementor<(ProcessorType)I>::T::numIntParams;
 }
 
 template <size_t I> const char *implGetProcessorDisplayGroup()
@@ -157,36 +173,6 @@ template <size_t I> remapFn_t implGetRemapFn()
             [](auto a, auto *b, auto *c, auto) { PT::remapParametersForStreamingVersion(a, b, c); };
     else if constexpr (HasFourArgRemap<PT>)
         return PT::remapParametersForStreamingVersion;
-}
-
-template <size_t... Is> auto getProcessorDisplayGroup(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr constCharOp_t fnc[] = {detail::implGetProcessorDisplayGroup<Is>...};
-    return fnc[ft]();
-}
-
-template <size_t... Is> auto getProcessorDefaultMix(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr floatOp_t fnc[] = {detail::implGetProcessorDefaultMix<Is>...};
-    return fnc[ft]();
-}
-
-template <size_t... Is> auto getProcessorStreamingVersion(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr int16Op_t fnc[] = {detail::implGetStreamingVersion<Is>...};
-    return fnc[ft]();
-}
-
-template <size_t... Is> auto getProcessorRemapFn(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr reampFnOp_t fnc[] = {detail::implGetRemapFn<Is>...};
-    return fnc[ft]();
-}
-
-template <size_t... Is> auto getForGroupOnly(size_t ft, std::index_sequence<Is...>)
-{
-    constexpr boolOp_t fnc[] = {detail::implGetForGroupOnly<Is>...};
-    return fnc[ft]();
 }
 
 template <size_t I>
@@ -251,50 +237,82 @@ auto spawnOntoOS(size_t ft, uint8_t *m, engine::MemoryPool *mp, const ProcessorS
 
 bool isProcessorImplemented(ProcessorType id)
 {
-    return detail::isProcessorImplemented(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<bool, detail::implIsProcessorImplemented<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 const char *getProcessorName(ProcessorType id)
 {
-    return detail::getProcessorName(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<const char *, detail::implGetProcessorName<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 const char *getProcessorStreamingName(ProcessorType id)
 {
-    return detail::getProcessorStreamingName(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<const char *, detail::implGetProcessorStreamingName<Is>...>(
+            ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 remapFn_t getProcessorRemapParametersFromStreamingVersion(ProcessorType id)
 {
-    return detail::getProcessorRemapFn(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<remapFn_t, detail::implGetRemapFn<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 const char *getProcessorDisplayGroup(ProcessorType id)
 {
-    return detail::getProcessorDisplayGroup(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<const char *, detail::implGetProcessorDisplayGroup<Is>...>(
+            ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 float getProcessorDefaultMix(ProcessorType id)
 {
-    return detail::getProcessorDefaultMix(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<float, detail::implGetProcessorDefaultMix<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 bool getProcessorGroupOnly(ProcessorType id)
 {
-    return detail::getForGroupOnly(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<bool, detail::implGetForGroupOnly<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 int16_t getProcessorStreamingVersion(ProcessorType id)
 {
-    return detail::getProcessorStreamingVersion(
-        id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<int16_t, detail::implGetStreamingVersion<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
+int16_t getProcessorFloatParamCount(ProcessorType id)
+{
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<int16_t, detail::implGetProcessorFloatParamCount<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
+int16_t getProcessorIntParamCount(ProcessorType id)
+{
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<int16_t, detail::implGetProcessorIntParamCount<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
+std::string getProcessorSSTVoiceDisplayName(ProcessorType id)
+{
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<std::string, detail::implGetProcessorSSTDisplayName<Is>...>(
+            ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s)
@@ -316,6 +334,12 @@ processorList_t getAllProcessorDescriptions()
         auto pt = (ProcessorType)i;
         if (isProcessorImplemented(pt))
         {
+            auto pn = getProcessorName(pt);
+            auto spn = getProcessorSSTVoiceDisplayName(pt);
+            if (pn != spn && (spn.find("Filters++") == std::string::npos))
+                SCLOG_IF(debug, "Processor Renamed : " << getProcessorName(pt) << " / "
+                                                       << getProcessorSSTVoiceDisplayName(pt));
+
             res.push_back({pt, getProcessorStreamingName(pt), getProcessorName(pt),
                            getProcessorDisplayGroup(pt), getProcessorGroupOnly(pt)});
         }

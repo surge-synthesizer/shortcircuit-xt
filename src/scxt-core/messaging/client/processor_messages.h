@@ -117,6 +117,85 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
 CLIENT_TO_SERIAL(SetSelectedProcessorType, c2s_set_processor_type, setProcessorPayload_t,
                  setProcessorType(payload, engine, cont));
 
+using sendFullProcessorStorage_t = std::tuple<bool, int, dsp::processor::ProcessorStorage>;
+inline void setFullProcessorStorage(sendFullProcessorStorage_t payload, engine::Engine &engine,
+                                    messaging::MessageController &cont)
+{
+    const auto &[forZone, w, storage] = payload;
+    if (!forZone)
+    {
+        auto sg = engine.getSelectionManager()->currentlySelectedGroups();
+        auto lg = engine.getSelectionManager()->currentLeadGroup(engine);
+        assert(sg.empty() || lg.has_value());
+        if (!sg.empty())
+        {
+            cont.scheduleAudioThreadCallback(
+                [gs = sg, which = w, st = storage](auto &e) {
+                    for (const auto &a : gs)
+                    {
+                        const auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
+                        if (g->processorStorage[which].type != st.type)
+                            g->setProcessorType(which, st.type);
+                        g->processorStorage[which] = st;
+                        g->checkOrAdjustIntConsistency(which);
+                    }
+                },
+                [a = *lg, which = w](const auto &engine) {
+                    const auto &g = engine.getPatch()->getPart(a.part)->getGroup(a.group);
+                    serializationSendToClient(
+                        messaging::client::s2c_respond_single_processor_metadata_and_data,
+                        messaging::client::ProcessorMetadataAndData::s2c_payload_t{
+                            false, which, true, g->processorDescription[which],
+                            g->processorStorage[which]},
+                        *(engine.getMessageController()));
+                    serializationSendToClient(messaging::client::s2c_update_group_matrix_metadata,
+                                              modulation::getGroupMatrixMetadata(*g),
+                                              *(engine.getMessageController()));
+                });
+        }
+        return;
+    }
+    else
+    {
+        auto sz = engine.getSelectionManager()->currentlySelectedZones();
+        auto lz = engine.getSelectionManager()->currentLeadZone(engine);
+
+        assert(sz.empty() || lz.has_value());
+
+        if (!sz.empty() && lz.has_value())
+        {
+            cont.scheduleAudioThreadCallback(
+                [zs = sz, which = w, st = storage](auto &e) {
+                    for (const auto &a : zs)
+                    {
+                        const auto &z =
+                            e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                        if (z->processorStorage[which].type != st.type)
+                            z->setProcessorType(which, st.type);
+                        z->processorStorage[which] = st;
+                        z->checkOrAdjustIntConsistency(which);
+                    }
+                },
+                [a = *lz, which = w](const auto &engine) {
+                    const auto &z =
+                        engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                    serializationSendToClient(
+                        messaging::client::s2c_respond_single_processor_metadata_and_data,
+                        messaging::client::ProcessorMetadataAndData::s2c_payload_t{
+                            true, which, true, z->processorDescription[which],
+                            z->processorStorage[which]},
+                        *(engine.getMessageController()));
+                    serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
+                                              voice::modulation::getVoiceMatrixMetadata(*z),
+                                              *(engine.getMessageController()));
+                });
+        }
+    }
+    // handle group/zone and multi-select
+}
+CLIENT_TO_SERIAL(SendFullProcessorStorage, c2s_send_full_processor_storage,
+                 sendFullProcessorStorage_t, setFullProcessorStorage(payload, engine, cont));
+
 // Fix make this group or zone
 using copyProcessorLeadPayload_t = std::pair<bool, int>;
 inline void copyProcessorLeadToAll(const copyProcessorLeadPayload_t &payload,

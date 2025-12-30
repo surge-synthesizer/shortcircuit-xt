@@ -30,13 +30,13 @@
 
 // the varags at end are underlyer ctor args to the base type
 #define DEFINE_PROC(procClass, procImpl, osProcImpl, procID, procDisplayName, procDisplayGroup,    \
-                    procStreamingName, ...)                                                        \
+                    ...)                                                                           \
     namespace procimpl                                                                             \
     {                                                                                              \
     struct alignas(16) procClass : SSTVoiceEffectShim<procImpl>                                    \
     {                                                                                              \
         static constexpr const char *processorName{procDisplayName};                               \
-        static constexpr const char *processorStreamingName{procStreamingName};                    \
+        static constexpr const char *processorStreamingName{procImpl::streamingName};              \
         static constexpr const char *processorDisplayGroup{procDisplayGroup};                      \
         procClass(engine::MemoryPool *mp, const ProcessorStorage &ps, float *f, int *i,            \
                   bool needsMD)                                                                    \
@@ -50,7 +50,7 @@
     struct alignas(16) OS##procClass : SSTVoiceEffectShim<osProcImpl>                              \
     {                                                                                              \
         static constexpr const char *processorName{procDisplayName};                               \
-        static constexpr const char *processorStreamingName{procStreamingName};                    \
+        static constexpr const char *processorStreamingName{osProcImpl::streamingName};            \
         static constexpr const char *processorDisplayGroup{procDisplayGroup};                      \
         OS##procClass(engine::MemoryPool *mp, const ProcessorStorage &ps, float *f, int *i,        \
                       bool needsMD)                                                                \

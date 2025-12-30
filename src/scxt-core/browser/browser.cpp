@@ -55,6 +55,9 @@ Browser::Browser(BrowserDB &db, const infrastructure::DefaultsProvider &dp, cons
     patchIODirectory = create("Patches");
     themeDirectory = create("Themes");
     modulatorPresetDirectory = create("Modulator Presets");
+    fxPresetDirectory = create("FX Presets");
+    voiceFxPresetDirectory = create("FX Presets/Voice");
+    busFxPresetDirectory = create("FX Presets/Bus");
 }
 
 std::vector<Browser::indexedRootPath_t> Browser::getRootPathsForDeviceView() const

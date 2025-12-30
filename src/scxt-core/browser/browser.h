@@ -74,6 +74,9 @@ struct Browser
     fs::path patchIODirectory;         // user/Patches
     fs::path themeDirectory;           // user/Themes
     fs::path modulatorPresetDirectory; // user/Modulator\ Presets
+    fs::path fxPresetDirectory;        // user/FX\ Presets
+    fs::path voiceFxPresetDirectory;   // user/FX\ Presets/Voice
+    fs::path busFxPresetDirectory;     // user/FX\ Presets/Bus
 
     /*
      * Filesystem Views: Very simple. The Browser gives you a set of
