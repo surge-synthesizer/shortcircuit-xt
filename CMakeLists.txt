@@ -16,8 +16,7 @@ cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0091 NEW)
 cmake_policy(SET CMP0063 NEW)
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-# https://github.com/taocpp/PEGTL/issues/347 would let us go to 13
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14 CACHE STRING "Minimum macOS version")
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 CACHE STRING "Minimum macOS version")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
