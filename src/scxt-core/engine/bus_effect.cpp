@@ -123,33 +123,25 @@ struct Config
     static inline float dbToLinear(GlobalStorage *s, float f) { return dsp::dbTable.dbToLinear(f); }
 };
 
-#define HAS_MEMFN(M)                                                                               \
-    template <typename T> class HasMemFn_##M                                                       \
-    {                                                                                              \
-        using No = uint8_t;                                                                        \
-        using Yes = uint64_t;                                                                      \
-        static_assert(sizeof(No) != sizeof(Yes));                                                  \
-        template <typename C> static Yes test(decltype(&C::M) *);                                  \
-        template <typename C> static No test(...);                                                 \
-                                                                                                   \
-      public:                                                                                      \
-        enum                                                                                       \
-        {                                                                                          \
-            value = sizeof(test<T>(nullptr)) == sizeof(Yes)                                        \
-        };                                                                                         \
+template <typename T>
+concept BusEffectImplProvider =
+    requires(T obj, Engine *e, BusEffectStorage *s, int16_t i, float *f) {
+        std::is_constructible_v<T, Engine *, BusEffectStorage *, float *>;
+        T::streamingVersion > 0;
+        T::numParams < BusEffectStorage::maxBusEffectParams;
+        { obj.remapParametersForStreamingVersion(i, f) } -> std::same_as<void>;
+        { obj.initialize() };
+        { obj.processBlock(f, f) };
+        { obj.paramAt(i) } -> std::same_as<datamodel::pmd>;
+        { obj.onSampleRateChanged() };
     };
-
-HAS_MEMFN(remapParametersForStreamingVersion);
-#undef HAS_MEMFN
-
 template <typename T>
 concept HasSilentSamplesLength = requires(T obj) {
     { obj.silentSamplesLength() } -> std::same_as<size_t>;
 };
 
-template <typename T> struct Impl : T
+template <BusEffectImplProvider T> struct Impl : T
 {
-    static_assert(T::numParams <= BusEffectStorage::maxBusEffectParams);
     Engine *engine{nullptr};
     BusEffectStorage *pes{nullptr};
     float *values{nullptr};
@@ -159,10 +151,6 @@ template <typename T> struct Impl : T
     }
     void init(bool defaultsOverride) override
     {
-        static_assert(T::streamingVersion > 0,
-                      "All template bus fx need independent streaming version");
-        static_assert(HasMemFn_remapParametersForStreamingVersion<T>::value,
-                      "All template bus fx need streaming version support");
         if (defaultsOverride)
         {
             for (int i = 0; i < T::numParams && i < BusEffectStorage::maxBusEffectParams; ++i)
