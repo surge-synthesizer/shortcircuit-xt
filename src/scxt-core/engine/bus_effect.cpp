@@ -56,6 +56,12 @@ namespace scxt::engine
 
 namespace dtl
 {
+typedef uint8_t unimpl_t;
+template <AvailableBusEffects ft> struct BusFxImplementor
+{
+    typedef unimpl_t T;
+};
+
 struct EngineBiquadAdapter
 {
     static inline float dbToLinear(Engine *e, float f) { return dsp::dbTable.dbToLinear(f); }
@@ -128,6 +134,8 @@ concept BusEffectImplProvider =
     requires(T obj, Engine *e, BusEffectStorage *s, int16_t i, float *f) {
         std::is_constructible_v<T, Engine *, BusEffectStorage *, float *>;
         T::streamingVersion > 0;
+        { T::streamingName } -> std::convertible_to<std::string>;
+        { T::displayName } -> std::convertible_to<std::string>;
         T::numParams < BusEffectStorage::maxBusEffectParams;
         { obj.remapParametersForStreamingVersion(i, f) } -> std::same_as<void>;
         { obj.initialize() };
@@ -181,6 +189,95 @@ template <BusEffectImplProvider T> struct Impl : T
 
 } // namespace dtl
 
+#define DEFINE_BUSFX(ABS, BASE)                                                                    \
+    namespace dtl                                                                                  \
+    {                                                                                              \
+    struct impl_##ABS : dtl::Impl<BASE<dtl::Config>>                                               \
+    {                                                                                              \
+        impl_##ABS(Engine *e, BusEffectStorage *f, float *v)                                       \
+            : dtl::Impl<BASE<dtl::Config>>(e, f, v)                                                \
+        {                                                                                          \
+        }                                                                                          \
+    };                                                                                             \
+    template <> struct BusFxImplementor<AvailableBusEffects::ABS>                                  \
+    {                                                                                              \
+        typedef impl_##ABS T;                                                                      \
+    };                                                                                             \
+    }
+
+DEFINE_BUSFX(reverb1, sst::effects::reverb1::Reverb1);
+DEFINE_BUSFX(reverb2, sst::effects::reverb2::Reverb2);
+DEFINE_BUSFX(flanger, sst::effects::flanger::Flanger);
+DEFINE_BUSFX(phaser, sst::effects::phaser::Phaser);
+DEFINE_BUSFX(treemonster, sst::effects::treemonster::TreeMonster);
+DEFINE_BUSFX(delay, sst::effects::delay::Delay);
+DEFINE_BUSFX(floatydelay, sst::effects::floatydelay::FloatyDelay);
+DEFINE_BUSFX(nimbus, sst::effects::nimbus::Nimbus);
+DEFINE_BUSFX(rotaryspeaker, sst::effects::rotaryspeaker::RotarySpeaker);
+DEFINE_BUSFX(bonsai, sst::effects::bonsai::Bonsai);
+
+namespace dtl
+{
+template <typename ReturnType, ReturnType (*...Funcs)()> auto genericWrapper(size_t ft)
+{
+    constexpr ReturnType (*fnc[])() = {Funcs...};
+    return fnc[ft]();
+}
+
+template <size_t I> std::string implGetBusFxStreamingName()
+{
+    if constexpr (I == AvailableBusEffects::none)
+        return "none";
+    else
+        return BusFxImplementor<(AvailableBusEffects)I>::T::streamingName;
+}
+
+template <size_t I> std::string implGetBusFxDisplayName()
+{
+    if constexpr (I == AvailableBusEffects::none)
+        return "None";
+    else
+        return BusFxImplementor<(AvailableBusEffects)I>::T::displayName;
+}
+
+using createEffectFn_t = std::function<std::unique_ptr<BusEffect>(Engine *, BusEffectStorage *)>;
+template <size_t I> createEffectFn_t implCreateEffect()
+{
+    if constexpr (I == AvailableBusEffects::none)
+        return [](auto, auto) { return nullptr; };
+    else
+        return [](auto a, auto b) {
+            return std::make_unique<typename BusFxImplementor<(AvailableBusEffects)I>::T>(
+                a, b, b->params.data());
+        };
+}
+
+template <size_t I> std::pair<int16_t, busRemapFn_t> implGetRemap()
+{
+    if constexpr (I == AvailableBusEffects::none)
+        return {0, nullptr};
+    else
+    {
+        using T = typename BusFxImplementor<(AvailableBusEffects)I>::T;
+        return {T::streamingVersion, &T::remapParametersForStreamingVersion};
+    }
+}
+} // namespace dtl
+
+std::string getBusEffectStreamingName(AvailableBusEffects p)
+{
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return dtl::genericWrapper<std::string, dtl::implGetBusFxStreamingName<Is>...>(ft);
+    }(p, std::make_index_sequence<(size_t)(LastAvailableBusEffect + 1)>());
+}
+
+std::string getBusEffectDisplayName(AvailableBusEffects p)
+{
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return dtl::genericWrapper<std::string, dtl::implGetBusFxDisplayName<Is>...>(ft);
+    }(p, std::make_index_sequence<(size_t)(LastAvailableBusEffect + 1)>());
+}
+
 std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s)
 {
     namespace sfx = sst::effects;
@@ -188,80 +285,19 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
     {
         s->type = p;
     }
-    switch (p)
-    {
-    case none:
-        return nullptr;
-    case reverb1:
-        return std::make_unique<dtl::Impl<sfx::reverb1::Reverb1<dtl::Config>>>(e, s,
-                                                                               s->params.data());
-    case reverb2:
-        return std::make_unique<dtl::Impl<sfx::reverb2::Reverb2<dtl::Config>>>(e, s,
-                                                                               s->params.data());
-    case flanger:
-        return std::make_unique<dtl::Impl<sfx::flanger::Flanger<dtl::Config>>>(e, s,
-                                                                               s->params.data());
-    case phaser:
-        return std::make_unique<dtl::Impl<sfx::phaser::Phaser<dtl::Config>>>(e, s,
-                                                                             s->params.data());
-    case treemonster:
-        return std::make_unique<dtl::Impl<sfx::treemonster::TreeMonster<dtl::Config>>>(
-            e, s, s->params.data());
-    case delay:
-        return std::make_unique<dtl::Impl<sfx::delay::Delay<dtl::Config>>>(e, s, s->params.data());
 
-    case floatydelay:
-        return std::make_unique<dtl::Impl<sfx::floatydelay::FloatyDelay<dtl::Config>>>(
-            e, s, s->params.data());
+    auto cf = []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return dtl::genericWrapper<dtl::createEffectFn_t, dtl::implCreateEffect<Is>...>(ft);
+    }(p, std::make_index_sequence<(size_t)(LastAvailableBusEffect + 1)>());
 
-    case nimbus:
-        return std::make_unique<dtl::Impl<sfx::nimbus::Nimbus<dtl::Config>>>(e, s,
-                                                                             s->params.data());
-    case rotaryspeaker:
-        return std::make_unique<dtl::Impl<sfx::rotaryspeaker::RotarySpeaker<dtl::Config>>>(
-            e, s, s->params.data());
-    case bonsai:
-        return std::make_unique<dtl::Impl<sfx::bonsai::Bonsai<dtl::Config>>>(e, s,
-                                                                             s->params.data());
-    }
-    return nullptr;
+    return cf(e, s);
 }
 
 std::pair<int16_t, busRemapFn_t> getBusEffectRemapStreamingFunction(AvailableBusEffects p)
 {
-    namespace sfx = sst::effects;
-
-#define RETVAL(x)                                                                                  \
-    {                                                                                              \
-        sfx::x<dtl::Config>::streamingVersion,                                                     \
-            &sfx::x<dtl::Config>::remapParametersForStreamingVersion                               \
-    }
-    switch (p)
-    {
-    case none:
-        return {0, nullptr};
-    case reverb1:
-        return RETVAL(reverb1::Reverb1);
-    case reverb2:
-        return RETVAL(reverb2::Reverb2);
-    case flanger:
-        return RETVAL(flanger::Flanger);
-    case phaser:
-        return RETVAL(phaser::Phaser);
-    case treemonster:
-        return RETVAL(treemonster::TreeMonster);
-    case delay:
-        return RETVAL(delay::Delay);
-    case floatydelay:
-        return RETVAL(floatydelay::FloatyDelay);
-    case nimbus:
-        return RETVAL(nimbus::Nimbus);
-    case rotaryspeaker:
-        return RETVAL(rotaryspeaker::RotarySpeaker);
-    case bonsai:
-        return RETVAL(bonsai::Bonsai);
-    }
-    return {0, nullptr};
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return dtl::genericWrapper<std::pair<int16_t, busRemapFn_t>, dtl::implGetRemap<Is>...>(ft);
+    }(p, std::make_index_sequence<(size_t)(LastAvailableBusEffect + 1)>());
 }
 
 } // namespace scxt::engine

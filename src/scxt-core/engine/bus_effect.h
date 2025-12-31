@@ -70,8 +70,9 @@ enum AvailableBusEffects
     nimbus,
     rotaryspeaker,
     floatydelay,
-    bonsai // if you make bonsai not last, make sure to update the fromString range
+    bonsai // if you make bonsai not last, make sure to update the range end
 };
+static constexpr auto LastAvailableBusEffect{bonsai};
 
 struct BusEffectStorage
 {
@@ -103,41 +104,18 @@ struct BusEffect
 std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEffectStorage *s);
 using busRemapFn_t = void (*)(int16_t, float *const);
 std::pair<int16_t, busRemapFn_t> getBusEffectRemapStreamingFunction(AvailableBusEffects);
+std::string getBusEffectStreamingName(AvailableBusEffects);
+std::string getBusEffectDisplayName(AvailableBusEffects);
 
 inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
 {
-    switch (p)
-    {
-    case none:
-        return "none";
-    case reverb1:
-        return "reverb1";
-    case reverb2:
-        return "reverb2";
-    case treemonster:
-        return "treemonster";
-    case flanger:
-        return "flanger";
-    case phaser:
-        return "phaser";
-    case delay:
-        return "delay";
-    case floatydelay:
-        return "floatydelay";
-    case nimbus:
-        return "nimbus";
-    case rotaryspeaker:
-        return "rotaryspeaker";
-    case bonsai:
-        return "bonsai";
-    }
-    return "normal";
+    return getBusEffectStreamingName(p);
 }
 
 inline AvailableBusEffects fromStringAvailableBusEffects(const std::string &s)
 {
     static auto inverse = makeEnumInverse<AvailableBusEffects, toStringAvailableBusEffects>(
-        AvailableBusEffects::none, AvailableBusEffects::bonsai);
+        AvailableBusEffects::none, LastAvailableBusEffect);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return none;
