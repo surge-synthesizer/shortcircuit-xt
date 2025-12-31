@@ -49,7 +49,7 @@
 
 #include "sst/voice-effects/VoiceEffectsPresetSupport.h"
 
-#include <strstream>
+#include <sstream>
 #include <fstream>
 
 namespace scxt::ui::app::edit_screen
