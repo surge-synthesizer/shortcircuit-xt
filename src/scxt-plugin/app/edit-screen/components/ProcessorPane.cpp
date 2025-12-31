@@ -49,6 +49,9 @@
 
 #include "sst/voice-effects/VoiceEffectsPresetSupport.h"
 
+#include <strstream>
+#include <fstream>
+
 namespace scxt::ui::app::edit_screen
 {
 namespace cmsg = scxt::messaging::client;
@@ -151,6 +154,65 @@ void ProcessorPane::showPresetsMenu()
         }
     }
 
+    try
+    {
+        std::vector<fs::path> userPresets;
+        auto ud = editor->browser.voiceFxPresetDirectory;
+        std::string dn = dsp::processor::getProcessorName(processorView.type);
+        std::string sdn = dsp::processor::getProcessorStreamingName(processorView.type);
+        std::string sstdn = dsp::processor::getProcessorSSTVoiceDisplayName(processorView.type);
+        if (sstdn == dn)
+            sstdn = "SKIPSKIP";
+        for (auto &pc : {dn, sdn, sstdn})
+        {
+            if (pc == "SKIPSKIP")
+                continue;
+            auto pth = ud / pc;
+            if (!fs::exists(pth))
+            {
+                continue;
+            }
+
+            for (auto &d : fs::directory_iterator(pth))
+            {
+                if (extensionMatches(d.path(), ".vcfx"))
+                {
+                    userPresets.push_back(d.path());
+                }
+            }
+        }
+
+        if (!userPresets.empty())
+        {
+            p.addSeparator();
+            std::sort(userPresets.begin(), userPresets.end(), [](auto &a, auto &b) {
+                return strnatcasecmp(a.filename().u8string().c_str(),
+                                     b.filename().u8string().c_str()) < 0;
+            });
+            for (auto &item : userPresets)
+            {
+                auto pt = item.filename().stem().u8string();
+                p.addItem(pt, [ic = item, w = juce::Component::SafePointer(this)]() {
+                    if (!w)
+                        return;
+                    std::ifstream fst(ic);
+                    if (!fst.is_open())
+                    {
+                        w->editor->displayError("Preset Load Error", "Unable to open preset file");
+                        return;
+                    }
+                    std::stringstream iss;
+                    iss << fst.rdbuf();
+                    std::string xml((std::istreambuf_iterator<char>(iss)),
+                                    std::istreambuf_iterator<char>());
+                    w->applyPresetXML(xml);
+                });
+            }
+        }
+    }
+    catch (fs::filesystem_error &e)
+    {
+    }
     p.addSeparator();
     p.addItem("Save Preset...", [w = juce::Component::SafePointer(this)] {
         if (w)
