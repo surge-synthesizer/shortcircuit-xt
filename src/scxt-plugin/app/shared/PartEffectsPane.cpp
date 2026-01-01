@@ -37,6 +37,7 @@
 #include "sst/jucegui/components/RuledLabel.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
+#include "sst/effects/EffectsPresetSupport.h"
 
 namespace scxt::ui::app::shared
 {
@@ -106,6 +107,27 @@ void PartEffectsPane<forBus>::paintMetadata(juce::Graphics &g, const juce::Recta
 
 template <bool forBus>
 typename PartEffectsPane<forBus>::partFXStorage_t &PartEffectsPane<forBus>::getPartFXStorage()
+{
+    if (busAddressOrPart < 0 || fxSlot < 0)
+    {
+        // once you find this fix those maxes below
+        SCLOG_ONCE_IF(debug, "Investigate: PartEffectsPane<"
+                                 << forBus << "> busAddress or fxSlot misconfigured "
+                                 << busAddressOrPart << " " << fxSlot << " - will use zero");
+    }
+    if constexpr (forBus)
+    {
+        return parent->busEffectsData[std::max(busAddressOrPart, 0)][std::max(fxSlot, 0)];
+    }
+    else
+    {
+        return parent->partsEffectsData[std::max(busAddressOrPart, 0)][std::max(fxSlot, 0)];
+    }
+}
+
+template <bool forBus>
+const typename PartEffectsPane<forBus>::partFXStorage_t &
+PartEffectsPane<forBus>::getPartFXStorage() const
 {
     if (busAddressOrPart < 0 || fxSlot < 0)
     {
@@ -459,8 +481,176 @@ template <bool forBus> void PartEffectsPane<forBus>::showHamburger()
     auto p = juce::PopupMenu();
     p.addSectionHeader("Presets");
     p.addSeparator();
-    p.addItem("Presets Coming Soon", []() {});
+    p.addItem("Save Preset...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->savePreset();
+    });
+    p.addItem("Load Preset...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->loadPreset();
+    });
     p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+template <bool forBus> void PartEffectsPane<forBus>::loadPreset()
+{
+    auto dir = editor->browser.busFxPresetDirectory;
+    auto &pes = getPartFXStorage();
+    auto sfx = engine::getBusEffectDisplayName(pes.second.type);
+    dir = dir / sfx;
+    try
+    {
+        if (!fs::exists(dir))
+            dir = editor->browser.voiceFxPresetDirectory;
+    }
+    catch (fs::filesystem_error &)
+    {
+    }
+    editor->fileChooser = std::make_unique<juce::FileChooser>("Load Effect Preset",
+                                                              juce::File(dir.u8string()), "*.vcfx");
+
+    editor->fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            if (!w)
+                return;
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+            {
+                return;
+            }
+            auto str = result[0].loadFileAsString().toStdString();
+            w->applyPresetXML(str);
+        });
+}
+
+template <bool forBus> struct PresetProviderAdapter
+{
+    const PartEffectsPane<forBus> &parent;
+    const typename PartEffectsPane<forBus>::partFXStorage_t &pes;
+    explicit PresetProviderAdapter(const PartEffectsPane<forBus> &p)
+        : parent(p), pes(p.getPartFXStorage())
+    {
+    }
+
+    size_t provideParamCount() const { return pes.first.size(); }
+    bool isParamInt(size_t idx) const
+    {
+        return pes.first[idx].type != sst::basic_blocks::params::ParamMetaData::FLOAT;
+    }
+    float provideFloatParam(size_t idx) const { return pes.second.params[idx]; }
+    int provideIntParam(size_t idx) const { return static_cast<int>(pes.second.params[idx]); }
+    bool provideDeactivated(size_t idx) const { return pes.second.deact[idx]; }
+    bool provideExtended(size_t idx) const { return false; }
+    bool provideTemposync(size_t idx) const { return pes.second.isTemposync; }
+
+    int provideStreamingVersion() const { return pes.second.streamingVersion; }
+    std::string provideStreamingName() const
+    {
+        return engine::getBusEffectStreamingName(pes.second.type);
+    }
+};
+
+template <bool forBus> struct PresetReceiverAdapter
+{
+    PartEffectsPane<forBus> &parent;
+    typename PartEffectsPane<forBus>::partFXStorage_t &pes;
+    explicit PresetReceiverAdapter(PartEffectsPane<forBus> &p)
+        : parent(p), pes(p.getPartFXStorage())
+    {
+    }
+
+    bool canReceiveForStreamingName(const std::string &s) { return true; }
+    int streamingVersion;
+    bool receiveStreamingVersion(int v)
+    {
+        streamingVersion = v;
+        return true;
+    }
+    bool receiveFloatParam(size_t idx, float f)
+    {
+        pes.second.params[idx] = f;
+        return true;
+    }
+    bool receiveIntParam(size_t idx, int i)
+    {
+        pes.second.params[idx] = i;
+        return true;
+    }
+    bool receiveDeactivated(size_t idx, bool b)
+    {
+        pes.second.deact[idx] = b;
+        return true;
+    }
+    bool receiveExtended(size_t idx, bool b) { return true; }
+    bool receiveTemposync(size_t idx, bool b)
+    {
+        pes.second.isTemposync = b;
+        return true;
+    }
+
+    void onError(const std::string &msg) { parent.editor->displayError("Preset Load Error", msg); }
+};
+
+template <bool forBus> void PartEffectsPane<forBus>::savePreset()
+{
+    auto dir = editor->browser.busFxPresetDirectory;
+    auto &pes = getPartFXStorage();
+    auto sfx = engine::getBusEffectDisplayName(pes.second.type);
+    dir = dir / sfx;
+    try
+    {
+        fs::create_directories(dir);
+    }
+    catch (fs::filesystem_error &)
+    {
+    }
+    editor->fileChooser = std::make_unique<juce::FileChooser>("Save Effect Preset",
+                                                              juce::File(dir.u8string()), "*.vcfx");
+
+    editor->fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
+            juce::FileBrowserComponent::warnAboutOverwriting,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            if (!w)
+                return;
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+            {
+                return;
+            }
+            auto ppa = PresetProviderAdapter<forBus>(*w);
+            auto psv = sst::effects::presets::toPreset(ppa);
+            if (!psv.empty())
+            {
+                if (!result[0].replaceWithText(psv))
+                {
+                    w->editor->displayError("File Save", "Unable to save file");
+                }
+            }
+        });
+}
+
+template <bool forBus> void PartEffectsPane<forBus>::applyPresetXML(const std::string &str)
+{
+    auto &pes = getPartFXStorage();
+
+    auto pra = PresetReceiverAdapter(*this);
+    auto psv = sst::effects::presets::fromPreset(str, pra);
+    if (psv)
+    {
+        // TODO : Streaming version
+        if (pra.streamingVersion != pes.second.streamingVersion)
+        {
+            editor->displayError("Preset Load Error", "Preset version mismatch - code this!");
+        }
+        busEffectStorageChangedFromGUI();
+        rebuild();
+    }
+    else
+    {
+        // FIX
+    }
 }
 
 template <bool forBus>
@@ -468,6 +658,11 @@ template <typename Att>
 void PartEffectsPane<forBus>::busEffectStorageChangedFromGUI(const Att &at, int idx)
 {
     updateValueTooltip(at);
+    busEffectStorageChangedFromGUI();
+}
+
+template <bool forBus> void PartEffectsPane<forBus>::busEffectStorageChangedFromGUI()
+{
     auto &data = getPartFXStorage();
 
     if (forBus)

@@ -366,7 +366,7 @@ void ProcessorPane::loadPreset()
     catch (fs::filesystem_error &)
     {
     }
-    editor->fileChooser = std::make_unique<juce::FileChooser>("Save Voice Effect Preset",
+    editor->fileChooser = std::make_unique<juce::FileChooser>("Load Voice Effect Preset",
                                                               juce::File(dir.u8string()), "*.vcfx");
 
     editor->fileChooser->launchAsync(

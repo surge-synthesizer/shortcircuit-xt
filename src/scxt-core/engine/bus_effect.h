@@ -105,6 +105,7 @@ std::unique_ptr<BusEffect> createEffect(AvailableBusEffects p, Engine *e, BusEff
 using busRemapFn_t = void (*)(int16_t, float *const);
 std::pair<int16_t, busRemapFn_t> getBusEffectRemapStreamingFunction(AvailableBusEffects);
 std::string getBusEffectStreamingName(AvailableBusEffects);
+int getBusEffectStreamingVersion(AvailableBusEffects);
 std::string getBusEffectDisplayName(AvailableBusEffects);
 
 inline std::string toStringAvailableBusEffects(const AvailableBusEffects &p)
