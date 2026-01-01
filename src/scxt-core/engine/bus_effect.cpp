@@ -97,6 +97,8 @@ struct Config
         return blockSize * s->getSampleRateInv() * dsp::twoToTheXTable.twoToThe(-f);
     }
 
+    static inline bool isTemposynced(EffectStorage *e, int idx) { return e->isTemposync; }
+
     static inline float temposyncRatio(GlobalStorage *s, EffectStorage *e, int idx)
     {
         if (e->isTemposync)
@@ -232,6 +234,14 @@ template <size_t I> std::string implGetBusFxStreamingName()
         return BusFxImplementor<(AvailableBusEffects)I>::T::streamingName;
 }
 
+template <size_t I> int implGetBusFxStreamingVersion()
+{
+    if constexpr (I == AvailableBusEffects::none)
+        return 0;
+    else
+        return BusFxImplementor<(AvailableBusEffects)I>::T::streamingVersion;
+}
+
 template <size_t I> std::string implGetBusFxDisplayName()
 {
     if constexpr (I == AvailableBusEffects::none)
@@ -268,6 +278,13 @@ std::string getBusEffectStreamingName(AvailableBusEffects p)
 {
     return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
         return dtl::genericWrapper<std::string, dtl::implGetBusFxStreamingName<Is>...>(ft);
+    }(p, std::make_index_sequence<(size_t)(LastAvailableBusEffect + 1)>());
+}
+
+int getBusEffectStreamingVersion(AvailableBusEffects p)
+{
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return dtl::genericWrapper<int, dtl::implGetBusFxStreamingVersion<Is>...>(ft);
     }(p, std::make_index_sequence<(size_t)(LastAvailableBusEffect + 1)>());
 }
 

@@ -88,6 +88,7 @@ struct PartEffectsPane : public HasEditor,
     using partFXMD_t = std::array<datamodel::pmd, engine::BusEffectStorage::maxBusEffectParams>;
     using partFXStorage_t = std::pair<partFXMD_t, engine::BusEffectStorage>;
     partFXStorage_t &getPartFXStorage();
+    const partFXStorage_t &getPartFXStorage() const;
 
     void setBusAddress(int ba)
     {
@@ -114,6 +115,10 @@ struct PartEffectsPane : public HasEditor,
     void showHamburger();
     void showNameSelect() { showFXSelectionMenu(parent, busAddressOrPart, fxSlot); };
     static void showFXSelectionMenu(parent_t *p, int b, int s);
+
+    void loadPreset();
+    void savePreset();
+    void applyPresetXML(const std::string &);
 
     void paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into);
 
@@ -177,7 +182,9 @@ struct PartEffectsPane : public HasEditor,
                                const sst::jucegui::layouts::json_document::Class &) override;
 
   protected:
+    // Note this idx is unused until I do cell level updates on part fx
     template <typename Att> void busEffectStorageChangedFromGUI(const Att &at, int idx);
+    void busEffectStorageChangedFromGUI();
 
   public:
     // The effects have names like 'flanger' and 'delay' internally but we
