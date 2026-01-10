@@ -506,8 +506,8 @@ template <bool forBus> void PartEffectsPane<forBus>::loadPreset()
     catch (fs::filesystem_error &)
     {
     }
-    editor->fileChooser = std::make_unique<juce::FileChooser>("Load Effect Preset",
-                                                              juce::File(dir.u8string()), "*.busfx");
+    editor->fileChooser = std::make_unique<juce::FileChooser>(
+        "Load Effect Preset", juce::File(dir.u8string()), "*.busfx");
 
     editor->fileChooser->launchAsync(
         juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
@@ -605,8 +605,8 @@ template <bool forBus> void PartEffectsPane<forBus>::savePreset()
     catch (fs::filesystem_error &)
     {
     }
-    editor->fileChooser = std::make_unique<juce::FileChooser>("Save Effect Preset",
-                                                              juce::File(dir.u8string()), "*.busfx");
+    editor->fileChooser = std::make_unique<juce::FileChooser>(
+        "Save Effect Preset", juce::File(dir.u8string()), "*.busfx");
 
     editor->fileChooser->launchAsync(
         juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
