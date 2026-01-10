@@ -338,13 +338,13 @@ DEFINE_PROC(Chorus, sst::voice_effects::modulation::Chorus<SCXTVFXConfig<1>>,
 
 DEFINE_PROC(LiftedReverb1, sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<1>>,
             sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<2>>, proct_lifted_reverb1,
-            "Reverb1", "Reverb");
+            "Reverb 1", "Reverb");
 PROC_FOR_GROUP_ONLY(proct_lifted_reverb1);
 PROC_DEFAULT_MIX(proct_lifted_reverb1, 0.333);
 
 DEFINE_PROC(LiftedReverb2, sst::voice_effects::liftbus::LiftedReverb2<SCXTVFXConfig<1>>,
             sst::voice_effects::liftbus::LiftedReverb2<SCXTVFXConfig<2>>, proct_lifted_reverb2,
-            "Reverb2", "Reverb");
+            "Reverb 2", "Reverb");
 PROC_FOR_GROUP_ONLY(proct_lifted_reverb2);
 PROC_DEFAULT_MIX(proct_lifted_reverb2, 0.333);
 
