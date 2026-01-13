@@ -34,12 +34,6 @@
 namespace scxt::ui::app::shared
 {
 
-inline fs::path juceFileToFSPath(const juce::File &f)
-{
-    auto fullPathName = f.getFullPathName();
-    return juceStringToFsPath(fullPathName);
-}
-
 inline fs::path juceStringToFSPath(const juce::String &fullPathName)
 {
 #if JUCE_WINDOWS
@@ -57,6 +51,12 @@ inline fs::path juceStringToFSPath(const juce::String &fullPathName)
 
 #endif
     return fullPath;
+}
+
+inline fs::path juceFileToFSPath(const juce::File &f)
+{
+    auto fullPathName = f.getFullPathName();
+    return juceStringToFsPath(fullPathName);
 }
 
 } // namespace scxt::ui::app::shared
