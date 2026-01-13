@@ -52,7 +52,7 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
                 return;
             }
             // send a 'save multi' message
-            auto fsp = juceFileToFsPath(result[0]);
+            auto fsp = juceFileToFSPath(result[0]);
             w->sendToSerialization(cmsg::SaveMulti({fsp.u8string(), (int)style}));
         });
 }
@@ -71,7 +71,7 @@ template <typename T> void doLoadMulti(T *that, std::unique_ptr<juce::FileChoose
                                  {
                                      return;
                                  }
-                                 auto fsp = juceFileToFsPath(result[0]);
+                                 auto fsp = juceFileToFSPath(result[0]);
                                  w->sendToSerialization(cmsg::LoadMulti(fsp.u8string()));
                              });
 }
@@ -95,7 +95,7 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
                 return;
             }
             // send a 'save multi' message
-            auto fsp = juceFileToFsPath(result[0]);
+            auto fsp = juceFileToFSPath(result[0]);
             w->sendToSerialization(cmsg::SavePart({fsp.u8string(), part, (int)style}));
         });
 }
@@ -115,7 +115,7 @@ void doLoadPartInto(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, in
             {
                 return;
             }
-            auto fsp = juceFileToFsPath(result[0]);
+            auto fsp = juceFileToFSPath(result[0]);
             w->sendToSerialization(cmsg::LoadPartInto({fsp.u8string(), part}));
         });
 }

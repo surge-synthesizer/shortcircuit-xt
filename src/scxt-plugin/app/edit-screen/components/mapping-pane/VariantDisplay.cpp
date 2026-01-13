@@ -732,7 +732,7 @@ void VariantDisplay::showFileBrowser()
         [this](const juce::FileChooser &fc) mutable {
             if (fc.getURLResults().size() > 0)
             {
-                const auto u = shared::juceFileToFsPath(fc.getResult());
+                const auto u = shared::juceFileToFSPath(fc.getResult());
 
                 namespace cmsg = scxt::messaging::client;
                 auto za{editor->currentLeadZoneSelection};
