@@ -95,6 +95,7 @@
 #include "sst/voice-effects/modulation/ShepardPhaser.h"
 #include "sst/voice-effects/modulation/NoiseAM.h"
 #include "sst/voice-effects/modulation/Chorus.h"
+#include "sst/voice-effects/modulation/Flanger.h"
 #include "sst/voice-effects/utilities/VolumeAndPan.h"
 #include "sst/voice-effects/utilities/StereoTool.h"
 #include "sst/voice-effects/utilities/GainMatrix.h"
@@ -109,7 +110,6 @@
 #include "sst/voice-effects/lifted_bus_effects/LiftedReverb1.h"
 #include "sst/voice-effects/lifted_bus_effects/LiftedReverb2.h"
 #include "sst/voice-effects/lifted_bus_effects/LiftedDelay.h"
-#include "sst/voice-effects/lifted_bus_effects/LiftedFlanger.h"
 
 namespace scxt::dsp::processor
 {
@@ -335,6 +335,9 @@ DEFINE_PROC(ShepardPhaser, sst::voice_effects::modulation::ShepardPhaser<SCXTVFX
 DEFINE_PROC(Chorus, sst::voice_effects::modulation::Chorus<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Chorus<SCXTVFXConfig<2>>, proct_Chorus, "Chorus",
             "Modulation", dsp::surgeSincTable);
+DEFINE_PROC(Flanger, sst::voice_effects::modulation::VoiceFlanger<SCXTVFXConfig<1>>,
+            sst::voice_effects::modulation::VoiceFlanger<SCXTVFXConfig<2>>, proct_flanger,
+            "Flanger", "Modulation", dsp::simpleSineTable);
 
 DEFINE_PROC(LiftedReverb1, sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<1>>,
             sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<2>>, proct_lifted_reverb1,
@@ -353,11 +356,6 @@ DEFINE_PROC(LiftedDelay, sst::voice_effects::liftbus::LiftedDelay<SCXTVFXConfig<
             "Dual Delay", "Delay");
 PROC_FOR_GROUP_ONLY(proct_lifted_delay);
 PROC_DEFAULT_MIX(proct_lifted_delay, 0.333);
-
-DEFINE_PROC(LiftedFlanger, sst::voice_effects::liftbus::LiftedFlanger<SCXTVFXConfig<1>>,
-            sst::voice_effects::liftbus::LiftedFlanger<SCXTVFXConfig<2>>, proct_lifted_flanger,
-            "Flanger", "Modulation");
-PROC_FOR_GROUP_ONLY(proct_lifted_flanger);
 
 } // namespace scxt::dsp::processor
 

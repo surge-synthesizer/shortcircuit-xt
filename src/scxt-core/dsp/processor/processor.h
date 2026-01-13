@@ -126,6 +126,7 @@ enum ProcessorType
     proct_Phaser,
     proct_shepard,
     proct_Chorus,
+    proct_flanger,
     proct_volpan,
     proct_stereotool,
     proct_gainmatrix,
@@ -154,7 +155,6 @@ enum ProcessorType
     proct_lifted_reverb1,
     proct_lifted_reverb2,
     proct_lifted_delay,
-    proct_lifted_flanger,
 
     proct_fx_treemonster,
     proct_osc_EBWaveforms,
