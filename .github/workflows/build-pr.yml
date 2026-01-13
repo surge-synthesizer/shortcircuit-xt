@@ -43,10 +43,10 @@ jobs:
             runTests: false
             clapValidate: false
 
-          - name: "ubuntu Standalone"
+          - name: "ubuntu Standalone gcc13"
             os: ubuntu-latest
             target: scxt_clapfirst_standalone
-            cmakeConfig: -GNinja
+            cmakeConfig: -GNinja -DCMAKE_CXX_COMPILER=g++-13 -DCMAKE_C_COMPILER=gcc-13
             runTests: true
             testPath: build/tests
             clapValidate: false
