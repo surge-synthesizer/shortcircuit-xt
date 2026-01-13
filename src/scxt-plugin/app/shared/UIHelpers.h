@@ -34,14 +34,29 @@
 namespace scxt::ui::app::shared
 {
 
-inline fs::path juceFileToFsPath(const juce::File &f)
+inline fs::path juceStringToFSPath(const juce::String &fullPathName)
 {
-    auto js = f.getFullPathName();
 #if JUCE_WINDOWS
-    return fs::path(js.toUTF16().getAddress());
+    fs::path fullPath = fullPathName.toWideCharPointer();
 #else
-    return fs::path(fs::u8path(js.toUTF8().getAddress()));
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
+    fs::path fullPath = fs::u8path(fullPathName.toRawUTF8());
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
+#endif
+    return fullPath;
+}
+
+inline fs::path juceFileToFSPath(const juce::File &f)
+{
+    auto fullPathName = f.getFullPathName();
+    return juceStringToFSPath(fullPathName);
 }
 
 } // namespace scxt::ui::app::shared

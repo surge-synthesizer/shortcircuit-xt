@@ -176,7 +176,7 @@ struct DriveArea : juce::Component, HasEditor
                         [idxxx = idxx, w, ed](const auto &c) {
                             auto result = c.getResults();
                             namespace cmsg = scxt::messaging::client;
-                            auto fsp = shared::juceFileToFsPath(result[0]);
+                            auto fsp = shared::juceFileToFSPath(result[0]);
                             w->driveArea->browserPane->sendToSerialization(
                                 cmsg::AddBrowserDeviceLocation({fsp.u8string(), idxxx}));
                         });

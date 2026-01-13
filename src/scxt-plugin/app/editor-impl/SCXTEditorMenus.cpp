@@ -339,7 +339,7 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
                     w->themeApplier.recolorStylesheetWith(std::move(cm), w->style());
                 w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapId,
                                                            theme::ColorMap::FILE_COLORMAP_ID);
-                auto fp = shared::juceFileToFsPath(result[0]);
+                auto fp = shared::juceFileToFSPath(result[0]);
                 w->defaultsProvider.updateUserDefaultValue(
                     infrastructure::DefaultKeys::colormapPathIfFile, fp.u8string());
             });

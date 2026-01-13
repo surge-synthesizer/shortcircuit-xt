@@ -213,7 +213,7 @@ void MissingResolutionScreen::resolveItem(int idx)
             }
             if (!w)
                 return;
-            auto p = shared::juceFileToFsPath(result[0]);
+            auto p = shared::juceFileToFSPath(result[0]);
             w->applyResolution(idx, p);
         });
 }
