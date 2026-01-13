@@ -28,7 +28,6 @@
 #ifndef SCXT_SRC_SCXT_CORE_DSP_PROCESSOR_PROCESSOR_H
 #define SCXT_SRC_SCXT_CORE_DSP_PROCESSOR_PROCESSOR_H
 
-
 #include <cstdint>
 #include <array>
 #include <optional>
