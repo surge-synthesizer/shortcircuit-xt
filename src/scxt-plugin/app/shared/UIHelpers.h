@@ -56,7 +56,7 @@ inline fs::path juceStringToFSPath(const juce::String &fullPathName)
 inline fs::path juceFileToFSPath(const juce::File &f)
 {
     auto fullPathName = f.getFullPathName();
-    return juceStringToFsPath(fullPathName);
+    return juceStringToFSPath(fullPathName);
 }
 
 } // namespace scxt::ui::app::shared
