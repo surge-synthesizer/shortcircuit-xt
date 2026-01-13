@@ -337,7 +337,7 @@ DEFINE_PROC(Chorus, sst::voice_effects::modulation::Chorus<SCXTVFXConfig<1>>,
             "Modulation", dsp::surgeSincTable);
 DEFINE_PROC(Flanger, sst::voice_effects::modulation::VoiceFlanger<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::VoiceFlanger<SCXTVFXConfig<2>>, proct_flanger,
-            "Flanger", "Modulation", dsp::simpleSineTable);
+            "Circle Flanger", "Modulation", dsp::simpleSineTable);
 
 DEFINE_PROC(LiftedReverb1, sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<1>>,
             sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<2>>, proct_lifted_reverb1,
