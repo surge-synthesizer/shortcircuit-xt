@@ -428,6 +428,7 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_VemberClassic, "filters/vember-classic.json");
     a(dsp::processor::proct_K35, "filters/k35.json");
     a(dsp::processor::proct_obx4, "filters/obxd-4pole.json");
+    a(dsp::processor::proct_obxpander, "filters/obxd-Xpander.json");
     a(dsp::processor::proct_diodeladder, "filters/linear-ladder.json");
     a(dsp::processor::proct_cutoffwarp, "filters/warp.json");
     a(dsp::processor::proct_reswarp, "filters/warp.json");
@@ -451,6 +452,7 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_Tremolo, "modulation/tremolo.json");
     a(dsp::processor::proct_Chorus, "modulation/chorus.json");
     a(dsp::processor::proct_Phaser, "modulation/phaser.json");
+    a(dsp::processor::proct_flanger, "modulation/voice-flanger.json");
     a(dsp::processor::proct_shepard, "modulation/shepard.json");
 
     a(dsp::processor::proct_fx_microgate, "delay/microgate.json");
