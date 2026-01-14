@@ -72,6 +72,7 @@ enum ProcessorType
     proct_diodeladder,
     proct_tripole,
     proct_obx4,
+    proct_obxpander,
     proct_cutoffwarp,
     proct_reswarp,
     proct_vintageladder,

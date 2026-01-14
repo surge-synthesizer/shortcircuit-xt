@@ -188,6 +188,12 @@ using obx4Impl =
 using obx4Impl_os =
     sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
                                                 sst::filtersplusplus::FilterModel::OBXD_4Pole>;
+using obxpandImpl =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
+                                                sst::filtersplusplus::FilterModel::OBXD_Xpander>;
+using obxpandImpl_os =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
+                                                sst::filtersplusplus::FilterModel::OBXD_Xpander>;
 
 using cWarpImpl =
     sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
@@ -236,6 +242,8 @@ DEFINE_PROC(VintageLadder, procimpl::detail::vintageImpl, procimpl::detail::vint
             proct_vintageladder, "Vintage Ladder", "Filters");
 DEFINE_PROC(OBX4PFilter, procimpl::detail::obx4Impl, procimpl::detail::obx4Impl_os, proct_obx4,
             "OB-Xd 4-Pole", "Filters");
+DEFINE_PROC(OBXpanderFilter, procimpl::detail::obxpandImpl, procimpl::detail::obxpandImpl_os,
+            proct_obxpander, "OB-Xd Xpander", "Filters");
 DEFINE_PROC(CutoffWarpFilter, procimpl::detail::cWarpImpl, procimpl::detail::cWarpImpl_os,
             proct_cutoffwarp, "Cutoff Warp", "Filters");
 DEFINE_PROC(ResWarpFilter, procimpl::detail::rWarpImpl, procimpl::detail::rWarpImpl_os,

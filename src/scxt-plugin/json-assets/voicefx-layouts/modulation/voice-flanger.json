@@ -1,0 +1,84 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "hamburger-stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {}
+    },
+    "knob0": {
+      "class": "knob40",
+      "label": "Root",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 5,
+        "y": 5
+      }
+    },
+    "knob1": {
+      "class": "knob80",
+      "label": "Feedback",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 50,
+        "y": 30
+      }
+    },
+    "qb": {
+      "class": "power-switch",
+      "binding": {
+        "index": 1,
+        "type": "int"
+      },
+      "position": {
+        "x": 120,
+        "y": 20
+      }
+    },
+    "knob2": {
+      "class": "knob40",
+      "label": "Rate",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 155,
+        "y": 65
+      }
+    },
+    "knob3": {
+      "class": "knob40",
+      "label": "Depth",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 155,
+        "y": 5
+      }
+    },
+    "pass": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 2
+      },
+      "position": {
+        "x": 135,
+        "y": 124,
+        "w": 80
+      }
+    }
+  }
+}
