@@ -36,6 +36,7 @@
 #include "sst/basic-blocks/tables/DbToLinearProvider.h"
 #include "sst/basic-blocks/tables/TwoToTheXProvider.h"
 #include "sst/basic-blocks/tables/SixSinesWaveProvider.h"
+#include "sst/basic-blocks/tables/SimpleSineProvider.h"
 #include "resampling.h"
 
 namespace scxt::dsp
@@ -58,6 +59,10 @@ extern TwoToTheXTable twoToTheXTable;
 
 using PmSineTable = sst::basic_blocks::tables::SixSinesWaveProvider;
 extern PmSineTable pmSineTable;
+
+// for the voice flanger LFO
+using SimpleSineTable = sst::basic_blocks::tables::SimpleSineProvider;
+extern SimpleSineTable simpleSineTable;
 } // namespace scxt::dsp
 
 #endif // __SCXT_DSP_SINC_TABLES_H

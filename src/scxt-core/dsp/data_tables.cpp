@@ -26,6 +26,7 @@
  */
 
 #include "data_tables.h"
+
 #include <cmath>
 
 namespace scxt::dsp
@@ -35,4 +36,5 @@ SurgeSincTable surgeSincTable;
 DbTable dbTable;
 TwoToTheXTable twoToTheXTable;
 PmSineTable pmSineTable{false};
+SimpleSineTable simpleSineTable;
 } // namespace scxt::dsp

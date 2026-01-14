@@ -28,49 +28,6 @@
 #ifndef SCXT_SRC_SCXT_CORE_DSP_PROCESSOR_PROCESSOR_H
 #define SCXT_SRC_SCXT_CORE_DSP_PROCESSOR_PROCESSOR_H
 
-/*
- * The non-fiction novel of how to port a filter from the old codebase to the next codebase,
- * with the microgate as an example. This goes up to the generic UI. For a custom UI see
- * (something I haven't written yet).
- *
- * The microgate is a zone filter which in the old code is ft_fx_microgate. It lives in
- * previous/src/synthesis/filters_destruction.cpp. So here's how to bring it here.
- *
- * First put the class definition in processor_defs.h. A few changes will be in order
- * - we use CamelCase names for classes so microgate->MicroGate
- * - rather than a global int make a class constexpr int for mg_size
- * - All processor constructors in next take the '3 arg' form of float*, int*, bool
- * - While it doesn't apply to microgate, int params API is renamed so get_ip_entry becomes
- * getIntParamEnntry etc... (compare the SVF).
- *
- * I defined process as{} and init as {floatParameterCount=0} so I had a stub
- *
- * Next make the stub available to the engine by registering it. This used to be editing a big
- * global switch but is now localized through the Magic Of Templates (tm). So immediately under the
- * MicroGate class definitino, specialize the ProcessorImplementation for the type. At this point if
- * you compile you will start getting errors about the configuration missing on the type.
- *
- * So add the constexprs (isZone etc.. and name). The processorStreamignName is what we stream
- * to patches across sessions so it should be stable and generally not contain special characters
- * and things. UTF-8 emojis might work but don't try it OK? It is never shown to a user anyway.
- *
- * With that in place, if you run the symth and compile, MicroGate will be available in the UI.
- * You can select it as a zone filter and voila. With the original port we now run into a problem
- * that we can't in-place new the microgate because it has a buffer member. These buffer members
- * were a primary driver of allocation. At the original port with loopbuffer[2][buffersize] the
- * static assert i placed in the specialization failed. So we need to fix that. Luckily we have
- * a processor memory pool which limits allocation so in the ::init() (not the constrctur)
- * we grab a block of memory and assign it to the loopbuffers.
- *
- * We then move most of the rest of the constructor to c++ initializers in the header and
- * go about setting up the control modes. Basically we set the objects onto the controlmodes
- * array in the constructor for the appropriate type. (As of this writing we don't actually
- * have the correct units for microgate param 0 though). Then implemente preocess_stereo and voila.
- *
- * At this point the effect should just work and the UI should appear. To learn about customizing
- * the ui, take a look in ProcessorPane.cpp in src-ui
- */
-
 #include <cstdint>
 #include <array>
 #include <optional>
@@ -126,6 +83,7 @@ enum ProcessorType
     proct_Phaser,
     proct_shepard,
     proct_Chorus,
+    proct_flanger,
     proct_volpan,
     proct_stereotool,
     proct_gainmatrix,
@@ -154,7 +112,6 @@ enum ProcessorType
     proct_lifted_reverb1,
     proct_lifted_reverb2,
     proct_lifted_delay,
-    proct_lifted_flanger,
 
     proct_fx_treemonster,
     proct_osc_EBWaveforms,
