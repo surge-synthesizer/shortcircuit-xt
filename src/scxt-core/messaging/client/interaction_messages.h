@@ -98,5 +98,19 @@ inline void doResetEngine(const std::string &fl, engine::Engine &e, MessageContr
 }
 CLIENT_TO_SERIAL(ResetEngine, c2s_reset_engine, std::string, doResetEngine(payload, engine, cont));
 
+inline void doResendFullState(const bool &b, engine::Engine &e, MessageController &cont)
+{
+    if (b)
+    {
+        e.sendFullRefreshToClient();
+    }
+    else
+    {
+        SCLOG_IF(debug, "Why did you bother sending the resend false message?");
+    }
+}
+CLIENT_TO_SERIAL(ResendFullState, c2s_resend_full_state, bool,
+                 doResendFullState(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_INTERACTION_MESSAGES_H
