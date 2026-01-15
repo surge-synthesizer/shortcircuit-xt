@@ -103,6 +103,12 @@ void SCXTEditor::showMainMenu()
     auto dp = juce::PopupMenu();
     dp.addSectionHeader("Developer");
     dp.addSeparator();
+    dp.addItem("Resend full engine state to UI", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::ResendFullState{true});
+    });
+    dp.addSeparator();
     dp.addItem("Pretty JSON (DAW)", [w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;

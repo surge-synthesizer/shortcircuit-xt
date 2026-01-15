@@ -63,6 +63,7 @@ enum ClientToSerializationMessagesIds
     // Registration and Reset Messages
     c2s_register_client,
     c2s_reset_engine,
+    c2s_resend_full_state,
 
     // Stream and IO Messages
     c2s_unstream_engine_state,
