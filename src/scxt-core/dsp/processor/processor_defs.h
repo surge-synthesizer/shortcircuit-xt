@@ -85,6 +85,7 @@
 #include "sst/voice-effects/generator/SinePlus.h"
 #include "sst/voice-effects/generator/StringResonator.h"
 #include "sst/voice-effects/generator/3opPhaseMod.h"
+#include "sst/voice-effects/generator/FourVoiceResonator.h"
 
 #include "sst/voice-effects/modulation/FreqShiftMod.h"
 #include "sst/voice-effects/modulation/RingMod.h"
@@ -308,6 +309,10 @@ DEFINE_PROC(StringResonator, sst::voice_effects::generator::StringResonator<SCXT
 DEFINE_PROC(ThreeOpPhaseMod, sst::voice_effects::generator::ThreeOpPhaseMod<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::ThreeOpPhaseMod<SCXTVFXConfig<2>>, proct_osc_3op,
             "3op Phase Mod", "Generators", dsp::twoToTheXTable, dsp::pmSineTable);
+
+DEFINE_PROC(TetradResonator, sst::voice_effects::generator::FourVoiceResonator<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::FourVoiceResonator<SCXTVFXConfig<2>>,
+            proct_tetradResonator, "Tetrad Resonator", "Generators", dsp::simpleSineTable);
 
 DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters");
