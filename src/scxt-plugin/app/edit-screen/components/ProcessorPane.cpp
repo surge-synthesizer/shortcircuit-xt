@@ -448,6 +448,7 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_osc_sineplus, "generators/sineplus.json");
     a(dsp::processor::proct_osc_tiltnoise, "generators/tilt-noise.json");
     a(dsp::processor::proct_osc_3op, "generators/threeop.json");
+    a(dsp::processor::proct_tetradResonator, "generators/tetrad-resonator.json");
 
     a(dsp::processor::proct_Tremolo, "modulation/tremolo.json");
     a(dsp::processor::proct_Chorus, "modulation/chorus.json");

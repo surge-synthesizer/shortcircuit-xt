@@ -93,6 +93,7 @@ enum ProcessorType
 
     proct_stringResonator,
     proct_osc_3op,
+    proct_tetradResonator,
 
     proct_eq_3band_parametric_A,
     proct_eq_6band,
