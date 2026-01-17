@@ -68,28 +68,33 @@ Claes for open sourcing Surge and they got to chatting about Shortcircuit. That 
 code, and that led to this repository and plan. We had a couple of false starts, but are
 confident in the path and architecture we have now!
 
-# An important note about licensing
+# An note about licensing
 
 Just like with Surge, we welcome any and all contributions from anyone who wants to work on open source music software.
 
-At the initial open-sourcing, the copyright to the Shortcircuit source was held by Claes (on the initial code) and
-Paul (on his diffs since Claes shared the code). This repository is licensed under GPL3. We know that, if we end up with
-Shortcircuit XT, we will end up with a GPL3 plugin, since it will depend on JUCE or VST3SDK, which are GPL3 if used in
-an open source context.
+At the initial open-sourcing of Shortcircuit 2, the copyright to the Shortcircuit source was held by Claes (on the
+initial code) and
+Paul (on his diffs since Claes shared the code). The current repository and program have GPL3 dependencies, so
+Shortcircuit XT binary plugins are distributed under the terms of GPL3 plugin due to the transitive nature of GPL3.
 
-But, Paul and Claes are discussing refactoring the code to be a mix of MIT and GPL3 code, with some critical things like
-sample format loaders, some DSP code, and some utilities at least being released under MIT in a subordinate library (and
-in a separate repo). We don't know where that line is yet, but we do want to reserve the right to re-license any or all
-of the code here under an MIT license at our discretion.
+But at the outset of the project, Paul and Claes both wanted the option to take the source which we developed
+for Shortcircuit-as-Shortcircuit and potentially use it or fragments of it in a variety of projects. So
+since project inception, users who contributed agreed to a CLA [here](doc/ShortcircuitXT-Individual-CLA.pdf) which kept
+copyright on all diffs with the author of each change, but which gave the maintainers of this project
+the option to distribute all contributions under an MIT or GPL3 license. This CLA was based on the
+Canonical/Harmony 1.0 CLA http://selector.harmonyagreements.org
 
-As a result, we are asking individual contributors who want to contribute to Shortcircuit XT to sign a CLA. We have used
-the Canonical/Harmony 1.0 CLA http://selector.harmonyagreements.org with the following choices:
+As we approached the beta, we decided to exercise that option, and as such, as of Jan 18, 2026, we've decided that
 
-1. You retain copyright to your code. *We do not need you to assign copyright to us*.
-2. You grant us a license to distribute your code under GPL3 or MIT; and your content under CC3 attribution
+1. The source in the shortcircuit-xt repo, outside of the libs/ directory, is licensed under the MIT license, provided
+   here in the file "LICENSE". The copyright to any particular line is still held by the author of that line as
+   described in github.
+2. Each dependency in libs/ has a license in the particular library repos. All these license are compatible with MIT
+   source and resulting GPL3 distribution.
+3. The resulting combined product, the Shortcircuit XT binary plugin and associated other CLI tools, are distributed
+   under the Gnu General Public License 3.0 or later, in the file 'resources/LICENSE.gpl3'
+4. In the event you choose to use Shortcircuit XT code in your project, you must either modify the code to break each of
+   the GPL3 dependencies, license the GPL3 dependency in a non-GPL3 context, or distribute your final product under GPL3
 
-You can read the entire document [here](doc/ShortcircuitXT-Individual-CLA.pdf).
-
-To agree to this document, please add your name to the `AUTHORS` list in a git transaction where you indicate in the git
-log message that you consent to the CLA. You only need to do this once, and you can do it in your first commit to the
-repo.
+If this is unclear and you have a relevant question related to your contribution to the project, please open a github
+issue or ask on our discord.
