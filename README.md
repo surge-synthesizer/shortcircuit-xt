@@ -93,7 +93,9 @@ As we approached the beta, we decided to exercise that option, and as such, as o
    source and resulting GPL3 distribution.
 3. The resulting combined product, the Shortcircuit XT binary plugin and associated other CLI tools, are distributed
    under the Gnu General Public License 3.0 or later, in the file 'resources/LICENSE.gpl3'
-4. In the event you choose to use Shortcircuit XT code in your project, you must either modify the code to break each of
+4. Users no longer have to aggree to the CLA to contribute to the project. Their contributions are owned by them and
+   goverend under the MIT license.
+5. In the event you choose to use Shortcircuit XT code in your project, you must either modify the code to break each of
    the GPL3 dependencies, license the GPL3 dependency in a non-GPL3 context, or distribute your final product under GPL3
 
 If this is unclear and you have a relevant question related to your contribution to the project, please open a github
