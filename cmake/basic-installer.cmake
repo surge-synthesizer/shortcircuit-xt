@@ -80,7 +80,7 @@ add_custom_command(
         POST_BUILD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMAND echo "Installing LICENSE and so forth to ${SCXT_PRODUCT_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/LICENSE ${SCXT_PRODUCT_DIR}/
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/resources/LICENSE.gpl3 ${SCXT_PRODUCT_DIR}/LICENSE
         # COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/Installer/ZipReadme.txt ${SCXT_PRODUCT_DIR}/Readme.txt
 )
 
@@ -144,7 +144,7 @@ elseif (WIN32)
                 /DCLAP /DVST3 /DSA
                 /DIcon="${CMAKE_SOURCE_DIR}/resources/images/scxt.ico"
                 /DArch=$<TARGET_PROPERTY:innosetup::compiler,ARCH_ID>
-                /DLicense="${CMAKE_SOURCE_DIR}/LICENSE"
+                /DLicense="${CMAKE_SOURCE_DIR}/resources/LICENSE.gpl3"
                 /DStagedAssets="${SCXT_PRODUCT_DIR}"
                 "$<TARGET_PROPERTY:innosetup::compiler,INSTALL_SCRIPT>"
         )
