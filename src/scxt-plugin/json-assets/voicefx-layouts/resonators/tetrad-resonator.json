@@ -51,9 +51,9 @@
         "index": 2
       },
       "position": {
-        "x": 15,
+        "x": 5,
         "y": 124,
-        "w": 80
+        "w": 65
       }
     },
     "inv": {
@@ -63,9 +63,21 @@
         "index": 3
       },
       "position": {
-        "x": 120,
+        "x": 75,
         "y": 124,
-        "w": 80
+        "w": 65
+      }
+    },
+    "tuning": {
+      "class": "jog-updown",
+      "binding": {
+        "type": "int",
+        "index": 4
+      },
+      "position": {
+        "x": 145,
+        "y": 124,
+        "w": 65
       }
     }
   }

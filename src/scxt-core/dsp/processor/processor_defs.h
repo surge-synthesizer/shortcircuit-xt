@@ -253,8 +253,6 @@ DEFINE_PROC(TripoleFilter, procimpl::detail::tripoleImpl, procimpl::detail::trip
             proct_tripole, "Tripole", "Filters");
 DEFINE_PROC(SNHFilter, procimpl::detail::SnHImpl, procimpl::detail::SnHImpl_os, proct_snhfilter,
             "Sample & Hold", "Filters");
-DEFINE_PROC(CombFilter, procimpl::detail::combImpl, procimpl::detail::combImpl_os, proct_comb,
-            "Comb", "Filters");
 
 DEFINE_PROC(EQ3Band, procimpl::detail::eq3impl, procimpl::detail::eq3impl_os,
             proct_eq_3band_parametric_A, "3 Band Parametric", "EQ");
@@ -302,17 +300,20 @@ DEFINE_PROC(GenTiltNoise, sst::voice_effects::generator::TiltNoise<SCXTVFXConfig
             "Tilt Noise", "Generators");
 PROC_DEFAULT_MIX(proct_osc_tiltnoise, 0.5);
 
-DEFINE_PROC(StringResonator, sst::voice_effects::generator::StringResonator<SCXTVFXConfig<1>>,
-            sst::voice_effects::generator::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
-            "String Resonator", "Generators", dsp::surgeSincTable);
-
 DEFINE_PROC(ThreeOpPhaseMod, sst::voice_effects::generator::ThreeOpPhaseMod<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::ThreeOpPhaseMod<SCXTVFXConfig<2>>, proct_osc_3op,
             "3op Phase Mod", "Generators", dsp::twoToTheXTable, dsp::pmSineTable);
 
+DEFINE_PROC(CombFilter, procimpl::detail::combImpl, procimpl::detail::combImpl_os, proct_comb,
+            "Comb", "Resonators");
+
+DEFINE_PROC(StringResonator, sst::voice_effects::generator::StringResonator<SCXTVFXConfig<1>>,
+            sst::voice_effects::generator::StringResonator<SCXTVFXConfig<2>>, proct_stringResonator,
+            "String Resonator", "Resonators", dsp::surgeSincTable);
+
 DEFINE_PROC(TetradResonator, sst::voice_effects::generator::FourVoiceResonator<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::FourVoiceResonator<SCXTVFXConfig<2>>,
-            proct_tetradResonator, "Tetrad Resonator", "Generators", dsp::simpleSineTable);
+            proct_tetradResonator, "Tetrad Resonator", "Resonators", dsp::simpleSineTable);
 
 DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters");
