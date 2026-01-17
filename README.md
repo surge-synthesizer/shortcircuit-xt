@@ -68,35 +68,37 @@ Claes for open sourcing Surge and they got to chatting about Shortcircuit. That 
 code, and that led to this repository and plan. We had a couple of false starts, but are
 confident in the path and architecture we have now!
 
-# An note about licensing
+# A note about licensing
 
-Just like with Surge, we welcome any and all contributions from anyone who wants to work on open source music software.
+Just like with Surge XT, we welcome any and all contributions from anyone who wants to work on open source music
+software.
 
-At the initial open-sourcing of Shortcircuit 2, the copyright to the Shortcircuit source was held by Claes (on the
-initial code) and
-Paul (on his diffs since Claes shared the code). The current repository and program have GPL3 dependencies, so
-Shortcircuit XT binary plugins are distributed under the terms of GPL3 plugin due to the transitive nature of GPL3.
+At the initial open-sourcing of Shortcircuit 2 (later renamed to Shortcircuit XT), the copyright to the Shortcircuit
+source was held by Claes (@kurasu) on the initial code and Paul (@baconpaul) on his diffs since Claes shared the code.
+The current repository and program have GPL3 dependencies, so Shortcircuit XT binaries are distributed under the terms
+of GPL3, due to the transitive nature of GPL3.
 
-But at the outset of the project, Paul and Claes both wanted the option to take the source which we developed
-for Shortcircuit-as-Shortcircuit and potentially use it or fragments of it in a variety of projects. So
-since project inception, users who contributed agreed to a CLA [here](doc/ShortcircuitXT-Individual-CLA.pdf) which kept
-copyright on all diffs with the author of each change, but which gave the maintainers of this project
-the option to distribute all contributions under an MIT or GPL3 license. This CLA was based on the
-Canonical/Harmony 1.0 CLA http://selector.harmonyagreements.org
+But, at the outset of the project, Paul and Claes both wanted the option to take the source which we developed for
+Shortcircuit-as-Shortcircuit and potentially use it or fragments of it in a variety of other projects. So, since project
+inception, users who contributed have agreed to a CLA [here](doc/ShortcircuitXT-Individual-CLA.pdf) which kept copyright
+on all diffs with the author of
+each change, but which gave the maintainers of this project the option to distribute all contributions under an MIT or
+GPL3 license. This CLA was based on [http://selector.harmonyagreements.org](Canonical/Harmony 1.0).
 
-As we approached the beta, we decided to exercise that option, and as such, as of Jan 18, 2026, we've decided that
+As we approached the beta, we decided to exercise that option. As such - as of January 18th, 2026 - we've decided that:
 
-1. The source in the shortcircuit-xt repo, outside of the libs/ directory, is licensed under the MIT license, provided
+1. The source in the `shortcircuit-xt` repo, outside of the `libs/` folder, is licensed under the MIT license, provided
    here in the file "LICENSE". The copyright to any particular line is still held by the author of that line as
-   described in github.
-2. Each dependency in libs/ has a license in the particular library repos. All these license are compatible with MIT
-   source and resulting GPL3 distribution.
-3. The resulting combined product, the Shortcircuit XT binary plugin and associated other CLI tools, are distributed
-   under the Gnu General Public License 3.0 or later, in the file 'resources/LICENSE.gpl3'
-4. Users no longer have to aggree to the CLA to contribute to the project. Their contributions are owned by them and
-   goverend under the MIT license.
-5. In the event you choose to use Shortcircuit XT code in your project, you must either modify the code to break each of
+   described on GitHub.
+2. Each dependency in `libs/` folder has a license in the particular library repository. All these licenses are
+   compatible with MIT source code and resulting GPL3 distribution.
+3. The resulting combined product - Shortcircuit XT binaries and other associated CLI tools - are distributed under the
+   GNU GPL v3 license or later, found at `resources/LICENSE.gpl3`
+3. Users no longer have to agree to the CLA in order to contribute to the project. Their contributions are owned by them
+   and governed under the MIT license.
+4. In the event you choose to use Shortcircuit XT code in your project, you must either modify the code to break each of
    the GPL3 dependencies, license the GPL3 dependency in a non-GPL3 context, or distribute your final product under GPL3
+   license.
 
-If this is unclear and you have a relevant question related to your contribution to the project, please open a github
-issue or ask on our discord.
+If this is unclear and you have a relevant question related to your contribution to the project, please open an issue
+here on GitHub, or ask on our [Discord](https://discord.gg/RcHTt5M55M)
