@@ -4,6 +4,19 @@ message(STATUS "Shortcircuit XT building clap-first wrappers")
 set(PRODUCT_NAME "Shortcircuit XT")
 set(IMPL_TARGET scxt-plugin)
 
+set(SCXT_FORMATS CLAP)
+if (${SCXT_BUILD_VST3})
+    list(APPEND SCXT_FORMATS VST3)
+endif()
+if (${SCXT_BUILD_AUV2})
+    list(APPEND SCXT_FORMATS AUV2)
+endif()
+if (${SCXT_BUILD_STANDALONE})
+    list(APPEND SCXT_FORMATS STANDALONE)
+endif()
+
+message(STATUS "Shortcircuit XT active wrapper formats: ${SCXT_FORMATS}")
+
 make_clapfirst_plugins(
         TARGET_NAME ${PROJECT_NAME}
         IMPL_TARGET ${IMPL_TARGET}
@@ -17,7 +30,7 @@ make_clapfirst_plugins(
 
         COPY_AFTER_BUILD ${SCXT_COPY_PLUGIN_AFTER_BUILD}
 
-        PLUGIN_FORMATS CLAP VST3 AUV2
+        PLUGIN_FORMATS ${SCXT_FORMATS}
 
         WINDOWS_FOLDER_VST3 TRUE
 

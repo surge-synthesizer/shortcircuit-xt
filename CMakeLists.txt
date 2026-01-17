@@ -41,14 +41,12 @@ if (NOT DEFINED SCXT_JUCE_PATH)
     set(SCXT_JUCE_PATH ${CMAKE_SOURCE_DIR}/libs/JUCE)
 endif()
 
+# Building a CLAP is required for any other format so dont make that
+# an option
 option(SCXT_BUILD_VST3 "Build a VST3 plugin" ON)
-option(SCXT_BUILD_AU "Build an AU plugin" ON)
-option(SCXT_BUILD_CLAP "Build a CLAP" ON)
+option(SCXT_BUILD_AUV2 "Build an AUv2 plugin" ON)
 option(SCXT_BUILD_STANDALONE "Build a standalone executable" ON)
-option(SCXT_USE_ALSA "Build with ALSA when appropriate" ON)
-option(SCXT_USE_JACK "Build with JACK when appropriate" ON)
 option(SCXT_COPY_PLUGIN_AFTER_BUILD "Copy plugin after build if possible" OFF)
-option(SCXT_SKIP_PIE_CHANGE "Dont add -no-pie to executables" OFF)
 
 if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
     message(STATUS "Default skipping FLAC and MP3 on arm64ec for now")
