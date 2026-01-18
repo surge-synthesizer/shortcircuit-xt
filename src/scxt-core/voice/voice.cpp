@@ -1085,6 +1085,7 @@ void Voice::initializeProcessors()
         memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
                sizeof(processorIntParams[i]));
 
+        auto fpitch = calculateVoicePitch();
         if ((processorIsActive[i] && processorType[i] != dsp::processor::proct_none) ||
             (processorType[i] == dsp::processor::proct_none && !processorIsActive[i]))
         {
@@ -1094,6 +1095,7 @@ void Voice::initializeProcessors()
                 processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,
                 zone->processorStorage[i], endpoints->processorTarget[i].fp, processorIntParams[i],
                 forceOversample, false);
+            processors[i]->init_pitch(fpitch - 69);
         }
         else
         {

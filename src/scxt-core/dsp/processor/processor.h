@@ -241,6 +241,7 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
 
     virtual void init_params() {}
     virtual void init() {}
+    virtual void init_pitch(float p) {}
 
     virtual bool isKeytracked() const { return false; }
     virtual bool setKeytrack(bool b) { return false; }

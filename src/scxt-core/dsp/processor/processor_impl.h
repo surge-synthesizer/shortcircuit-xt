@@ -152,6 +152,7 @@ template <int OSFactor> struct SCXTVFXConfig
     };
 HAS_MEMFN(initVoiceEffect);
 HAS_MEMFN(initVoiceEffectParams);
+HAS_MEMFN(initVoiceEffectPitch);
 HAS_MEMFN(processStereo);
 HAS_MEMFN(processMonoToMono);
 HAS_MEMFN(processMonoToStereo);
@@ -210,6 +211,14 @@ template <typename T> struct SSTVoiceEffectShim : T
         if constexpr (HasMemFn_initVoiceEffectParams<T>::value)
         {
             this->initVoiceEffectParams();
+        }
+    }
+
+    void init_pitch(float p) override
+    {
+        if constexpr (HasMemFn_initVoiceEffectPitch<T>::value)
+        {
+            this->initVoiceEffectPitch(p);
         }
     }
 
