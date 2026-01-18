@@ -59,7 +59,7 @@ struct Group : MoveableOnly<Group>,
                modulation::shared::HasModulators<Group, egsPerGroup>,
                SampleRateSupport
 {
-    Group();
+    explicit Group(sst::basic_blocks::dsp::RNG &engineRNG);
     virtual ~Group()
     {
         for (auto *p : processors)

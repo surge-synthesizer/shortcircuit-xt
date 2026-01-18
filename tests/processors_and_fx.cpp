@@ -28,17 +28,19 @@
 #include "catch2/catch2.hpp"
 #include "dsp/processor/processor.h"
 #include "engine/memory_pool.h"
+#include "engine/engine.h"
 
 TEST_CASE("Processors have Formatting")
 {
     namespace pdsp = scxt::dsp::processor;
+    scxt::engine::Engine e;
     scxt::engine::MemoryPool mp;
     pdsp::ProcessorStorage procStorage;
     uint8_t memory[pdsp::processorMemoryBufferSize];
     float pfp[pdsp::maxProcessorFloatParams];
     int ifp[pdsp::maxProcessorIntParams];
 
-    // Akip peoxr_nonw
+    // start from 1 to skip proct_none
     for (int i = 1; i < pdsp::proct_num_types; ++i)
     {
         auto pt = (pdsp::ProcessorType)i;
@@ -51,9 +53,9 @@ TEST_CASE("Processors have Formatting")
                 memset(pfp, 0, sizeof(pfp));
                 memset(ifp, 0, sizeof(ifp));
                 procStorage.type = pt;
-                auto p =
-                    pdsp::spawnProcessorInPlace(pt, &mp, memory, pdsp::processorMemoryBufferSize,
-                                                procStorage, pfp, ifp, false, true);
+                auto p = pdsp::spawnProcessorInPlace(pt, &e, &mp, memory,
+                                                     pdsp::processorMemoryBufferSize, procStorage,
+                                                     pfp, ifp, false, true);
                 REQUIRE(p);
 
                 auto desc = p->getControlDescription();
@@ -80,13 +82,14 @@ TEST_CASE("Processors have Formatting")
 TEST_CASE("Dump Processor Silence Lengths")
 {
     namespace pdsp = scxt::dsp::processor;
+    scxt::engine::Engine e;
     scxt::engine::MemoryPool mp;
     pdsp::ProcessorStorage procStorage;
     uint8_t memory[pdsp::processorMemoryBufferSize];
     float pfp[pdsp::maxProcessorFloatParams];
     int ifp[pdsp::maxProcessorIntParams];
 
-    // Akip peoxr_nonw
+    // start from 1 to skip proct_none
     for (int i = 1; i < pdsp::proct_num_types; ++i)
     {
         auto pt = (pdsp::ProcessorType)i;
@@ -99,9 +102,9 @@ TEST_CASE("Dump Processor Silence Lengths")
                 memset(pfp, 0, sizeof(pfp));
                 memset(ifp, 0, sizeof(ifp));
                 procStorage.type = pt;
-                auto p =
-                    pdsp::spawnProcessorInPlace(pt, &mp, memory, pdsp::processorMemoryBufferSize,
-                                                procStorage, pfp, ifp, false, true);
+                auto p = pdsp::spawnProcessorInPlace(pt, &e, &mp, memory,
+                                                     pdsp::processorMemoryBufferSize, procStorage,
+                                                     pfp, ifp, false, true);
                 p->init_params();
                 p->init();
 

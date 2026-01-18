@@ -469,6 +469,8 @@ struct CurveLFOPane : juce::Component, HasEditor
 
     struct CurveDataSource : public sst::jucegui::data::CompactPlotSource
     {
+        modulation::modulators::CurveLFO curveLfo;
+
         LfoPane *parent{nullptr};
         sst::basic_blocks::modulators::Transport dummyTransport;
         CurveDataSource(LfoPane *p) : parent(p)
@@ -491,8 +493,6 @@ struct CurveLFOPane : juce::Component, HasEditor
             // msCopy.rate = 1.;
             auto sr{48000};
             auto ds{10};
-            modulation::modulators::CurveLFO curveLfo;
-            curveLfo.simpleLfo.objrngRef.reseed(2112);
             curveLfo.assign(&msCopy, &dummyTransport);
             curveLfo.setSampleRate(sr);
             curveLfo.attack(msCopy.start_phase, msCopy.curveLfoStorage.delay,

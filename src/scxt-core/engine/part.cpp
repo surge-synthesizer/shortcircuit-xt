@@ -221,6 +221,37 @@ std::vector<SampleID> Part::getSamplesUsedByPart() const
     return std::vector<SampleID>(resSet.begin(), resSet.end());
 }
 
+size_t Part::addGroup()
+{
+    auto g = std::make_unique<Group>(this->parentPatch->parentEngine->rng);
+
+    g->parentPart = this;
+    g->setSampleRate(getSampleRate());
+
+    std::unordered_set<std::string> gn;
+    std::string gpfx = "New Group";
+    for (const auto &og : groups)
+    {
+        if (og->name.find(gpfx) != std::string::npos)
+            gn.insert(og->name);
+    }
+
+    std::string cn = gpfx;
+    auto ngid = 1;
+    auto found = gn.find(cn) != gn.end();
+    while (found)
+    {
+        ngid++;
+        cn = gpfx + " (" + std::to_string(ngid) + ")";
+        found = gn.find(cn) != gn.end();
+    }
+
+    g->name = cn;
+
+    groups.push_back(std::move(g));
+    return groups.size();
+}
+
 void Part::moveGroupToAfter(size_t whichGroup, size_t toAfter)
 {
     if (whichGroup < 0 || whichGroup >= groups.size() || toAfter < 0 || toAfter >= groups.size() ||

@@ -145,7 +145,7 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
     {
         auto &ps = processorStorage[whichProcessor];
         tmpProcessor = dsp::processor::spawnProcessorInPlace(
-            type, asT()->getEngine()->getMemoryPool().get(), mem,
+            type, asT()->getEngine(), asT()->getEngine()->getMemoryPool().get(), mem,
             dsp::processor::processorMemoryBufferSize, ps, pfp, ifp, false, true);
 
         assert(tmpProcessor);
