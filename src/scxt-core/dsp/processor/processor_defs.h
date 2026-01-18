@@ -30,7 +30,6 @@
 
 #include "processor.h"
 #include "engine/engine.h"
-#include "engine/engine.h"
 #include "datamodel/metadata.h"
 #include "configuration.h"
 

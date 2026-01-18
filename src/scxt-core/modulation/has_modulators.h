@@ -63,7 +63,7 @@ template <typename T, size_t egsPerObject> struct HasModulators
         : eg{sst::cpputils::make_array<ahdsrenv_t, egsPerObject>(that)}, doubleRate{that},
           egOS{sst::cpputils::make_array<ahdsrenvOS_t, egsPerObject>(&doubleRate)},
           randomEvaluator(extrng),
-          curveLfos{cLFO_t(extrng), cLFO_t(extrng), cLFO_t(extrng), cLFO_t(extrng)}
+          curveLfos{sst::cpputils::make_array<cLFO_t, lfosPerObject>(extrng)}
     {
     }
 
