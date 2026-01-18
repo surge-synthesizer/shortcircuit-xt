@@ -38,8 +38,8 @@
         static constexpr const char *processorName{procDisplayName};                               \
         static constexpr const char *processorStreamingName{procImpl::streamingName};              \
         static constexpr const char *processorDisplayGroup{procDisplayGroup};                      \
-        procClass(engine::MemoryPool *mp, const ProcessorStorage &ps, float *f, int *i,            \
-                  bool needsMD)                                                                    \
+        procClass(engine::Engine *engine, engine::MemoryPool *mp, const ProcessorStorage &ps,      \
+                  float *f, int *i, bool needsMD)                                                  \
             : SSTVoiceEffectShim<procImpl>(__VA_ARGS__)                                            \
         {                                                                                          \
             assert(mp);                                                                            \
@@ -52,8 +52,8 @@
         static constexpr const char *processorName{procDisplayName};                               \
         static constexpr const char *processorStreamingName{osProcImpl::streamingName};            \
         static constexpr const char *processorDisplayGroup{procDisplayGroup};                      \
-        OS##procClass(engine::MemoryPool *mp, const ProcessorStorage &ps, float *f, int *i,        \
-                      bool needsMD)                                                                \
+        OS##procClass(engine::Engine *engine, engine::MemoryPool *mp, const ProcessorStorage &ps,  \
+                      float *f, int *i, bool needsMD)                                              \
             : SSTVoiceEffectShim<osProcImpl>(__VA_ARGS__)                                          \
         {                                                                                          \
             assert(mp);                                                                            \

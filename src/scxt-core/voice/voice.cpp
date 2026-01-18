@@ -40,7 +40,7 @@ namespace scxt::voice
 {
 
 Voice::Voice(engine::Engine *e, engine::Zone *z)
-    : scxt::modulation::shared::HasModulators<Voice, egsPerZone>(this), engine(e), zone(z),
+    : scxt::modulation::shared::HasModulators<Voice, egsPerZone>(this, e->rng), engine(e), zone(z),
       sampleIndex(zone->sampleIndex), halfRate(6, true), endpoints(nullptr) // see comment
 {
     assert(zone);
@@ -162,7 +162,7 @@ void Voice::voiceStarted()
         }
     }
 
-    randomEvaluator.evaluate(engine->rng, zone->miscSourceStorage);
+    randomEvaluator.evaluate(zone->miscSourceStorage);
     phasorEvaluator.attack(engine->transport, zone->miscSourceStorage, engine->rng);
 
     auto &aegp = endpoints->egTarget[0];
@@ -679,7 +679,7 @@ template <bool OS> bool Voice::processWithOS()
             processorType[i] = proct;
             // this is copied below in the init.
             processors[i] = dsp::processor::spawnProcessorInPlace(
-                processorType[i], zone->getEngine()->getMemoryPool().get(),
+                processorType[i], zone->getEngine(), zone->getEngine()->getMemoryPool().get(),
                 processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,
                 zone->processorStorage[i], endpoints->processorTarget[i].fp, processorIntParams[i],
                 forceOversample, false);
@@ -1090,7 +1090,7 @@ void Voice::initializeProcessors()
         {
             // this init code is partly copied above in the voice state toggle
             processors[i] = dsp::processor::spawnProcessorInPlace(
-                processorType[i], zone->getEngine()->getMemoryPool().get(),
+                processorType[i], zone->getEngine(), zone->getEngine()->getMemoryPool().get(),
                 processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,
                 zone->processorStorage[i], endpoints->processorTarget[i].fp, processorIntParams[i],
                 forceOversample, false);

@@ -47,7 +47,8 @@
 namespace scxt::engine
 {
 struct MemoryPool;
-}
+struct Engine;
+} // namespace scxt::engine
 
 namespace scxt::dsp::processor
 {
@@ -322,9 +323,9 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
  * Spawn with in-place new onto a pre-allocated block. The memory must
  * be a 16byte aligned block of at least size processorMemoryBufferSize.
  */
-Processor *spawnProcessorInPlace(ProcessorType id, engine::MemoryPool *mp, uint8_t *memory,
-                                 size_t memorySize, const ProcessorStorage &ps, float *f, int *i,
-                                 bool oversample, bool needsMetaData);
+Processor *spawnProcessorInPlace(ProcessorType id, engine::Engine *e, engine::MemoryPool *mp,
+                                 uint8_t *memory, size_t memorySize, const ProcessorStorage &ps,
+                                 float *f, int *i, bool oversample, bool needsMetaData);
 
 /**
  * Whetner a processor is spawned in place or onto fresh memory, release it here.

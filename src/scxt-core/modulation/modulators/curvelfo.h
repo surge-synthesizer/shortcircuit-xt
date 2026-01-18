@@ -31,6 +31,7 @@
 #include "sst/basic-blocks/modulators/SimpleLFO.h"
 #include "sst/basic-blocks/modulators/DAREnvelope.h"
 #include "sst/basic-blocks/modulators/Transport.h"
+#include "sst/basic-blocks/dsp/RNG.h"
 
 #include "utils.h"
 #include "modulation/modulator_storage.h"
@@ -41,12 +42,18 @@ struct CurveLFO : SampleRateSupport
 {
     float output{0.f};
 
+    explicit CurveLFO(sst::basic_blocks::dsp::RNG &extrng) : simpleLfo(this, extrng) {}
+
+    // only use this no-arg for the UI drawing!
+    CurveLFO() : simpleLfo(this) { forDisplay = false; }
+
     using slfo_t = sst::basic_blocks::modulators::SimpleLFO<CurveLFO, scxt::blockSize>;
     using senv_t = sst::basic_blocks::modulators::DAREnvelope<
         CurveLFO, scxt::blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>;
-    slfo_t simpleLfo{this};
+    slfo_t simpleLfo;
     senv_t simpleEnv{this};
     friend slfo_t;
+    bool forDisplay{false};
 
     slfo_t::Shape curveShape{slfo_t::SINE};
 
@@ -95,7 +102,14 @@ struct CurveLFO : SampleRateSupport
             break;
         }
 
-        simpleLfo.attack(curveShape);
+        if (forDisplay)
+        {
+            simpleLfo.attackForDisplay(curveShape);
+        }
+        else
+        {
+            simpleLfo.attack(curveShape);
+        }
         simpleLfo.applyPhaseOffset(initPhase);
         simpleEnv.attack(delay);
     }

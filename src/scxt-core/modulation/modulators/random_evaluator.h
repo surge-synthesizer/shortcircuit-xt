@@ -37,8 +37,12 @@ namespace scxt::modulation::modulators
 {
 struct RandomEvaluator
 {
+    sst::basic_blocks::dsp::RNG &rng;
+
+    RandomEvaluator(sst::basic_blocks::dsp::RNG &extrng) : rng(extrng) {}
+
     std::array<float, scxt::randomsPerGroupOrZone> outputs;
-    void evaluate(sst::basic_blocks::dsp::RNG &rng, const modulation::MiscSourceStorage &rs)
+    void evaluate(const modulation::MiscSourceStorage &rs)
     {
         for (int i = 0; i < scxt::randomsPerGroupOrZone; i++)
         {

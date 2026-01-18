@@ -45,9 +45,9 @@
 namespace scxt::engine
 {
 
-Group::Group()
+Group::Group(sst::basic_blocks::dsp::RNG &engineRNG)
     : id(GroupID::next()), name(id.to_string()), endpoints{nullptr},
-      modulation::shared::HasModulators<Group, egsPerGroup>(this), osDownFilter(6, true)
+      modulation::shared::HasModulators<Group, egsPerGroup>(this, engineRNG), osDownFilter(6, true)
 {
 }
 
@@ -575,10 +575,10 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
         }
         // FIXME - replace the float params with something modulatable
         processors[w] = dsp::processor::spawnProcessorInPlace(
-            t, asT()->getEngine()->getMemoryPool().get(), processorPlacementStorage[w],
-            dsp::processor::processorMemoryBufferSize, processorStorage[w],
-            endpoints.processorTarget[w].fp, processorStorage[w].intParams.data(),
-            outputInfo.oversample, false);
+            t, asT()->getEngine(), asT()->getEngine()->getMemoryPool().get(),
+            processorPlacementStorage[w], dsp::processor::processorMemoryBufferSize,
+            processorStorage[w], endpoints.processorTarget[w].fp,
+            processorStorage[w].intParams.data(), outputInfo.oversample, false);
 
         if (processors[w])
         {
@@ -618,7 +618,7 @@ void Group::attack()
         }
 
         // second, randoms get new values
-        randomEvaluator.evaluate(getEngine()->rng, miscSourceStorage);
+        randomEvaluator.evaluate(miscSourceStorage);
 
         // Third, LFOs which are *envelopes* need to re-attack
         for (auto i = 0; i < engine::lfosPerGroup; ++i)
@@ -717,7 +717,7 @@ void Group::resetLFOs(int whichLFO)
         }
     }
 
-    randomEvaluator.evaluate(getEngine()->rng, miscSourceStorage);
+    randomEvaluator.evaluate(miscSourceStorage);
     phasorEvaluator.attack(getEngine()->transport, miscSourceStorage, getEngine()->rng);
 }
 

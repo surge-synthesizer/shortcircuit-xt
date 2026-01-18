@@ -58,9 +58,12 @@ template <typename T, size_t egsPerObject> struct HasModulators
         }
     } doubleRate;
 
-    HasModulators(T *that)
+    using cLFO_t = scxt::modulation::modulators::CurveLFO;
+    HasModulators(T *that, sst::basic_blocks::dsp::RNG &extrng)
         : eg{sst::cpputils::make_array<ahdsrenv_t, egsPerObject>(that)}, doubleRate{that},
-          egOS{sst::cpputils::make_array<ahdsrenvOS_t, egsPerObject>(&doubleRate)}
+          egOS{sst::cpputils::make_array<ahdsrenvOS_t, egsPerObject>(&doubleRate)},
+          randomEvaluator(extrng),
+          curveLfos{cLFO_t(extrng), cLFO_t(extrng), cLFO_t(extrng), cLFO_t(extrng)}
     {
     }
 
@@ -75,9 +78,9 @@ template <typename T, size_t egsPerObject> struct HasModulators
         MSEG
     } lfoEvaluator[lfosPerObject]{};
     std::array<scxt::modulation::modulators::StepLFO, lfosPerObject> stepLfos{};
-    std::array<scxt::modulation::modulators::CurveLFO, lfosPerObject> curveLfos{};
+    std::array<scxt::modulation::modulators::CurveLFO, lfosPerObject> curveLfos;
     std::array<scxt::modulation::modulators::EnvLFO, lfosPerObject> envLfos{};
-    scxt::modulation::modulators::RandomEvaluator randomEvaluator{};
+    scxt::modulation::modulators::RandomEvaluator randomEvaluator;
     scxt::modulation::modulators::PhasorEvaluator phasorEvaluator{};
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<

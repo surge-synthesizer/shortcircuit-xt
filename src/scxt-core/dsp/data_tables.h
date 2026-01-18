@@ -65,4 +65,4 @@ using SimpleSineTable = sst::basic_blocks::tables::SimpleSineProvider;
 extern SimpleSineTable simpleSineTable;
 } // namespace scxt::dsp
 
-#endif // __SCXT_DSP_SINC_TABLES_H
+#endif // SCXT_SRC_SCXT_CORE_DSP_DATA_TABLES_H

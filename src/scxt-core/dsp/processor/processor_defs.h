@@ -29,16 +29,13 @@
 #define SCXT_SRC_SCXT_CORE_DSP_PROCESSOR_PROCESSOR_DEFS_H
 
 #include "processor.h"
+#include "engine/engine.h"
+#include "engine/engine.h"
 #include "datamodel/metadata.h"
-
-#include "sst/basic-blocks/simd/setup.h"
-
-#include <sst/filters/HalfRateFilter.h>
-#include "sst/basic-blocks/dsp/BlockInterpolators.h"
 #include "configuration.h"
 
 /**
- * Adding a processor here. Used to be we had a bunch of case staements. But now we are all
+ * Adding a processor here. Used to be we had a bunch of case statements. But now we are all
  * driven by templates (see "processor.cpp" for some hairy template code you never need to touch).
  * So to add a processor
  *
@@ -282,7 +279,7 @@ DEFINE_PROC(Widener, sst::voice_effects::delay::Widener<SCXTVFXConfig<1>>,
 DEFINE_PROC(EllipticBlepWaveforms,
             sst::voice_effects::generator::EllipticBlepWaveforms<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::EllipticBlepWaveforms<SCXTVFXConfig<2>>,
-            proct_osc_EBWaveforms, "Virtual Analog", "Generators");
+            proct_osc_EBWaveforms, "Virtual Analog", "Generators", engine->rng);
 PROC_DEFAULT_MIX(proct_osc_EBWaveforms, 0.5);
 
 DEFINE_PROC(SinePlus, sst::voice_effects::generator::SinePlus<SCXTVFXConfig<1>>,
@@ -292,12 +289,12 @@ PROC_DEFAULT_MIX(proct_osc_sineplus, 0.5);
 
 DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<2>>,
-            proct_osc_correlatednoise, "Correlated Noise", "Generators");
+            proct_osc_correlatednoise, "Correlated Noise", "Generators", engine->rng);
 PROC_DEFAULT_MIX(proct_osc_correlatednoise, 0.5);
 
 DEFINE_PROC(GenTiltNoise, sst::voice_effects::generator::TiltNoise<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::TiltNoise<SCXTVFXConfig<2>>, proct_osc_tiltnoise,
-            "Tilt Noise", "Generators");
+            "Tilt Noise", "Generators", engine->rng);
 PROC_DEFAULT_MIX(proct_osc_tiltnoise, 0.5);
 
 DEFINE_PROC(ThreeOpPhaseMod, sst::voice_effects::generator::ThreeOpPhaseMod<SCXTVFXConfig<1>>,
@@ -313,7 +310,8 @@ DEFINE_PROC(StringResonator, sst::voice_effects::generator::StringResonator<SCXT
 
 DEFINE_PROC(TetradResonator, sst::voice_effects::generator::FourVoiceResonator<SCXTVFXConfig<1>>,
             sst::voice_effects::generator::FourVoiceResonator<SCXTVFXConfig<2>>,
-            proct_tetradResonator, "Tetrad Resonator", "Resonators", dsp::simpleSineTable);
+            proct_tetradResonator, "Tetrad Resonator", "Resonators", dsp::simpleSineTable,
+            engine->rng);
 
 DEFINE_PROC(MorphEQ, sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<1>>,
             sst::voice_effects::eq::MorphEQ<SCXTVFXConfig<2>>, proct_eq_morph, "Morph", "Filters");
@@ -335,23 +333,24 @@ DEFINE_PROC(RingMod, sst::voice_effects::modulation::RingMod<SCXTVFXConfig<1>>,
             "Audio Rate Mod");
 DEFINE_PROC(NoiseAM, sst::voice_effects::modulation::NoiseAM<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::NoiseAM<SCXTVFXConfig<2>>, proct_noise_am, "Noise AM",
-            "Audio Rate Mod");
+            "Audio Rate Mod", engine->rng);
 
 DEFINE_PROC(Tremolo, sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Tremolo<SCXTVFXConfig<2>>, proct_Tremolo, "Tremolo",
-            "Modulation");
+            "Modulation", engine->rng);
 DEFINE_PROC(Phaser, sst::voice_effects::modulation::Phaser<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Phaser<SCXTVFXConfig<2>>, proct_Phaser, "Phaser",
-            "Modulation");
+            "Modulation", engine->rng);
 DEFINE_PROC(ShepardPhaser, sst::voice_effects::modulation::ShepardPhaser<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::ShepardPhaser<SCXTVFXConfig<2>>, proct_shepard,
-            "Shepard Phaser", "Modulation");
+            "Shepard Phaser", "Modulation", engine->rng);
+
 DEFINE_PROC(Chorus, sst::voice_effects::modulation::Chorus<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::Chorus<SCXTVFXConfig<2>>, proct_Chorus, "Chorus",
-            "Modulation", dsp::surgeSincTable);
+            "Modulation", dsp::surgeSincTable, engine->rng);
 DEFINE_PROC(Flanger, sst::voice_effects::modulation::VoiceFlanger<SCXTVFXConfig<1>>,
             sst::voice_effects::modulation::VoiceFlanger<SCXTVFXConfig<2>>, proct_flanger,
-            "Circle Flanger", "Modulation", dsp::simpleSineTable);
+            "Circle Flanger", "Modulation", dsp::simpleSineTable, engine->rng);
 
 DEFINE_PROC(LiftedReverb1, sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<1>>,
             sst::voice_effects::liftbus::LiftedReverb1<SCXTVFXConfig<2>>, proct_lifted_reverb1,
