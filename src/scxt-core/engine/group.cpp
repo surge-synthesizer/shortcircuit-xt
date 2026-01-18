@@ -588,6 +588,7 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
             endpoints.processorTarget[w].snapValues();
 
             processors[w]->init();
+            processors[w]->init_pitch(0);
         }
     }
     else
