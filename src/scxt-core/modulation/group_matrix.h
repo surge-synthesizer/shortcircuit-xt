@@ -221,7 +221,7 @@ struct GroupMatrixEndpoints
         std::function<std::string(const engine::Group &,
                                   const GroupMatrixConfig::TargetIdentifier &)>
             nameFn,
-        std::function<bool(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+        std::function<int32_t(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
             additiveFn);
 
     static void registerGroupModSource(engine::Engine *e,
@@ -300,8 +300,9 @@ struct GroupMatrixEndpoints
 
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
-// The last bool is "allows multiplicative"
-typedef std::tuple<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t, bool, bool>
+// The last two are "multiplicative" and "enabled"
+// "multiplicative" uses first bit as can and second bit as should
+typedef std::tuple<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t, int32_t, bool>
     namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<GroupMatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;
