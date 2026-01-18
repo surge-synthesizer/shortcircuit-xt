@@ -133,7 +133,7 @@ template <class T> class SampleFLACDecoderBase : public T
                 collectSizeOnly = false;
             }
 
-            sample->sample_length = total_samples;
+            sample->sampleLengthPerChannel = total_samples;
 
             if (total_samples == 0)
             {

@@ -377,7 +377,7 @@ template <bool OS> bool Voice::processWithOS()
                 {
                     GD[currGen].samplePos = std::clamp(
                         (int64_t)(GD[currGen].playbackLowerBound +
-                                  (*endpoints->sampleTarget.startPosP * s->sample_length)),
+                                  (*endpoints->sampleTarget.startPosP * s->sampleLengthPerChannel)),
                         (int64_t)0, (int64_t)GD[currGen].playbackUpperBound);
                 }
                 currGen++;
@@ -438,7 +438,7 @@ template <bool OS> bool Voice::processWithOS()
                     GDIO[gidx].outputR = loutput[1];
                 }
                 GD[gidx].sampleStart = 0;
-                GD[gidx].sampleStop = s->sample_length;
+                GD[gidx].sampleStop = s->sampleLengthPerChannel;
 
                 /*
                  * We implement loop for count by gating on loop count
@@ -926,7 +926,7 @@ void Voice::initializeGenerator()
         {
             assert(false);
         }
-        GDIO[currGen].waveSize = s->sample_length;
+        GDIO[currGen].waveSize = s->sampleLengthPerChannel;
 
         GD[currGen].samplePos = variantData.startSample;
         GD[currGen].sampleSubPos = 0;

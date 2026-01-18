@@ -109,8 +109,11 @@ struct alignas(16) Sample : MoveableOnly<Sample>
                 getCompoundRegion()};
     }
 
-    size_t getDataSize() const { return sample_length * bitDepthByteSize(bitDepth) * channels; }
-    size_t getSampleLength() const { return sample_length; }
+    size_t getDataSize() const
+    {
+        return sampleLengthPerChannel * bitDepthByteSize(bitDepth) * channels;
+    }
+    size_t getSampleLength() const { return sampleLengthPerChannel; }
     std::string getBitDepthText() const { return bitDepthName(bitDepth); }
 
     bool parseFlac(const fs::path &p);
@@ -173,7 +176,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     uint8_t channels{0};
     bool Embedded{false}; // if true, sample data will be stored inside the patch/multi
-    uint32_t sample_length{0};
+    uint32_t sampleLengthPerChannel{0};
     uint32_t sample_rate{1};
     float InvSampleRate{1};
     uint32_t *graintable{nullptr};

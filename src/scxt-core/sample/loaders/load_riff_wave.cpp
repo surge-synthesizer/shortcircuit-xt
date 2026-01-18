@@ -286,7 +286,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         {
             meta.slice_start = new int[cuepoints];
             meta.slice_end = new int[cuepoints];
-            meta.slice_end[cuepoints - 1] = sample_length;
+            meta.slice_end[cuepoints - 1] = sampleLengthPerChannel;
             meta.n_slices = cuepoints;
             meta.playmode = pm_forward_hitpoints;
             meta.playmode_present = true;
@@ -315,7 +315,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             {
                 meta.slice_start = new int[subchunks];
                 meta.slice_end = new int[subchunks];
-                meta.slice_end[subchunks - 1] = sample_length;
+                meta.slice_end[subchunks - 1] = sampleLengthPerChannel;
                 meta.n_slices = subchunks;
                 meta.playmode = pm_forward_hitpoints;
                 meta.playmode_present = true;
