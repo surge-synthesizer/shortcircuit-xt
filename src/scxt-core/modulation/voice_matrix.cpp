@@ -197,7 +197,7 @@ void MatrixEndpoints::registerVoiceModTarget(
     engine::Engine *e, const MatrixConfig::TargetIdentifier &t,
     std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> pathFn,
     std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> nameFn,
-    std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> additiveFn,
+    std::function<int32_t(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> additiveFn,
     std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> enabledFn)
 {
     if (!e)
@@ -324,11 +324,16 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
             return d.floatControlDescriptions[icopy].name;
         };
         auto adFn = [icopy = i](const engine::Zone &z,
-                                const MatrixConfig::TargetIdentifier &t) -> bool {
+                                const MatrixConfig::TargetIdentifier &t) -> int32_t {
             auto &d = z.processorDescription[t.index];
             if (d.type == dsp::processor::proct_none)
-                return "";
-            return d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
+                return false;
+            auto can = d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
+            if (!can)
+                return false;
+            auto should =
+                !d.floatControlDescriptions[icopy].hasMultiplicativeModulationOffByDefault();
+            return can * 1 + should * 2;
         };
         auto enFn = [icopy = i](const engine::Zone &z,
                                 const MatrixConfig::TargetIdentifier &t) -> bool {

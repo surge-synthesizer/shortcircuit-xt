@@ -401,7 +401,7 @@ struct MatrixEndpoints
             pathFn,
         std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             nameFn,
-        std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+        std::function<int32_t(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             additiveFn,
         std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             enabledFn =
@@ -421,8 +421,9 @@ struct MatrixEndpoints
  */
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
-// The last bool is "allows multiplicative"
-typedef std::tuple<MatrixConfig::TargetIdentifier, identifierDisplayName_t, bool, bool>
+// The last two are "multiplcative" and "enabled"
+// "multiplcaitve" uses first bit as can and second bit as should
+typedef std::tuple<MatrixConfig::TargetIdentifier, identifierDisplayName_t, int32_t, bool>
     namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<MatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;

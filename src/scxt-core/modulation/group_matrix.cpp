@@ -82,11 +82,16 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
             };
 
             auto adFn = [icopy = i](const engine::Group &z,
-                                    const GroupMatrixConfig::TargetIdentifier &t) -> bool {
+                                    const GroupMatrixConfig::TargetIdentifier &t) -> int32_t {
                 auto &d = z.processorDescription[t.index];
                 if (d.type == dsp::processor::proct_none)
-                    return "";
-                return d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
+                    return false;
+                auto can = d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
+                if (!can)
+                    return false;
+                auto should =
+                    !d.floatControlDescriptions[icopy].hasMultiplicativeModulationOffByDefault();
+                return can * 1 + should * 2;
             };
             registerGroupModTarget(e, fpT[i], ptFn, elFn, adFn);
         }
@@ -239,7 +244,7 @@ void GroupMatrixEndpoints::registerGroupModTarget(
         pathFn,
     std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
         nameFn,
-    std::function<bool(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+    std::function<int32_t(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
         additiveFn)
 {
     if (!e)

@@ -586,16 +586,21 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     using gmodTgtBoolFn_t =
         std::function<bool(const Group &, const modulation::GroupMatrixConfig::TargetIdentifier &)>;
 
+    using vmodTgtIntFn_t = std::function<int32_t(
+        const Zone &, const voice::modulation::MatrixConfig::TargetIdentifier &)>;
+    using gmodTgtIntFn_t = std::function<int32_t(
+        const Group &, const modulation::GroupMatrixConfig::TargetIdentifier &)>;
+
     using vmodSrcStrFn_t = std::function<std::string(
         const Zone &, const voice::modulation::MatrixConfig::SourceIdentifier &)>;
     using gmodSrcStrFn_t = std::function<std::string(
         const Group &, const voice::modulation::MatrixConfig::SourceIdentifier &)>;
 
     std::unordered_map<voice::modulation::MatrixConfig::TargetIdentifier,
-                       std::tuple<vmodTgtStrFn_t, vmodTgtStrFn_t, vmodTgtBoolFn_t, vmodTgtBoolFn_t>>
+                       std::tuple<vmodTgtStrFn_t, vmodTgtStrFn_t, vmodTgtIntFn_t, vmodTgtBoolFn_t>>
         voiceModTargets;
     std::unordered_map<modulation::GroupMatrixConfig::TargetIdentifier,
-                       std::tuple<gmodTgtStrFn_t, gmodTgtStrFn_t, gmodTgtBoolFn_t, gmodTgtBoolFn_t>>
+                       std::tuple<gmodTgtStrFn_t, gmodTgtStrFn_t, gmodTgtIntFn_t, gmodTgtBoolFn_t>>
         groupModTargets;
 
     std::unordered_map<voice::modulation::MatrixConfig::SourceIdentifier,
@@ -607,13 +612,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     void registerVoiceModTarget(
         const voice::modulation::MatrixConfig::TargetIdentifier &, vmodTgtStrFn_t pathFn,
-        vmodTgtStrFn_t nameFn, vmodTgtBoolFn_t additiveFn,
+        vmodTgtStrFn_t nameFn, vmodTgtIntFn_t additiveFn,
         vmodTgtBoolFn_t enabledFn = [](const auto &, const auto &) { return true; });
     void registerVoiceModSource(const voice::modulation::MatrixConfig::SourceIdentifier &,
                                 vmodSrcStrFn_t pathFn, vmodSrcStrFn_t nameFn);
     void registerGroupModTarget(
         const modulation::GroupMatrixConfig::TargetIdentifier &, gmodTgtStrFn_t pathFn,
-        gmodTgtStrFn_t nameFn, gmodTgtBoolFn_t additiveFn,
+        gmodTgtStrFn_t nameFn, gmodTgtIntFn_t additiveFn,
         gmodTgtBoolFn_t enabledFn = [](const auto &, const auto &) { return true; });
     void registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &,
                                 gmodSrcStrFn_t pathFn, gmodSrcStrFn_t nameFn);

@@ -745,26 +745,30 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         bool checkPath{false};
         juce::PopupMenu subMenu;
 
-        for (const auto &[ti, tn, canAdditive, isEnabled] : tgts)
+        for (const auto &[ti, tn, mulConfig, isEnabled] : tgts)
         {
             if (tn.second.empty())
                 continue;
 
+            auto canMul = mulConfig & 1;
+            auto defMul = mulConfig & 2;
+
             const auto &row = parent->routingTable.routes[index];
             auto selected = (row.target == ti);
 
-            auto mop = [tidx = ti, ca = canAdditive, w = juce::Component::SafePointer(this)]() {
+            auto mop = [tidx = ti, cm = canMul, sm = defMul,
+                        w = juce::Component::SafePointer(this)]() {
                 if (!w)
                     return;
                 auto &row = w->parent->routingTable.routes[w->index];
 
                 row.target = tidx;
 
-                w->allowsMultiplicative = ca;
+                w->allowsMultiplicative = cm;
 
                 row.applicationMode =
-                    ca ? sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE
-                       : sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
+                    (cm && sm) ? sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE
+                               : sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
                 w->pushRowUpdate(true);
             };
 
