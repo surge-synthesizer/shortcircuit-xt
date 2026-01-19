@@ -296,7 +296,7 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
         if (ch == 1)
         {
             auto fd = sp->GetSamplePtrF32(0);
-            for (int i = 0; i < sp->sample_length; ++i)
+            for (int i = 0; i < sp->sampleLengthPerChannel; ++i)
             {
                 d[0] = fd[i];
                 writer.pushSamplesF32(d);
@@ -306,7 +306,7 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
         {
             auto fl = sp->GetSamplePtrF32(0);
             auto fr = sp->GetSamplePtrF32(1);
-            for (int i = 0; i < sp->sample_length; ++i)
+            for (int i = 0; i < sp->sampleLengthPerChannel; ++i)
             {
                 d[0] = fl[i];
                 d[1] = fr[i];
@@ -333,7 +333,7 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
         if (ch == 1)
         {
             auto fd = sp->GetSamplePtrI16(0);
-            for (int i = 0; i < sp->sample_length; ++i)
+            for (int i = 0; i < sp->sampleLengthPerChannel; ++i)
             {
                 d[0] = fd[i];
                 writer.pushSamplesI16(d);
@@ -343,7 +343,7 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
         {
             auto fl = sp->GetSamplePtrI16(0);
             auto fr = sp->GetSamplePtrI16(1);
-            for (int i = 0; i < sp->sample_length; ++i)
+            for (int i = 0; i < sp->sampleLengthPerChannel; ++i)
             {
                 d[0] = fl[i];
                 d[1] = fr[i];

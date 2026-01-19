@@ -63,15 +63,15 @@ struct PreviewVoice::Details
         {
             assert(false);
         }
-        GDIO.waveSize = sample->sample_length;
+        GDIO.waveSize = sample->sampleLengthPerChannel;
 
         GD.samplePos = 0;
         GD.sampleSubPos = 0;
         GD.loopLowerBound = 0;
-        GD.loopUpperBound = sample->sample_length;
+        GD.loopUpperBound = sample->sampleLengthPerChannel;
         GD.loopFade = 0;
         GD.playbackLowerBound = 0;
-        GD.playbackUpperBound = sample->sample_length;
+        GD.playbackUpperBound = sample->sampleLengthPerChannel;
         GD.direction = 1;
         GD.isFinished = false;
         GD.directionAtOutset = GD.direction;
