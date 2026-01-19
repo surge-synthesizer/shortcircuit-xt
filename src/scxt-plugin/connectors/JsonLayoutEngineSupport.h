@@ -34,6 +34,8 @@
 #include <sst/jucegui/components/ContinuousParamEditor.h>
 #include <sst/jucegui/components/DiscreteParamEditor.h>
 #include <sst/jucegui/components/Knob.h>
+#include <sst/jucegui/components/HSlider.h>
+#include <sst/jucegui/components/VSlider.h>
 #include <sst/jucegui/components/Label.h>
 #include <sst/jucegui/components/ToggleButton.h>
 #include <sst/jucegui/components/MultiSwitch.h>
@@ -125,11 +127,23 @@ inline std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>
 createContinuousWidget(const sst::jucegui::layouts::json_document::Control &ctrl,
                        const sst::jucegui::layouts::json_document::Class &cls)
 {
+    namespace jcmp = sst::jucegui::components;
     if (cls.controlType == "knob")
     {
-        auto kb = std::make_unique<sst::jucegui::components::Knob>();
+        auto kb = std::make_unique<jcmp::Knob>();
         kb->setDrawLabel(false);
         return kb;
+    }
+    if (cls.controlType == "hslider")
+    {
+        auto sl = std::make_unique<jcmp::HSlider>();
+        sl->setShowLabel(false);
+        return sl;
+    }
+    if (cls.controlType == "vslider")
+    {
+        auto sl = std::make_unique<jcmp::VSlider>();
+        return sl;
     }
 
     return nullptr;
@@ -162,10 +176,19 @@ createDiscreteWidget(const sst::jucegui::layouts::json_document::Control &ctrl,
                 onError("Missing glyph for toggle");
                 return nullptr;
             }
-            kb->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
-            kb->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
 
-            if (cls.extraKVs.at("glyph") != "small-power-light")
+            if (cls.extraKVs.at("glyph") == "small-power-light")
+            {
+                kb->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+                kb->setGlyph(jcmp::GlyphPainter::SMALL_POWER_LIGHT);
+            }
+            else if (cls.extraKVs.at("glyph") == "plus-minus")
+            {
+                kb->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
+                kb->setGlyph(jcmp::GlyphPainter::MINUS);
+                kb->setOffGlyph(jcmp::GlyphPainter::PLUS);
+            }
+            else
             {
                 onError("Unimplemented glyph: " + cls.extraKVs.at("glyph"));
                 // but keep going for now

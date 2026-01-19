@@ -2,51 +2,51 @@
   "include": "voicefx-layouts/voicefx-classes.json",
   "controls": {
     "knob0": {
-      "class": "knob55",
+      "class": "knob50",
       "label": "Hold",
       "binding": {
         "type": "float",
         "index": 0
       },
       "position": {
-        "x": 25,
-        "y": 0
+        "x": 86,
+        "y": 4
       }
     },
     "knob1": {
-      "class": "knob55",
+      "class": "knob50",
       "label": "Loop",
       "binding": {
         "type": "float",
         "index": 1
       },
       "position": {
-        "x": 105,
-        "y": 0
+        "x": 86,
+        "y": 74
       }
     },
     "knob2": {
-      "class": "knob55",
+      "class": "vslider",
       "label": "Threshold",
       "binding": {
         "type": "float",
         "index": 2
       },
       "position": {
-        "x": 25,
-        "y": 75
+        "x": 32,
+        "y": 8
       }
     },
     "knob3": {
-      "class": "knob55",
-      "label": "Reduction",
+      "class": "vslider",
+      "label": "Thru",
       "binding": {
         "type": "float",
         "index": 3
       },
       "position": {
-        "x": 105,
-        "y": 75
+        "x": 160,
+        "y": 8
       }
     }
   }

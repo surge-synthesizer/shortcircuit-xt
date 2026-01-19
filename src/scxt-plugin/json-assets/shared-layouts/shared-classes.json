@@ -1,106 +1,123 @@
 {
-    "classes": {
-        "knob80": {
-            "control-type": "knob",
-            "w": 80,
-            "h": 80,
-            "label-position": "bottom-center"
-        },
-        "knob70": {
-            "control-type": "knob",
-            "w": 70,
-            "h": 70,
-            "label-position": "bottom-center"
-        },
-        "knob60": {
-            "control-type": "knob",
-            "w": 60,
-            "h": 60,
-            "label-position": "bottom-center"
-        },
-        "knob55": {
-            "control-type": "knob",
-            "w": 55,
-            "h": 55,
-            "label-position": "bottom-center"
-        },
-        "knob50": {
-            "control-type": "knob",
-            "w": 50,
-            "h": 50,
-            "label-position": "bottom-center"
-        },
-        "knob45": {
-            "control-type": "knob",
-            "w": 45,
-            "h": 45,
-            "label-position": "bottom-center"
-        },
-        "knob40": {
-            "control-type": "knob",
-            "w": 40,
-            "h": 40,
-            "label-position": "bottom-center"
-        },
-        "knob35": {
-            "control-type": "knob",
-            "w": 35,
-            "h": 35,
-            "label-position": "bottom-center"
-        },
-        "knob30": {
-            "control-type": "knob",
-            "w": 30,
-            "h": 30,
-            "label-position": "bottom-center"
-        },
-        "knob20": {
-            "control-type": "knob",
-            "w": 20,
-            "h": 20,
-            "label-position": "bottom-center"
-        },
-        "ruled-label": {
-            "control-type": "ruled-label"
-        },
-        "vertical-multiswitch": {
-            "control-type": "multiswitch",
-            "orientation": "vertical"
-        },
-        "jog-updown": {
-            "control-type": "jog-updown",
-            "h": 22
-        },
-        "power-switch": {
-            "control-type": "toggle",
-            "toggle-mode": "glyph",
-            "glyph": "small-power-light",
-            "w": 10,
-            "h": 10
-        },
-        "label": {
-            "control-type": "label",
-            "h": 18
-        },
-        "ruled-label": {
-            "control-type": "ruled-label",
-            "h": 18
-        },
-        "bezier-segment": {
-            "control-type": "line-segment",
-            "curve": "bezier",
-            "direction": "lr"
-        },
-        "bezier-segment-ud": {
-            "control-type": "line-segment",
-            "curve": "bezier",
-            "direction": "ud"
-        },
-        "bezier-segment-lr": {
-            "control-type": "line-segment",
-            "curve": "bezier",
-            "direction": "lr",
-            "comment": "same as bezier-segment"
-        }
+  "classes": {
+    "hslider": {
+      "control-type": "hslider",
+      "w": 80,
+      "h": 15
+    },
+    "vslider": {
+      "control-type": "vslider",
+      "w": 24,
+      "h": 116
+    },
+    "knob80": {
+      "control-type": "knob",
+      "w": 80,
+      "h": 80,
+      "label-position": "bottom-center"
+    },
+    "knob70": {
+      "control-type": "knob",
+      "w": 70,
+      "h": 70,
+      "label-position": "bottom-center"
+    },
+    "knob60": {
+      "control-type": "knob",
+      "w": 60,
+      "h": 60,
+      "label-position": "bottom-center"
+    },
+    "knob55": {
+      "control-type": "knob",
+      "w": 55,
+      "h": 55,
+      "label-position": "bottom-center"
+    },
+    "knob50": {
+      "control-type": "knob",
+      "w": 50,
+      "h": 50,
+      "label-position": "bottom-center"
+    },
+    "knob45": {
+      "control-type": "knob",
+      "w": 45,
+      "h": 45,
+      "label-position": "bottom-center"
+    },
+    "knob40": {
+      "control-type": "knob",
+      "w": 40,
+      "h": 40,
+      "label-position": "bottom-center"
+    },
+    "knob35": {
+      "control-type": "knob",
+      "w": 35,
+      "h": 35,
+      "label-position": "bottom-center"
+    },
+    "knob30": {
+      "control-type": "knob",
+      "w": 30,
+      "h": 30,
+      "label-position": "bottom-center"
+    },
+    "knob20": {
+      "control-type": "knob",
+      "w": 20,
+      "h": 20,
+      "label-position": "bottom-center"
+    },
+    "ruled-label": {
+      "control-type": "ruled-label"
+    },
+    "vertical-multiswitch": {
+      "control-type": "multiswitch",
+      "orientation": "vertical"
+    },
+    "jog-updown": {
+      "control-type": "jog-updown",
+      "h": 22
+    },
+    "power-switch": {
+      "control-type": "toggle",
+      "toggle-mode": "glyph",
+      "glyph": "small-power-light",
+      "w": 10,
+      "h": 10
+    },
+    "plusminus-switch": {
+      "control-type": "toggle",
+      "toggle-mode": "glyph",
+      "glyph": "plus-minus",
+      "w": 20,
+      "h": 20
+    },
+    "label": {
+      "control-type": "label",
+      "h": 18
+    },
+    "ruled-label": {
+      "control-type": "ruled-label",
+      "h": 18
+    },
+    "bezier-segment": {
+      "control-type": "line-segment",
+      "curve": "bezier",
+      "direction": "lr"
+    },
+    "bezier-segment-ud": {
+      "control-type": "line-segment",
+      "curve": "bezier",
+      "direction": "ud"
+    },
+    "bezier-segment-lr": {
+      "control-type": "line-segment",
+      "curve": "bezier",
+      "direction": "lr",
+      "comment": "same as bezier-segment"
     }
+  }
 }

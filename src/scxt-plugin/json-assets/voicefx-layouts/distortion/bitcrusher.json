@@ -2,51 +2,51 @@
   "include": "voicefx-layouts/voicefx-classes.json",
   "controls": {
     "sr": {
-      "class": "knob50",
-      "label": "Sample Rate",
+      "class": "knob40",
+      "label": "Freq",
       "binding": {
         "type": "float",
         "index": 0
       },
       "position": {
-        "x": 10,
-        "y": 5
+        "x": 16,
+        "y": 4
       }
     },
     "bd": {
-      "class": "knob50",
-      "label": "BitDepth",
+      "class": "knob40",
+      "label": "Bits",
       "binding": {
         "type": "float",
         "index": 1
       },
       "position": {
-        "x": 70,
-        "y": 5
+        "x": 84,
+        "y": 4
       }
     },
     "zp": {
-      "class": "knob50",
+      "class": "knob40",
       "label": "ZeroPoint",
       "binding": {
         "type": "float",
         "index": 2
       },
       "position": {
-        "x": 130,
-        "y": 5
+        "x": 84,
+        "y": 64
       }
     },
-    "lp": {
-      "class": "knob50",
-      "label": "LowPass",
+    "freq": {
+      "class": "knob40",
+      "label": "Cutoff",
       "binding": {
         "type": "float",
         "index": 3
       },
       "position": {
-        "x": 70,
-        "y": 80
+        "x": 152,
+        "y": 4
       },
       "enabled-if": {
         "type": "int",
@@ -56,16 +56,16 @@
         ]
       }
     },
-    "hp": {
-      "class": "knob50",
-      "label": "HiPass",
+    "res": {
+      "class": "knob40",
+      "label": "Reso",
       "binding": {
         "type": "float",
         "index": 4
       },
       "position": {
-        "x": 130,
-        "y": 80
+        "x": 152,
+        "y": 64
       },
       "enabled-if": {
         "type": "int",
@@ -82,21 +82,20 @@
         "type": "int"
       },
       "position": {
-        "x": 175,
-        "y": 75
+        "x": 192,
+        "y": 4
       }
     },
     "filtermode": {
-      "class": "vertical-multiswitch",
+      "class": "jog-updown",
       "binding": {
         "type": "int",
         "index": 1
       },
       "position": {
-        "x": 10,
-        "y": 80,
-        "w": 50,
-        "h": 50
+        "x": 142,
+        "y": 123,
+        "w": 60
       },
       "enabled-if": {
         "type": "int",

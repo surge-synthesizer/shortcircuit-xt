@@ -103,7 +103,7 @@
       }
     },
     "stages": {
-      "class": "vertical-multiswitch",
+      "class": "jog-updown",
       "binding": {
         "type": "int",
         "index": 0
@@ -111,8 +111,7 @@
       "position": {
         "x": 125,
         "y": 78,
-        "w": 55,
-        "h": 67
+        "w": 80
       }
     }
   }

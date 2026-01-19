@@ -1,216 +1,216 @@
 {
-    "include": "voicefx-layouts/voicefx-classes.json",
-    "controls": {
-        "hamburger-stereo": {
-            "class": "hamburger-stereo",
-            "binding": {
-                "type": "int",
-                "index": 0
-            },
-            "position": {}
-        },
-        "dual": {
-            "class": "power-switch",
-            "binding": {
-                "type": "int",
-                "index": 1
-            },
-            "position": {
-                "x": 5,
-                "y": 70,
-                "w": 10,
-                "h": 11
-            }
-        },
-        "knob0": {
-            "class": "knob40",
-            "label": "Level 1",
-            "binding": {
-                "type": "float",
-                "index": 0
-            },
-            "position": {
-                "x": 10,
-                "y": 10
-            }
-        },
-        "knob1": {
-            "class": "knob40",
-            "label": "Level 2",
-            "binding": {
-                "type": "float",
-                "index": 1
-            },
-            "position": {
-                "x": 10,
-                "y": 80
-            },
-            "enabled-if": {
-                "type": "int",
-                "index": 1,
-                "values": [
-                    1
-                ]
-            }
-        },
-        "knob2-mono": {
-            "class": "knob40",
-            "label": "Off 1",
-            "binding": {
-                "type": "float",
-                "index": 2
-            },
-            "position": {
-                "x": 88,
-                "y": 10
-            },
-            "visible-if": {
-                "type": "int",
-                "index": 0,
-                "values": [
-                    0
-                ]
-            }
-        },
-        "knob2-stereo": {
-            "class": "knob40",
-            "label": "Off 1",
-            "binding": {
-                "type": "float",
-                "index": 2
-            },
-            "position": {
-                "x": 60,
-                "y": 10
-            },
-            "visible-if": {
-                "type": "int",
-                "index": 0,
-                "values": [
-                    1
-                ]
-            }
-        },
-        "knob3-mono": {
-            "class": "knob40",
-            "label": "Off 2",
-            "binding": {
-                "type": "float",
-                "index": 3
-            },
-            "position": {
-                "x": 88,
-                "y": 80
-            },
-            "visible-if": {
-                "type": "int",
-                "index": 0,
-                "values": [
-                    0
-                ]
-            },
-            "enabled-if": {
-                "type": "int",
-                "index": 1,
-                "values": [
-                    1
-                ]
-            }
-        },
-        "knob3-stereo": {
-            "class": "knob40",
-            "label": "Off 2",
-            "binding": {
-                "type": "float",
-                "index": 3
-            },
-            "position": {
-                "x": 60,
-                "y": 80
-            },
-            "visible-if": {
-                "type": "int",
-                "index": 0,
-                "values": [
-                    1
-                ]
-            },
-            "enabled-if": {
-                "type": "int",
-                "index": 1,
-                "values": [
-                    1
-                ]
-            }
-        },
-        "knob4": {
-            "class": "knob40",
-            "label": "Pan 1",
-            "binding": {
-                "type": "float",
-                "index": 4
-            },
-            "position": {
-                "x": 113,
-                "y": 10
-            },
-            "visible-if": {
-                "type": "int",
-                "index": 0,
-                "values": [
-                    1
-                ]
-            }
-        },
-        "knob5": {
-            "class": "knob40",
-            "label": "Pan 1",
-            "binding": {
-                "type": "float",
-                "index": 5
-            },
-            "position": {
-                "x": 113,
-                "y": 80
-            },
-            "visible-if": {
-                "type": "int",
-                "index": 0,
-                "values": [
-                    1
-                ]
-            },
-            "enabled-if": {
-                "type": "int",
-                "index": 1,
-                "values": [
-                    1
-                ]
-            }
-        },
-        "knob6": {
-            "class": "knob40",
-            "label": "Decay",
-            "binding": {
-                "type": "float",
-                "index": 6
-            },
-            "position": {
-                "x": 165,
-                "y": 10
-            }
-        },
-        "knob7": {
-            "class": "knob40",
-            "label": "Stiffness",
-            "binding": {
-                "type": "float",
-                "index": 7
-            },
-            "position": {
-                "x": 165,
-                "y": 80
-            }
-        }
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "hamburger-stereo": {
+      "class": "hamburger-stereo",
+      "binding": {
+        "type": "int",
+        "index": 0
+      },
+      "position": {}
+    },
+    "dual": {
+      "class": "power-switch",
+      "binding": {
+        "type": "int",
+        "index": 1
+      },
+      "position": {
+        "x": 45,
+        "y": 73,
+        "w": 10,
+        "h": 10
+      }
+    },
+    "knob0": {
+      "class": "knob40",
+      "label": "Level 1",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 10,
+        "y": 10
+      }
+    },
+    "knob1": {
+      "class": "knob40",
+      "label": "Level 2",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 10,
+        "y": 80
+      },
+      "enabled-if": {
+        "type": "int",
+        "index": 1,
+        "values": [
+          1
+        ]
+      }
+    },
+    "knob2-mono": {
+      "class": "knob40",
+      "label": "Off 1",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 88,
+        "y": 10
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          0
+        ]
+      }
+    },
+    "knob2-stereo": {
+      "class": "knob40",
+      "label": "Off 1",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 60,
+        "y": 10
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "knob3-mono": {
+      "class": "knob40",
+      "label": "Off 2",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 88,
+        "y": 80
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          0
+        ]
+      },
+      "enabled-if": {
+        "type": "int",
+        "index": 1,
+        "values": [
+          1
+        ]
+      }
+    },
+    "knob3-stereo": {
+      "class": "knob40",
+      "label": "Off 2",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 60,
+        "y": 80
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      },
+      "enabled-if": {
+        "type": "int",
+        "index": 1,
+        "values": [
+          1
+        ]
+      }
+    },
+    "knob4": {
+      "class": "knob40",
+      "label": "Pan 1",
+      "binding": {
+        "type": "float",
+        "index": 4
+      },
+      "position": {
+        "x": 113,
+        "y": 10
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      }
+    },
+    "knob5": {
+      "class": "knob40",
+      "label": "Pan 1",
+      "binding": {
+        "type": "float",
+        "index": 5
+      },
+      "position": {
+        "x": 113,
+        "y": 80
+      },
+      "visible-if": {
+        "type": "int",
+        "index": 0,
+        "values": [
+          1
+        ]
+      },
+      "enabled-if": {
+        "type": "int",
+        "index": 1,
+        "values": [
+          1
+        ]
+      }
+    },
+    "knob6": {
+      "class": "knob40",
+      "label": "Decay",
+      "binding": {
+        "type": "float",
+        "index": 6
+      },
+      "position": {
+        "x": 165,
+        "y": 10
+      }
+    },
+    "knob7": {
+      "class": "knob40",
+      "label": "Stiffness",
+      "binding": {
+        "type": "float",
+        "index": 7
+      },
+      "position": {
+        "x": 165,
+        "y": 80
+      }
     }
+  }
 }

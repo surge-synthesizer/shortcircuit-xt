@@ -14,8 +14,8 @@
         "type": "float"
       },
       "position": {
-        "x": 5,
-        "y": 15
+        "x": 8,
+        "y": 20
       }
     },
     "bias": {
@@ -26,44 +26,44 @@
         "type": "float"
       },
       "position": {
-        "x": 87,
-        "y": 5
+        "x": 100,
+        "y": 8
       }
     },
     "postgain": {
       "class": "knob40",
-      "label": "Post Gain",
+      "label": "Level",
       "binding": {
         "index": 2,
         "type": "float"
       },
       "position": {
-        "x": 87,
-        "y": 65
+        "x": 160,
+        "y": 8
       }
     },
     "lowcut": {
       "class": "knob40",
-      "label": "LowCut",
+      "label": "Low Cut",
       "binding": {
         "index": 3,
         "type": "float"
       },
       "position": {
-        "x": 140,
-        "y": 5
+        "x": 100,
+        "y": 68
       }
     },
     "highcut": {
       "class": "knob40",
-      "label": "HighCut",
+      "label": "High Cut",
       "binding": {
         "index": 4,
         "type": "float"
       },
       "position": {
-        "x": 140,
-        "y": 65
+        "x": 160,
+        "y": 68
       }
     },
     "wstype": {
@@ -73,9 +73,9 @@
         "index": 0
       },
       "position": {
-        "x": 10,
+        "x": 8,
         "y": 128,
-        "w": 180,
+        "w": 198,
         "h": 22
       }
     }
