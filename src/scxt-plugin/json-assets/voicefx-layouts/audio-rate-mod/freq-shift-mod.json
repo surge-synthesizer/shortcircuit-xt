@@ -17,8 +17,8 @@
         "type": "float"
       },
       "position": {
-        "x": 10,
-        "y": 10
+        "x": 148,
+        "y": 4
       }
     },
     "coarse": {
@@ -29,20 +29,20 @@
         "type": "float"
       },
       "position": {
-        "x": 110,
-        "y": 10
+        "x": 8,
+        "y": 4
       }
     },
     "feedback": {
-      "class": "knob40",
+      "class": "knob60",
       "label": "Feedback",
       "binding": {
         "index": 2,
         "type": "float"
       },
       "position": {
-        "x": 70,
-        "y": 80
+        "x": 78,
+        "y": 64
       }
     }
   }

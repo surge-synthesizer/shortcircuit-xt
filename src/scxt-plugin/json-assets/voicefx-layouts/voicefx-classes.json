@@ -1,12 +1,12 @@
 {
-    "comment": "Size of the display region is 215x148",
-    "include": "shared-layouts/shared-classes.json",
-    "classes": {
-        "hamburger-stereo": {
-            "control-type": "hamburger-stereo"
-        },
-        "waveshaper-menu": {
-            "control-type": "waveshaper-menu"
-        }
+  "comment": "Size of the display region is 215x148",
+  "include": "shared-layouts/shared-classes.json",
+  "classes": {
+    "hamburger-stereo": {
+      "control-type": "hamburger-stereo"
+    },
+    "waveshaper-menu": {
+      "control-type": "waveshaper-menu"
     }
+  }
 }

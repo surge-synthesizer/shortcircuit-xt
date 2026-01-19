@@ -118,12 +118,12 @@ DEFINE_PROC(ShortDelay, sst::voice_effects::delay::ShortDelay<SCXTVFXConfig<1>>,
 PROC_DEFAULT_MIX(proct_fx_simple_delay, 0.3);
 
 DEFINE_PROC(MicroGate, sst::voice_effects::delay::MicroGate<SCXTVFXConfig<1>>,
-            sst::voice_effects::delay::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate, "MicroGate",
+            sst::voice_effects::delay::MicroGate<SCXTVFXConfig<2>>, proct_fx_microgate, "Microgate",
             "Delay", dsp::surgeSincTable);
 
 DEFINE_PROC(BitCrusher, sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<1>>,
             sst::voice_effects::distortion::BitCrusher<SCXTVFXConfig<2>>, proct_fx_bitcrusher,
-            "BitCrusher", "Distortion");
+            "Bitcrusher", "Distortion");
 DEFINE_PROC(WaveShaper, sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig<1>>,
             sst::voice_effects::waveshaper::WaveShaper<SCXTVFXConfig<2>>, proct_fx_waveshaper,
             "WaveShaper", "Distortion");

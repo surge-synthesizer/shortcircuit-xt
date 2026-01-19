@@ -9,94 +9,42 @@
       },
       "position": {}
     },
-    "color-mono": {
-      "class": "knob70",
-      "label": "Color",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 10,
-        "y": 20
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          0
-        ]
-      }
-    },
-    "level-mono": {
-      "class": "knob70",
-      "label": "Level",
-      "binding": {
-        "type": "float",
-        "index": 1
-      },
-      "position": {
-        "x": 110,
-        "y": 20
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          0
-        ]
-      }
-    },
     "color-stereo": {
-      "class": "knob50",
+      "class": "knob60",
       "label": "Color",
       "binding": {
         "type": "float",
         "index": 0
       },
       "position": {
-        "x": 20,
-        "y": 10
+        "x": 148,
+        "y": 8
       },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          1
-        ]
-      }
     },
     "level-stereo": {
-      "class": "knob50",
+      "class": "knob60",
       "label": "Level",
       "binding": {
         "type": "float",
         "index": 1
       },
       "position": {
-        "x": 120,
-        "y": 10
+        "x": 8,
+        "y": 8
       },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          1
-        ]
-      }
     },
     "width": {
-      "class": "knob50",
+      "class": "knob60",
       "label": "Width",
       "binding": {
         "type": "float",
         "index": 2
       },
       "position": {
-        "x": 70,
-        "y": 75
+        "x": 78,
+        "y": 64
       },
-      "visible-if": {
+      "enable-if": {
         "type": "int",
         "index": 0,
         "values": [

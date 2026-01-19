@@ -9,16 +9,16 @@
       },
       "position": {}
     },
-    "frequency-mono": {
-      "class": "knob50",
-      "label": "Frequency",
+    "frequency-m": {
+      "class": "knob40",
+      "label": "Cutoff",
       "binding": {
         "type": "float",
         "index": 0
       },
       "position": {
-        "x": 15,
-        "y": 40
+        "x": 8,
+        "y": 38
       },
       "visible-if": {
         "type": "int",
@@ -30,14 +30,14 @@
     },
     "frequency-l": {
       "class": "knob40",
-      "label": "Freq L",
+      "label": "Cutoff L",
       "binding": {
         "type": "float",
         "index": 0
       },
       "position": {
-        "x": 10,
-        "y": 5
+        "x": 8,
+        "y": 8
       },
       "visible-if": {
         "type": "int",
@@ -49,13 +49,13 @@
     },
     "frequency-r": {
       "class": "knob40",
-      "label": "Freq R",
+      "label": "Cutoff R",
       "binding": {
         "type": "float",
         "index": 1
       },
       "position": {
-        "x": 45,
+        "x": 10,
         "y": 65
       },
       "visible-if": {
@@ -67,27 +67,27 @@
       }
     },
     "fm-depth": {
-      "class": "knob40",
+      "class": "knob60",
       "label": "FM Depth",
       "binding": {
         "type": "float",
         "index": 2
       },
       "position": {
-        "x": 85,
-        "y": 5
+        "x": 75,
+        "y": 25
       }
     },
     "resonance": {
       "class": "knob40",
-      "label": "Resonance",
+      "label": "Reso",
       "binding": {
         "type": "float",
         "index": 3
       },
       "position": {
-        "x": 120,
-        "y": 65
+        "x": 160,
+        "y": 8
       }
     },
     "mod-freq": {
@@ -99,7 +99,7 @@
       },
       "position": {
         "x": 160,
-        "y": 5
+        "y": 65
       }
     },
     "filter-mode": {
@@ -109,9 +109,9 @@
         "index": 1
       },
       "position": {
-        "x": 3,
+        "x": 64,
         "y": 123,
-        "w": 210
+        "w": 88
       }
     }
   }

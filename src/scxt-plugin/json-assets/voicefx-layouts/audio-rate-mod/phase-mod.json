@@ -2,11 +2,11 @@
   "include": "voicefx-layouts/voicefx-classes.json",
   "controls": {
     "transpose": {
-      "class": "knob70",
+      "class": "knob60",
       "label": "Frequency",
       "position": {
-        "x": 15,
-        "y": 15
+        "x": 8,
+        "y": 4
       },
       "binding": {
         "type": "float",
@@ -14,11 +14,11 @@
       }
     },
     "lpf": {
-      "class": "knob40",
+      "class": "knob60",
       "label": "LPF",
       "position": {
-        "x": 90,
-        "y": 90
+        "x": 78,
+        "y": 64
       },
       "binding": {
         "type": "float",
@@ -26,11 +26,11 @@
       }
     },
     "depth": {
-      "class": "knob70",
+      "class": "knob60",
       "label": "Depth",
       "position": {
-        "x": 130,
-        "y": 15
+        "x": 148,
+        "y": 4
       },
       "binding": {
         "type": "float",

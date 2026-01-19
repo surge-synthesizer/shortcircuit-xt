@@ -10,51 +10,50 @@
             "position": {}
         },
         "threshold": {
-            "class": "knob50",
+            "class": "vslider",
             "label": "Threshold",
             "binding": {
                 "type": "float",
                 "index": 0
             },
             "position": {
-                "x": 10,
-                "y": 5
+                "x": 32,
+                "y": 8
             }
         },
         "depth": {
-            "class": "knob50",
+            "class": "vslider",
             "label": "Depth",
             "binding": {
                 "type": "float",
                 "index": 1
             },
             "position": {
-                "x": 70,
-                "y": 5
+                "x": 160,
+                "y": 8
             }
         },
         "tilt": {
-            "class": "knob50",
+            "class": "knob60",
             "label": "Tilt",
             "binding": {
                 "type": "float",
                 "index": 2
             },
             "position": {
-                "x": 130,
-                "y": 5
+                "x": 78,
+                "y": 64
             }
         },
         "envelope": {
             "class": "vertical-multiswitch",
-            "label": "Envelope",
             "binding": {
                 "type": "int",
                 "index": 0
             },
             "position": {
-                "x": 40,
-                "y": 80,
+                "x": 80,
+                "y": 8,
                 "w": 50,
                 "h": 40
             }

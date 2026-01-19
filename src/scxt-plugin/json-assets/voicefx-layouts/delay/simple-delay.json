@@ -9,8 +9,8 @@
         "type": "float"
       },
       "position": {
-        "x": 10,
-        "y": 5
+        "x": 8,
+        "y": 4
       },
       "visible-if": {
         "index": 0,
@@ -21,15 +21,15 @@
       }
     },
     "time-large": {
-      "class": "knob80",
+      "class": "knob50",
       "label": "Time",
       "binding": {
         "index": 0,
         "type": "float"
       },
       "position": {
-        "x": 5,
-        "y": 15
+        "x": 8,
+        "y": 38
       },
       "visible-if": {
         "index": 0,
@@ -47,8 +47,8 @@
         "type": "float"
       },
       "position": {
-        "x": 10,
-        "y": 75
+        "x": 8,
+        "y": 74
       },
       "visible-if": {
         "index": 0,
@@ -58,38 +58,28 @@
         ]
       }
     },
-    "feedback-header": {
-      "class": "ruled-label",
-      "label": "Feedback",
-      "position": {
-        "x": 95,
-        "y": 0,
-        "w": 90,
-        "h": 15
-      }
-    },
     "feedback": {
       "class": "knob40",
-      "label": "F/B",
+      "label": "Feedback",
       "binding": {
         "index": 2,
         "type": "float"
       },
       "position": {
-        "x": 95,
-        "y": 16
+        "x": 88,
+        "y": 8
       }
     },
     "crossfeed": {
       "class": "knob40",
-      "label": "Cross",
+      "label": "Crossfeed",
       "binding": {
         "index": 3,
         "type": "float"
       },
       "position": {
-        "x": 140,
-        "y": 16
+        "x": 164,
+        "y": 8
       },
       "enabled-if": {
         "index": 0,
@@ -99,38 +89,28 @@
         ]
       }
     },
-    "filter-header": {
-      "class": "ruled-label",
-      "label": "Filter",
-      "position": {
-        "x": 95,
-        "y": 75,
-        "w": 90,
-        "h": 15
-      }
-    },
     "locut": {
       "class": "knob40",
-      "label": "LoCut",
+      "label": "Low Cut",
       "binding": {
         "index": 4,
         "type": "float"
       },
       "position": {
-        "x": 95,
-        "y": 92
+        "x": 88,
+        "y": 84
       }
     },
     "hicut": {
       "class": "knob40",
-      "label": "HiCut",
+      "label": "High Cut",
       "binding": {
         "index": 5,
         "type": "float"
       },
       "position": {
-        "x": 140,
-        "y": 92
+        "x": 164,
+        "y": 84
       }
     },
     "stereo": {
