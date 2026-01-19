@@ -524,7 +524,7 @@ void SampleManager::updateSampleMemory()
     uint64_t res = 0;
     for (const auto &[id, smp] : samples)
     {
-        res += smp->sample_length * (smp->bitDepth == Sample::BD_I16 ? 4 : 8);
+        res += smp->getDataSize();
     }
     sampleMemoryInBytes = res;
 }

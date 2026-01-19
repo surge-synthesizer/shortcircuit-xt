@@ -607,14 +607,14 @@ void VariantDisplay::rebuild()
         {
             if (a)
             {
-                a->sampleCount = samp->sample_length;
+                a->sampleCount = samp->sampleLengthPerChannel;
             }
         }
 
         fileButton->setLabel(samp->displayName);
         fileInfos->sampleRate = samp->sample_rate;
         fileInfos->bd = samp->getBitDepthText();
-        fileInfos->sampleLength = samp->sample_length;
+        fileInfos->sampleLength = samp->sampleLengthPerChannel;
         fileInfos->channels = samp->channels;
     }
 

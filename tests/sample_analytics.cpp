@@ -49,7 +49,7 @@ TEST_CASE("Sample Analytics", "[sample]")
         sineBuffer[i] = 0.6f * std::sin(2.0f * float(M_PI) * 440.0f * t);
     }
     sineSample->load_data_f32(0, sineBuffer.data(), sineBuffer.size(), sizeof(float));
-    sineSample->sample_length = sineBuffer.size();
+    sineSample->sampleLengthPerChannel = sineBuffer.size();
     sineSample->channels = 1;
     sineSample->sample_loaded = true;
 
@@ -66,7 +66,7 @@ TEST_CASE("Sample Analytics", "[sample]")
         squareBuffer[i] = 0.8f * (std::modf(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);
     }
     squareSample->load_data_f32(0, squareBuffer.data(), squareBuffer.size(), sizeof(float));
-    squareSample->sample_length = squareBuffer.size();
+    squareSample->sampleLengthPerChannel = squareBuffer.size();
     squareSample->channels = 1;
     squareSample->sample_loaded = true;
 
@@ -86,7 +86,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     }
     sawSample->load_data_i16(0, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));
     sawSample->load_data_i16(1, sawBuffer.data(), sawBuffer.size(), sizeof(int16_t));
-    sawSample->sample_length = sawBuffer.size();
+    sawSample->sampleLengthPerChannel = sawBuffer.size();
     sawSample->channels = 2;
     sawSample->sample_loaded = true;
 

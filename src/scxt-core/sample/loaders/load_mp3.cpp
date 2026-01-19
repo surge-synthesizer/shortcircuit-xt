@@ -99,25 +99,25 @@ bool Sample::parseMP3(const fs::path &p)
 
     sample_rate = info.hz;
     channels = info.channels;
-    sample_length = info.samples / info.channels;
+    sampleLengthPerChannel = info.samples / info.channels;
     bitDepth = BD_I16;
 
     if (channels == 1)
     {
-        allocateI16(0, sample_length);
+        allocateI16(0, sampleLengthPerChannel);
         auto *dat = GetSamplePtrI16(0);
-        memcpy(dat, info.buffer, sample_length * sizeof(mp3d_sample_t));
+        memcpy(dat, info.buffer, sampleLengthPerChannel * sizeof(mp3d_sample_t));
     }
     else
     {
-        allocateI16(0, sample_length);
-        allocateI16(1, sample_length);
+        allocateI16(0, sampleLengthPerChannel);
+        allocateI16(1, sampleLengthPerChannel);
 
         auto *dat0 = GetSamplePtrI16(0);
         auto *dat1 = GetSamplePtrI16(1);
 
         // de-interleave by hand I guess
-        for (int i = 0; i < sample_length; ++i)
+        for (int i = 0; i < sampleLengthPerChannel; ++i)
         {
             dat0[i] = info.buffer[i * 2];
             dat1[i] = info.buffer[i * 2 + 1];

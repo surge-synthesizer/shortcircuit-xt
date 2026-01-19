@@ -165,7 +165,7 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
 
     auto frameSize = sfsample->GetFrameSize();
     channels = sfsample->GetChannelCount();
-    sample_length = sfsample->GetTotalFrameCount();
+    sampleLengthPerChannel = sfsample->GetTotalFrameCount();
     sample_rate = sfsample->SampleRate;
 
     auto s = sfsample;
@@ -235,7 +235,7 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
 
     auto frameSize = sfsample->FrameSize;
     channels = sfsample->Channels;
-    sample_length = sfsample->SamplesTotal;
+    sampleLengthPerChannel = sfsample->SamplesTotal;
     sample_rate = sfsample->SamplesPerSecond;
 
     auto s = sfsample;
@@ -246,7 +246,7 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
         sname = s->pInfo->Name;
     displayName = fmt::format("{} - ({} @ {})", sname, fnp.filename().u8string(), sampleIndex);
 
-    SCLOG_IF(sampleLoadAndPurge, "GIG " << SCD((int)channels) << SCD(sample_length)
+    SCLOG_IF(sampleLoadAndPurge, "GIG " << SCD((int)channels) << SCD(sampleLengthPerChannel)
                                         << SCD(sample_rate) << SCD(frameSize) << " "
                                         << displayName);
     if (frameSize == 2 && channels == 1)
@@ -545,7 +545,7 @@ bool Sample::SetMeta(unsigned int Channels, unsigned int SampleRate, unsigned in
     }
 
     channels = Channels;
-    sample_length = SampleLength;
+    sampleLengthPerChannel = SampleLength;
     sample_rate = SampleRate;
     InvSampleRate = 1.f / (float)SampleRate;
 
@@ -592,7 +592,7 @@ void Sample::dumpInformationToLog()
     SCLOG_IF(sampleLoadAndPurge,
              "BitDepth=" << bitDepthByteSize(bitDepth) * 8 << " Channels=" << (int)channels);
     SCLOG_IF(sampleLoadAndPurge,
-             "SampleRate=" << sample_rate << " sample_length=" << sample_length);
+             "SampleRate=" << sample_rate << " sample_length=" << sampleLengthPerChannel);
 
     switch (bitDepth)
     {
@@ -603,7 +603,7 @@ void Sample::dumpInformationToLog()
             auto *dat = GetSamplePtrI16(c);
             auto mxv = std::numeric_limits<int16_t>::min();
             auto mnv = std::numeric_limits<int16_t>::max();
-            for (int i = 0; i < sample_length; ++i)
+            for (int i = 0; i < sampleLengthPerChannel; ++i)
             {
                 mxv = std::max(mxv, dat[i]);
                 mnv = std::min(mnv, dat[i]);
