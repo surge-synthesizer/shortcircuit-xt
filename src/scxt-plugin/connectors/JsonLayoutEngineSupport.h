@@ -105,15 +105,39 @@ createControlLabel(const sst::jucegui::layouts::json_document::Control &ctrl,
     if (ctrl.label.has_value())
     {
         auto lab = std::make_unique<jcmp::Label>();
-        // Always position below for now
-        SCLOG_ONCE_IF(debug || scxt::log::jsonUI, "Assuming labels always below controls");
+
+        auto lpi = cls.extraKVs.find("label-position");
+        std::string lp = "bottom-center";
+        if (lpi != cls.extraKVs.end())
+            lp = lpi->second;
+
+        if (lp != "bottom-center")
+        {
+            SCLOG_IF(jsonUI,
+                     "Label position is '" << lp << "', ignored, using default bottom-center")
+        }
+
+        float lpPad = 1.5;
+        float yOff = 0.f;
+        auto lpp = cls.extraKVs.find("label-padding");
+        if (lpp != cls.extraKVs.end())
+        {
+            auto pd = std::stof(lpp->second);
+            lpPad = pd;
+            if (lpPad < 0)
+            {
+                yOff = lpPad;
+                lpPad = 0;
+            }
+        }
+
         auto ft =
             sc.style()->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont);
         auto wid = SST_STRING_WIDTH_FLOAT(ft, *ctrl.label);
         wid = wid + 5;
         auto bx = juce::Rectangle<int>(ctrl.position.x + zeroPoint.x + ctrl.position.w / 2,
-                                       ctrl.position.y + zeroPoint.y + ctrl.position.h, 0,
-                                       ft.getHeight() + 3);
+                                       ctrl.position.y + zeroPoint.y + ctrl.position.h + yOff, 0,
+                                       ft.getHeight() + 2 * lpPad);
         bx = bx.expanded(wid / 2, 0);
         lab->setBounds(bx);
         lab->setText(*ctrl.label);
