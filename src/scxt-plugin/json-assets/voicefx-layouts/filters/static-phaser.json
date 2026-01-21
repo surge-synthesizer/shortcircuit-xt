@@ -9,16 +9,16 @@
       },
       "position": {}
     },
-    "frequency": {
-      "class": "knob45",
-      "label": "Frequency",
+    "frequency-m": {
+      "class": "knob40",
+      "label": "Cutoff",
       "binding": {
         "type": "float",
         "index": 0
       },
       "position": {
-        "x": 5,
-        "y": 43
+        "x": 8,
+        "y": 38
       },
       "visible-if": {
         "type": "int",
@@ -28,16 +28,16 @@
         ]
       }
     },
-    "frequencyL": {
-      "class": "knob45",
-      "label": "Freq L",
+    "frequency-l": {
+      "class": "knob40",
+      "label": "Cutoff L",
       "binding": {
         "type": "float",
         "index": 0
       },
       "position": {
-        "x": 5,
-        "y": 10
+        "x": 8,
+        "y": 8
       },
       "visible-if": {
         "type": "int",
@@ -47,16 +47,16 @@
         ]
       }
     },
-    "frequencyR": {
-      "class": "knob45",
-      "label": "Freq R",
+    "frequency-r": {
+      "class": "knob40",
+      "label": "Cutoff R",
       "binding": {
         "type": "float",
         "index": 1
       },
       "position": {
-        "x": 5,
-        "y": 85
+        "x": 10,
+        "y": 65
       },
       "visible-if": {
         "type": "int",
@@ -67,39 +67,49 @@
       }
     },
     "resonance": {
-      "class": "knob45",
-      "label": "Resonance",
+      "class": "knob40",
+      "label": "Reso",
       "binding": {
         "type": "float",
         "index": 3
       },
       "position": {
-        "x": 65,
-        "y": 10
+        "x": 160,
+        "y": 8
       }
     },
     "spacing": {
-      "class": "knob45",
+      "class": "knob60",
       "label": "Feedback",
       "binding": {
         "type": "float",
         "index": 4
       },
       "position": {
-        "x": 125,
-        "y": 10
+        "x": 75,
+        "y": 25
       }
     },
     "feedback": {
-      "class": "knob45",
+      "class": "knob40",
       "label": "Spacing",
       "binding": {
         "type": "float",
         "index": 2
       },
       "position": {
-        "x": 65,
-        "y": 85
+        "x": 160,
+        "y": 65
+      }
+    },
+    "stages-header": {
+      "class": "ruled-label",
+      "label": "Stages",
+      "position": {
+        "x": 78,
+        "y": 106,
+        "w": 60,
+        "h": 15
       }
     },
     "stages": {
@@ -109,9 +119,9 @@
         "index": 0
       },
       "position": {
-        "x": 125,
-        "y": 78,
-        "w": 80
+        "x": 78,
+        "y": 124,
+        "w": 60
       }
     }
   }
