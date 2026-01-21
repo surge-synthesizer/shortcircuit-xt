@@ -45,7 +45,7 @@ struct CurveLFO : SampleRateSupport
     explicit CurveLFO(sst::basic_blocks::dsp::RNG &extrng) : simpleLfo(this, extrng) {}
 
     // only use this no-arg for the UI drawing!
-    CurveLFO() : simpleLfo(this) { forDisplay = false; }
+    CurveLFO() : simpleLfo(this) { forDisplay = true; }
 
     using slfo_t = sst::basic_blocks::modulators::SimpleLFO<CurveLFO, scxt::blockSize>;
     using senv_t = sst::basic_blocks::modulators::DAREnvelope<
