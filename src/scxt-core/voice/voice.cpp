@@ -1068,6 +1068,7 @@ void Voice::initializeProcessors()
     outputPan.set_target_instant(*endpoints->outputTarget.panP);
     outputAmp.set_target_instant(*endpoints->outputTarget.ampP);
 
+    auto fpitch = calculateVoicePitch();
     for (auto i = 0; i < engine::processorCount; ++i)
     {
         processorIsActive[i] = zone->processorStorage[i].isActive;
@@ -1085,7 +1086,6 @@ void Voice::initializeProcessors()
         memcpy(&processorIntParams[i][0], zone->processorStorage[i].intParams.data(),
                sizeof(processorIntParams[i]));
 
-        auto fpitch = calculateVoicePitch();
         if ((processorIsActive[i] && processorType[i] != dsp::processor::proct_none) ||
             (processorType[i] == dsp::processor::proct_none && !processorIsActive[i]))
         {
@@ -1095,14 +1095,18 @@ void Voice::initializeProcessors()
                 processorPlacementStorage[i], dsp::processor::processorMemoryBufferSize,
                 zone->processorStorage[i], endpoints->processorTarget[i].fp, processorIntParams[i],
                 forceOversample, false);
-            processors[i]->init_pitch(fpitch - 69);
+            // the processor may still be NULL here!
+            // Don't touch it until the safety-checked block below
         }
         else
         {
             processors[i] = nullptr;
         }
+
         if (processors[i])
         {
+            processors[i]->init_pitch(fpitch - 69);
+
             processors[i]->setSampleRate(sampleRate * (forceOversample ? 2 : 1));
             processors[i]->setTempoPointer(&(zone->getEngine()->transport.tempo));
 
