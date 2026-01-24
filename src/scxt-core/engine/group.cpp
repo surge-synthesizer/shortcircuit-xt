@@ -599,6 +599,22 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
             processors[w] = nullptr;
         }
     }
+
+    auto &pd = processorDescription[w];
+    for (auto &row : routingTable.routes)
+    {
+        if (row.target.has_value() && row.target->isProcessorTarget(w))
+        {
+            auto tidx = row.target->whichProcessorFPTarget(w);
+            if (tidx >= 0)
+            {
+                if (!pd.floatControlDescriptions[tidx].hasSupportsMultiplicativeModulation())
+                {
+                    row.applicationMode = sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
+                }
+            }
+        }
+    }
 }
 
 void Group::attack()
