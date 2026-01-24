@@ -58,6 +58,13 @@
       "h": 40,
       "label-position": "bottom-center"
     },
+    "quantized-knob40": {
+      "control-type": "knob",
+      "w": 40,
+      "h": 40,
+      "label-position": "bottom-center",
+      "force-quantized": "true"
+    },
     "knob35": {
       "control-type": "knob",
       "w": 35,
