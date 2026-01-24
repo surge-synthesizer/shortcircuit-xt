@@ -242,6 +242,14 @@ createDiscreteWidget(const sst::jucegui::layouts::json_document::Control &ctrl,
     {
         return std::make_unique<jcmp::JogUpDownButton>();
     }
+    else if (cls.controlType == "integer-knob")
+    {
+        return std::make_unique<jcmp::DiscreteKnob>();
+    }
+    else
+    {
+        SCLOG_IF(jsonUI, "Unable to create controlType " << cls.controlType);
+    }
     return nullptr;
 }
 
@@ -298,11 +306,12 @@ createAndPositionNonDataWidget(const sst::jucegui::layouts::json_document::Contr
 template <typename P, typename W, typename A>
 void attachAndPosition(P *parent, const std::unique_ptr<W> &ed, const std::unique_ptr<A> &att,
                        const sst::jucegui::layouts::json_document::Control &ctrl,
+                       const sst::jucegui::layouts::json_document::Class &cls,
                        juce::Point<int> zeroPoint = {0, 0})
 {
     if (!ctrl.binding.has_value())
         return;
-    if (ctrl.binding->type == "float")
+    if (ctrl.binding->type == "float" || cls.controlType == "integer-knob")
     {
         parent->setupWidgetForValueTooltip(ed.get(), att);
     }

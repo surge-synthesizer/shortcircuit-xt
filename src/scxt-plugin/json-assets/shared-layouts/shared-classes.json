@@ -52,6 +52,12 @@
       "h": 40,
       "label-position": "bottom-center"
     },
+    "integer-knob40": {
+      "control-type": "integer-knob",
+      "w": 40,
+      "h": 40,
+      "label-position": "bottom-center"
+    },
     "knob35": {
       "control-type": "knob",
       "w": 35,
