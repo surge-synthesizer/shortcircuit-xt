@@ -222,7 +222,7 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
                 return;
             }
 
-            connectors::jsonlayout::attachAndPosition(this, ed, levelA[i], ctrl);
+            connectors::jsonlayout::attachAndPosition(this, ed, levelA[i], ctrl, cls);
             routingLayoutComp->addAndMakeVisible(*ed);
             auto isNone = w->processorView.type == dsp::processor::proct_none;
             auto isOn = w->processorView.isActive;

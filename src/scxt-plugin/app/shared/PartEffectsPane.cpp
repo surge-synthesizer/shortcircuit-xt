@@ -806,7 +806,7 @@ void PartEffectsPane<forBus>::createBindAndPosition(
             return;
         }
 
-        connectors::jsonlayout::attachAndPosition(this, ed, at, ctrl, zeroPoint);
+        connectors::jsonlayout::attachAndPosition(this, ed, at, ctrl, cls, zeroPoint);
         addAndMakeVisible(*ed);
 
         const auto &metadata = getPartFXStorage().first;
@@ -856,7 +856,7 @@ void PartEffectsPane<forBus>::createBindAndPosition(
         }
 
         addAndMakeVisible(*ed);
-        connectors::jsonlayout::attachAndPosition(this, ed, ipt, ctrl, zeroPoint);
+        connectors::jsonlayout::attachAndPosition(this, ed, ipt, ctrl, cls, zeroPoint);
 
         floatAttachments.insert(std::move(at));
         intProxyAttachments[pidx] = std::move(ipt);

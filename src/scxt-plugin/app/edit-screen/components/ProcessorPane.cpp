@@ -1011,7 +1011,7 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         }
 
         auto &att = floatAttachments[idx];
-        connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl);
+        connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl, cls);
 
         getContentAreaComponent()->addAndMakeVisible(*ed);
 
@@ -1099,7 +1099,7 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         getContentAreaComponent()->addAndMakeVisible(*ed);
 
         auto &att = intAttachments[idx];
-        connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl);
+        connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl, cls);
 
         if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this))
         {
