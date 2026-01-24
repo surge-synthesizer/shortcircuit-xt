@@ -260,7 +260,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     // 0 is the AEG, 1 is EG2
     std::array<modulation::modulators::AdsrStorage, egsPerZone> egStorage;
 
-    void onProcessorTypeChanged(int, dsp::processor::ProcessorType) {}
+    void onProcessorTypeChanged(int, dsp::processor::ProcessorType);
 
     void setupOnUnstream(const engine::Engine &e);
     engine::Engine *engine{nullptr};

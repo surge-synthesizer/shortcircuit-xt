@@ -68,6 +68,20 @@ struct TargetIdentifier
         return (gid == 'proc' || gid == 'gprc') && index == procNum;
     }
 
+    int whichProcessorFPTarget(size_t procNum) const
+    {
+        if (!isProcessorTarget(procNum))
+            return -1;
+
+        char tids[4];
+        for (int i = 0; i < 4; ++i)
+            tids[3 - i] = (tid >> (i * 8)) & 0xFF;
+        if (tids[0] == 'f' && tids[1] == 'p')
+            return tids[3] - '0';
+
+        return -1;
+    }
+
     void setProcessorTargetTo(size_t t)
     {
         assert(gid == 'proc' || gid == 'gprc');

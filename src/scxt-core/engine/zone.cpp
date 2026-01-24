@@ -498,5 +498,24 @@ void Zone::deleteVariant(int idx)
     }
 }
 
+void Zone::onProcessorTypeChanged(int idx, dsp::processor::ProcessorType)
+{
+    auto &pd = processorDescription[idx];
+    for (auto &row : routingTable.routes)
+    {
+        if (row.target.has_value() && row.target->isProcessorTarget(idx))
+        {
+            auto tidx = row.target->whichProcessorFPTarget(idx);
+            if (tidx >= 0)
+            {
+                if (!pd.floatControlDescriptions[tidx].hasSupportsMultiplicativeModulation())
+                {
+                    row.applicationMode = sst::basic_blocks::mod_matrix::ApplicationMode::ADDITIVE;
+                }
+            }
+        }
+    }
+}
+
 template struct HasGroupZoneProcessors<Zone>;
 } // namespace scxt::engine
