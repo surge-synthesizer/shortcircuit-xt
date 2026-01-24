@@ -156,17 +156,29 @@ createContinuousWidget(const sst::jucegui::layouts::json_document::Control &ctrl
     {
         auto kb = std::make_unique<jcmp::Knob>();
         kb->setDrawLabel(false);
+        if (cls.extraKVs.find("force-quantized") != cls.extraKVs.end())
+        {
+            kb->setAlwaysQuantize(true);
+        }
         return kb;
     }
     if (cls.controlType == "hslider")
     {
         auto sl = std::make_unique<jcmp::HSlider>();
         sl->setShowLabel(false);
+        if (cls.extraKVs.find("force-quantized") != cls.extraKVs.end())
+        {
+            sl->setAlwaysQuantize(true);
+        }
         return sl;
     }
     if (cls.controlType == "vslider")
     {
         auto sl = std::make_unique<jcmp::VSlider>();
+        if (cls.extraKVs.find("force-quantized") != cls.extraKVs.end())
+        {
+            sl->setAlwaysQuantize(true);
+        }
         return sl;
     }
 
