@@ -9,7 +9,7 @@
         "type": "float"
       },
       "position": {
-        "x": 35,
+        "x": 16,
         "y": 4
       }
     },
@@ -21,8 +21,32 @@
         "type": "float"
       },
       "position": {
-        "x": 110,
+        "x": 159,
         "y": 4
+      }
+    },
+    "LowCutRes": {
+      "class": "knob30",
+      "label": "Reso",
+      "binding": {
+        "index": 6,
+        "type": "float"
+      },
+      "position": {
+        "x": 72,
+        "y": 8
+      }
+    },
+    "HiCutRes": {
+      "class": "knob30",
+      "label": "Reso",
+      "binding": {
+        "index": 7,
+        "type": "float"
+      },
+      "position": {
+        "x": 116,
+        "y": 8
       }
     },
     "lowshelffreq": {
@@ -33,8 +57,8 @@
         "type": "float"
       },
       "position": {
-        "x": 5,
-        "y": 75
+        "x": 16,
+        "y": 88
       }
     },
     "highshelffreq": {
@@ -45,8 +69,8 @@
         "type": "float"
       },
       "position": {
-        "x": 140,
-        "y": 75
+        "x": 159,
+        "y": 88
       }
     },
     "lowshelfgain": {
@@ -57,8 +81,8 @@
         "type": "float"
       },
       "position": {
-        "x": 60,
-        "y": 95
+        "x": 72,
+        "y": 92
       }
     },
     "highshelfgain": {
@@ -69,8 +93,8 @@
         "type": "float"
       },
       "position": {
-        "x": 100,
-        "y": 95
+        "x": 116,
+        "y": 92
       }
     }
   }
