@@ -494,6 +494,7 @@ void ProcessorPane::rebuildControlsFromDescription()
     if (!isEnabled())
     {
         setToggleDataSource(nullptr);
+        setName(processorControlDescription.typeDisplayName);
         repaint();
         return;
     }
