@@ -27,6 +27,7 @@
 
 #include "AdsrPane.h"
 #include "app/SCXTEditor.h"
+#include "app/edit-screen/EditScreen.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/ToggleButton.h"
 
@@ -54,9 +55,9 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
             onTabSelected = [w = juce::Component::SafePointer(this)](int nt) {
                 if (!w)
                     return;
-                w->tabChanged(nt);
+                w->tabChanged(nt, true);
             };
-            tabChanged(0);
+            tabChanged(0, false);
         }
     }
 }
@@ -106,7 +107,7 @@ void AdsrPane::adsrDeactivated()
     repaint();
 }
 
-void AdsrPane::tabChanged(int newIndex)
+void AdsrPane::tabChanged(int newIndex, bool updateState)
 {
     assert(newIndex < zoneAdsrCache.size());
     assert(forZone);
@@ -118,6 +119,14 @@ void AdsrPane::tabChanged(int newIndex)
 
     getContentAreaComponent()->removeAllChildren();
     rebuildPanelComponents(newIndex + 1);
+
+    if (updateState)
+    {
+        // Handle group case even though we dont use it today
+        auto kn = std::string("multi") + (forZone ? ".zone.eg" : ".group.eg");
+        editor->setTabSelection(editor->editScreen->tabKey(kn), std::to_string(newIndex));
+        SCLOG_IF(debug, "Setting " << kn << " to " << newIndex);
+    }
 
     repaint();
 }
