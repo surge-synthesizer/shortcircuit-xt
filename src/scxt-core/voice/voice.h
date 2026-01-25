@@ -87,6 +87,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float mpeTimbre{0.f};    // 0..1 normalized
     float mpePressure{0.f};  // 0..1 normalized
 
+    float keyChangedInLegatoModeTrigger{0.f};
+
     float retunedKeyAtAttack{0.f};
     bool retuneContinuous{true};
 

@@ -273,7 +273,8 @@ struct MatrixEndpoints
             MIDISources(engine::Engine *e)
                 : modWheelSource{'zmid', 'modw'}, velocitySource{'zmid', 'velo'},
                   releaseVelocitySource{'zmid', 'rvel'}, keytrackSource{'zmid', 'ktrk'},
-                  chanATSource{'zmid', 'chat'}, pbpm1Source{'zmid', 'pb11'}
+                  chanATSource{'zmid', 'chat'}, pbpm1Source{'zmid', 'pb11'},
+                  keyChangedLeg{'zmid', 'kclg'}
             {
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 MatrixConfig::setDefaultLagFor(modWheelSource, 25);
@@ -285,9 +286,10 @@ struct MatrixEndpoints
                 MatrixConfig::setDefaultLagFor(polyATSource, 100);
                 registerVoiceModSource(e, pbpm1Source, "MIDI", "Pitch Bend");
                 MatrixConfig::setDefaultLagFor(pbpm1Source, 10);
+                registerVoiceModSource(e, keyChangedLeg, "MIDI", "Key Changed");
             }
             SR modWheelSource, velocitySource, releaseVelocitySource, keytrackSource, polyATSource,
-                chanATSource, pbpm1Source;
+                chanATSource, pbpm1Source, keyChangedLeg;
         } midiSources;
 
         struct MPESources

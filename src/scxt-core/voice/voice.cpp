@@ -846,6 +846,11 @@ template <bool OS> bool Voice::processWithOS()
 
         isVoicePlaying = false;
     }
+
+    if (keyChangedInLegatoModeTrigger > 0)
+    {
+        keyChangedInLegatoModeTrigger = 0;
+    }
     return true;
 }
 

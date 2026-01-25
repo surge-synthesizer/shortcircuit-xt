@@ -293,6 +293,7 @@ void Engine::VoiceManagerResponder::moveVoice(VMConfig::voice_t *v, uint16_t por
     auto dkey = v->key - v->originalMidiKey;
     v->key = key;
     v->originalMidiKey = key - dkey;
+    v->keyChangedInLegatoModeTrigger = 1.f;
     v->calculateVoicePitch();
 }
 

@@ -150,6 +150,7 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(midiSources.releaseVelocitySource, v.releaseVelocity);
     m.bindSourceValue(midiSources.keytrackSource, v.keytrackPerOct);
     m.bindSourceValue(midiSources.polyATSource, v.polyAT);
+    m.bindSourceValue(midiSources.keyChangedLeg, v.keyChangedInLegatoModeTrigger);
 
     m.bindSourceValue(mpeSources.mpePressure, v.mpePressure);
     m.bindSourceValue(mpeSources.mpeTimbre, v.mpeTimbre);
