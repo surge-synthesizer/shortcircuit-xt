@@ -77,7 +77,7 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     void adsrChangedFromModel(const modulation::modulators::AdsrStorage &);
     void adsrChangedFromModel(const modulation::modulators::AdsrStorage &, int index);
     void adsrDeactivated();
-    void tabChanged(int newIndex);
+    void tabChanged(int newIndex, bool updateState);
 
     void rebuildPanelComponents(int newIndex);
 
