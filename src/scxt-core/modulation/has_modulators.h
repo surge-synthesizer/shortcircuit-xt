@@ -135,7 +135,7 @@ template <typename T, size_t egsPerObject> struct HasModulators
         {
         case modulation::modulators::AdsrStorage::GateMode::GATED:
             return keyGate;
-        case modulation::modulators::AdsrStorage::GateMode::SKIP_SUSTAIN:
+        case modulation::modulators::AdsrStorage::GateMode::SEMI_GATED:
             return keyGate && stage < ahdsrenv_t::s_sustain;
         case modulation::modulators::AdsrStorage::GateMode::ONESHOT:
             return stage < ahdsrenv_t::s_sustain;
