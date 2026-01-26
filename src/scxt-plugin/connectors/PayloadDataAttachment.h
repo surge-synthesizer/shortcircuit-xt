@@ -155,7 +155,13 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     // Would def need to fix that to make web ui consistent if we write it
     datamodel::pmd description;
 
-    std::string getLabel() const override { return label; }
+    std::optional<std::string> labelOverride{};
+    std::string getLabel() const override
+    {
+        if (labelOverride.has_value())
+            return *labelOverride;
+        return label;
+    }
     float getValue() const override { return (float)value; }
 
     void setValueFromGUIQuantized(const float &f) override

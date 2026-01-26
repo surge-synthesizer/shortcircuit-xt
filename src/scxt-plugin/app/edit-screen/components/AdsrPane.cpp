@@ -76,6 +76,7 @@ void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d
         if (sl)
             sl->setEnabled(true);
 
+    updateSustainBreakpoint();
     repaint();
 }
 
@@ -85,6 +86,7 @@ void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d
     if (cacheIdx - 1 == selectedTab)
     {
         adsrView = d;
+        updateSustainBreakpoint();
     }
     for (const auto &sl : sliders.members)
         if (sl)
@@ -119,6 +121,7 @@ void AdsrPane::tabChanged(int newIndex, bool updateState)
     zoneAdsrCache[displayedTabIndex] = adsrView;
     displayedTabIndex = newIndex;
     adsrView = zoneAdsrCache[newIndex];
+    updateSustainBreakpoint();
 
     getContentAreaComponent()->removeAllChildren();
     rebuildPanelComponents(newIndex + 1);
@@ -189,7 +192,25 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
         editor->themeApplier.applyGroupMultiScreenModulationTheme(this);
     }
 
+    updateSustainBreakpoint();
+
     resized();
+}
+
+void AdsrPane::updateSustainBreakpoint()
+{
+    switch (adsrView.gateMode)
+    {
+    case modulation::modulators::AdsrStorage::GateMode::ONESHOT:
+    case modulation::modulators::AdsrStorage::GateMode::SEMI_GATED:
+        attachments.S->labelOverride = "Breakpoint";
+        labels.S->setText("B");
+        break;
+    default:
+        attachments.S->labelOverride = std::nullopt;
+        labels.S->setText("S");
+        break;
+    }
 }
 
 void AdsrPane::resized()
@@ -261,24 +282,32 @@ void AdsrPane::showHamburgerMenu()
                   if (!w)
                       return;
                   w->adsrView.gateMode = modulation::modulators::AdsrStorage::GateMode::GATED;
+                  w->updateSustainBreakpoint();
+                  w->repaint();
                   w->sendToSerialization(
                       cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
               });
-    p.addItem("Semi-Gated (DAHDR)", true,
+    p.addItem("No Sustain", true,
               adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::SEMI_GATED,
               [aidx, w = juce::Component::SafePointer(this)]() {
                   if (!w)
                       return;
                   w->adsrView.gateMode = modulation::modulators::AdsrStorage::GateMode::SEMI_GATED;
+                  w->updateSustainBreakpoint();
+                  w->repaint();
+
                   w->sendToSerialization(
                       cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
               });
-    p.addItem("Oneshot (DAHDR)", true,
+    p.addItem("Oneshot", true,
               adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::ONESHOT,
               [aidx, w = juce::Component::SafePointer(this)]() {
                   if (!w)
                       return;
                   w->adsrView.gateMode = modulation::modulators::AdsrStorage::GateMode::ONESHOT;
+                  w->updateSustainBreakpoint();
+                  w->repaint();
+
                   w->sendToSerialization(
                       cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
               });
