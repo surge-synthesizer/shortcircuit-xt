@@ -264,16 +264,17 @@ void AdsrPane::showHamburgerMenu()
                   w->sendToSerialization(
                       cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
               });
-    p.addItem("Semi-Gated (DAHDR)", true,
-              adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::SEMI_GATED,
+    p.addItem("Skip Sustain", true,
+              adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::SKIP_SUSTAIN,
               [aidx, w = juce::Component::SafePointer(this)]() {
                   if (!w)
                       return;
-                  w->adsrView.gateMode = modulation::modulators::AdsrStorage::GateMode::SEMI_GATED;
+                  w->adsrView.gateMode =
+                      modulation::modulators::AdsrStorage::GateMode::SKIP_SUSTAIN;
                   w->sendToSerialization(
                       cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
               });
-    p.addItem("Oneshot (DAHDR)", true,
+    p.addItem("Oneshot", true,
               adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::ONESHOT,
               [aidx, w = juce::Component::SafePointer(this)]() {
                   if (!w)

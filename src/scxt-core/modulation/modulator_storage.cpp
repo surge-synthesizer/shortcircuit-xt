@@ -38,7 +38,7 @@ std::string AdsrStorage::toStringGateMode(const GateMode &s)
     {
     case GateMode::GATED:
         return "g";
-    case GateMode::SEMI_GATED:
+    case GateMode::SKIP_SUSTAIN:
         return "s";
     case GateMode::ONESHOT:
         return "o";
