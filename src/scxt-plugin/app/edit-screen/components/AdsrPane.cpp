@@ -42,9 +42,12 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
 {
     setContentAreaComponent(std::make_unique<juce::Component>());
 
-    hasHamburger = hasFeature::alternateEGModes;
-
     rebuildPanelComponents(idx);
+    hasHamburger = true;
+    onHamburger = [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showHamburgerMenu();
+    };
 
     if (forZone)
     {
@@ -125,7 +128,6 @@ void AdsrPane::tabChanged(int newIndex, bool updateState)
         // Handle group case even though we dont use it today
         auto kn = std::string("multi") + (forZone ? ".zone.eg" : ".group.eg");
         editor->setTabSelection(editor->editScreen->tabKey(kn), std::to_string(newIndex));
-        SCLOG_IF(debug, "Setting " << kn << " to " << newIndex);
     }
 
     repaint();
@@ -233,9 +235,68 @@ void AdsrPane::resized()
 void AdsrPane::showHamburgerMenu()
 {
     juce::PopupMenu p;
-    p.addSectionHeader("Menu");
-    p.addItem("Coming", []() {});
-    p.addItem("Soon", []() {});
+    int aidx = 0;
+    if (forZone)
+    {
+        if (index == 0)
+        {
+            p.addSectionHeader("Amp EG");
+            aidx = 0;
+        }
+        else
+        {
+            p.addSectionHeader("EG " + std::to_string(displayedTabIndex + 2));
+            aidx = displayedTabIndex + 1;
+        }
+    }
+    else
+    {
+        p.addSectionHeader("Group EG " + std::to_string(index + 1));
+        aidx = index;
+    }
+    p.addSeparator();
+    p.addItem("Gated (DAHDSR)", true,
+              adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::GATED,
+              [aidx, w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  w->adsrView.gateMode = modulation::modulators::AdsrStorage::GateMode::GATED;
+                  w->sendToSerialization(
+                      cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
+              });
+    p.addItem("Semi-Gated (DAHDR)", true,
+              adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::SEMI_GATED,
+              [aidx, w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  w->adsrView.gateMode = modulation::modulators::AdsrStorage::GateMode::SEMI_GATED;
+                  w->sendToSerialization(
+                      cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
+              });
+    p.addItem("Oneshot (DAHDR)", true,
+              adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::ONESHOT,
+              [aidx, w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  w->adsrView.gateMode = modulation::modulators::AdsrStorage::GateMode::ONESHOT;
+                  w->sendToSerialization(
+                      cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
+              });
+
+    if (!forZone)
+    {
+        p.addSeparator();
+        p.addItem("Gate on Voice Sounding", true, adsrView.gateGroupEGOnAnyPlaying,
+                  [w = juce::Component::SafePointer(this)]() {
+                      if (!w)
+                          return;
+                      if (!w->gateToggleA)
+                          return;
+
+                      w->gateToggleA->setValueFromGUI(!w->adsrView.gateGroupEGOnAnyPlaying);
+                      w->repaint();
+                  });
+    }
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

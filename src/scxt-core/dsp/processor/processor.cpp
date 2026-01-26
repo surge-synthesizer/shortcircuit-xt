@@ -339,10 +339,6 @@ processorList_t getAllProcessorDescriptions()
         {
             auto pn = getProcessorName(pt);
             auto spn = getProcessorSSTVoiceDisplayName(pt);
-            if (pn != spn && (spn.find("Filters++") == std::string::npos))
-                SCLOG_IF(debug, "Processor Renamed : " << getProcessorName(pt) << " / "
-                                                       << getProcessorSSTVoiceDisplayName(pt));
-
             res.push_back({pt, getProcessorStreamingName(pt), getProcessorName(pt),
                            getProcessorDisplayGroup(pt), getProcessorGroupOnly(pt)});
         }

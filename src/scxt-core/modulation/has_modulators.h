@@ -127,6 +127,21 @@ template <typename T, size_t egsPerObject> struct HasModulators
             lastLFORetrigger[i] = nrt;
         }
     }
+
+    bool getEnvSpecificGate(bool keyGate, const modulation::modulators::AdsrStorage &adsr,
+                            ahdsrenv_t::Stage stage)
+    {
+        switch (adsr.gateMode)
+        {
+        case modulation::modulators::AdsrStorage::GateMode::GATED:
+            return keyGate;
+        case modulation::modulators::AdsrStorage::GateMode::SEMI_GATED:
+            return keyGate && stage < ahdsrenv_t::s_sustain;
+        case modulation::modulators::AdsrStorage::GateMode::ONESHOT:
+            return stage < ahdsrenv_t::s_sustain;
+        }
+        return keyGate;
+    }
 };
 } // namespace scxt::modulation::shared
 #endif // SHORTCIRCUITXT_HAS_MODULATORS_H

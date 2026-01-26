@@ -106,6 +106,10 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
                  findOrSet(v, "loop", false, result.loop);
              }))
 
+STREAM_ENUM(modulation::modulators::AdsrStorage::GateMode,
+            modulation::modulators::AdsrStorage::toStringGateMode,
+            modulation::modulators::AdsrStorage::fromStringGateMode);
+
 SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  v = tao::json::empty_object;
                  addUnlessDefault<val_t>(v, "dl", 0.f, from.dly);
@@ -118,6 +122,9 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  addUnlessDefault<val_t>(v, "dShape", 0.f, from.dShape);
                  addUnlessDefault<val_t>(v, "rShape", 0.f, from.rShape);
                  addUnlessDefault<val_t>(v, "groupGate", false, from.gateGroupEGOnAnyPlaying);
+                 addUnlessDefault<val_t>(v, "gateMode",
+                                         modulation::modulators::AdsrStorage::GateMode::GATED,
+                                         from.gateMode);
              }),
              SC_TO({
                  findOrSet(v, "dl", 0.f, result.dly);
@@ -130,6 +137,8 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  findOrSet(v, "dShape", 0.f, result.dShape);
                  findOrSet(v, "rShape", 0.f, result.rShape);
                  findOrSet(v, "groupGate", false, result.gateGroupEGOnAnyPlaying);
+                 findOrSet(v, "gateMode", modulation::modulators::AdsrStorage::GateMode::GATED,
+                           result.gateMode);
              }))
 
 STREAM_ENUM(modulation::modulators::PhasorStorage::Division,

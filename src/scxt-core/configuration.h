@@ -133,7 +133,6 @@ namespace hasFeature
 static constexpr bool undoRedo{false};               // undo-redo
 static constexpr bool memoryUsageExplanation{false}; // that chip in the header
 static constexpr bool mappingPane11Controls{false};  // zone mapping header skipped for 1.0
-static constexpr bool alternateEGModes{false};       // do we have DA only etc...
 static constexpr bool hasBrowserSearch{false};
 } // namespace hasFeature
 

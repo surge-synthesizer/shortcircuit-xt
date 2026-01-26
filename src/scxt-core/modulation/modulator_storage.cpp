@@ -32,6 +32,30 @@ namespace scxt::modulation
 namespace modulators
 {
 
+std::string AdsrStorage::toStringGateMode(const GateMode &s)
+{
+    switch (s)
+    {
+    case GateMode::GATED:
+        return "g";
+    case GateMode::SEMI_GATED:
+        return "s";
+    case GateMode::ONESHOT:
+        return "o";
+    }
+    return "g";
+}
+
+AdsrStorage::GateMode AdsrStorage::fromStringGateMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<AdsrStorage::GateMode, AdsrStorage::toStringGateMode>(
+        AdsrStorage::GateMode::GATED, AdsrStorage::GateMode::ONESHOT);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return GateMode::GATED;
+    return p->second;
+}
+
 std::string PhasorStorage::toStringDivision(const Division &s)
 {
     switch (s)

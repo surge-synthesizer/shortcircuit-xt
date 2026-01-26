@@ -316,24 +316,28 @@ template <bool OS> bool Voice::processWithOS()
     auto &aegp = endpoints->egTarget[0];
     auto rtaeg = doEGRetrigger[0];
     doEGRetrigger[0] = false;
+    auto aegGate = getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage);
     if constexpr (OS)
     {
         if (rtaeg)
         {
             aegOS.attackFromWithDelay(aegOS.outBlock0, *aegp.dlyP, *aegp.aP);
+            aegGate = getEnvSpecificGate(envGate, zone->egStorage[0],
+                                         (ahdsrenv_t::Stage)((int)aegOS.stage));
         }
         // we need the aegOS for the curve in oversample space
         aegOS.processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP,
-                                    *aegp.asP, *aegp.dsP, *aegp.rsP, envGate, true);
+                                    *aegp.asP, *aegp.dsP, *aegp.rsP, aegGate, true);
     }
 
     // But We need to run the undersample AEG no matter what since it is a modulatino source
     if (rtaeg)
     {
         aeg.attackFromWithDelay(aeg.outBlock0, *aegp.dlyP, *aegp.aP);
+        aegGate = getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage);
     }
     aeg.processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP,
-                              *aegp.asP, *aegp.dsP, *aegp.rsP, envGate, true);
+                              *aegp.asP, *aegp.dsP, *aegp.rsP, aegGate, true);
     // TODO: And output is non zero once we are past attack
     isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
 
@@ -341,15 +345,19 @@ template <bool OS> bool Voice::processWithOS()
     {
         if (egsActive[i])
         {
+            auto &eg2p = endpoints->egTarget[i];
+
+            auto egiGate = getEnvSpecificGate(envGate, zone->egStorage[i], eg[i].stage);
+
             if (doEGRetrigger[i])
             {
                 doEGRetrigger[i] = false;
-                eg[i].attackFromWithDelay(eg[i].outBlock0, *aegp.dlyP, *aegp.aP);
+                eg[i].attackFromWithDelay(eg[i].outBlock0, *eg2p.dlyP, *eg2p.aP);
+                egiGate = getEnvSpecificGate(envGate, zone->egStorage[0], eg[i].stage);
             }
 
-            auto &eg2p = endpoints->egTarget[i];
             eg[i].processBlockWithDelay(*eg2p.dlyP, *eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP,
-                                        *eg2p.rP, *eg2p.asP, *eg2p.dsP, *eg2p.rsP, envGate, false);
+                                        *eg2p.rP, *eg2p.asP, *eg2p.dsP, *eg2p.rsP, egiGate, false);
         }
     }
     updateTransportPhasors();
