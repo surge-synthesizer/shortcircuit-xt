@@ -48,6 +48,66 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupEGBoolValue, c2s_update_zone_or_gr
                                                                          &engine::Group::gegStorage,
                                                                          payload, engine, cont));
 
+using fullAdsrStoragePayload_t = std::tuple<bool, int, modulation::modulators::AdsrStorage>;
+inline void doFullAdsrStorageUpdateForGroupsOrZones(const fullAdsrStoragePayload_t &payload,
+                                                    const engine::Engine &engine,
+                                                    messaging::MessageController &cont)
+{
+    auto [fz, eg, as] = payload;
+    if (fz)
+    {
+        auto zn = engine.getSelectionManager()->currentlySelectedZones();
+        if (!zn.empty())
+        {
+            cont.scheduleAudioThreadCallback(
+                [zns = zn, which = eg, storage = as](auto &engine) {
+                    for (auto &z : zns)
+                    {
+                        engine.getPatch()
+                            ->getPart(z.part)
+                            ->getGroup(z.group)
+                            ->getZone(z.zone)
+                            ->egStorage[which] = storage;
+                    }
+                },
+                [](auto &eng) {
+                    auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+                    if (lz.has_value())
+                    {
+                        eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(
+                            lz->part, lz->group, lz->zone);
+                    }
+                });
+        }
+    }
+    else
+    {
+        auto gs = engine.getSelectionManager()->currentlySelectedGroups();
+        if (!gs.empty())
+        {
+            cont.scheduleAudioThreadCallback(
+                [gsss = gs, which = eg, storage = as](auto &engine) {
+                    for (auto &g : gsss)
+                    {
+                        auto &grp = engine.getPatch()->getPart(g.part)->getGroup(g.group);
+                        grp->gegStorage[which] = storage;
+                    }
+                },
+                [](auto &eng) {
+                    auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
+                    if (lg.has_value())
+                    {
+                        eng.getSelectionManager()->sendDisplayDataForGroupsBasedOnLead(lg->part,
+                                                                                       lg->group);
+                    }
+                });
+        }
+    }
+}
+CLIENT_TO_SERIAL(UpdateFullAdsrStorageForGroupsOrZones,
+                 c2s_update_full_adsrstorage_for_groups_or_zones, fullAdsrStoragePayload_t,
+                 doFullAdsrStorageUpdateForGroupsOrZones(payload, engine, cont));
+
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupModStorageFloatValue, c2s_update_zone_or_group_modstorage_float_value,
     detail::indexedZoneOrGroupDiffMsg_t<float>, modulation::ModulatorStorage,

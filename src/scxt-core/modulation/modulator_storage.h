@@ -56,6 +56,17 @@ struct AdsrStorage
     float aShape{0}, dShape{0}, rShape{0};
 
     /*
+     * Gate Modes
+     */
+    enum struct GateMode
+    {
+        GATED,      // DAHDR, ungate to release
+        SEMI_GATED, // DAHDR, ungate or end of decay jumps to release (no sustain)
+        ONESHOT,    // DAHDR, gate ignored, full cycle always
+    } gateMode{GateMode::GATED};
+    DECLARE_ENUM_STRING(GateMode);
+
+    /*
      * Gate mode (only used by group)
      */
     bool gateGroupEGOnAnyPlaying{false};
