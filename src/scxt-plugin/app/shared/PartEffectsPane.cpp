@@ -798,7 +798,7 @@ void PartEffectsPane<forBus>::createBindAndPosition(
         // if (!viz)
         //            return;
 
-        auto ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls);
+        auto ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls, pmd);
         if (!ed)
         {
             onError("Could not create widget for " + ctrl.name + " with unknown control type " +
