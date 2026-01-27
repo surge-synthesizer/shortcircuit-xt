@@ -143,7 +143,10 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 muteProvider = std::make_unique<bdm_t>(muteValue);
                 muteProvider->widget->setLabel("M");
                 muteProvider->setup();
-                muteProvider->onValueChanged = [this](bool v) { setMuteTo(v); };
+                muteProvider->onValueChanged = [this](bool v) {
+                    auto shift = juce::ModifierKeys::getCurrentModifiers().isShiftDown();
+                    setMuteTo(v, shift);
+                };
                 addAndMakeVisible(*muteProvider->widget);
                 resized();
             }
@@ -163,13 +166,13 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             DRAG_OVER
         } dragOverState{NONE};
 
-        void setMuteTo(bool v)
+        void setMuteTo(bool v, bool allSel)
         {
             assert(!isZone());
             const auto &tgl = lbm->gzData;
             const auto &sg = tgl[rowNumber];
             gsb->sendToSerialization(
-                cmsg::MuteOrSoloGroup({sg.address.part, sg.address.group, v, false}));
+                cmsg::MuteOrSoloGroup({sg.address.part, sg.address.group, v, false, allSel}));
         }
 
         void paint(juce::Graphics &g) override
