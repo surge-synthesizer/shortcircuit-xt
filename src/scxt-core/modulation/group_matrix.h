@@ -132,6 +132,7 @@ struct GroupMatrixEndpoints
                 registerGroupModTarget(e, asT, envnm, "Attack Shape");
                 registerGroupModTarget(e, dsT, envnm, "Decay Shape");
                 registerGroupModTarget(e, rsT, envnm, "Release Shape");
+                registerGroupModTarget(e, retriggerT, envnm, "Retrigger");
             }
         }
         void bind(GroupMatrix &m, engine::Group &g);
