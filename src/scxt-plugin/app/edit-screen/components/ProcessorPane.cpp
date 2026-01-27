@@ -489,9 +489,8 @@ void ProcessorPane::setupJsonTypeMap()
 void ProcessorPane::rebuildControlsFromDescription()
 {
     resetControls();
-    // TODO: Am I actually an off type? Then bail.
 
-    if (!isEnabled())
+    if (!isEnabled() && !multiZone)
     {
         setToggleDataSource(nullptr);
         setName(processorControlDescription.typeDisplayName);
