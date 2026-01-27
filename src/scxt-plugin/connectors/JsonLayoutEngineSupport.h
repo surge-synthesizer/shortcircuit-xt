@@ -43,6 +43,7 @@
 #include <sst/jucegui/components/RuledLabel.h>
 #include <sst/jucegui/components/LineSegment.h>
 #include <sst/jucegui/layouts/JsonLayoutEngine.h>
+#include <sst/basic-blocks/params/ParamMetadata.h>
 #include <concepts>
 #include <optional>
 
@@ -149,40 +150,43 @@ createControlLabel(const sst::jucegui::layouts::json_document::Control &ctrl,
 
 inline std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>
 createContinuousWidget(const sst::jucegui::layouts::json_document::Control &ctrl,
-                       const sst::jucegui::layouts::json_document::Class &cls)
+                       const sst::jucegui::layouts::json_document::Class &cls,
+                       const sst::basic_blocks::params::ParamMetaData &pmd)
 {
+    std::unique_ptr<sst::jucegui::components::ContinuousParamEditor> res;
     namespace jcmp = sst::jucegui::components;
     if (cls.controlType == "knob")
     {
         auto kb = std::make_unique<jcmp::Knob>();
         kb->setDrawLabel(false);
-        if (cls.extraKVs.find("force-quantized") != cls.extraKVs.end())
-        {
-            kb->setAlwaysQuantize(true);
-        }
-        return kb;
+        res = std::move(kb);
     }
-    if (cls.controlType == "hslider")
+    else if (cls.controlType == "hslider")
     {
         auto sl = std::make_unique<jcmp::HSlider>();
         sl->setShowLabel(false);
-        if (cls.extraKVs.find("force-quantized") != cls.extraKVs.end())
-        {
-            sl->setAlwaysQuantize(true);
-        }
-        return sl;
+        res = std::move(sl);
     }
-    if (cls.controlType == "vslider")
+    else if (cls.controlType == "vslider")
     {
         auto sl = std::make_unique<jcmp::VSlider>();
-        if (cls.extraKVs.find("force-quantized") != cls.extraKVs.end())
-        {
-            sl->setAlwaysQuantize(true);
-        }
-        return sl;
+        res = std::move(sl);
     }
 
-    return nullptr;
+    if (res)
+    {
+        if (cls.extraKVs.find("force-quantized") != cls.extraKVs.end())
+        {
+            res->setAlwaysQuantize(true);
+        }
+
+        if (pmd.hasFloatAlwaysQuantizes())
+        {
+            res->setAlwaysQuantize(true);
+        }
+    }
+
+    return res;
 }
 
 inline std::unique_ptr<sst::jucegui::components::DiscreteParamEditor>

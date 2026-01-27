@@ -199,15 +199,16 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
                 return;
             }
 
-            auto at = std::make_unique<ProcessorPane::attachment_t>(
-                datamodel::describeValue(w->processorView, w->processorView.outputCubAmp),
-                w->processorView.outputCubAmp);
+            const auto &pmd =
+                datamodel::describeValue(w->processorView, w->processorView.outputCubAmp);
+            auto at =
+                std::make_unique<ProcessorPane::attachment_t>(pmd, w->processorView.outputCubAmp);
             connectors::configureUpdater<cmsg::UpdateZoneOrGroupProcessorFloatValue,
                                          ProcessorPane::attachment_t>(*at, w->processorView, w,
                                                                       RPTraits::forZone, i);
             levelA[i] = std::move(at);
 
-            auto ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls);
+            auto ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls, pmd);
             if (!ed && cls.controlType == "routing-box")
             {
                 auto rb = std::make_unique<RoutingBox>(i, editor, this);

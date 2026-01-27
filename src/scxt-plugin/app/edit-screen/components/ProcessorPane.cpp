@@ -1003,7 +1003,8 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         if (!viz)
             return;
 
-        jsonFloatEditor_t ed = connectors::jsonlayout::createContinuousWidget(ctrl, cls);
+        jsonFloatEditor_t ed = connectors::jsonlayout::createContinuousWidget(
+            ctrl, cls, processorControlDescription.floatControlDescriptions[idx]);
         if (!ed)
         {
             onError("Could not create widget for " + ctrl.name + " with unknown control type " +
