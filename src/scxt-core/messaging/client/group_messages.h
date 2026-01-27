@@ -113,15 +113,40 @@ CLIENT_TO_SERIAL(UpdateGroupOutputInfoMidiChannel, c2s_update_group_output_info_
                  scxt::engine::Group::GroupOutputInfo,
                  doUpdateGroupOutputInfoMidiChannel(payload, engine, cont));
 
-using muteOrSoloGroup_t = std::tuple<int32_t, int32_t, bool, bool>; // p, g, m, s
+using muteOrSoloGroup_t = std::tuple<int32_t, int32_t, bool, bool, bool>; // p, g, m, s, selected
 inline void doMuteOrSoloGroup(const muteOrSoloGroup_t &payload, const engine::Engine &engine,
                               messaging::MessageController &cont)
 {
-    auto &[p, g, m, s] = payload;
+    auto &[p, g, m, s, sel] = payload;
+    auto &gs = engine.getSelectionManager()->allSelectedGroups[p];
+    bool muteSelected{false};
+    if (sel)
+    {
+        for (auto gi : gs)
+        {
+            if (g == gi.group)
+            {
+                muteSelected = true;
+                break;
+            }
+        }
+    }
+
     cont.scheduleAudioThreadCallback(
-        [p, g, m](auto &eng) {
-            auto &grp = eng.getPatch()->getPart(p)->getGroup(g);
-            grp->outputInfo.muted = m;
+        [p, g, m, gs, muteSelected](auto &eng) {
+            if (!muteSelected)
+            {
+                auto &grp = eng.getPatch()->getPart(p)->getGroup(g);
+                grp->outputInfo.muted = m;
+            }
+            else
+            {
+                for (auto &gi : gs)
+                {
+                    auto &grp = eng.getPatch()->getPart(gi.part)->getGroup(gi.group);
+                    grp->outputInfo.muted = m;
+                }
+            }
         },
         [](auto &engine) {
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
