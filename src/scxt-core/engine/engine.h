@@ -161,8 +161,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                     part->configuration.transpose + part->getChannelBasedTransposition(channel);
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
-                    if (!group->respondsToChannelOrUsesPartChannel(channel, prex))
-                        continue;
+                    if (hasFeature::hasGroupMIDIChannel)
+                    {
+                        if (!group->respondsToChannelOrUsesPartChannel(channel, prex))
+                            continue;
+                    }
 
                     if (!group->triggerConditions.value(*this, *group))
                         continue;
