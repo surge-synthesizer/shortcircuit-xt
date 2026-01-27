@@ -342,10 +342,13 @@ void Part::sendBusEffectInfoToClient(const Engine &e, int slot)
 void Part::rebuildGroupChannelMask()
 {
     std::fill(groupChannelMask.begin(), groupChannelMask.end(), false);
-    for (const auto &g : groups)
+    if (hasFeature::hasGroupMIDIChannel)
     {
-        if (g->outputInfo.midiChannel >= 0)
-            groupChannelMask[g->outputInfo.midiChannel] = true;
+        for (const auto &g : groups)
+        {
+            if (g->outputInfo.midiChannel >= 0)
+                groupChannelMask[g->outputInfo.midiChannel] = true;
+        }
     }
 }
 

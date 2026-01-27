@@ -134,6 +134,7 @@ static constexpr bool undoRedo{false};               // undo-redo
 static constexpr bool memoryUsageExplanation{false}; // that chip in the header
 static constexpr bool mappingPane11Controls{false};  // zone mapping header skipped for 1.0
 static constexpr bool hasBrowserSearch{false};
+static constexpr bool hasGroupMIDIChannel{false}; // turn off per-group midi channel (see #1959)
 } // namespace hasFeature
 
 } // namespace scxt

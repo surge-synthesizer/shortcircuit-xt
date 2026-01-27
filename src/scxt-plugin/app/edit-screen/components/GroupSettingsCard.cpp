@@ -58,14 +58,17 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
         addAndMakeVisible(*res);
         return res;
     };
-    midiGlyph = mkg(jcmp::GlyphPainter::GlyphType::MIDI);
-    midiMenu = std::make_unique<jcmp::TextPushButton>();
-    midiMenu->setLabel("PART");
-    midiMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->showMidiChannelMenu();
-    });
-    addAndMakeVisible(*midiMenu);
+    if (hasFeature::hasGroupMIDIChannel)
+    {
+        midiGlyph = mkg(jcmp::GlyphPainter::GlyphType::MIDI);
+        midiMenu = std::make_unique<jcmp::TextPushButton>();
+        midiMenu->setLabel("PART");
+        midiMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showMidiChannelMenu();
+        });
+        addAndMakeVisible(*midiMenu);
+    }
 
     outputGlyph = mkg(jcmp::GlyphPainter::GlyphType::SPEAKER);
     outputMenu = mkm("PART", "Output");
@@ -144,7 +147,11 @@ void GroupSettingsCard::resized()
         g->setBounds(r.withWidth(componentHeight));
         m->setBounds(r.withTrimmedLeft(componentHeight + 2));
     };
-    spair(midiGlyph, midiMenu);
+    if (hasFeature::hasGroupMIDIChannel)
+    {
+        spair(midiGlyph, midiMenu);
+        r = r.translated(0, rowHeight);
+    }
 
     auto q = b.withHeight(componentHeight).withTrimmedLeft(r.getWidth() + 10);
     q = q.withWidth(r.getWidth() - componentHeight - 2);
@@ -156,7 +163,6 @@ void GroupSettingsCard::resized()
     q = q.translated(-(q.getWidth() + 2), 0);
     pbLabel->setBounds(q);
 
-    r = r.translated(0, rowHeight);
     spair(outputGlyph, outputMenu);
     r = r.translated(0, rowHeight);
     spair(polyGlygh, polyMenu);
@@ -213,13 +219,16 @@ void GroupSettingsCard::rebuildFromInfo()
         }
     }
 
-    if (info.midiChannel < 0)
+    if (hasFeature::hasGroupMIDIChannel)
     {
-        midiMenu->setLabel("PART");
-    }
-    else
-    {
-        midiMenu->setLabel(std::to_string(info.midiChannel + 1));
+        if (info.midiChannel < 0)
+        {
+            midiMenu->setLabel("PART");
+        }
+        else
+        {
+            midiMenu->setLabel(std::to_string(info.midiChannel + 1));
+        }
     }
 
     repaint();

@@ -198,12 +198,19 @@ struct Group : MoveableOnly<Group>,
      */
     bool respondsToChannelOrUsesPartChannel(int16_t channel, bool parentRespondsExcluding)
     {
-        if (outputInfo.midiChannel < 0)
-            return parentRespondsExcluding;
+        if (hasFeature::hasGroupMIDIChannel)
+        {
+            if (outputInfo.midiChannel < 0)
+                return parentRespondsExcluding;
 
-        if (outputInfo.midiChannel == channel)
-            return true;
-        return false;
+            if (outputInfo.midiChannel == channel)
+                return true;
+            return false;
+        }
+        else
+        {
+            return parentRespondsExcluding;
+        }
     }
 
     sst::filters::HalfRate::HalfRateFilter osDownFilter;
