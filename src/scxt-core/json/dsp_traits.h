@@ -45,7 +45,15 @@ SC_STREAMDEF(
         auto &t = from;
         if (t.type == dsp::processor::proct_none)
         {
-            v = tao::json::empty_object;
+            if (t.procTypeConsistent)
+            {
+                v = tao::json::empty_object;
+            }
+            else
+            {
+                v = {{"type", scxt::dsp::processor::getProcessorStreamingName(t.type)},
+                     {"procTypeConsistent", t.procTypeConsistent}};
+            }
         }
         else
         {
@@ -82,6 +90,7 @@ SC_STREAMDEF(
         {
             result = scxt::dsp::processor::ProcessorStorage();
             result.type = dsp::processor::proct_none;
+            findOrSet(v, "procTypeConsistent", true, result.procTypeConsistent);
         }
         else
         {
