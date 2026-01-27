@@ -40,9 +40,7 @@ determine if we are right!
 
 ## I would love to build it myself. What do I do?
 
-To build, first configure your machine. Basically set up your machine the same way you would
-[to build Surge XT](https://github.com/surge-synthesizer/surge#setting-up-for-your-os) then
-fork this repo and:
+Given a configured machine, 
 
 ```bash
 git clone <this repo or your fork>
@@ -56,6 +54,12 @@ Our production build uses clang on macos, and gcc on linux. We
 will test with a wide variety of compilers, including msvc on windows and several gcc versions.
 If you are using a new compiler and have changes to the CMake or so on, please
 do send them to us.
+
+To configure a machine on Mac and Windows, basically set up your machine the same way you would
+[to build Surge XT](https://github.com/surge-synthesizer/surge#setting-up-for-your-os).
+
+For Linux, we do have a set of depdencies required to build from a fresh machine. You can
+read them [in our dockerfile we use for CI builds](https://github.com/surge-synthesizer/sst-dockerimages/blob/818c1f1f27b0597c1d1528e4308b8760a401110c/ubuntu22-gcc12-cmake328/Dockerfile#L21).
 
 ## How we got here?
 
