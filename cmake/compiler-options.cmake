@@ -74,7 +74,7 @@ elseif (UNIX AND NOT APPLE)
             -Werror
             -Wno-multichar
             -fPIC  # probably not needed with CMAKE_POSITION_INDEPENDENT_CODE_ON but hey
-            -march=nehalem
+            $<IF:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},aarch64>,-march=armv8-a,-march=nehalem>
             )
     set(OS_COMPILE_DEFINITIONS
             LINUX=1)
