@@ -108,6 +108,7 @@ static constexpr bool missingResolution{false};
 static constexpr bool ringout{false};
 static constexpr bool streaming{false};
 static constexpr bool sqlDb{false};
+static constexpr bool groupTrigggers{false};
 
 static constexpr bool patchIO{false};
 static constexpr bool jsonUI{false};

@@ -55,6 +55,9 @@ enum struct GroupTriggerID : int32_t
 {
     NONE,
 
+    KEYSWITCH_LATCH,
+    KEYSWITCH_MOMENTARY,
+
     // Leave these at the end please
     MACRO,
     MIDICC = MACRO + scxt::macrosPerPart,
@@ -87,7 +90,8 @@ struct GroupTrigger
     }
     GroupTriggerID getID() const { return id; }
     virtual ~GroupTrigger() = default;
-    virtual bool value(const Engine &, const Group &) const = 0;
+    virtual bool groupShouldPlay(const Engine &, const Group &, int16_t channel,
+                                 int16_t key) const = 0;
     virtual void storageAdjusted() = 0;
 
     /*
@@ -119,6 +123,7 @@ struct GroupTriggerConditions
     std::array<bool, scxt::triggerConditionsPerGroup> active{};
 
     bool alwaysReturnsTrue{true};
+    bool containsKeySwitchLatch{false};
 
     enum struct Conjunction : int32_t
     {
@@ -135,7 +140,9 @@ struct GroupTriggerConditions
 
     void setupOnUnstream(GroupTriggerInstrumentState &);
 
-    bool value(const Engine &, const Group &) const;
+    bool groupShouldPlay(const Engine &, const Group &, int16_t channel, int16_t key) const;
+    bool wasPlaySupressedByKeySwitch(const Engine &, const Group &, int16_t channel,
+                                     int16_t key) const;
 
   protected:
     std::array<GroupTriggerBuffer, scxt::triggerConditionsPerGroup> conditionBuffers;

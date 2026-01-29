@@ -79,6 +79,7 @@ struct Group : MoveableOnly<Group>,
     {
         float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f}, tuning{0.f};
         bool muted{false};
+        bool mutedByLatch{false};
         bool oversample{true};
 
         ProcRoutingPath procRouting{procRoute_linear};

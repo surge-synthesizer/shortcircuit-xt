@@ -167,8 +167,53 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                             continue;
                     }
 
-                    if (!group->triggerConditions.value(*this, *group))
+                    auto tcv =
+                        group->triggerConditions.groupShouldPlay(*this, *group, channel, key);
+
+                    if (group->triggerConditions.containsKeySwitchLatch && !tcv)
+                    {
+                        if (group->triggerConditions.wasPlaySupressedByKeySwitch(*this, *group,
+                                                                                 channel, key))
+                        {
+                            SCLOG_IF(groupTrigggers, "Keyswitch found at " << (int)key << " "
+                                                                           << group->id.to_string()
+                                                                           << " " << group->name);
+
+                            // This second iteration is a wee bit annoying but
+                            for (auto &gkt : *part)
+                            {
+                                SCLOG_IF(groupTrigggers, "Checking group " << gkt->id.to_string());
+                                if (!gkt->triggerConditions.containsKeySwitchLatch)
+                                {
+                                    SCLOG_IF(groupTrigggers, "   Not a keyswitch - mute false");
+                                    gkt->outputInfo.mutedByLatch = false;
+                                    continue;
+                                }
+                                gkt->outputInfo.mutedByLatch = gkt->id != group->id;
+                                SCLOG_IF(groupTrigggers,
+                                         "   Muted by latch: " << gkt->outputInfo.mutedByLatch);
+                            }
+
+                            // Ignore any voices found here
+                            return 0;
+                        }
+                        else
+                        {
+                            SCLOG_IF(groupTrigggers, "Skipping keyswitch supression");
+                        }
+                    }
+
+                    if (group->outputInfo.mutedByLatch)
+                    {
+                        SCLOG_IF(groupTrigggers, "Group " << group->id.to_string() << " "
+                                                          << group->name << " is muted by latch");
                         continue;
+                    }
+
+                    if (!tcv)
+                    {
+                        continue;
+                    }
 
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
                     {
