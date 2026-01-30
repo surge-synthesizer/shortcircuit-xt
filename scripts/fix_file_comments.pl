@@ -30,20 +30,20 @@ sub findfiles
  * A fully featured creative sampler, available as a standalone
  * and plugin for multiple platforms.
  *
- * Copyright 2019 - 2025, Various authors, as described in the github
+ * Copyright 2019 - 2026, Various authors, as described in the github
  * transaction log.
  *
- * ShortcircuitXT is released under the Gnu General Public Licence
- * V3 or later (GPL-3.0-or-later). The license is found in the file
- * "LICENSE" in the root of this repository or at
- * https://www.gnu.org/licenses/gpl-3.0.en.html
+ * This source file and all other files in the shortcircuit-xt repo outside of
+ * `libs/` are licensed under the MIT license, available in the
+ * file LICENSE or at https://opensource.org/license/mit.
  *
- * Individual sections of code which comprises ShortcircuitXT in this
- * repository may also be used under an MIT license. Please see the
- * section  "Licensing" in "README.md" for details.
+ * As some dependencies of ShortcircuitXT are released under the GNU General
+ * Public License 3, if you distribute a binary of ShortcircuitXT
+ * without breaking those dependencies, the combined work must be
+ * distributed under GPL3.
  *
- * ShortcircuitXT is inspired by, and shares code with, the
- * commercial product Shortcircuit 1 and 2, released by VemberTech
+ * ShortcircuitXT is inspired by, and shares a small amount of code with,
+ * the commercial product Shortcircuit 1 and 2, released by VemberTech
  * in the mid 2000s. The code for Shortcircuit 2 was opensourced in
  * 2020 at the outset of this project.
  *
