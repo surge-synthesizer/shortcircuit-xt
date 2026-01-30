@@ -36,7 +36,7 @@ namespace scxt::ui::app::other_screens
 WelcomeScreen::WelcomeScreen(SCXTEditor *e) : HasEditor(e)
 {
     setAccessible(true);
-    setTitle("Welcome to ShortCircuit XT Alpha. Please use care. Press escape to use sampler.");
+    setTitle("Welcome to ShortCircuit XT Beta. Please use care. Press escape to use sampler.");
     setWantsKeyboardFocus(true);
 }
 void WelcomeScreen::visibilityChanged()
@@ -62,19 +62,18 @@ void WelcomeScreen::okGotItDontShowAgain()
 }
 
 auto txt =
-    "Shortcircuit XT is in an very-late-alpha release. This version has incomplete and "
-    "missing features, may have crashing bugs, and may generate improper sounds\n"
+    "Welcome to the Shortcircuit XT beta! The synth is now stable, many of the "
+    "features are complete, and we are opening up the tool to a wider audience for "
+    "testing and feedback as we push towards 1.0 in 2026.\n"
     "\n"
-    "We welcome testers in this pre-alpha period but recommend a few precautions:\n\n"
-    "- Consider using limiter and don't use in-ear headphones when experimenting.\n"
-    "- We beleive we have both the streaming and Plugin ID/Params stable as of mid Aug 24\n"
-    "   but we could be wrong. If you make music you love, please do bounce stems so you can\n"
-    "   recreate it.\n"
-
+    "As with all beta software, we strongly suggest you consider using limiter and "
+    "don't use in-ear headphones when experimenting.\n"
     "\n"
     "We love early testers, documenters, and designers on all our projects. The best way to "
     "chat with the Surge Synth Team devs about ShortcircuitXT is to join the Surge Synth Team "
-    "discord and hop into the #using-shortcircuit or #sc-development channels.\n\n"
+    "discord and hop into the #using-shortcircuit or #sc-development channels. There is a link "
+    "to our discord in the synth about screen, available by pressing the logo in the upper right "
+    "corner\n\n"
     "Finally, we love developers too! If you want to join the team and help sling some code on the "
     "project, please get in touch.\n\n"
     "Press escape or click on this screen to dismiss. If you want to re-review this information, "
@@ -97,8 +96,7 @@ void WelcomeScreen::paint(juce::Graphics &g)
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
     g.drawText("Welcome to ShortcircuitXT", bd.reduced(10), juce::Justification::centredTop);
     g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
-    g.drawText("Late Alpha Release", bd.reduced(10).translated(0, 50),
-               juce::Justification::centredTop);
+    g.drawText("Beta Release", bd.reduced(10).translated(0, 50), juce::Justification::centredTop);
 
     g.setFont(editor->themeApplier.interLightFor(22));
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
