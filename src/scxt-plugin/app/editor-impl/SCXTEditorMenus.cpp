@@ -75,17 +75,6 @@ void SCXTEditor::showMainMenu()
     addUIThemesMenu(skin);
     m.addSubMenu("UI Behavior", skin);
 
-    m.addSeparator();
-    m.addItem(juce::String("Copy ") +
-                  sst::plugininfra::VersionInformation::project_version_and_hash,
-              [w = juce::Component::SafePointer(this)] {
-                  if (w)
-                      w->aboutScreen->copyInfo();
-              });
-    m.addItem("Show About Screen", [w = juce::Component::SafePointer(this)] {
-        if (w)
-            w->showAboutOverlay();
-    });
     m.addItem("Show Log", [w = juce::Component::SafePointer(this)] {
         if (w)
             w->showLogOverlay();
@@ -97,6 +86,12 @@ void SCXTEditor::showMainMenu()
     });
     m.addItem("Read Source", [] {
         juce::URL("https://github.com/surge-synthesizer/shortcircuit-xt").launchInDefaultBrowser();
+    });
+
+    m.addSeparator();
+    m.addItem("About Shortcircuit XT", [w = juce::Component::SafePointer(this)] {
+        if (w)
+            w->showAboutOverlay();
     });
 
     m.addSeparator();
