@@ -134,7 +134,7 @@ jobs:
           webhook: ${{ secrets.DISCORD_SHORTCIRCUIT_WEBHOOK }}
           tag: Nightly
           title: "A New Shortcircuit XT Nightly is Available"
-          subtitle: "Shortcircuit XT is alpha software. Please use care."
+          subtitle: "Shortcircuit XT is beta software. Let us know what you think!"
 
       - name: Checkout for git info
         uses: actions/checkout@v5
