@@ -180,7 +180,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     addAndMakeVisible(*saveAsButton);
 
     multiMenuButton = std::make_unique<jcmp::MenuButton>();
-    multiMenuButton->setLabel("This is my Super Awesome Multi");
+    multiMenuButton->setLabel("Multi and Instrument IO");
     multiMenuButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (w)
             w->showMultiSelectionMenu();
@@ -356,8 +356,19 @@ void HeaderRegion::doLoadIntoSelectedPart()
 void HeaderRegion::showSaveMenu()
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Save");
+    p.addSectionHeader("Save and Load");
     p.addSeparator();
+
+    populateSaveMenu(p);
+    p.addSeparator();
+
+    addResetMenuItems(p);
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions(saveAsButton.get()));
+}
+
+void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
+{
     p.addItem("Save Multi Only", [w = juce::Component::SafePointer(this)]() {
         if (w)
             w->doSaveMulti(patch_io::SaveStyles::NO_SAMPLES);
@@ -398,18 +409,14 @@ void HeaderRegion::showSaveMenu()
                   if (w)
                       w->doLoadIntoSelectedPart();
               });
-    p.addSeparator();
-
-    addResetMenuItems(p);
-
-    p.showMenuAsync(editor->defaultPopupMenuOptions(saveAsButton.get()));
 }
 
 void HeaderRegion::showMultiSelectionMenu()
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Multis - Coming Soon");
-    p.addSeparator();
+    juce::PopupMenu sm;
+    populateSaveMenu(sm);
+    p.addSubMenu("Save and Load", sm);
     addResetMenuItems(p);
     p.showMenuAsync(editor->defaultPopupMenuOptions(multiMenuButton.get()));
 }
