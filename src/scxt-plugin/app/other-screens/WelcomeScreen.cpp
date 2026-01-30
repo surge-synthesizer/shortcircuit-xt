@@ -94,7 +94,7 @@ void WelcomeScreen::paint(juce::Graphics &g)
     g.drawRect(bd);
     g.setFont(editor->themeApplier.interBoldFor(40));
     g.setColour(editor->themeColor(theme::ColorMap::generic_content_highest));
-    g.drawText("Welcome to ShortcircuitXT", bd.reduced(10), juce::Justification::centredTop);
+    g.drawText("Welcome to Shortcircuit XT", bd.reduced(10), juce::Justification::centredTop);
     g.setColour(editor->themeColor(theme::ColorMap::warning_1a));
     g.drawText("Beta Release", bd.reduced(10).translated(0, 50), juce::Justification::centredTop);
 

@@ -4,6 +4,9 @@
 
 Welcome to Shortcircuit XT!
 
+**You can download the beta of Shortcircuit
+XT [here](https://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly)**
+
 Shortcircuit was a popular creative sampler in the mid 2000s from vembertech, the
 company that originally created surge. In 2021, Claes Johansen, the principle
 at vembertech (and now at Bitwig), open sourced a version of Shortcircuit2
@@ -40,7 +43,7 @@ determine if we are right!
 
 ## I would love to build it myself. What do I do?
 
-Given a configured machine, 
+Given a configured machine,
 
 ```bash
 git clone <this repo or your fork>
@@ -59,7 +62,8 @@ To configure a machine on Mac and Windows, basically set up your machine the sam
 [to build Surge XT](https://github.com/surge-synthesizer/surge#setting-up-for-your-os).
 
 For Linux, we do have a set of depdencies required to build from a fresh machine. You can
-read them [in our dockerfile we use for CI builds](https://github.com/surge-synthesizer/sst-dockerimages/blob/818c1f1f27b0597c1d1528e4308b8760a401110c/ubuntu22-gcc12-cmake328/Dockerfile#L21).
+read
+them [in our dockerfile we use for CI builds](https://github.com/surge-synthesizer/sst-dockerimages/blob/818c1f1f27b0597c1d1528e4308b8760a401110c/ubuntu22-gcc12-cmake328/Dockerfile#L21).
 
 ## How we got here?
 
