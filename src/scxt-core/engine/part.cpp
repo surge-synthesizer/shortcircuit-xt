@@ -25,6 +25,7 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <ranges>
 #include "part.h"
 #include "bus.h"
 #include "patch.h"
@@ -294,7 +295,7 @@ void Part::swapGroups(size_t gA, size_t gB)
     std::swap(groups[gA], groups[gB]);
 }
 
-void Part::initializeAfterUnstream(Engine &e)
+void Part::setupOnUnstream(Engine &e)
 {
     for (int idx = 0; idx < maxEffectsPerPart; ++idx)
     {
@@ -306,6 +307,76 @@ void Part::initializeAfterUnstream(Engine &e)
         }
     }
     rebuildGroupChannelMask();
+    guaranteeKeyswitchLatchCoherence(e);
+}
+
+void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
+{
+    int kslCount{0};
+    int muteCount{0};
+    for (auto &g : groups)
+    {
+        if (g->triggerConditions.containsKeySwitchLatch)
+        {
+            SCLOG_IF(groupTrigggers, "Group has trigger " << g->id.to_string());
+            kslCount++;
+        }
+        if (g->outputInfo.mutedByLatch)
+        {
+            SCLOG_IF(groupTrigggers, "Group is Muted " << g->id.to_string());
+            muteCount++;
+        }
+    }
+    if (kslCount == 0 && muteCount == 0)
+        return;
+
+    if ((kslCount == 0 && muteCount != 0) || (kslCount == 1 && muteCount != 0))
+    {
+        // Either there's no switches, or theres just one so it is on
+        SCLOG_IF(debug, "Adjusting mutes in zero or 1 ksl case");
+        for (auto &g : groups)
+        {
+            g->outputInfo.mutedByLatch = false;
+        }
+    }
+    else if (muteCount != kslCount - 1)
+    {
+        SCLOG_IF(groupTrigggers,
+                 "Key Switches not set up properly : " << SCD(kslCount) << SCD(muteCount));
+        if (muteCount > kslCount - 1)
+        {
+            // Too maky groups are muted. Unmute some
+            for (auto &g : groups)
+            {
+                if (g->triggerConditions.containsKeySwitchLatch && g->outputInfo.mutedByLatch)
+                {
+                    SCLOG_IF(groupTrigggers, "Stream Un-Muting " << g->id.to_string()
+                                                                 << SCD(kslCount)
+                                                                 << SCD(muteCount));
+                    g->outputInfo.mutedByLatch = false;
+                    muteCount--;
+                    if (muteCount == kslCount - 1)
+                        break;
+                }
+            }
+        }
+        else
+        {
+            // Not enough groups are muted. Mute from back forwards
+            for (auto &g : groups | std::views::reverse)
+            {
+                if (g->triggerConditions.containsKeySwitchLatch && !g->outputInfo.mutedByLatch)
+                {
+                    SCLOG_IF(groupTrigggers, "Stream Muting " << g->id.to_string() << SCD(kslCount)
+                                                              << SCD(muteCount));
+                    g->outputInfo.mutedByLatch = true;
+                    muteCount++;
+                    if (muteCount == kslCount - 1)
+                        break;
+                }
+            }
+        }
+    }
 }
 
 void Part::setBusEffectType(Engine &e, int idx, AvailableBusEffects t)

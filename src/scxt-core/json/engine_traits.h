@@ -290,7 +290,7 @@ SC_STREAMDEF(scxt::engine::Part, SC_FROM({
                  }
                  if (to.parentPatch->parentEngine)
                  {
-                     part.initializeAfterUnstream(*to.parentPatch->parentEngine);
+                     part.setupOnUnstream(*to.parentPatch->parentEngine);
                  }
              }))
 
@@ -389,6 +389,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"oversample", t.oversample},
                       {"velocitySensitivity", t.velocitySensitivity},
                       {"muted", t.muted},
+                      {"mutedByLatch", t.mutedByLatch},
                       {"procRouting", t.procRouting},
                       {"prCon", t.procRoutingConsistent},
                       {"buCon", t.busRoutingConsistent},
@@ -406,6 +407,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "pan", result.pan);
                  findOrSet(v, "tn", 0.f, result.tuning);
                  findIf(v, "muted", result.muted);
+                 findOrSet(v, "mutedByLatch", false, result.mutedByLatch);
                  findIf(v, "procRouting", result.procRouting);
                  findIf(v, "velocitySensitivity", result.velocitySensitivity);
                  findIf(v, "oversample", result.oversample);

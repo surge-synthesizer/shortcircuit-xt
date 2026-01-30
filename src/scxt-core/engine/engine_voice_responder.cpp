@@ -37,6 +37,7 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
     SCLOG_IF(voiceResponder, "begin voice transaction " << SCD(port) << SCD(channel) << SCD(key)
                                                         << SCD(noteId) << SCD(velocity));
     assert(!transactionValid);
+
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
     auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127),
                                findZoneWorkingBuffer);

@@ -276,7 +276,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     std::array<BusEffectStorage, maxEffectsPerPart> partEffectStorage{};
     std::array<std::unique_ptr<BusEffect>, maxEffectsPerPart> partEffects{};
     void setBusEffectType(Engine &e, int idx, AvailableBusEffects t);
-    void initializeAfterUnstream(Engine &e);
+    void setupOnUnstream(Engine &e);
+    void guaranteeKeyswitchLatchCoherence(Engine &e);
     void sendAllBusEffectInfoToClient(const Engine &e)
     {
         for (int i = 0; i < maxEffectsPerPart; ++i)

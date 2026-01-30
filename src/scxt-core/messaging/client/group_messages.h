@@ -69,6 +69,7 @@ inline void doUpdateGroupTriggerConditions(const engine::GroupTriggerConditions 
             grp->triggerConditions = p;
             grp->triggerConditions.setupOnUnstream(
                 eng.getPatch()->getPart(g.part)->groupTriggerInstrumentState);
+            eng.getPatch()->getPart(g.part)->guaranteeKeyswitchLatchCoherence(eng);
         });
     }
 }

@@ -30,6 +30,7 @@
 #include "group.h"
 #include "part.h"
 #include "utils.h"
+#include "engine.h"
 
 namespace scxt::engine
 {
@@ -50,6 +51,10 @@ std::string toStringGroupTriggerID(const GroupTriggerID &p)
         // and just make big files so use compact ones here
     case GroupTriggerID::NONE:
         return "n";
+    case GroupTriggerID::KEYSWITCH_LATCH:
+        return "ksL";
+    case GroupTriggerID::KEYSWITCH_MOMENTARY:
+        return "ksM";
     case GroupTriggerID::MACRO:
     case GroupTriggerID::MIDICC:
     case GroupTriggerID::LAST_MIDICC:
@@ -110,7 +115,7 @@ struct GTMacro : GroupTrigger
     {
     }
 
-    bool value(const Engine &, const Group &g) const override
+    bool groupShouldPlay(const Engine &, const Group &g, int16_t, int16_t) const override
     {
         auto mv = g.parentPart->macros[macro].value;
         return mv >= lb && mv <= ub;
@@ -135,7 +140,7 @@ struct GTMIDI1CC : GroupTrigger
     {
     }
 
-    bool value(const Engine &, const Group &g) const override
+    bool groupShouldPlay(const Engine &, const Group &g, int16_t, int16_t) const override
     {
         assert(g.parentPart);
         auto ccv = g.parentPart->midiCCValues[cc];
@@ -151,6 +156,51 @@ struct GTMIDI1CC : GroupTrigger
         lb = std::floor(flb) / 127.0;
         ub = std::ceil(fub) / 127.0;
     }
+};
+
+struct GTKeyswitchLatch : GroupTrigger
+{
+    GTKeyswitchLatch(GroupTriggerID id, GroupTriggerInstrumentState &onState,
+                     GroupTriggerStorage &onStorage)
+        : GroupTrigger(id, onState, onStorage)
+    {
+    }
+
+    // hmmm that ! is because this is answering 'should group play'. That's gonna be confusing.
+    // Probably need a split API for conjunctions. Ponder.
+    bool groupShouldPlay(const Engine &, const Group &g, int16_t, int16_t key) const override
+    {
+        if (key == (int)std::round(storage.args[0]))
+            return false;
+        return true;
+    }
+
+    void storageAdjusted() override {}
+};
+
+struct GTKeyswitchMomentary : GroupTrigger
+{
+    GTKeyswitchMomentary(GroupTriggerID id, GroupTriggerInstrumentState &onState,
+                         GroupTriggerStorage &onStorage)
+        : GroupTrigger(id, onState, onStorage)
+    {
+    }
+
+    // hmmm that ! is because this is answering 'should group play'. That's gonna be confusing.
+    // Probably need a split API for conjunctions. Ponder.
+    bool groupShouldPlay(const Engine &e, const Group &g, int16_t ch, int16_t key) const override
+    {
+        auto vsKey = (int)std::round(storage.args[0]);
+        if (ch < 0 || ch >= 16 || vsKey < 0 || vsKey >= 128)
+            return true;
+
+        SCLOG_IF(groupTrigggers, "Evaluating momentary at "
+                                     << ch << " " << vsKey << " "
+                                     << e.voiceManager.heldMIDIKeyByChannel[ch][vsKey]);
+        return e.voiceManager.heldMIDIKeyByChannel[ch][vsKey];
+    }
+
+    void storageAdjusted() override {}
 };
 
 GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &gis,
@@ -173,9 +223,12 @@ GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &g
         return new (bf) tp(id, gis, st);
     switch (id)
     {
+        CS(GroupTriggerID::KEYSWITCH_LATCH, GTKeyswitchLatch);
+        CS(GroupTriggerID::KEYSWITCH_MOMENTARY, GTKeyswitchMomentary);
     default:
         return nullptr;
     }
+    SCLOG_IF(groupTrigggers, "Unable to create group trigger for id " << (int)id);
     return nullptr;
 }
 
@@ -194,8 +247,15 @@ std::string getGroupTriggerDisplayName(GroupTriggerID id)
     {
     case GroupTriggerID::NONE:
         return "NONE";
+    case GroupTriggerID::KEYSWITCH_LATCH:
+        return "KSWITCH";
+    case GroupTriggerID::KEYSWITCH_MOMENTARY:
+        return "KSW/MOM";
     default:
+    {
+        SCLOG_IF(groupTrigggers, "Un-named group trigger id=" << (int)id);
         return "ERROR";
+    }
     }
     return "ERROR";
 }
@@ -203,6 +263,7 @@ std::string getGroupTriggerDisplayName(GroupTriggerID id)
 void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
 {
     bool allNone{true};
+    containsKeySwitchLatch = false;
     for (int i = 0; i < triggerConditionsPerGroup; ++i)
     {
         auto &s = storage[i];
@@ -215,10 +276,13 @@ void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
         else
         {
             allNone = false;
+            if (s.id == GroupTriggerID::KEYSWITCH_LATCH)
+                containsKeySwitchLatch = true;
 
             if (!conditions[i] || conditions[i]->getID() != s.id)
             {
                 conditions[i] = makeGroupTrigger(s.id, gis, s, conditionBuffers[i]);
+                assert(conditions[i]);
             }
         }
         if (conditions[i])
@@ -227,7 +291,8 @@ void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
     alwaysReturnsTrue = allNone;
 }
 
-bool GroupTriggerConditions::value(const Engine &e, const Group &g) const
+bool GroupTriggerConditions::groupShouldPlay(const Engine &e, const Group &g, int16_t channel,
+                                             int16_t key) const
 {
     if (alwaysReturnsTrue)
         return true;
@@ -237,9 +302,26 @@ bool GroupTriggerConditions::value(const Engine &e, const Group &g) const
     {
         // FIXME - conjunctions
         if (active[i] && conditions[i])
-            v = v & conditions[i]->value(e, g);
+            v = v & conditions[i]->groupShouldPlay(e, g, channel, key);
     }
     return v;
+}
+
+bool GroupTriggerConditions::wasPlaySupressedByKeySwitch(const Engine &e, const Group &g,
+                                                         int16_t channel, int16_t key) const
+{
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        auto gtk = dynamic_cast<GTKeyswitchLatch *>(conditions[i]);
+        if (gtk)
+        {
+            if (!gtk->groupShouldPlay(e, g, channel, key))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 } // namespace scxt::engine

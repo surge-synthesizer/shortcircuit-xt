@@ -144,9 +144,24 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
                 a2M->setSource(a2A.get());
                 addAndMakeVisible(*a2M);
             }
+            else if (sr.id == engine::GroupTriggerID::KEYSWITCH_LATCH ||
+                     sr.id == engine::GroupTriggerID::KEYSWITCH_MOMENTARY)
+            {
+                auto dm = datamodel::pmd()
+                              .asFloat()
+                              .withRange(0, 127)
+                              .withLinearScaleFormatting("")
+                              .withDecimalPlaces(0)
+                              .withDefault(64);
+                a1A = std::make_unique<floatAttachment_t>(dm, onArgChanged, sr.args[0]);
+
+                a1M = std::make_unique<jcmp::DraggableTextEditableValue>();
+                a1M->setSource(a1A.get());
+                addAndMakeVisible(*a1M);
+            }
             else
             {
-                SCLOG_IF(debug, "No midi CC for type " << (int)sr.id);
+                SCLOG_IF(debug, "No group trigger for type " << (int)sr.id);
             }
             resized();
         }
@@ -189,7 +204,10 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
             };
         };
 
-        p.addItem("NONE", mkv((int)engine::GroupTriggerID::NONE));
+        p.addItem("None", mkv((int)engine::GroupTriggerID::NONE));
+
+        p.addItem("KeySwitch", mkv((int)engine::GroupTriggerID::KEYSWITCH_LATCH));
+        p.addItem("KeySwitch (Momentary)", mkv((int)engine::GroupTriggerID::KEYSWITCH_MOMENTARY));
 
         auto mcc = juce::PopupMenu();
         for (int i = 0; i < 128; ++i)
