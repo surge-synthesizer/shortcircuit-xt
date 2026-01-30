@@ -109,6 +109,7 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     void setCPULevel(float);
 
     void showSaveMenu();
+    void populateSaveMenu(juce::PopupMenu &);
     void doSaveMulti(patch_io::SaveStyles style);
     void doLoadMulti();
     void doSaveSelectedPart(patch_io::SaveStyles style);
