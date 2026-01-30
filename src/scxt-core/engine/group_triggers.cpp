@@ -30,6 +30,7 @@
 #include "group.h"
 #include "part.h"
 #include "utils.h"
+#include "engine.h"
 
 namespace scxt::engine
 {
