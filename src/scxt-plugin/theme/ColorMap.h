@@ -37,9 +37,12 @@ struct ColorMap
     enum BuiltInColorMaps : uint32_t
     {
         WIREFRAME = 'wire',
-        LIGHT = 'lite',
-        HICONTRAST_DARK = 'hico',
-        TEST = 'test'
+
+        CELTIC = 'cltc',
+        LUX2 = 'lux2',
+        GRAYLOW = 'grlw',
+        OCEANOR = 'ocen'
+
     } myId{WIREFRAME};
     static constexpr uint32_t FILE_COLORMAP_ID{'fcmp'};
     static std::unique_ptr<ColorMap> createColorMap(BuiltInColorMaps cm);

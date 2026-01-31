@@ -278,10 +278,11 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
     }
     p.addSectionHeader("Themes");
     std::vector<std::pair<theme::ColorMap::BuiltInColorMaps, std::string>> maps = {
-        {theme::ColorMap::WIREFRAME, "Wireframe Colors"},
-        {theme::ColorMap::LIGHT, "Wireframe Light"},
-        {theme::ColorMap::HICONTRAST_DARK, "High Contrast Dark"},
-        {theme::ColorMap::TEST, "Test Colors"},
+        {theme::ColorMap::WIREFRAME, "Default Colors"},
+        {theme::ColorMap::CELTIC, "Celtic"},
+        {theme::ColorMap::LUX2, "Lux2"},
+        {theme::ColorMap::GRAYLOW, "GrayLow"},
+        {theme::ColorMap::OCEANOR, "Oceanor"}
     };
     auto cid = themeApplier.colors->myId;
     for (const auto &[mo, d] : maps)
@@ -299,6 +300,8 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
                 w->setStyle(w->style());
             }
         });
+        if (mo == theme::ColorMap::WIREFRAME)
+            p.addSeparator();
     }
 
     p.addSeparator();
