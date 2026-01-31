@@ -276,8 +276,14 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     void onMissingResolutionWorkItemList(const std::vector<engine::MissingResolutionWorkItem> &);
 
+    // Some items which are not fully represented here have a server-side clipboard
     scxt::engine::Clipboard::ContentType clipboardType{scxt::engine::Clipboard::ContentType::NONE};
     void onClipboardType(const scxt::engine::Clipboard::ContentType &s) { clipboardType = s; }
+    // but some can be copy and pasted entirely in the ui.
+    struct UISideClipboard
+    {
+        std::optional<dsp::processor::ProcessorStorage> processorStorage;
+    } clipboard;
 
     // Originate client to serialization messages
     void doSelectionAction(const selection::SelectionManager::ZoneAddress &, bool selecting,

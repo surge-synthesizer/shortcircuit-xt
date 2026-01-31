@@ -103,6 +103,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
 
     void layoutControlsWithJsonEngine(const std::string &jsonpath);
 
+    void pasteFromEditorClipboard();
+
     // massive swaths of this can go in the near future
     template <typename T = sst::jucegui::components::Knob>
     std::unique_ptr<theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>>
