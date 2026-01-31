@@ -355,7 +355,8 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
             {
                 boxOutline =
                     editor->themeColor(theme::ColorMap::generic_content_medium).withAlpha(0.5f);
-                boxFill = editor->themeColor(theme::ColorMap::generic_content_lowest);
+                boxFill =
+                    editor->themeColor(theme::ColorMap::generic_content_lowest).withAlpha(0.1f);
                 labelC =
                     editor->themeColor(theme::ColorMap::generic_content_medium).withAlpha(0.5f);
                 valueC = editor->themeColor(theme::ColorMap::accent_1b).withAlpha(0.5f);
