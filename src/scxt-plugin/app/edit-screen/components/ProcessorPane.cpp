@@ -131,6 +131,19 @@ void ProcessorPane::showPresetsMenu()
         return;
 
     juce::PopupMenu p;
+    p.addSectionHeader("Edit");
+    p.addItem("Copy", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->clipboard.processorStorage = w->processorView;
+    });
+    p.addItem("Paste", editor->clipboard.processorStorage.has_value(), false,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  w->pasteFromEditorClipboard();
+              });
+    p.addSeparator();
     p.addSectionHeader("Presets");
 
     auto ps = sst::voice_effects::presets::factoryPresetPathsFor(
@@ -419,6 +432,16 @@ void ProcessorPane::resetControls()
     otherEditors.clear();
 
     setToggleDataSource(nullptr);
+}
+
+void ProcessorPane::pasteFromEditorClipboard()
+{
+    if (!editor->clipboard.processorStorage.has_value())
+    {
+        return;
+    }
+    processorView = editor->clipboard.processorStorage.value();
+    sendToSerialization(cmsg::SendFullProcessorStorage({forZone, index, processorView}));
 }
 
 void ProcessorPane::setupJsonTypeMap()
