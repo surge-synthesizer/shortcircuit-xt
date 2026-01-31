@@ -1169,6 +1169,14 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
         auto rb = rectangleForRange(rr[1], rr[2], 0, 127);
         g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.4f));
         g.fillRect(rb);
+
+        auto sd = subdivideRangeForMultiDrop(rr[1], rr[2], display->dropElementCount);
+        for (auto &q : sd)
+        {
+            auto rb = rectangleForRange(q.first, q.second, 0, 127);
+            g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.6f));
+            g.drawRect(rb, 1.f);
+        }
     }
 
     if (mouseState == MULTI_SELECT || mouseState == CREATE_EMPTY_ZONE)
@@ -1235,6 +1243,38 @@ std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Po
     auto low = std::clamp(rootKey - span, 0.f, 127.f);
     auto high = std::clamp(rootKey + span, 0.f, 127.f);
     return {(int16_t)rootKey, (int16_t)low, (int16_t)high};
+}
+
+std::vector<std::pair<int16_t, int16_t>>
+ZoneLayoutDisplay::subdivideRangeForMultiDrop(int16_t start, int16_t end, size_t nEls)
+{
+    std::vector<std::pair<int16_t, int16_t>> res;
+    auto rangeWidth = end - start;
+    auto widthPer = std::max(1.f * rangeWidth / nEls, 1.f);
+    // OK so now widthPer will be like 3.7 or some such so we want to alternate
+    // 3 4 4 3 4 4 or so. A crude heuristic to do that is to space out in 10x
+    // resolution
+    auto widthScale = 10.f;
+    auto currPos = start * widthScale;
+    auto nextStart = start;
+    auto stepSize = widthPer * widthScale;
+
+    for (int i = 0; i < nEls; ++i)
+    {
+        currPos += stepSize;
+        auto knextScale = currPos;
+        auto st = nextStart;
+        auto kNext = (int)std::round(knextScale / widthScale);
+
+        if (kNext > end)
+            kNext = end;
+        nextStart = kNext + 1;
+        if (nextStart >= end)
+            nextStart = end - 1;
+
+        res.emplace_back(st, kNext);
+    }
+    return res;
 }
 
 void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &rIn,

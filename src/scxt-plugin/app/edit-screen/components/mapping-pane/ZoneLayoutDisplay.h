@@ -43,6 +43,8 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     void resized() override;
 
     std::array<int16_t, 3> rootAndRangeForPosition(const juce::Point<int> &);
+    std::vector<std::pair<int16_t, int16_t>> subdivideRangeForMultiDrop(int16_t start, int16_t end,
+                                                                        size_t nEls);
 
     juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
     juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
