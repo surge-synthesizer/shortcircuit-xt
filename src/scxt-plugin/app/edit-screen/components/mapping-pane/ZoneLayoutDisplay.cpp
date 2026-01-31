@@ -1242,6 +1242,24 @@ std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Po
     auto span = (1.0f - sqrt(fromTop)) * 80;
     auto low = std::clamp(rootKey - span, 0.f, 127.f);
     auto high = std::clamp(rootKey + span, 0.f, 127.f);
+
+    // Check if we left room
+    if (display->isUndertakingDrop && display->dropElementCount > 1)
+    {
+        auto dec = std::min((int)display->dropElementCount, 127);
+        // We need to adjust
+        if (high - low < display->dropElementCount)
+        {
+            auto lp = low;
+            auto hp = high;
+            auto hD = (display->dropElementCount - 1) / 2;
+            auto lD = display->dropElementCount - 1 - hD;
+            high = std::round(rootKey) + hD;
+            low = high - display->dropElementCount + 1;
+            low = std::max((int)low, 0);
+            high = std::min((int)high, 127);
+        }
+    }
     return {(int16_t)rootKey, (int16_t)low, (int16_t)high};
 }
 
@@ -1268,11 +1286,11 @@ ZoneLayoutDisplay::subdivideRangeForMultiDrop(int16_t start, int16_t end, size_t
 
         if (kNext > end)
             kNext = end;
-        nextStart = kNext + 1;
+        nextStart = kNext + (stepSize > 10 ? 1 : 0);
         if (nextStart >= end)
             nextStart = end - 1;
 
-        res.emplace_back(st, kNext);
+        res.emplace_back(st, (stepSize <= 10 ? st : kNext));
     }
     return res;
 }
