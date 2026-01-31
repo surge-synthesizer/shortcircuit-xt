@@ -360,6 +360,19 @@ int MappingDisplay::voiceCountFor(const selection::SelectionManager::ZoneAddress
 bool MappingDisplay::isInterestedInDragSource(
     const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
+    auto r = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
+    if (r)
+    {
+        auto wsi = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
+        if (wsi->encompassesMultipleSampleInfos())
+        {
+            dropElementCount = wsi->getMultipleSampleInfos().size();
+        }
+        else
+        {
+            dropElementCount = 1;
+        }
+    }
     return browser_ui::hasSampleInfo(dragSourceDetails.sourceComponent);
 }
 void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
@@ -372,12 +385,20 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
         if (wsi->encompassesMultipleSampleInfos())
         {
             auto els = wsi->getMultipleSampleInfos();
+            auto nEls = els.size();
+            auto layout = mappingZones->subdivideRangeForMultiDrop(r[1], r[2], nEls);
+
+            int idx{0};
             for (auto e : els)
             {
+                auto &lo = layout[idx++];
+                auto ctr = std::clamp((lo.second - lo.first) / 2 + lo.first, (int)lo.first,
+                                      (int)lo.second);
+
                 if (e->getCompoundElement().has_value())
                 {
                     sendToSerialization(cmsg::AddCompoundElementWithRange(
-                        {*e->getCompoundElement(), r[0], r[1], r[2], 0, 127}));
+                        {*e->getCompoundElement(), ctr, lo.first, lo.second, 0, 127}));
                 }
                 else if (
                     e->getDirEnt()
@@ -385,7 +406,7 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                                       //  !browser::Browser::isLoadableSingleSample(wsi->getDirEnt()->path()))
                 {
                     sendToSerialization(cmsg::AddSampleWithRange(
-                        {e->getDirEnt()->path().u8string(), r[0], r[1], r[2], 0, 127}));
+                        {e->getDirEnt()->path().u8string(), ctr, lo.first, lo.second, 0, 127}));
                 }
             }
         }
@@ -431,7 +452,7 @@ void MappingDisplay::itemDragMove(const juce::DragAndDropTarget::SourceDetails &
 
 bool MappingDisplay::isInterestedInFileDrag(const juce::StringArray &files)
 {
-    return std::all_of(files.begin(), files.end(), [this](const auto &f) {
+    auto allLoadable = std::all_of(files.begin(), files.end(), [this](const auto &f) {
         try
         {
             auto pt = fs::path{(const char *)(f.toUTF8())};
@@ -442,6 +463,10 @@ bool MappingDisplay::isInterestedInFileDrag(const juce::StringArray &files)
         }
         return false;
     });
+    dropElementCount = 1;
+    if (allLoadable)
+        dropElementCount = files.size();
+    return allLoadable;
 }
 
 void MappingDisplay::fileDragEnter(const juce::StringArray &files, int x, int y)
@@ -465,14 +490,20 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
 {
     namespace cmsg = scxt::messaging::client;
     auto r = mappingZones->rootAndRangeForPosition({x, y});
+    auto locs = mappingZones->subdivideRangeForMultiDrop(r[1], r[2], files.size());
+    int lidx{0};
     for (auto f : files)
     {
+        auto &lo = locs[lidx++];
+        auto ctr = std::clamp((lo.second - lo.first) / 2 + lo.first, (int)lo.first, (int)lo.second);
+        if (files.size() == 1)
+            ctr = r[0];
         auto p = fs::path{(const char *)(f.toUTF8())};
         auto inst = browser::Browser::getMultiInstrumentElements(p);
         if (inst.empty())
         {
             sendToSerialization(
-                cmsg::AddSampleWithRange({f.toStdString(), r[0], r[1], r[2], 0, 127}));
+                cmsg::AddSampleWithRange({f.toStdString(), ctr, lo.first, lo.second, 0, 127}));
         }
         else
         {

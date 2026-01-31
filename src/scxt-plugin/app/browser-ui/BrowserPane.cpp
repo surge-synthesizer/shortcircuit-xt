@@ -494,15 +494,20 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         return entry.expandableAddress;
     }
     bool encompassesMultipleSampleInfos() const override { return isDraggingMulti; }
-    std::set<WithSampleInfo *> getMultipleSampleInfos() const override
+    std::vector<WithSampleInfo *> getMultipleSampleInfos() const override
     {
-        std::set<WithSampleInfo *> r;
+        std::vector<DriveFSRowComponent *> r;
+        std::vector<WithSampleInfo *> res;
 
         for (auto q : browserPane->devicesPane->driveFSArea->selectedRows)
         {
-            r.insert(q);
+            r.push_back(q);
         }
-        return r;
+        std::sort(r.begin(), r.end(), [](auto &a, auto &b) { return a->rowNumber < b->rowNumber; });
+
+        for (auto q : r)
+            res.push_back(q);
+        return res;
     }
 
     void mouseDown(const juce::MouseEvent &event) override

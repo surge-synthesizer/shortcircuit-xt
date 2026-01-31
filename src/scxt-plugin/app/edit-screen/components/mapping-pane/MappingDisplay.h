@@ -173,6 +173,7 @@ struct MappingDisplay : juce::Component,
     bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override;
     void itemDropped(const SourceDetails &dragSourceDetails) override;
     bool isUndertakingDrop{false};
+    size_t dropElementCount{7};
     juce::Point<int> currentDragPoint;
     void itemDragEnter(const SourceDetails &dragSourceDetails) override;
 

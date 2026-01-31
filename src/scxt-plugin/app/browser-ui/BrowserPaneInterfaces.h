@@ -41,7 +41,7 @@ struct WithSampleInfo
     virtual std::optional<fs::directory_entry> getDirEnt() const = 0;
     virtual std::optional<sample::compound::CompoundElement> getCompoundElement() const = 0;
     virtual bool encompassesMultipleSampleInfos() const = 0;
-    virtual std::set<WithSampleInfo *> getMultipleSampleInfos() const = 0;
+    virtual std::vector<WithSampleInfo *> getMultipleSampleInfos() const = 0;
 };
 
 template <typename T> static bool hasSampleInfo(const T &t)
