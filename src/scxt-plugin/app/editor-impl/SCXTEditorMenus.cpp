@@ -241,7 +241,7 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
         p.addSectionHeader("Zoom");
         p.addSeparator();
     }
-    for (auto v : {75, 100, 125, 150, 200})
+    for (auto v : {75, 80, 90, 100, 110, 125, 150, 200})
     {
         bool checked = (std::fabs(zoomFactor * 100 - v) < 1);
         p.addItem(juce::String(v) + "%", true, checked,
