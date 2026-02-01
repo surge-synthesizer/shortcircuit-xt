@@ -111,6 +111,7 @@ static constexpr bool ringout{false};
 static constexpr bool streaming{false};
 static constexpr bool sqlDb{false};
 static constexpr bool groupTrigggers{false};
+static constexpr bool zoneLayout{true};
 
 static constexpr bool patchIO{false};
 static constexpr bool jsonUI{false};
@@ -133,6 +134,12 @@ static constexpr bool cliTools{true}; // allow cli tools to use the log
 // but this turns them off or providers simpler versions.
 namespace hasFeature
 {
+/*
+ * Does a zone geometry to a smaller zone shrink the fade, or block the shrink
+ * if the fade wont fit in the zone
+ */
+static constexpr bool geometryChangesAdjustFade{false};
+
 static constexpr bool undoRedo{false};               // undo-redo
 static constexpr bool memoryUsageExplanation{false}; // that chip in the header
 static constexpr bool mappingPane11Controls{false};  // zone mapping header skipped for 1.0

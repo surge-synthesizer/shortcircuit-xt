@@ -78,7 +78,6 @@ bool Sample::load(const fs::path &path)
         sample_loaded = true;
         mFileName = path;
         displayName = fmt::format("{}", path.filename().u8string());
-        compoundSourceDetails = "";
         type = WAV_FILE;
 
         id.setAsMD5(md5Sum);

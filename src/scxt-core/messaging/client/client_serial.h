@@ -94,6 +94,8 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_mapping_int16_t,
     c2s_update_lead_zone_single_variant,
     c2s_update_zone_variants_int16_t,
+    c2s_apply_all_zone_delta,
+    c2s_request_zone_mapping,
 
     c2s_normalize_variant_amplitude,
     c2s_clear_variant_amplitude_normalization,

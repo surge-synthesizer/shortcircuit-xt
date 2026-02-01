@@ -181,6 +181,7 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         repaint();
     }
     void updateTooltipContents(bool andShow, const juce::Point<int> &pos);
+    void updateCacheFromDisplay();
 };
 
 } // namespace scxt::ui::app::edit_screen
