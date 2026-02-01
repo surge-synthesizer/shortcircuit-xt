@@ -226,6 +226,18 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
 
         boolAttachments.insert(std::move(at));
         addAdditionalHamburgerComponent(std::move(res));
+
+        for (auto &a : floatAttachments)
+        {
+            if (a->description.canTemposync)
+            {
+                a->setTemposyncFunction([w = juce::Component::SafePointer(this)](const auto &a) {
+                    if (w)
+                        return w->getPartFXStorage().second.isTemposync;
+                    return false;
+                });
+            }
+        }
     }
 
     {
