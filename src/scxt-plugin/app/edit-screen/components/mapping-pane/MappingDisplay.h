@@ -193,6 +193,26 @@ struct MappingDisplay : juce::Component,
     bool keyPressed(const juce::KeyPress &key) override;
 
     engine::Part::zoneMappingSummary_t summary{};
+
+    enum DeltaResult
+    {
+        NO_CHANGE = 0,
+        KEYRANGE_CHANGED = 1,
+        VELOCITY_CHANGED = 2,
+        BOTH_CHANGED = KEYRANGE_CHANGED | VELOCITY_CHANGED
+    };
+
+    // Adjusts every selected zone; returns what we did to the lead zone
+    DeltaResult applyDeltaToSelectedZones(engine::Zone::ChangeDimension dim, int &deltaX,
+                                          int &deltaY, bool updateLead = true);
+
+    bool applyAbsoluteToSelectedZones(engine::Zone::ChangeDimension dim, int newX, int newY,
+                                      bool updateLead = true);
+
+    bool evaluateCanApplyUISide(engine::Zone::ChangeDimension dim, int deltaX, int deltaY) const;
+    void adjustDeltasToMakeSureTheyWillFit(engine::Zone::ChangeDimension dim, int &deltaX,
+                                           int &deltaY, const engine::KeyboardRange &kr,
+                                           const engine::VelocityRange &vr) const;
 };
 
 } // namespace scxt::ui::app::edit_screen

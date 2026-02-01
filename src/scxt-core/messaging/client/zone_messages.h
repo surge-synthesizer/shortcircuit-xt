@@ -71,6 +71,99 @@ inline void doUpdateLeadZoneMapping(const engine::Zone::ZoneMappingData &payload
 CLIENT_TO_SERIAL(UpdateLeadZoneMapping, c2s_update_lead_zone_mapping, engine::Zone::ZoneMappingData,
                  doUpdateLeadZoneMapping(payload, engine, cont));
 
+typedef std::tuple<bool, bool, int, int, int, int>
+    applyZoneDeltaPayload_t; // absolute, lead-only, part, dim, dx, dy
+inline void doApplyZoneDelta(const applyZoneDeltaPayload_t &payload, const engine::Engine &engine,
+                             MessageController &cont)
+{
+    auto part = std::get<2>(payload);
+    auto &sc = engine.getSelectionManager()->allSelectedZones[part];
+    auto lz = engine.getSelectionManager()->currentLeadZone(engine);
+    if (!sc.empty())
+    {
+        cont.scheduleAudioThreadCallback([lead = lz, pl = payload, zones = sc](auto &eng) {
+            auto [abs, leadOnly, pt, dirI, dx, dy] = pl;
+            auto dir = (engine::Zone::ChangeDimension)dirI;
+            auto doApply = true;
+            if (leadOnly)
+            {
+                if (lead.has_value())
+                {
+                    auto &z =
+                        eng.getPatch()->getPart(pt)->getGroup(lead->group)->getZone(lead->zone);
+                    if (abs)
+                    {
+                        z->applyAbsoluteBoundEdit(dir, dx, dy);
+                    }
+                    else
+                    {
+                        z->applyChange(dir, dx, dy);
+                    }
+                }
+            }
+            else
+            {
+                if (abs)
+                {
+                    bool doApply = true;
+                    for (auto &z : zones)
+                    {
+                        doApply = doApply && eng.getPatch()
+                                                 ->getPart(pt)
+                                                 ->getGroup(z.group)
+                                                 ->getZone(z.zone)
+                                                 ->canApplyAbsoluteBoundEdit(dir, dx, dy);
+                    }
+                    if (doApply)
+                    {
+                        for (auto &z : zones)
+                        {
+                            eng.getPatch()
+                                ->getPart(pt)
+                                ->getGroup(z.group)
+                                ->getZone(z.zone)
+                                ->applyAbsoluteBoundEdit(dir, dx, dy);
+                        }
+                    }
+                }
+                else
+                {
+                    for (auto &z : zones)
+                    {
+                        doApply = doApply && eng.getPatch()
+                                                 ->getPart(pt)
+                                                 ->getGroup(z.group)
+                                                 ->getZone(z.zone)
+                                                 ->canApplyChange(dir, dx, dy);
+                    }
+                    if (doApply)
+                    {
+                        for (auto &z : zones)
+                        {
+                            eng.getPatch()
+                                ->getPart(pt)
+                                ->getGroup(z.group)
+                                ->getZone(z.zone)
+                                ->applyChange(dir, dx, dy);
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+CLIENT_TO_SERIAL(ApplyZoneDelta, c2s_apply_all_zone_delta, applyZoneDeltaPayload_t,
+                 doApplyZoneDelta(payload, engine, cont));
+
+inline void doRequestZoneMapping(int p, const engine::Engine &eng, MessageController &cont)
+{
+    serializationSendToClient(messaging::client::s2c_send_selected_group_zone_mapping_summary,
+                              eng.getPatch()->getPart(p)->getZoneMappingSummary(),
+                              *(eng.getMessageController()));
+}
+CLIENT_TO_SERIAL(RequestZoneMapping, c2s_request_zone_mapping, int,
+                 doRequestZoneMapping(payload, engine, cont));
+
 // Updating mapping rather than try and calculate the image client side just
 // resend the resulting mapped zones with selection state back to the UI
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneMappingFloatValue, c2s_update_zone_mapping_float,

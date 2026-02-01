@@ -275,6 +275,52 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         return engine;
     }
 
+    enum ChangeDimension
+    {
+        NO_CHANGE = 0,
+        MOVE_CTR_NO_ROOTKEY = 1,
+        MOVE_ROOTKEY = 1 << 1,
+        MOVE_CTR = MOVE_CTR_NO_ROOTKEY | MOVE_ROOTKEY,
+
+        KEY_RANGE_START = 1 << 2,
+        KEY_RANGE_END = 1 << 3,
+        VEL_RANGE_START = 1 << 4,
+        VEL_RANGE_END = 1 << 5,
+
+        KSVS = KEY_RANGE_START | VEL_RANGE_START,
+        KSVE = KEY_RANGE_START | VEL_RANGE_END,
+        KEVS = KEY_RANGE_END | VEL_RANGE_START,
+        KEVE = KEY_RANGE_END | VEL_RANGE_END,
+    };
+    static bool canApplyChange(ChangeDimension dim, int deltaX, int deltaY, const KeyboardRange &kr,
+                               const VelocityRange &vr);
+    static void applyChange(ChangeDimension dim, int deltaX, int deltaY, Zone::ZoneMappingData &md);
+    static bool canApplyAbsoluteBoundEdit(ChangeDimension dim, int deltaX, int deltaY,
+                                          const KeyboardRange &kr, const VelocityRange &vr);
+    static void applyAbsoluteBoundEdit(ChangeDimension dim, int deltaX, int deltaY,
+                                       KeyboardRange &kr, VelocityRange &vr);
+
+    bool canApplyChange(ChangeDimension dim, int deltaX, int deltaY) const
+    {
+        return canApplyChange(dim, deltaX, deltaY, mapping.keyboardRange, mapping.velocityRange);
+    }
+
+    void applyChange(ChangeDimension dim, int deltaX, int deltaY)
+    {
+        applyChange(dim, deltaX, deltaY, mapping);
+    }
+
+    bool canApplyAbsoluteBoundEdit(ChangeDimension dim, int deltaX, int deltaY) const
+    {
+        return canApplyAbsoluteBoundEdit(dim, deltaX, deltaY, mapping.keyboardRange,
+                                         mapping.velocityRange);
+    }
+
+    void applyAbsoluteBoundEdit(ChangeDimension dim, int deltaX, int deltaY)
+    {
+        applyAbsoluteBoundEdit(dim, deltaX, deltaY, mapping.keyboardRange, mapping.velocityRange);
+    }
+
     sst::basic_blocks::dsp::UIComponentLagHandler mUILag;
     void onSampleRateChanged() override;
 };

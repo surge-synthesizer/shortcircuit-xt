@@ -517,5 +517,173 @@ void Zone::onProcessorTypeChanged(int idx, dsp::processor::ProcessorType)
     }
 }
 
+bool Zone::canApplyChange(ChangeDimension dim, int deltaX, int deltaY, const KeyboardRange &kr,
+                          const VelocityRange &vr)
+{
+    if (dim == NO_CHANGE)
+        return true;
+
+    if (dim == MOVE_CTR)
+    {
+        return kr.keyStart + deltaX >= 0 && kr.keyEnd + deltaX <= 127 &&
+               vr.velStart + deltaY >= 0 && vr.velEnd + deltaY <= 127;
+    }
+
+    auto doApply = true;
+
+    /*
+     * Activate this code path if you want *any* item shrinking to size 0 to
+     * result in no item having a span or velocity drag.
+     */
+
+    auto iDim = (int)dim;
+    if (iDim & VEL_RANGE_START)
+    {
+        doApply = doApply && (vr.velStart + deltaY >= 0);
+        doApply = doApply && (vr.velStart + deltaY < vr.velEnd - 1);
+    }
+    if (iDim & VEL_RANGE_END)
+    {
+        doApply = doApply && (vr.velEnd + deltaY <= 127);
+        doApply = doApply && (vr.velStart < vr.velEnd + deltaY - 1);
+    }
+    if (iDim & KEY_RANGE_START)
+    {
+        doApply = doApply && (kr.keyStart + deltaX >= 0);
+        doApply = doApply && (kr.keyStart + deltaX <= kr.keyEnd);
+    }
+    if (iDim & KEY_RANGE_END)
+    {
+        doApply = doApply && (kr.keyEnd + deltaX <= 127);
+        doApply = doApply && (kr.keyStart <= kr.keyEnd + deltaX);
+    }
+
+    return doApply;
+}
+
+void Zone::applyChange(ChangeDimension dim, int deltaX, int deltaY, Zone::ZoneMappingData &md)
+{
+    auto &kr = md.keyboardRange;
+    auto &vr = md.velocityRange;
+    if (!canApplyChange(dim, deltaX, deltaY, kr, vr))
+        return;
+
+    if (dim == NO_CHANGE)
+        return;
+
+    auto iDim = (int)dim;
+    if (iDim & MOVE_CTR_NO_ROOTKEY)
+    {
+        kr.keyStart += deltaX;
+        kr.keyEnd += deltaX;
+        vr.velStart += deltaY;
+        vr.velEnd += deltaY;
+
+        if (iDim & MOVE_ROOTKEY)
+        {
+            // This line moves root key when moving.
+            md.rootKey += deltaX;
+        }
+    }
+    else
+    {
+        if (iDim & VEL_RANGE_START)
+        {
+            vr.velStart += deltaY;
+            vr.velStart = std::min(vr.velStart, (int16_t)(vr.velEnd - 1));
+        }
+        if (iDim & VEL_RANGE_END)
+        {
+            vr.velEnd += deltaY;
+            vr.velEnd = std::max(vr.velEnd, (int16_t)(vr.velStart - 1));
+        }
+        if (iDim & KEY_RANGE_START)
+        {
+            kr.keyStart += deltaX;
+            kr.keyStart = std::min(kr.keyStart, (int16_t)(kr.keyEnd));
+        }
+        if (iDim & KEY_RANGE_END)
+        {
+            kr.keyEnd += deltaX;
+            kr.keyEnd = std::max(kr.keyEnd, (int16_t)(kr.keyStart));
+        }
+    }
+
+    // Constrain fades
+    auto keySpan = kr.keyEnd - kr.keyStart;
+    auto keyFadeSpan = kr.fadeEnd + kr.fadeStart;
+    while (keyFadeSpan > keySpan)
+    {
+        if (kr.fadeStart > kr.fadeEnd)
+            kr.fadeStart--;
+        else
+            kr.fadeEnd--;
+        keyFadeSpan = kr.fadeEnd + kr.fadeStart;
+    }
+    auto velSpan = vr.velEnd - vr.velStart;
+    auto velFadeSpan = vr.fadeEnd + vr.fadeStart;
+    while (velFadeSpan > velSpan)
+    {
+        if (vr.fadeStart > vr.fadeEnd)
+            vr.fadeStart--;
+        else
+            vr.fadeEnd--;
+        velFadeSpan = vr.fadeEnd + vr.fadeStart;
+    }
+}
+
+bool Zone::canApplyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY,
+                                     const KeyboardRange &kr, const VelocityRange &vr)
+{
+    if (dim == NO_CHANGE)
+        return true;
+
+    if (dim == VEL_RANGE_START)
+    {
+        return newY >= 0 && newY < 127 && newY <= vr.velEnd - 1;
+    }
+    if (dim == VEL_RANGE_END)
+    {
+        return newY >= 0 && newY < 127 && newY <= vr.velStart;
+    }
+    if (dim == KEY_RANGE_START)
+    {
+        return newX >= 0 && newX <= 127 && newX < kr.keyEnd;
+    }
+    if (dim == KEY_RANGE_END)
+    {
+        return newY >= 0 && newY <= 127 && newX >= kr.keyStart;
+    }
+    return true;
+}
+
+void Zone::applyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY, KeyboardRange &kr,
+                                  VelocityRange &vr)
+{
+    if (!canApplyAbsoluteBoundEdit(dim, newX, newY, kr, vr))
+        return;
+
+    if (dim == VEL_RANGE_START)
+    {
+        if (newY >= 0 && newY <= 127 && newY < vr.velEnd - 1)
+            vr.velStart = newY;
+    }
+    if (dim == VEL_RANGE_END)
+    {
+        if (newY >= 0 && newY <= 127 && newY > vr.velStart)
+            vr.velEnd = newY;
+    }
+    if (dim == KEY_RANGE_START)
+    {
+        if (newX >= 0 && newX <= 127 && newX < kr.keyEnd)
+            kr.keyStart = newX;
+    }
+    if (dim == KEY_RANGE_END)
+    {
+        if (newY >= 0 && newY <= 127 && newX >= kr.keyStart)
+            kr.keyEnd = newX;
+    }
+}
+
 template struct HasGroupZoneProcessors<Zone>;
 } // namespace scxt::engine
