@@ -1,0 +1,38 @@
+[
+   {
+      "hoverfactor": "0.250000",
+      "version": "1"
+   },
+   {
+      "accent_1a": "#ffffb949",
+      "accent_1b": "#ffd09030",
+      "accent_1b_alpha_a": "#20d09030",
+      "accent_1b_alpha_b": "#60d09030",
+      "accent_1b_alpha_c": "#90d09030",
+      "accent_2a": "#ff2788d6",
+      "accent_2a_alpha_a": "#202788d6",
+      "accent_2a_alpha_b": "#602788d6",
+      "accent_2a_alpha_c": "#902788d6",
+      "accent_2b": "#ff004f8a",
+      "accent_2b_alpha_a": "#20004f8a",
+      "accent_2b_alpha_b": "#60004f8a",
+      "accent_2b_alpha_c": "#90004f8a",
+      "bg_1": "#ff484a4a",
+      "bg_2": "#ff404242", 
+      "bg_3": "#ff5d5D5d",
+      "generic_content_high": "#ff080808",
+      "generic_content_highest": "#ff000000",
+      "generic_content_low": "#ff75746F",
+      "generic_content_lowest": "#ff000000",
+      "generic_content_medium": "#ffD4CF60",
+      "grid_primary": "#a8393939",
+      "grid_secondary": "#14a6a6a6",
+      "gutter_2": "#ff333333",
+      "gutter_3": "#ff262a2f",
+      "knob_fill": "#ff404040",
+      "panel_outline_2": "#ff000000",
+      "panel_outline_3": "#ffffffff",
+      "warning_1a": "#ffd67272",
+      "warning_1b": "#ff8a0000"
+   }
+]

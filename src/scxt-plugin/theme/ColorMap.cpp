@@ -213,28 +213,26 @@ std::unique_ptr<ColorMap> ColorMap::createColorMap(scxt::ui::theme::ColorMap::Bu
 {
     std::unique_ptr<ColorMap> res;
     std::optional<std::string> json;
-    switch (cm)
+
+    std::unordered_map<scxt::ui::theme::ColorMap::BuiltInColorMaps, std::string> jsonMap;
+    jsonMap[WIREFRAME] = "themes/wireframe-dark.json";
+    jsonMap[CELTIC] = "themes/Celtic.json";
+    jsonMap[GRAYLOW] = "themes/Grayllow.json";
+    jsonMap[LUX2] = "themes/Lux2.json";
+    jsonMap[OCEANOR] = "themes/Oceanor.json";
+
+    auto jf = jsonMap.find(cm);
+    if (jf != jsonMap.end())
     {
-    case TEST:
-        json = connectors::jsonlayout::resolveJsonFile("themes/test-colors.json");
+        json = connectors::jsonlayout::resolveJsonFile(jf->second);
         if (json.has_value())
+        {
             res = ColorMap::jsonToColormap(*json);
-        break;
-    case WIREFRAME:
-        json = connectors::jsonlayout::resolveJsonFile("themes/wireframe-dark.json");
-        if (json.has_value())
-            res = ColorMap::jsonToColormap(*json);
-        break;
-    case HICONTRAST_DARK:
-        json = connectors::jsonlayout::resolveJsonFile("themes/wireframe-dark-hicontrast.json");
-        if (json.has_value())
-            res = ColorMap::jsonToColormap(*json);
-        break;
-    case LIGHT:
-        json = connectors::jsonlayout::resolveJsonFile("themes/wireframe-light.json");
-        if (json.has_value())
-            res = ColorMap::jsonToColormap(*json);
-        break;
+        }
+        else
+        {
+            SCLOG_IF(warnings, "Unable to resolve internal wireframe " << jf->second);
+        }
     }
 
     if (!res)
