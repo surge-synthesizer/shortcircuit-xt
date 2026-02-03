@@ -121,6 +121,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     addAndMakeVisible(*vuMeter);
 
     scMenu = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::SHORTCIRCUIT_LOGO);
+    scMenu->setTitle("Main Menu");
     scMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (w)
             w->editor->showMainMenu();
@@ -142,6 +143,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
 
     tuningButton = std::make_unique<jcmp::TextPushButton>();
     tuningButton->setLabel("Tune");
+    tuningButton->setTitle("Tuning");
     tuningButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
@@ -153,6 +155,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
 
     zoomButton = std::make_unique<jcmp::TextPushButton>();
     zoomButton->setLabel("Zoom");
+    zoomButton->setTitle("Zoom");
     zoomButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
@@ -170,6 +173,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     }
 
     saveAsButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::SAVE);
+    saveAsButton->setTitle("Save and Load");
     saveAsButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
