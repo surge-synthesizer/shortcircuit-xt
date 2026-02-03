@@ -66,6 +66,10 @@ struct alignas(16) Sample : MoveableOnly<Sample>
 
     std::string displayName{};
     std::string getDisplayName() const { return displayName; }
+
+    std::string compoundSourceDetails{};
+    std::string getCompoundSourceDetails() const { return compoundSourceDetails; }
+
     bool load(const fs::path &path);
     bool loadFromSF2(const fs::path &path, sf2::File *f, int sampleIndex);
     bool loadFromGIG(const fs::path &path, gig::File *f, int sampleIndex);
