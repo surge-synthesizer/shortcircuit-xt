@@ -928,11 +928,13 @@ struct BrowserPaneFooter : HasEditor, juce::Component
                     infrastructure::DefaultKeys::browserAutoPreviewEnabled, v);
             },
             parent->autoPreviewEnabled);
+        autoPreviewAtt->label = "Auto Preview";
         autoPreview->setSource(autoPreviewAtt.get());
         addAndMakeVisible(*autoPreview);
 
         preview = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::JOG_RIGHT);
         preview->setOnCallback([this]() { launchPreview(); });
+        preview->setTitle("Launch Preview");
         addAndMakeVisible(*preview);
 
         addAndMakeVisible(*previewLevelConnector->widget);
@@ -941,6 +943,7 @@ struct BrowserPaneFooter : HasEditor, juce::Component
             editor->defaultsProvider.updateUserDefaultValue(
                 infrastructure::DefaultKeys::browserPreviewAmplitude, (int)(amp * 100));
         };
+        previewLevelConnector->widget->setTitle("Preview Volume Level");
     }
     void resized() override
     {

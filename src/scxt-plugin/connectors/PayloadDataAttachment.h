@@ -474,7 +474,8 @@ struct DirectBooleanPayloadDataAttachment : sst::jucegui::data::Discrete
     {
     }
 
-    std::string getLabel() const override { return "Bool"; }
+    std::string label{"Bool"};
+    std::string getLabel() const override { return label; }
     int getValue() const override { return value ? 1 : 0; }
     void setValueFromGUI(const int &f) override
     {
