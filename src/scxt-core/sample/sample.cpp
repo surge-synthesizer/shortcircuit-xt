@@ -78,6 +78,7 @@ bool Sample::load(const fs::path &path)
         sample_loaded = true;
         mFileName = path;
         displayName = fmt::format("{}", path.filename().u8string());
+        compoundSourceDetails = "";
         type = WAV_FILE;
 
         id.setAsMD5(md5Sum);
@@ -92,6 +93,7 @@ bool Sample::load(const fs::path &path)
             type = FLAC_FILE;
             mFileName = path;
             displayName = fmt::format("{}", path.filename().u8string());
+            compoundSourceDetails = "";
 
             id.setAsMD5(md5Sum);
 
@@ -110,6 +112,7 @@ bool Sample::load(const fs::path &path)
             type = MP3_FILE;
             mFileName = path;
             displayName = fmt::format("{}", path.filename().u8string());
+            compoundSourceDetails = "";
 
             id.setAsMD5(md5Sum);
 
@@ -139,6 +142,7 @@ bool Sample::load(const fs::path &path)
         sample_loaded = true;
         mFileName = path;
         displayName = fmt::format("{}", path.filename().u8string());
+        compoundSourceDetails = "";
 
         id.setAsMD5(md5Sum);
 
@@ -171,7 +175,8 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
     auto s = sfsample;
 
     auto fnp = fs::path(fs::u8path(f->GetRiffFile()->GetFileName()));
-    displayName = fmt::format("{} - ({} @ {})", s->Name, fnp.filename().u8string(), sampleIndex);
+    displayName = std::string(s->Name);
+    compoundSourceDetails = fmt::format("{} @ {}", fnp.filename().u8string(), sampleIndex);
 
     if (frameSize == 2 && channels == 1 && sfsample->SampleType == sf2::Sample::MONO_SAMPLE)
     {
@@ -244,7 +249,8 @@ bool Sample::loadFromGIG(const fs::path &p, gig::File *f, int sampleIndex)
     std::string sname = "Gig Sample";
     if (s->pInfo)
         sname = s->pInfo->Name;
-    displayName = fmt::format("{} - ({} @ {})", sname, fnp.filename().u8string(), sampleIndex);
+    displayName = sname;
+    compoundSourceDetails = fmt::format("{} @ {}", fnp.filename().u8string(), sampleIndex);
 
     SCLOG_IF(sampleLoadAndPurge, "GIG " << SCD((int)channels) << SCD(sampleLengthPerChannel)
                                         << SCD(sample_rate) << SCD(frameSize) << " "
@@ -295,8 +301,8 @@ bool Sample::loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampl
         return false;
     }
 
-    displayName =
-        fmt::format("{} - ({} @ {})", dat.filename, path.filename().u8string(), sampleIndex);
+    displayName = dat.filename;
+    compoundSourceDetails = fmt::format("{} @ {}", path.filename().u8string(), sampleIndex);
 
     auto fnP = fs::path(fs::u8path(dat.filename));
 

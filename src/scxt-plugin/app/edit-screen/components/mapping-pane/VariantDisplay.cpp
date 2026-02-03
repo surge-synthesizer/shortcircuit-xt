@@ -612,6 +612,9 @@ void VariantDisplay::rebuild()
         }
 
         fileButton->setLabel(samp->displayName);
+        if (!samp->compoundSourceDetails.empty())
+            fileButton->setLabel(samp->displayName + " (" + samp->compoundSourceDetails + ")");
+
         fileInfos->sampleRate = samp->sample_rate;
         fileInfos->bd = samp->getBitDepthText();
         fileInfos->sampleLength = samp->sampleLengthPerChannel;
