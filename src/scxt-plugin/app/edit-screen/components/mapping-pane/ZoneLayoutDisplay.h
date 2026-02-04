@@ -42,9 +42,14 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     void paint(juce::Graphics &g) override;
     void resized() override;
 
-    std::array<int16_t, 3> rootAndRangeForPosition(const juce::Point<int> &);
-    std::vector<std::pair<int16_t, int16_t>> subdivideRangeForMultiDrop(int16_t start, int16_t end,
-                                                                        size_t nEls);
+    struct RootAndRange
+    {
+        RootAndRange(int16_t r, int16_t l, int16_t h) : root(r), lo(l), hi(h) {}
+        int16_t root, lo, hi;
+    };
+    std::vector<RootAndRange>
+    rootAndRangeForPosition(const juce::Point<int> &, size_t nFiles,
+                            bool isMappedInstrument /* like an SFZ or such */);
 
     juce::Rectangle<float> rectangleForZone(const engine::Part::zoneMappingItem_t &sum);
     juce::Rectangle<float> rectangleForRange(int kL, int kH, int vL, int vH);
