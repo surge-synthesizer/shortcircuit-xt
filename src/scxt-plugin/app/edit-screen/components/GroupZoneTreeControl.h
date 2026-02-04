@@ -678,6 +678,12 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 gzRow->setBounds(getLocalBounds());
         }
     };
+
+    void mouseDown(const juce::MouseEvent &event) override
+    {
+        sidebar->editor->doSelectionAction(
+            selection::SelectionManager::SelectActionContents::deselectSentinel());
+    }
 };
 
 } // namespace scxt::ui::app::edit_screen
