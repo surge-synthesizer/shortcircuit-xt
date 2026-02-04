@@ -1165,17 +1165,22 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
     if (display->isUndertakingDrop)
     {
-        auto rr = rootAndRangeForPosition(display->currentDragPoint);
-        auto rb = rectangleForRange(rr[1], rr[2], 0, 127);
-        g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.4f));
-        g.fillRect(rb);
-
-        auto sd = subdivideRangeForMultiDrop(rr[1], rr[2], display->dropElementCount);
-        for (auto &q : sd)
+        // this can be expanded some....
+        auto ranges =
+            rootAndRangeForPosition(display->currentDragPoint, display->dropElementCount, false);
+        auto mul = ranges.size() > 1;
+        bool first = true;
+        for (auto &rr : ranges)
         {
-            auto rb = rectangleForRange(q.first, q.second, 0, 127);
-            g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.6f));
-            g.drawRect(rb, 1.f);
+            auto rb = rectangleForRange(rr.lo, rr.hi, 0, 127);
+            g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.4f));
+            g.fillRect(rb);
+            if (mul && !first)
+            {
+                g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.6f));
+                g.drawVerticalLine(rb.getX(), rb.getY(), rb.getBottom());
+            }
+            first = false;
         }
     }
 
@@ -1223,8 +1228,13 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
 void ZoneLayoutDisplay::resized() {}
 
-std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Point<int> &p)
+std::vector<ZoneLayoutDisplay::RootAndRange>
+ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Point<int> &p, size_t nEls,
+                                           bool isMappedInstrument)
 {
+    if (isMappedInstrument)
+        return {{60, 0, 127}};
+
     assert(ZoneLayoutKeyboard::lastMidiNote > ZoneLayoutKeyboard::firstMidiNote);
     auto lb = getLocalBounds().toFloat();
     auto bip = getBoundsInParent();
@@ -1240,59 +1250,44 @@ std::array<int16_t, 3> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Po
     static constexpr float zoneTrim{0.15f};
     fromTop = std::clamp((fromTop - zoneTrim) / (1.f - zoneTrim), 0.f, 1.f);
     auto span = (1.0f - sqrt(fromTop)) * 80;
-    auto low = std::clamp(rootKey - span, 0.f, 127.f);
-    auto high = std::clamp(rootKey + span, 0.f, 127.f);
 
-    // Check if we left room
-    if (display->isUndertakingDrop && display->dropElementCount > 1)
+    if (nEls == 1)
     {
-        auto dec = std::min((int)display->dropElementCount, 127);
-        // We need to adjust
-        if (high - low < display->dropElementCount)
-        {
-            auto lp = low;
-            auto hp = high;
-            auto hD = (display->dropElementCount - 1) / 2;
-            auto lD = display->dropElementCount - 1 - hD;
-            high = std::round(rootKey) + hD;
-            low = high - display->dropElementCount + 1;
-            low = std::max((int)low, 0);
-            high = std::min((int)high, 127);
-        }
+        auto low = std::clamp(rootKey - span, 0.f, 127.f);
+        auto high = std::clamp(rootKey + span, 0.f, 127.f);
+
+        return {{(int16_t)rootKey, (int16_t)low, (int16_t)high}};
     }
-    return {(int16_t)rootKey, (int16_t)low, (int16_t)high};
-}
 
-std::vector<std::pair<int16_t, int16_t>>
-ZoneLayoutDisplay::subdivideRangeForMultiDrop(int16_t start, int16_t end, size_t nEls)
-{
-    std::vector<std::pair<int16_t, int16_t>> res;
-    auto rangeWidth = end - start;
-    auto widthPer = std::max(1.f * rangeWidth / nEls, 1.f);
-    // OK so now widthPer will be like 3.7 or some such so we want to alternate
-    // 3 4 4 3 4 4 or so. A crude heuristic to do that is to space out in 10x
-    // resolution
-    auto widthScale = 10.f;
-    auto currPos = start * widthScale;
-    auto nextStart = start;
-    auto stepSize = widthPer * widthScale;
+    /* OK multi-element case */
+    auto wid = span;
+    auto per = wid / (nEls - 1);
+    auto rPer = std::max((int)std::round(per), 1);
+    auto toRoot = (int)(rPer / 2);
+    auto nwid = rPer * nEls;
+    auto start = rootKey - nwid / 2;
 
+    // bound constrain so end <= 127 and start >= 0
+    if (nEls < 127)
+    {
+        if (start < 0)
+            start = 0;
+        if (start + rPer * nEls > 127)
+            start = 127 - rPer * nEls;
+    }
+    else
+    {
+        start = 0;
+    }
+    std::vector<RootAndRange> ranges;
     for (int i = 0; i < nEls; ++i)
     {
-        currPos += stepSize;
-        auto knextScale = currPos;
-        auto st = nextStart;
-        auto kNext = (int)std::round(knextScale / widthScale);
-
-        if (kNext > end)
-            kNext = end;
-        nextStart = kNext + (stepSize > 10 ? 1 : 0);
-        if (nextStart >= end)
-            nextStart = end - 1;
-
-        res.emplace_back(st, (stepSize <= 10 ? st : kNext));
+        ranges.emplace_back(start + toRoot, start, start + rPer - 1);
+        start += rPer;
+        if (start + rPer - 1 > 127)
+            start = 127 - rPer;
     }
-    return res;
+    return ranges;
 }
 
 void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &rIn,

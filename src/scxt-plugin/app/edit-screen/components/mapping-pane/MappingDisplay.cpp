@@ -381,24 +381,24 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
     if (wsi)
     {
         namespace cmsg = scxt::messaging::client;
-        auto r = mappingZones->rootAndRangeForPosition(dragSourceDetails.localPosition);
+        auto r = mappingZones->rootAndRangeForPosition(dragSourceDetails.localPosition,
+                                                       dropElementCount, false);
+        assert(r.size() > 0);
+        assert(r.size() == dropElementCount);
         if (wsi->encompassesMultipleSampleInfos())
         {
             auto els = wsi->getMultipleSampleInfos();
             auto nEls = els.size();
-            auto layout = mappingZones->subdivideRangeForMultiDrop(r[1], r[2], nEls);
-
+            assert(nEls == dropElementCount);
             int idx{0};
             for (auto e : els)
             {
-                auto &lo = layout[idx++];
-                auto ctr = std::clamp((lo.second - lo.first) / 2 + lo.first, (int)lo.first,
-                                      (int)lo.second);
+                auto &loc = r[std::min(idx++, (int)nEls - 1)];
 
                 if (e->getCompoundElement().has_value())
                 {
                     sendToSerialization(cmsg::AddCompoundElementWithRange(
-                        {*e->getCompoundElement(), ctr, lo.first, lo.second, 0, 127}));
+                        {*e->getCompoundElement(), loc.root, loc.lo, loc.hi, 0, 127}));
                 }
                 else if (
                     e->getDirEnt()
@@ -406,21 +406,25 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                                       //  !browser::Browser::isLoadableSingleSample(wsi->getDirEnt()->path()))
                 {
                     sendToSerialization(cmsg::AddSampleWithRange(
-                        {e->getDirEnt()->path().u8string(), ctr, lo.first, lo.second, 0, 127}));
+                        {e->getDirEnt()->path().u8string(), loc.root, loc.lo, loc.hi, 0, 127}));
                 }
             }
         }
         else if (wsi->getCompoundElement().has_value())
         {
+            auto loc = r[0];
+            assert(r.size() == 1);
             sendToSerialization(cmsg::AddCompoundElementWithRange(
-                {*wsi->getCompoundElement(), r[0], r[1], r[2], 0, 127}));
+                {*wsi->getCompoundElement(), loc.root, loc.lo, loc.hi, 0, 127}));
         }
         else if (wsi->getDirEnt().has_value())
         {
+            auto loc = r[0];
+            assert(r.size() == 1);
             auto inst = browser::Browser::getMultiInstrumentElements(wsi->getDirEnt()->path());
             if (inst.empty())
                 sendToSerialization(cmsg::AddSampleWithRange(
-                    {wsi->getDirEnt()->path().u8string(), r[0], r[1], r[2], 0, 127}));
+                    {wsi->getDirEnt()->path().u8string(), loc.root, loc.lo, loc.hi, 0, 127}));
             else
             {
                 promptForMultiInstrument(inst);
@@ -489,21 +493,17 @@ void MappingDisplay::fileDragExit(const juce::StringArray &files)
 void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
 {
     namespace cmsg = scxt::messaging::client;
-    auto r = mappingZones->rootAndRangeForPosition({x, y});
-    auto locs = mappingZones->subdivideRangeForMultiDrop(r[1], r[2], files.size());
+    auto regions = mappingZones->rootAndRangeForPosition({x, y}, files.size(), false);
     int lidx{0};
     for (auto f : files)
     {
-        auto &lo = locs[lidx++];
-        auto ctr = std::clamp((lo.second - lo.first) / 2 + lo.first, (int)lo.first, (int)lo.second);
-        if (files.size() == 1)
-            ctr = r[0];
+        auto &loc = regions[lidx++];
         auto p = fs::path{(const char *)(f.toUTF8())};
         auto inst = browser::Browser::getMultiInstrumentElements(p);
         if (inst.empty())
         {
             sendToSerialization(
-                cmsg::AddSampleWithRange({f.toStdString(), ctr, lo.first, lo.second, 0, 127}));
+                cmsg::AddSampleWithRange({f.toStdString(), loc.root, loc.lo, loc.hi, 0, 127}));
         }
         else
         {
