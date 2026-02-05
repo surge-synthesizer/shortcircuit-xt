@@ -143,8 +143,6 @@ inline bool allActive(Processor *processors[engine::processorCount], Indices... 
     return (isActive(processors, idxs) && ...);
 }
 
-
-
 // -> 1 -> 2 -> 3 -> 4 ->
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 inline void processSequential(float fpitch, Processor *processors[engine::processorCount],
