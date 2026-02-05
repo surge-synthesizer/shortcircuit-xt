@@ -119,7 +119,6 @@ struct SampleManager : MoveableOnly<SampleManager>
     }
 
     fs::path reparentPath;
-    static constexpr const char *relativeSentinel = "SCXT_RELATIVE_PATH_MARKER";
     void reparentSamplesOnStreamToRelative(const fs::path &newParent)
     {
         reparentPath = fs::path{relativeSentinel} / newParent;
