@@ -126,6 +126,25 @@ inline void runSingleProcessor(int i, float fpitch, Processor *processors[engine
                            */
 }
 
+inline bool isActive(Processor *processors[engine::processorCount], size_t idx)
+{
+    return processors[idx] && !processors[idx]->bypassAnyway;
+}
+
+template <typename... Indices>
+inline bool anyActive(Processor *processors[engine::processorCount], Indices... idxs)
+{
+    return (isActive(processors, idxs) || ...);
+}
+
+template <typename... Indices>
+inline bool allActive(Processor *processors[engine::processorCount], Indices... idxs)
+{
+    return (isActive(processors, idxs) && ...);
+}
+
+
+
 // -> 1 -> 2 -> 3 -> 4 ->
 template <bool OS, bool forceStereo, int N, typename Mix, typename Endpoints>
 inline void processSequential(float fpitch, Processor *processors[engine::processorCount],
@@ -137,7 +156,7 @@ inline void processSequential(float fpitch, Processor *processors[engine::proces
 
     for (auto i = 0; i < engine::processorCount; ++i)
     {
-        if (processors[i])
+        if (isActive(processors, i))
         {
             runSingleProcessor<OS, forceStereo>(i, fpitch, processors, processorConsumesMono, mix,
                                                 outLev, endpoints, chainIsMono, output, output);
@@ -159,14 +178,14 @@ void processParallelPair(int A, int B, float fpitch, Processor *processors[engin
     float tmpbuf alignas(16)[2][2][N];
     bool isMute[2]{true, true};
 
-    if (processors[A] && !processors[A]->bypassAnyway)
+    if (isActive(processors, A))
     {
         isMute[0] = false;
         runSingleProcessor<OS, forceStereo>(A, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, m1, output, tmpbuf[0]);
     }
 
-    if (processors[B] && !processors[B]->bypassAnyway)
+    if (isActive(processors, B))
     {
         isMute[1] = false;
         runSingleProcessor<OS, forceStereo>(B, fpitch, processors, processorConsumesMono, mix,
@@ -227,13 +246,13 @@ void processSer2Pattern(float fpitch, Processor *processors[engine::processorCou
                         bool processorConsumesMono[engine::processorCount], Mix &mix, Mix &outLev,
                         Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
-    if (processors[0] || processors[1])
+    if (anyActive(processors, 0, 1))
     {
         processParallelPair<OS, forceStereo>(0, 1, fpitch, processors, processorConsumesMono, mix,
                                              outLev, endpoints, chainIsMono, output);
     }
 
-    if (processors[2] || processors[3])
+    if (anyActive(processors, 2, 3))
     {
         processParallelPair<OS, forceStereo>(2, 3, fpitch, processors, processorConsumesMono, mix,
                                              outLev, endpoints, chainIsMono, output);
@@ -246,19 +265,19 @@ void processSer3Pattern(float fpitch, Processor *processors[engine::processorCou
                         bool processorConsumesMono[engine::processorCount], Mix &mix, Mix &outLev,
                         Endpoints *endpoints, bool &chainIsMono, float output[2][N])
 {
-    if (processors[0])
+    if (isActive(processors, 0))
     {
         runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, chainIsMono, output, output);
     }
 
-    if (processors[1] || processors[2])
+    if (anyActive(processors, 1, 2))
     {
         processParallelPair<OS, forceStereo>(1, 2, fpitch, processors, processorConsumesMono, mix,
                                              outLev, endpoints, chainIsMono, output);
     }
 
-    if (processors[3])
+    if (isActive(processors, 3))
     {
         runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, chainIsMono, output, output);
@@ -282,7 +301,7 @@ void processPar1Pattern(float fpitch, Processor *processors[engine::processorCou
 
     for (int i = 0; i < engine::processorCount; ++i)
     {
-        if (processors[i])
+        if (isActive(processors, i))
         {
             isMute[i] = false;
             runSingleProcessor<OS, forceStereo>(i, fpitch, processors, processorConsumesMono, mix,
@@ -352,7 +371,7 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
     bool muteIn12 = true;
     bool muteIn34 = true;
 
-    if (processors[0] || processors[1])
+    if (anyActive(processors, 0, 1))
     {
         muteIn12 = false;
         mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0], tempbuf12[0]);
@@ -364,18 +383,18 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
         mech::clear_block<scxt::blockSize << (OS ? 1 : 0)>(tempbuf12[1]);
     }
 
-    if (processors[0])
+    if (isActive(processors, 0))
     {
         runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, mono12, tempbuf12, tempbuf12);
     }
-    if (processors[1])
+    if (isActive(processors, 1))
     {
         runSingleProcessor<OS, forceStereo>(1, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, mono12, tempbuf12, tempbuf12);
     }
 
-    if (processors[2] || processors[3])
+    if (anyActive(processors, 2, 3))
     {
         muteIn34 = false;
         mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0], tempbuf34[0]);
@@ -388,12 +407,12 @@ void processPar2Pattern(float fpitch, Processor *processors[engine::processorCou
         mech::clear_block<scxt::blockSize << (OS ? 1 : 0)>(tempbuf34[1]);
     }
 
-    if (processors[2])
+    if (isActive(processors, 2))
     {
         runSingleProcessor<OS, forceStereo>(2, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, mono34, tempbuf34, tempbuf34);
     }
-    if (processors[3])
+    if (isActive(processors, 3))
     {
         runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, mono34, tempbuf34, tempbuf34);
@@ -471,7 +490,7 @@ void processPar3Pattern(float fpitch, Processor *processors[engine::processorCou
 
     bool processed = false;
 
-    if (processors[0] || processors[1] || processors[2])
+    if (anyActive(processors, 0, 1, 2))
     {
         bool m1 = chainIsMono;
         bool m2 = chainIsMono;
@@ -480,21 +499,21 @@ void processPar3Pattern(float fpitch, Processor *processors[engine::processorCou
         float tmpbuf alignas(16)[3][2][N];
         bool isMute[3]{true, true, true};
 
-        if (processors[0])
+        if (isActive(processors, 0))
         {
             isMute[0] = false;
             runSingleProcessor<OS, forceStereo>(0, fpitch, processors, processorConsumesMono, mix,
                                                 outLev, endpoints, m1, output, tmpbuf[0]);
         }
 
-        if (processors[1])
+        if (isActive(processors, 1))
         {
             isMute[1] = false;
             runSingleProcessor<OS, forceStereo>(1, fpitch, processors, processorConsumesMono, mix,
                                                 outLev, endpoints, m2, output, tmpbuf[1]);
         }
 
-        if (processors[2])
+        if (isActive(processors, 2))
         {
             isMute[2] = false;
             runSingleProcessor<OS, forceStereo>(2, fpitch, processors, processorConsumesMono, mix,
@@ -552,7 +571,7 @@ void processPar3Pattern(float fpitch, Processor *processors[engine::processorCou
         }
     }
 
-    if (processors[3])
+    if (isActive(processors, 3))
     {
         runSingleProcessor<OS, forceStereo>(3, fpitch, processors, processorConsumesMono, mix,
                                             outLev, endpoints, chainIsMono, output, output);
