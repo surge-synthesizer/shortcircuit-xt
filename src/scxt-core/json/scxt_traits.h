@@ -31,6 +31,7 @@
 #include <initializer_list>
 #include "tao/json/traits.hpp"
 #include "filesystem/import.h"
+#include "configuration.h"
 
 namespace scxt::json
 {
@@ -251,6 +252,15 @@ inline fs::path unstreamPathFromString(const std::string &s)
         std::replace(r.begin(), r.end(), '\\', '/');
         auto res = fs::path(fs::u8path(mnt + r));
         return res;
+    }
+    else if (s.starts_with(std::string(scxt::relativeSentinel) + "\\"))
+    {
+        // Streamed on windows with a buggy version.
+        auto q = strlen(scxt::relativeSentinel);
+        auto newS = s;
+        newS[q] = '/';
+
+        return fs::path(fs::u8path(newS));
     }
     else
     {
