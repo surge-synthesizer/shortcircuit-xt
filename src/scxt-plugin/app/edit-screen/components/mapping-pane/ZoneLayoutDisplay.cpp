@@ -1238,11 +1238,12 @@ ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Point<int> &p, size_t nEl
     assert(ZoneLayoutKeyboard::lastMidiNote > ZoneLayoutKeyboard::firstMidiNote);
     auto lb = getLocalBounds().toFloat();
     auto bip = getBoundsInParent();
-    auto kw =
-        lb.getWidth() / (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
+    auto kw = hZoom * lb.getWidth() /
+              (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
+    auto k0 = hPct * 128;
 
     auto rootKey = std::clamp(
-        (p.getX() - bip.getX()) * 1.f / kw + ZoneLayoutKeyboard::firstMidiNote,
+        (p.getX() - bip.getX()) * 1.f / kw + ZoneLayoutKeyboard::firstMidiNote + k0,
         (float)ZoneLayoutKeyboard::firstMidiNote, (float)ZoneLayoutKeyboard::lastMidiNote);
 
     auto fromTop = std::clamp((p.getY() - bip.getY()), 0, getHeight()) * 1.f / getHeight();
