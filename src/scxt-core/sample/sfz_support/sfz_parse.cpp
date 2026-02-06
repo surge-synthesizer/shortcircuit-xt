@@ -366,6 +366,8 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
                 OpCode oc;
                 oc.name = opcode;
                 oc.value = stripTrailingAndQuotes(key);
+                if (res.empty())
+                    res.push_back({{Header::master, "default"}, {}});
                 res.back().second.push_back(oc);
             }
             else
