@@ -230,9 +230,9 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         releaseVelocity = 0.f;
 
         voiceStarted();
-        firstRender = true;
+        firstSamplePlayback = true;
     }
-    bool firstRender{false};
+    bool firstSamplePlayback{false};
 
     void release() { setIsGated(false); }
     void beginTerminationSequence()
