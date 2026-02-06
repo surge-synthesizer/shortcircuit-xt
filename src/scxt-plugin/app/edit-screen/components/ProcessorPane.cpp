@@ -546,6 +546,12 @@ void ProcessorPane::rebuildControlsFromDescription()
     if (processorControlDescription.type == dsp::processor::proct_none)
     {
         setToggleDataSource(nullptr);
+        if (toggleButton)
+        {
+            // this is a long lived component; remove the tooltip
+            toggleButton->onIdleHover = []() {};
+            toggleButton->onIdleHoverEnd = []() {};
+        }
         repaint();
         return;
     }
