@@ -92,6 +92,9 @@ void MatrixEndpoints::SampleTarget::bind(Matrix &m, engine::Zone &z)
     auto &mt = z.mapping;
     shmo::bindEl(m, mt, startPosT, zeroBase, startPosP,
                  datamodel::pmd().asPercentBipolar().withName("Start Pos Adjustment"));
+    // need a bindEl with an extra nonmod default value
+    shmo::bindEl(m, mt, playSampleT, zeroBase, oneBase, playSampleP,
+                 datamodel::pmd().asBool().withName("Sample Playing Gate"));
 }
 
 void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)

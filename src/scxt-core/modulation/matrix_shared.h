@@ -230,8 +230,17 @@ template <typename TG, uint32_t gn> struct ProcessorTargetEndpointData
 };
 
 template <typename Matrix, typename P>
-void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &tg, float &tgs,
-            const float *&p, std::optional<datamodel::pmd> providedMetadata = std::nullopt)
+void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &tg,
+            float &baseValue, const float *&p,
+            std::optional<datamodel::pmd> providedMetadata = std::nullopt)
+{
+    bindEl(m, payload, tg, baseValue, baseValue, p, providedMetadata);
+}
+
+template <typename Matrix, typename P>
+void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &tg,
+            float &baseValue, float &unmodulatedBase, const float *&p,
+            std::optional<datamodel::pmd> providedMetadata = std::nullopt)
 {
     assert(tg.gid != 0); // hit this? You forgot to init your target ctor
     assert(tg.tid != 0);
@@ -241,28 +250,36 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
         datamodel::pmd tmd;
         if (!providedMetadata.has_value())
         {
-            tmd = datamodel::describeValue(payload, tgs);
+            tmd = datamodel::describeValue(payload, baseValue);
         }
         else
         {
             tmd = *providedMetadata;
         }
         m.activeTargetsToPMD[tg] = tmd;
-        m.activeTargetsToBaseValue[tg] = tgs;
+        m.activeTargetsToBaseValue[tg] = baseValue;
         return;
     }
 
-    m.bindTargetBaseValue(tg, tgs);
+    if (&baseValue == &unmodulatedBase)
+    {
+        m.bindTargetBaseValue(tg, baseValue);
+    }
+    else
+    {
+        m.bindTargetBaseValueWithDistinctUnmodulatedValue(tg, baseValue, unmodulatedBase);
+    }
     p = m.getTargetValuePointer(tg);
 
 #if BUILD_IS_DEBUG
     /* Make sure every element has a description or a value provided.
      * This could be in an assert but you know, figure I'll just do it this
-     * way
+     * way (inasmuch as the describe will fail miserably if theres no
+     * metadata in debug mode here but not in release)
      * */
     if (!providedMetadata.has_value())
     {
-        auto metaData = datamodel::describeValue(payload, tgs);
+        auto metaData = datamodel::describeValue(payload, baseValue);
     }
 #endif
 
@@ -272,7 +289,7 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
         datamodel::pmd tmd;
         if (!providedMetadata.has_value())
         {
-            tmd = datamodel::describeValue(payload, tgs);
+            tmd = datamodel::describeValue(payload, baseValue);
         }
         else
         {

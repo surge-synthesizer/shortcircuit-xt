@@ -365,7 +365,9 @@ template <bool OS> bool Voice::processWithOS()
     // TODO and probably just want to process the envelopes here
     modMatrix.process();
 
-    if (firstRender)
+    bool samplePlaying = *endpoints->sampleTarget.playSampleP > 0.1;
+
+    if (firstSamplePlayback && samplePlaying)
     {
         /*
          * This is a placeholder for a collection of items which will need doing
@@ -391,187 +393,198 @@ template <bool OS> bool Voice::processWithOS()
                 currGen++;
             }
         }
-    }
 
-    firstRender = false;
+        firstSamplePlayback = false;
+    }
 
     auto fpitch = calculateVoicePitch();
 
-    auto [firstIndex, lastIndex] = sampleIndexRange();
-    if (firstIndex >= 0)
+    if (samplePlaying)
     {
-        for (auto i = firstIndex; i < lastIndex; ++i)
+        auto [firstIndex, lastIndex] = sampleIndexRange();
+        if (firstIndex >= 0)
         {
-            assert(i >= 0);
-            assert(i < zone->samplePointers.size());
-            if (zone->samplePointers[i])
+            for (auto i = firstIndex; i < lastIndex; ++i)
             {
-                calculateGeneratorRatio(fpitch, i, i - firstIndex);
+                assert(i >= 0);
+                assert(i < zone->samplePointers.size());
+                if (zone->samplePointers[i])
+                {
+                    calculateGeneratorRatio(fpitch, i, i - firstIndex);
+                }
+            }
+        }
+
+        if (useOversampling)
+            for (auto i = 0; i < numGeneratorsActive; ++i)
+                GD[i].ratio = GD[i].ratio >> 1;
+        fpitch -= 69;
+
+        memset(output, 0, sizeof(output));
+        if (numGeneratorsActive > 0)
+        {
+            isAnyGeneratorRunning = false;
+            float loutput alignas(16)[2][blockSize << 2];
+
+            bool inloop = false;
+            currentLoopPercentageF = 0.f;
+
+            for (auto idx = firstIndex; idx < lastIndex; ++idx)
+            {
+                auto &variantData = zone->variantData.variants[idx];
+
+                auto gidx = idx - firstIndex;
+                if (isGeneratorRunning[gidx])
+                {
+                    auto &s = zone->samplePointers[idx];
+                    assert(s);
+
+                    if (gidx == 0)
+                    {
+                        GDIO[gidx].outputL = output[0];
+                        GDIO[gidx].outputR = output[1];
+                    }
+                    else
+                    {
+                        GDIO[gidx].outputL = loutput[0];
+                        GDIO[gidx].outputR = loutput[1];
+                    }
+                    GD[gidx].sampleStart = 0;
+                    GD[gidx].sampleStop = s->sampleLengthPerChannel;
+
+                    /*
+                     * We implement loop for count by gating on loop count
+                     */
+                    if (variantData.loopMode == engine::Zone::LOOP_COUNT)
+                    {
+                        // first loop is zero so don't skip -1
+                        GD[gidx].gated = GD[gidx].loopCount < variantData.loopCountWhenCounted - 1;
+                    }
+                    else
+                    {
+                        GD[gidx].gated = isGated;
+                    }
+                    GD[gidx].loopInvertedBounds =
+                        1.f / std::max(1, GD[gidx].loopUpperBound - GD[gidx].loopLowerBound);
+                    GD[gidx].playbackInvertedBounds =
+                        1.f /
+                        std::max(1, GD[gidx].playbackUpperBound - GD[gidx].playbackLowerBound);
+
+                    if (!GD[gidx].isFinished && Generator[gidx])
+                    {
+                        Generator[gidx](&GD[gidx], &GDIO[gidx]);
+                    }
+
+                    inloop = inloop || GD[gidx].isInLoop;
+
+                    if (GD[gidx].isInLoop)
+                    {
+                        currentLoopPercentageF =
+                            1.0 * (GD[gidx].samplePos - GD[gidx].loopLowerBound) /
+                            (GD[gidx].loopUpperBound - GD[gidx].loopLowerBound);
+                    }
+                    currentSamplePercentageF =
+                        1.0 * (GD[gidx].samplePos - GD[gidx].playbackLowerBound) /
+                        (GD[gidx].playbackUpperBound - GD[gidx].playbackLowerBound);
+
+                    isGeneratorRunning[gidx] = !GD[gidx].isFinished;
+                    isAnyGeneratorRunning = isAnyGeneratorRunning || isGeneratorRunning[gidx];
+
+                    if (variantData.normalizationAmplitude != 1.0 || variantData.amplitude != 1.0)
+                    {
+                        auto normBy = variantData.normalizationAmplitude * variantData.amplitude *
+                                      variantData.amplitude * variantData.amplitude;
+                        auto *sl = (gidx == 0 ? output[0] : loutput[0]);
+                        auto *sr = (gidx == 0 ? output[1] : loutput[1]);
+                        if (monoGenerator[gidx])
+                        {
+                            mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(normBy, sl);
+                        }
+                        else
+                        {
+                            mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(normBy, sl, sr);
+                        }
+                    }
+
+                    bool panOverridesMono{false};
+                    if (variantData.pan > 0.001f || variantData.pan < -0.001f)
+                    {
+                        namespace pl = sst::basic_blocks::dsp::pan_laws;
+
+                        panOverridesMono = true;
+                        auto pv = std::clamp(variantData.pan, -1.f, 1.f) * 0.5 + 0.5;
+                        pl::panmatrix_t pmat{1, 1, 0, 0};
+
+                        auto *sl = (gidx == 0 ? output[0] : loutput[0]);
+                        auto *sr = (gidx == 0 ? output[1] : loutput[1]);
+                        if (monoGenerator[gidx])
+                        {
+                            pl::monoEqualPowerUnityGainAtExtrema(pv, pmat);
+                            for (int i = 0; i < blockSize << (OS ? 1 : 0); ++i)
+                            {
+                                sr[i] = sl[i] * pmat[3];
+                                sl[i] = sl[i] * pmat[0];
+                            }
+                        }
+                        else
+                        {
+                            pl::stereoEqualPower(pv, pmat);
+
+                            for (int i = 0; i < blockSize << (forceOversample ? 1 : 0); ++i)
+                            {
+                                auto il = sl[i];
+                                auto ir = sr[i];
+                                sl[i] = pmat[0] * il + pmat[2] * ir;
+                                sr[i] = pmat[1] * ir + pmat[3] * il;
+                            }
+                        }
+                    }
+
+                    if (gidx == 0)
+                    {
+                        if (monoGenerator[gidx] && !allGeneratorsMono && !panOverridesMono)
+                        {
+                            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0],
+                                                                                output[1]);
+                        }
+                    }
+                    else
+                    {
+                        mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
+                                                                                  output[0]);
+                        if (!monoGenerator[gidx] && !panOverridesMono)
+                        {
+                            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[1],
+                                                                                      output[1]);
+                        }
+                        else if (!allGeneratorsMono || panOverridesMono)
+                        {
+                            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
+                                                                                      output[1]);
+                        }
+                    }
+                }
+            }
+
+            inLoopF = (inloop ? 1.f : 0.f);
+            loopCountF = (inloop &&
+                                  zone->variantData.variants[sampleIndex].loopMode ==
+                                      engine::Zone::LOOP_COUNT &&
+                                  zone->variantData.variants[sampleIndex].loopCountWhenCounted > 0
+                              ? ((float)GD[0].loopCount /
+                                 zone->variantData.variants[sampleIndex].loopCountWhenCounted)
+                              : 0.f);
+
+            if (useOversampling && !OS)
+            {
+                halfRate.process_block_D2(output[0], output[1], blockSize << 1);
             }
         }
     }
-
-    if (useOversampling)
-        for (auto i = 0; i < numGeneratorsActive; ++i)
-            GD[i].ratio = GD[i].ratio >> 1;
-    fpitch -= 69;
-
-    memset(output, 0, sizeof(output));
-    if (numGeneratorsActive > 0)
+    else
     {
-        isAnyGeneratorRunning = false;
-        float loutput alignas(16)[2][blockSize << 2];
-
-        bool inloop = false;
-        currentLoopPercentageF = 0.f;
-
-        for (auto idx = firstIndex; idx < lastIndex; ++idx)
-        {
-            auto &variantData = zone->variantData.variants[idx];
-
-            auto gidx = idx - firstIndex;
-            if (isGeneratorRunning[gidx])
-            {
-                auto &s = zone->samplePointers[idx];
-                assert(s);
-
-                if (gidx == 0)
-                {
-                    GDIO[gidx].outputL = output[0];
-                    GDIO[gidx].outputR = output[1];
-                }
-                else
-                {
-                    GDIO[gidx].outputL = loutput[0];
-                    GDIO[gidx].outputR = loutput[1];
-                }
-                GD[gidx].sampleStart = 0;
-                GD[gidx].sampleStop = s->sampleLengthPerChannel;
-
-                /*
-                 * We implement loop for count by gating on loop count
-                 */
-                if (variantData.loopMode == engine::Zone::LOOP_COUNT)
-                {
-                    // first loop is zero so don't skip -1
-                    GD[gidx].gated = GD[gidx].loopCount < variantData.loopCountWhenCounted - 1;
-                }
-                else
-                {
-                    GD[gidx].gated = isGated;
-                }
-                GD[gidx].loopInvertedBounds =
-                    1.f / std::max(1, GD[gidx].loopUpperBound - GD[gidx].loopLowerBound);
-                GD[gidx].playbackInvertedBounds =
-                    1.f / std::max(1, GD[gidx].playbackUpperBound - GD[gidx].playbackLowerBound);
-
-                if (!GD[gidx].isFinished && Generator[gidx])
-                {
-                    Generator[gidx](&GD[gidx], &GDIO[gidx]);
-                }
-
-                inloop = inloop || GD[gidx].isInLoop;
-
-                if (GD[gidx].isInLoop)
-                {
-                    currentLoopPercentageF = 1.0 * (GD[gidx].samplePos - GD[gidx].loopLowerBound) /
-                                             (GD[gidx].loopUpperBound - GD[gidx].loopLowerBound);
-                }
-                currentSamplePercentageF =
-                    1.0 * (GD[gidx].samplePos - GD[gidx].playbackLowerBound) /
-                    (GD[gidx].playbackUpperBound - GD[gidx].playbackLowerBound);
-
-                isGeneratorRunning[gidx] = !GD[gidx].isFinished;
-                isAnyGeneratorRunning = isAnyGeneratorRunning || isGeneratorRunning[gidx];
-
-                if (variantData.normalizationAmplitude != 1.0 || variantData.amplitude != 1.0)
-                {
-                    auto normBy = variantData.normalizationAmplitude * variantData.amplitude *
-                                  variantData.amplitude * variantData.amplitude;
-                    auto *sl = (gidx == 0 ? output[0] : loutput[0]);
-                    auto *sr = (gidx == 0 ? output[1] : loutput[1]);
-                    if (monoGenerator[gidx])
-                    {
-                        mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(normBy, sl);
-                    }
-                    else
-                    {
-                        mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(normBy, sl, sr);
-                    }
-                }
-
-                bool panOverridesMono{false};
-                if (variantData.pan > 0.001f || variantData.pan < -0.001f)
-                {
-                    namespace pl = sst::basic_blocks::dsp::pan_laws;
-
-                    panOverridesMono = true;
-                    auto pv = std::clamp(variantData.pan, -1.f, 1.f) * 0.5 + 0.5;
-                    pl::panmatrix_t pmat{1, 1, 0, 0};
-
-                    auto *sl = (gidx == 0 ? output[0] : loutput[0]);
-                    auto *sr = (gidx == 0 ? output[1] : loutput[1]);
-                    if (monoGenerator[gidx])
-                    {
-                        pl::monoEqualPowerUnityGainAtExtrema(pv, pmat);
-                        for (int i = 0; i < blockSize << (OS ? 1 : 0); ++i)
-                        {
-                            sr[i] = sl[i] * pmat[3];
-                            sl[i] = sl[i] * pmat[0];
-                        }
-                    }
-                    else
-                    {
-                        pl::stereoEqualPower(pv, pmat);
-
-                        for (int i = 0; i < blockSize << (forceOversample ? 1 : 0); ++i)
-                        {
-                            auto il = sl[i];
-                            auto ir = sr[i];
-                            sl[i] = pmat[0] * il + pmat[2] * ir;
-                            sr[i] = pmat[1] * ir + pmat[3] * il;
-                        }
-                    }
-                }
-
-                if (gidx == 0)
-                {
-                    if (monoGenerator[gidx] && !allGeneratorsMono && !panOverridesMono)
-                    {
-                        mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0], output[1]);
-                    }
-                }
-                else
-                {
-                    mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
-                                                                              output[0]);
-                    if (!monoGenerator[gidx] && !panOverridesMono)
-                    {
-                        mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[1],
-                                                                                  output[1]);
-                    }
-                    else if (!allGeneratorsMono || panOverridesMono)
-                    {
-                        mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
-                                                                                  output[1]);
-                    }
-                }
-            }
-        }
-
-        inLoopF = (inloop ? 1.f : 0.f);
-        loopCountF =
-            (inloop &&
-                     zone->variantData.variants[sampleIndex].loopMode == engine::Zone::LOOP_COUNT &&
-                     zone->variantData.variants[sampleIndex].loopCountWhenCounted > 0
-                 ? ((float)GD[0].loopCount /
-                    zone->variantData.variants[sampleIndex].loopCountWhenCounted)
-                 : 0.f);
-
-        if (useOversampling && !OS)
-        {
-            halfRate.process_block_D2(output[0], output[1], blockSize << 1);
-        }
+        fpitch -= 69;
+        memset(output, 0, sizeof(output));
     }
 
     float tempbuf alignas(16)[2][BLOCK_SIZE << 1], postfader_buf alignas(16)[2][BLOCK_SIZE << 1];
