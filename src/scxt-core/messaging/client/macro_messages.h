@@ -60,18 +60,24 @@ inline void updateMacroFullState(const macroFullState_t &t, const engine::Engine
             {
                 auto &zone =
                     e.getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(lz->zone);
-                serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
-                                          voice::modulation::getVoiceMatrixMetadata(*zone),
-                                          *(e.getMessageController()));
+                if (zone)
+                {
+                    serializationSendToClient(messaging::client::s2c_update_zone_matrix_metadata,
+                                              voice::modulation::getVoiceMatrixMetadata(*zone),
+                                              *(e.getMessageController()));
+                }
             }
 
             const auto &lg = e.getSelectionManager()->currentLeadGroup(e);
             if (lg.has_value())
             {
                 auto &group = e.getPatch()->getPart(lg->part)->getGroup(lg->group);
-                serializationSendToClient(messaging::client::s2c_update_group_matrix_metadata,
-                                          modulation::getGroupMatrixMetadata(*group),
-                                          *(e.getMessageController()));
+                if (group)
+                {
+                    serializationSendToClient(messaging::client::s2c_update_group_matrix_metadata,
+                                              modulation::getGroupMatrixMetadata(*group),
+                                              *(e.getMessageController()));
+                }
             }
 
             messaging::audio::SerializationToAudio s2am;
