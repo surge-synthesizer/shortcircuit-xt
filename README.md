@@ -91,7 +91,7 @@ Shortcircuit-as-Shortcircuit and potentially use it or fragments of it in a vari
 inception, users who contributed have agreed to a CLA [here](doc/ShortcircuitXT-Individual-CLA.pdf) which kept copyright
 on all diffs with the author of
 each change, but which gave the maintainers of this project the option to distribute all contributions under an MIT or
-GPL3 license. This CLA was based on [http://selector.harmonyagreements.org](Canonical/Harmony 1.0).
+GPL3 license. This CLA was based on [Canonical/Harmony 1.0](http://selector.harmonyagreements.org).
 
 As we approached the beta, we decided to exercise that option. As such - as of January 18th, 2026 - we've decided that:
 
