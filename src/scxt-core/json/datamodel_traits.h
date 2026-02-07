@@ -40,7 +40,6 @@ namespace scxt::json
 {
 
 SC_STREAMDEF(datamodel::pmd, SC_FROM({
-                 assert(SC_STREAMING_FOR_IN_PROCESS);
                  std::vector<std::pair<int, std::string>> dvStream;
                  for (const auto &[k, mv] : t.discreteValues)
                      dvStream.emplace_back(k, mv);
