@@ -92,6 +92,13 @@ AboutScreen::AboutScreen(SCXTEditor *e) : HasEditor(e)
     infoFont = editor->themeApplier.interMediumFor(12);
     aboutFont = editor->themeApplier.interMediumFor(18);
 
+    copyButton = std::make_unique<AboutLink>(editor, "", "Copy Version Info");
+    copyButton->onClick = [this]() { copyInfo(); };
+    copyButton->displayColor = theme::ColorMap::accent_2a;
+    copyButton->hoverColor = theme::ColorMap::generic_content_high;
+    copyButton->font = aboutFont;
+    addAndMakeVisible(*copyButton);
+
     resetInfo();
 }
 
@@ -108,13 +115,6 @@ void AboutScreen::resetInfo()
     info.push_back({"Version", ver, false});
 
     std::string platform = juce::SystemStats::getOperatingSystemName().toStdString();
-
-    copyButton = std::make_unique<AboutLink>(editor, "", "Copy Version Info");
-    copyButton->onClick = [this]() { copyInfo(); };
-    copyButton->displayColor = theme::ColorMap::accent_2a;
-    copyButton->hoverColor = theme::ColorMap::generic_content_high;
-    copyButton->font = aboutFont;
-    addAndMakeVisible(*copyButton);
 
     platform += " on " + sst::plugininfra::cpufeatures::brand();
     info.push_back({"System", platform, false});
