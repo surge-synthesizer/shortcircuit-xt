@@ -54,6 +54,7 @@
 #include "theme/ThemeApplier.h"
 
 #include "connectors/PayloadDataAttachment.h"
+#include "sst/jucegui/component-adapters/PopupMenuParentMarker.h"
 
 namespace melatonin
 {
@@ -97,7 +98,8 @@ struct LogScreen;
 
 struct SCXTEditor : sst::jucegui::components::WindowPanel,
                     juce::DragAndDropContainer,
-                    sst::jucegui::screens::ScreenHolder<SCXTEditor>
+                    sst::jucegui::screens::ScreenHolder<SCXTEditor>,
+                    sst::jucegui::component_adapters::PopupMenuParentMarker
 {
     // The message controller is needed to communicate
     messaging::MessageController &msgCont;
