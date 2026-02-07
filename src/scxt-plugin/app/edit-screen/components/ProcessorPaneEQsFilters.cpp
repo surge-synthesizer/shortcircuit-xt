@@ -274,7 +274,7 @@ void ProcessorPane::layoutControlsEQNBandParm()
     auto eq = bd.withTrimmedRight(slWidth);
     auto mx = bd.withLeft(bd.getWidth() - slWidth);
 
-    eqdisp->setBounds(eq.withTrimmedTop(60));
+    eqdisp->setBounds(eq.withTrimmedTop(65));
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
 
     auto cols = lo::columns(eq, 4);
@@ -363,10 +363,7 @@ void ProcessorPane::layoutControlsEQMorph()
 {
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2>>(*this);
-    auto bd = getContentAreaComponent()->getLocalBounds();
-    auto slWidth = 20;
-    auto eq = bd.withTrimmedRight(slWidth);
-    auto mx = bd.withLeft(bd.getWidth() - slWidth);
+    auto eq = getContentAreaComponent()->getLocalBounds();
 
     eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
 
@@ -415,11 +412,8 @@ void ProcessorPane::layoutControlsEQGraphic()
 {
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
-    auto bd = getContentAreaComponent()->getLocalBounds();
-    auto slWidth = 20;
-    auto sliderHeight = 80;
-    auto eq = bd.withTrimmedRight(slWidth);
-    auto mx = bd.withLeft(bd.getWidth() - slWidth);
+    auto eq = getContentAreaComponent()->getLocalBounds();
+    auto sliderHeight = 65;
 
     auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
         if (w)
@@ -441,7 +435,7 @@ void ProcessorPane::layoutControlsEQGraphic()
         floatEditors[i]->item->setBounds(cols[i].reduced(3, 0));
     }
 
-    eqdisp->setBounds(eq.withTrimmedTop(sliderHeight + 2));
+    eqdisp->setBounds(eq.withTrimmedTop(sliderHeight));
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
 
     otherEditors.push_back(std::move(eqdisp));
