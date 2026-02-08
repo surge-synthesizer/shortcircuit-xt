@@ -336,11 +336,18 @@ void SCXTEditor::drainCallbackQueue()
     }
 }
 
+selection::SelectionManager::SelectActionContents
+SCXTEditor::makeSelectActionContents(const selection::SelectionManager::ZoneAddress &a,
+                                     bool selecting, bool distinct, bool asLead) const
+{
+    return selection::SelectionManager::SelectActionContents{a.part,    a.group,  a.zone,
+                                                             selecting, distinct, asLead};
+}
+
 void SCXTEditor::doSelectionAction(const selection::SelectionManager::ZoneAddress &a,
                                    bool selecting, bool distinct, bool asLead)
 {
-    doSelectionAction(selection::SelectionManager::SelectActionContents{
-        a.part, a.group, a.zone, selecting, distinct, asLead});
+    doSelectionAction(makeSelectActionContents(a, selecting, distinct, asLead));
 }
 
 void SCXTEditor::doSelectionAction(const selection::SelectionManager::SelectActionContents &p)

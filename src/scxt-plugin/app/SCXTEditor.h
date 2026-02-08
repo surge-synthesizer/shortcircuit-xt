@@ -288,6 +288,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     } clipboard;
 
     // Originate client to serialization messages
+    selection::SelectionManager::SelectActionContents
+    makeSelectActionContents(const selection::SelectionManager::ZoneAddress &a, bool selecting,
+                             bool distinct, bool asLead) const;
     void doSelectionAction(const selection::SelectionManager::ZoneAddress &, bool selecting,
                            bool distinct, bool asLead);
     void doSelectionAction(const selection::SelectionManager::SelectActionContents &);
