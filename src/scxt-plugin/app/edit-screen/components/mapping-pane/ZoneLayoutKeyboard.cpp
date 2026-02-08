@@ -140,7 +140,7 @@ void ZoneLayoutKeyboard::mouseDrag(const juce::MouseEvent &e)
             }
             else
             {
-                if (heldNote > 0)
+                if (heldNote >= 0)
                 {
                     sendToSerialization(cmsg::NoteFromGUI({heldNote, 0.0f, false}));
                 }
