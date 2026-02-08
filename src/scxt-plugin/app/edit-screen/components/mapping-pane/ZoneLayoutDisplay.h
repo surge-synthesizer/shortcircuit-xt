@@ -182,6 +182,10 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     }
     void updateTooltipContents(bool andShow, const juce::Point<int> &pos);
     void updateCacheFromDisplay();
+
+    juce::Rectangle<float> drawZone(juce::Graphics &g, const engine::Part::zoneMappingItem_t &z,
+                                    const juce::Colour &fillColour,
+                                    const juce::Colour &borderColor);
 };
 
 } // namespace scxt::ui::app::edit_screen
