@@ -460,7 +460,6 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_snhfilter, "filters/sample-and-hold.json");
     a(dsp::processor::proct_CytomicSVF, "filters/fast-svf.json");
     a(dsp::processor::proct_StaticPhaser, "filters/static-phaser.json");
-    a(dsp::processor::proct_fmfilter, "filters/fm-filter.json");
     a(dsp::processor::proct_utilfilt, "filters/utility-filter.json");
 
     a(dsp::processor::proct_eq_tilt, "eq/tilt-eq.json");
@@ -489,6 +488,7 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_volpan, "utility/volume-and-pan.json");
     a(dsp::processor::proct_fx_widener, "utility/widener.json");
 
+    a(dsp::processor::proct_fmfilter, "audio-rate-mod/fm-filter.json");
     a(dsp::processor::proct_fx_ringmod, "audio-rate-mod/ring-mod.json");
     a(dsp::processor::proct_fx_freqshiftmod, "audio-rate-mod/freq-shift-mod.json");
     a(dsp::processor::proct_noise_am, "audio-rate-mod/noise-am.json");
@@ -496,6 +496,7 @@ void ProcessorPane::setupJsonTypeMap()
 
     a(dsp::processor::proct_fx_bitcrusher, "distortion/bitcrusher.json");
     a(dsp::processor::proct_fx_waveshaper, "distortion/waveshaper.json");
+    a(dsp::processor::proct_fx_slewer, "distortion/slewer.json");
 
 #if DEBUG
     for (auto &[_, s] : jsonDefinitions)

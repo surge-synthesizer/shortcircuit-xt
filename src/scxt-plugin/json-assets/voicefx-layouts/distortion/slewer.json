@@ -1,0 +1,89 @@
+{
+  "include": "voicefx-layouts/voicefx-classes.json",
+  "controls": {
+    "pregain": {
+      "class": "knob30",
+      "label": "Pre Gain",
+      "binding": {
+        "type": "float",
+        "index": 0
+      },
+      "position": {
+        "x": 16,
+        "y": 8
+      }
+    },
+    "prefreq": {
+      "class": "knob30",
+      "label": "Pre Freq",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 16,
+        "y": 52
+      }
+    },
+    "prewidth": {
+      "class": "knob30",
+      "label": "Pre BW",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 16,
+        "y": 96
+      }
+    },
+    "slew": {
+      "class": "knob70",
+      "label": "Slew Rate",
+      "binding": {
+        "type": "float",
+        "index": 3
+      },
+      "position": {
+        "x": 73,
+        "y": 32
+      }
+    },
+    "postgain": {
+      "class": "knob30",
+      "label": "Post Gain",
+      "binding": {
+        "type": "float",
+        "index": 4
+      },
+      "position": {
+        "x": 169,
+        "y": 8
+      }
+    },
+    "postfreq": {
+      "class": "knob30",
+      "label": "Post Freq",
+      "binding": {
+        "type": "float",
+        "index": 5
+      },
+      "position": {
+        "x": 169,
+        "y": 52
+      }
+    },
+    "postwidth": {
+      "class": "knob30",
+      "label": "Post BW",
+      "binding": {
+        "type": "float",
+        "index": 6
+      },
+      "position": {
+        "x": 169,
+        "y": 96
+      }
+    }
+  }
+}
