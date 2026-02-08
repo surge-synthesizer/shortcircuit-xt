@@ -136,4 +136,6 @@ void PreviewVoice::processBlock()
     mech::scale_by<blockSize>(a3, output[0], output[1]);
 }
 
+void PreviewVoice::adjustAmplitude(float newA) { details->amplitude = newA; }
+
 } // namespace scxt::voice
