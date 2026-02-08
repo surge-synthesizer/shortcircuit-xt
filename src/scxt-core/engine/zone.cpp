@@ -691,7 +691,7 @@ bool Zone::canApplyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY,
     }
     if (dim == VEL_RANGE_END)
     {
-        return newY >= 0 && newY < 127 && newY <= vr.velStart;
+        return newY >= 0 && newY < 127 && newY > vr.velStart;
     }
     if (dim == KEY_RANGE_START)
     {
