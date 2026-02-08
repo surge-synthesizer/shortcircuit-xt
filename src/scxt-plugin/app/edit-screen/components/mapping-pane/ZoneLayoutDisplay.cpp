@@ -679,6 +679,7 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
     mouseState = NONE;
     repaint();
 
+    namespace cmsg = scxt::messaging::client;
     sendToSerialization(cmsg::RequestZoneMapping({editor->selectedPart}));
 }
 
@@ -863,7 +864,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
                 }
                 else
                 {
-                    auto ctr = rectangleForRangeSkipEnd(
+                    auto ctr = rectangleForRange(
                         z.kr.keyStart + z.kr.fadeStart, z.kr.keyEnd - z.kr.fadeEnd,
                         z.vr.velStart + z.vr.fadeStart, z.vr.velEnd - z.vr.fadeEnd);
                     g.setColour(fillColor);
@@ -898,7 +899,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
                     if (z.kr.fadeEnd > 0)
                     {
                         // Side but within vel end
-                        auto bx = rectangleForRange(z.kr.keyEnd - z.kr.fadeEnd, z.kr.keyEnd,
+                        auto bx = rectangleForRange(z.kr.keyEnd - z.kr.fadeEnd + 1, z.kr.keyEnd,
                                                     z.vr.velStart + z.vr.fadeStart,
                                                     z.vr.velEnd - z.vr.fadeEnd);
                         g.setColour(off);
@@ -915,8 +916,8 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
                     }
                     if (z.kr.fadeEnd > 0)
                     {
-                        auto rr = rectangleForRangeSkipEnd(z.kr.keyEnd - z.kr.fadeEnd, z.kr.keyEnd,
-                                                           z.vr.velStart, z.vr.velEnd);
+                        auto rr = rectangleForRangeSkipEnd(z.kr.keyEnd - z.kr.fadeEnd + 1,
+                                                           z.kr.keyEnd, z.vr.velStart, z.vr.velEnd);
                         g.setColour(c2);
                         g.drawVerticalLine(rr.getX(), rr.getY(), rr.getBottom());
                     }
