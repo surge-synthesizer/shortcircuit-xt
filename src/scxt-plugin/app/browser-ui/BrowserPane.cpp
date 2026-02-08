@@ -543,8 +543,8 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 hasStartedPreview = true;
                 namespace cmsg = scxt::messaging::client;
                 scxt::messaging::client::clientSendToSerialization(
-                    cmsg::PreviewBrowserSample({true, browserPane->previewAmplitude,
-                                                entry.expandableAddress->sampleAddress}),
+                    cmsg::PreviewBrowserSample(
+                        {1, browserPane->previewAmplitude, entry.expandableAddress->sampleAddress}),
                     browserPane->editor->msgCont);
                 repaint();
             }
@@ -555,7 +555,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 auto pth = fs::path(fs::u8path(data[rowNumber].dirent.path().u8string()));
                 scxt::messaging::client::clientSendToSerialization(
                     cmsg::PreviewBrowserSample(
-                        {true,
+                        {1,
                          browserPane->previewAmplitude,
                          {sample::Sample::sourceTypeFromPath(data[rowNumber].dirent.path()), pth,
                           "", -1, -1, -1}}),
@@ -637,7 +637,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             namespace cmsg = scxt::messaging::client;
 
             scxt::messaging::client::clientSendToSerialization(
-                cmsg::PreviewBrowserSample({false, 1.0, {}}), browserPane->editor->msgCont);
+                cmsg::PreviewBrowserSample({0, 1.0, {}}), browserPane->editor->msgCont);
         }
     }
 
@@ -943,6 +943,12 @@ struct BrowserPaneFooter : HasEditor, juce::Component
             editor->defaultsProvider.updateUserDefaultValue(
                 infrastructure::DefaultKeys::browserPreviewAmplitude, (int)(amp * 100));
         };
+        previewLevelConnector->onValueChanged = [this](auto v) {
+            namespace cmsg = scxt::messaging::client;
+            scxt::messaging::client::clientSendToSerialization(
+                cmsg::PreviewBrowserSample({2, parent->previewAmplitude, {}}),
+                parent->editor->msgCont);
+        };
         previewLevelConnector->widget->setTitle("Preview Volume Level");
     }
     void resized() override
@@ -968,7 +974,7 @@ struct BrowserPaneFooter : HasEditor, juce::Component
                 namespace cmsg = scxt::messaging::client;
                 scxt::messaging::client::clientSendToSerialization(
                     cmsg::PreviewBrowserSample(
-                        {true, parent->previewAmplitude, entry.expandableAddress->sampleAddress}),
+                        {1, parent->previewAmplitude, entry.expandableAddress->sampleAddress}),
                     parent->editor->msgCont);
             }
             else if (!entry.dirent.is_directory() &&
@@ -978,7 +984,7 @@ struct BrowserPaneFooter : HasEditor, juce::Component
                 auto pth = fs::path(fs::u8path(entry.dirent.path().u8string()));
                 scxt::messaging::client::clientSendToSerialization(
                     cmsg::PreviewBrowserSample(
-                        {true,
+                        {1,
                          parent->previewAmplitude,
                          {sample::Sample::sourceTypeFromPath(entry.dirent.path()), pth, "", -1, -1,
                           -1}}),

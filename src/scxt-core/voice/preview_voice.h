@@ -60,6 +60,11 @@ struct alignas(16) PreviewVoice : SampleRateSupport
      */
     void processBlock();
 
+    /**
+     *  Adjust the playing amplitude
+     */
+    void adjustAmplitude(float);
+
     bool isActive{false};
     bool schedulePurge{false};
     std::unique_ptr<Details> details;
