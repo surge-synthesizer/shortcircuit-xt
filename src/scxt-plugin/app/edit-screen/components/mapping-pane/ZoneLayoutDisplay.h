@@ -44,8 +44,12 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
 
     struct RootAndRange
     {
-        RootAndRange(int16_t r, int16_t l, int16_t h) : root(r), lo(l), hi(h) {}
-        int16_t root, lo, hi;
+        RootAndRange(int16_t r, int16_t l, int16_t h) : root(r), lo(l), hi(h), vlo(0), vhi(127) {}
+        RootAndRange(int16_t r, int16_t l, int16_t h, int16_t vl, int16_t vh)
+            : root(r), lo(l), hi(h), vlo(vl), vhi(vh)
+        {
+        }
+        int16_t root, lo, hi, vlo, vhi;
     };
     std::vector<RootAndRange>
     rootAndRangeForPosition(const juce::Point<int> &, size_t nFiles,

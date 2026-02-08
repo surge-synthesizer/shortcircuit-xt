@@ -899,13 +899,16 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
         bool first = true;
         for (auto &rr : ranges)
         {
-            auto rb = rectangleForRange(rr.lo, rr.hi, 0, 127);
+            auto rb = rectangleForRange(rr.lo, rr.hi, rr.vlo, rr.vhi);
             g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.4f));
             g.fillRect(rb);
             if (mul && !first)
             {
                 g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.6f));
-                g.drawVerticalLine(rb.getX(), rb.getY(), rb.getBottom());
+                if (rr.vlo == 0 && rr.vhi == 127)
+                    g.drawVerticalLine(rb.getX(), rb.getY(), rb.getBottom());
+                else
+                    g.drawHorizontalLine(rb.getBottom(), rb.getX(), rb.getRight());
             }
             first = false;
         }
@@ -979,7 +982,10 @@ ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Point<int> &p, size_t nEl
     fromTop = std::clamp((fromTop - zoneTrim) / (1.f - zoneTrim), 0.f, 1.f);
     auto span = (1.0f - sqrt(fromTop)) * 80;
 
-    if (nEls == 1)
+    auto spanVel = juce::ModifierKeys::getCurrentModifiers().isShiftDown();
+    auto intoVar = juce::ModifierKeys::getCurrentModifiers().isAltDown();
+
+    if (nEls == 1 || intoVar)
     {
         auto low = std::clamp(rootKey - span, 0.f, 127.f);
         auto high = std::clamp(rootKey + span, 0.f, 127.f);
@@ -987,35 +993,65 @@ ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Point<int> &p, size_t nEl
         return {{(int16_t)rootKey, (int16_t)low, (int16_t)high}};
     }
 
-    /* OK multi-element case */
-    auto wid = span;
-    auto per = wid / (nEls - 1);
-    auto rPer = std::max((int)std::round(per), 1);
-    auto toRoot = (int)(rPer / 2);
-    auto nwid = rPer * nEls;
-    auto start = rootKey - nwid / 2;
-
-    // bound constrain so end <= 127 and start >= 0
-    if (nEls < 127)
+    if (spanVel)
     {
-        if (start < 0)
-            start = 0;
-        if (start + rPer * nEls > 127)
-            start = 127 - rPer * nEls;
+        auto low = std::clamp(rootKey - span, 0.f, 127.f);
+        auto high = std::clamp(rootKey + span, 0.f, 127.f);
+        float velSpread = 127.0 / (nEls);
+        float cVel{0.f};
+        int nextS{0};
+        if (nEls >= 127)
+            velSpread = 1;
+
+        std::vector<RootAndRange> ranges;
+        for (int i = 0; i < nEls; ++i)
+        {
+            auto end = cVel + velSpread;
+            int endI = std::min((int)std::round(end), 127);
+            if (i == nEls - 1)
+                endI = 127;
+            int start = std::min(nextS, endI - 1);
+            if (i == 0)
+                start = 0;
+            nextS = endI + 1;
+            cVel = end;
+            ranges.emplace_back((int16_t)rootKey, (int16_t)low, (int16_t)high, start, endI);
+        }
+
+        return ranges;
     }
     else
     {
-        start = 0;
+        /* OK multi-element case */
+        auto wid = span;
+        auto per = wid / (nEls - 1);
+        auto rPer = std::max((int)std::round(per), 1);
+        auto toRoot = (int)(rPer / 2);
+        auto nwid = rPer * nEls;
+        auto start = rootKey - nwid / 2;
+
+        // bound constrain so end <= 127 and start >= 0
+        if (nEls < 127)
+        {
+            if (start < 0)
+                start = 0;
+            if (start + rPer * nEls > 127)
+                start = 127 - rPer * nEls;
+        }
+        else
+        {
+            start = 0;
+        }
+        std::vector<RootAndRange> ranges;
+        for (int i = 0; i < nEls; ++i)
+        {
+            ranges.emplace_back(start + toRoot, start, start + rPer - 1);
+            start += rPer;
+            if (start + rPer - 1 > 127)
+                start = 127 - rPer;
+        }
+        return ranges;
     }
-    std::vector<RootAndRange> ranges;
-    for (int i = 0; i < nEls; ++i)
-    {
-        ranges.emplace_back(start + toRoot, start, start + rPer - 1);
-        start += rPer;
-        if (start + rPer - 1 > 127)
-            start = 127 - rPer;
-    }
-    return ranges;
 }
 
 void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &rIn,

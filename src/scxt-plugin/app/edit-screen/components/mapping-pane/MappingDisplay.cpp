@@ -450,15 +450,16 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                 if (e->getCompoundElement().has_value())
                 {
                     sendToSerialization(cmsg::AddCompoundElementWithRange(
-                        {*e->getCompoundElement(), loc.root, loc.lo, loc.hi, 0, 127}));
+                        {*e->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
                 }
                 else if (
                     e->getDirEnt()
                         .has_value()) //  &&
                                       //  !browser::Browser::isLoadableSingleSample(wsi->getDirEnt()->path()))
                 {
-                    sendToSerialization(cmsg::AddSampleWithRange(
-                        {e->getDirEnt()->path().u8string(), loc.root, loc.lo, loc.hi, 0, 127}));
+                    sendToSerialization(
+                        cmsg::AddSampleWithRange({e->getDirEnt()->path().u8string(), loc.root,
+                                                  loc.lo, loc.hi, loc.vlo, loc.vhi}));
                 }
             }
         }
@@ -467,7 +468,7 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
             auto loc = r[0];
             assert(r.size() == 1);
             sendToSerialization(cmsg::AddCompoundElementWithRange(
-                {*wsi->getCompoundElement(), loc.root, loc.lo, loc.hi, 0, 127}));
+                {*wsi->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
         }
         else if (wsi->getDirEnt().has_value())
         {
@@ -475,8 +476,9 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
             assert(r.size() == 1);
             auto inst = browser::Browser::getMultiInstrumentElements(wsi->getDirEnt()->path());
             if (inst.empty())
-                sendToSerialization(cmsg::AddSampleWithRange(
-                    {wsi->getDirEnt()->path().u8string(), loc.root, loc.lo, loc.hi, 0, 127}));
+                sendToSerialization(
+                    cmsg::AddSampleWithRange({wsi->getDirEnt()->path().u8string(), loc.root, loc.lo,
+                                              loc.hi, loc.vlo, loc.vhi}));
             else
             {
                 promptForMultiInstrument(inst);
@@ -554,8 +556,8 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
         auto inst = browser::Browser::getMultiInstrumentElements(p);
         if (inst.empty())
         {
-            sendToSerialization(
-                cmsg::AddSampleWithRange({f.toStdString(), loc.root, loc.lo, loc.hi, 0, 127}));
+            sendToSerialization(cmsg::AddSampleWithRange(
+                {f.toStdString(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
         }
         else
         {

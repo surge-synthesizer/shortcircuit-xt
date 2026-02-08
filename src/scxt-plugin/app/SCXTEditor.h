@@ -359,7 +359,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // Keyboard shortcuts
     std::unique_ptr<KeyBindings> keyBindings;
     bool keyPressed(const juce::KeyPress &key) override;
-
+    void modifierKeysChanged(const juce::ModifierKeys &modifiers) override;
     void switchGroupOrZoneFocus();
 
   protected:
