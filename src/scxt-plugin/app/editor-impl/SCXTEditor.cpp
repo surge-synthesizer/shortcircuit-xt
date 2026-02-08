@@ -612,4 +612,13 @@ void SCXTEditor::processorBypassToggled(int which)
     }
 }
 
+void SCXTEditor::modifierKeysChanged(const juce::ModifierKeys &modifiers)
+{
+    if (editScreen && editScreen->mappingPane)
+    {
+        // Bit of a hammer for now
+        editScreen->mappingPane->repaint();
+    }
+}
+
 } // namespace scxt::ui::app
