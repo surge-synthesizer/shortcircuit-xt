@@ -51,6 +51,14 @@ jobs:
             testPath: build/tests
             clapValidate: false
 
+          - name: "ubuntu Installer Arm"
+            os: ubuntu-24.04-arm
+            target: shortcircuit-installer
+            cmakeConfig: -GNinja -DSCXT_EXTRA_INSTALLER_NAME=-ubuntu24.04-arm64
+            runTests: false
+            testPath: build/tests
+            clapValidate: false
+
           - name: "win unity"
             os: windows-latest
             target: shortcircuit-products
