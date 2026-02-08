@@ -52,9 +52,9 @@ jobs:
             clapValidate: false
 
           - name: "ubuntu Installer Arm"
-            os: ubuntu-22.04-arm
+            os: ubuntu-24.04-arm
             target: shortcircuit-installer
-            cmakeConfig: -GNinja -DSCXT_EXTRA_INSTALLER_NAME=-arm64
+            cmakeConfig: -GNinja -DSCXT_EXTRA_INSTALLER_NAME=-ubuntu24.04-arm64
             runTests: false
             testPath: build/tests
             clapValidate: false
