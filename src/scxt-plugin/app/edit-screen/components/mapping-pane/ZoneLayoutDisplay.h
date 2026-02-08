@@ -85,11 +85,28 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
                 return;
             }
         }
+        auto hzCOrder = std::vector({juce::MouseCursor::TopLeftCornerResizeCursor,
+                                     juce::MouseCursor::TopRightCornerResizeCursor,
+                                     juce::MouseCursor::BottomRightCornerResizeCursor,
+                                     juce::MouseCursor::BottomLeftCornerResizeCursor});
+
+        int idx{0};
         for (const auto &h : bothHotZones)
         {
             if (h.contains(e.position))
             {
-                setMouseCursor(juce::MouseCursor::UpDownLeftRightResizeCursor);
+                setMouseCursor(hzCOrder[idx]);
+                return;
+            }
+            idx++;
+        }
+
+        if (cacheLastZone.has_value())
+        {
+            auto r = rectangleForZone(*cacheLastZone);
+            if (r.contains(e.position))
+            {
+                setMouseCursor(juce::MouseCursor::DraggingHandCursor);
                 return;
             }
         }
@@ -123,6 +140,7 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         velocityHotZones.push_back(top.translated(0, r.getHeight() - 6));
 
         auto corner = r.withWidth(10).withHeight(10).translated(-2, -2);
+        // This order matters both in mouse cursor above and from-setting in the cpp
         bothHotZones.clear();
         bothHotZones.push_back(corner);
         bothHotZones.push_back(corner.translated(r.getWidth() - 8, 0));
