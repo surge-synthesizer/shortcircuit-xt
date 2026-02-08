@@ -105,7 +105,7 @@ if (WIN32)
         set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}-${BITS}bit.zip)
     endif()
 else ()
-    set(SCXT_ZIP ShortcircuitXT-${SCXT_EXTRA_INSTALLER_NAME}${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}.zip)
+    set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}${SCXT_EXTRA_INSTALLER_NAME}.zip)
 endif ()
 message(STATUS "Installer ZIP is ${SCXT_ZIP}")
 
