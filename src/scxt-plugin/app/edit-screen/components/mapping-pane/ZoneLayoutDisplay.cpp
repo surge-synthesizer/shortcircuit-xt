@@ -608,9 +608,10 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
 
     if (mouseState == MULTI_SELECT)
     {
+        std::vector<selection::SelectionManager::SelectActionContents> actions;
+
         auto rz = juce::Rectangle<float>(firstMousePos, e.position);
         bool selectedLead{false};
-        bool selectedAny{false};
         if (display->editor->currentLeadZoneSelection.has_value())
         {
             const auto &sel = *(display->editor->currentLeadZoneSelection);
@@ -633,16 +634,19 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
 
             if (rz.intersects(rectangleForZone(z)))
             {
-                display->editor->doSelectionAction(z.address, true, first && firstAsLead,
-                                                   first && firstAsLead);
+                actions.push_back(display->editor->makeSelectActionContents(
+                    z.address, true, first && firstAsLead, first && firstAsLead));
                 first = false;
-                selectedAny = true;
             }
         }
-        if (!selectedAny)
+        if (actions.empty())
         {
             display->editor->doSelectionAction(
                 selection::SelectionManager::SelectActionContents::deselectSentinel());
+        }
+        else
+        {
+            display->editor->doSelectionAction(actions);
         }
     }
     if (mouseState == CREATE_EMPTY_ZONE)
