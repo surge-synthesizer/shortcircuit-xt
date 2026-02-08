@@ -121,6 +121,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     if (!keyboardHotZones.empty() && keyboardHotZones[0].contains(e.position))
     {
         updateTooltipContents(true, e.position.toInt());
+        lastMousePos = e.position;
         mouseState = DRAG_KEY;
         dragFrom[0] = FROM_START;
         return;
@@ -128,6 +129,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     if (!keyboardHotZones.empty() && keyboardHotZones[1].contains(e.position))
     {
         updateTooltipContents(true, e.position.toInt());
+        lastMousePos = e.position;
         mouseState = DRAG_KEY;
         dragFrom[0] = FROM_END;
         return;
@@ -136,6 +138,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     if (!velocityHotZones.empty() && velocityHotZones[0].contains(e.position))
     {
         updateTooltipContents(true, e.position.toInt());
+        lastMousePos = e.position;
         mouseState = DRAG_VELOCITY;
         dragFrom[1] = FROM_END;
         return;
@@ -143,6 +146,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     if (!velocityHotZones.empty() && velocityHotZones[1].contains(e.position))
     {
         updateTooltipContents(true, e.position.toInt());
+        lastMousePos = e.position;
         mouseState = DRAG_VELOCITY;
         dragFrom[1] = FROM_START;
         return;
@@ -156,6 +160,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
             {
                 // 0 1
                 // 3 2
+                lastMousePos = e.position;
                 dragFrom[0] = (idx == 1 || idx == 2) ? FROM_END : FROM_START;
                 dragFrom[1] = (idx < 2) ? FROM_END : FROM_START;
                 mouseState = DRAG_KEY_AND_VEL;
@@ -480,164 +485,95 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
         return;
     }
 
+    auto lb = getLocalBounds().toFloat();
+    auto displayRegion = lb;
+
+    auto kw = hZoom * displayRegion.getWidth() /
+              (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote + 1);
+    auto vh = vZoom * displayRegion.getHeight() / 127.0;
+    auto dx = e.position.x - lastMousePos.x;
+    auto dy = -(e.position.y - lastMousePos.y);
+    auto deltaX = (int)(dx / kw);
+    auto deltaY = (int)(dy / vh);
+
     if (mouseState == DRAG_SELECTED_ZONE)
     {
         if (e.getDistanceFromDragStart() <= 2)
         {
             return;
         }
-        auto lb = getLocalBounds().toFloat();
-        auto displayRegion = lb;
-
-        auto kw = hZoom * displayRegion.getWidth() /
-                  (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote + 1);
-        auto vh = vZoom * displayRegion.getHeight() / 127.0;
-
-        auto dx = e.position.x - lastMousePos.x;
-        auto &kr = display->mappingView.keyboardRange;
-        auto nx = (int)(dx / kw) + ZoneLayoutKeyboard::firstMidiNote;
-
-        if (kr.keyStart + nx < 0)
-            nx = -kr.keyStart;
-        else if (kr.keyEnd + nx > 127)
-            nx = 127 - kr.keyEnd;
-        if (nx != 0)
-        {
+        auto res = display->applyDeltaToSelectedZones(engine::Zone::ChangeDimension::MOVE_CTR,
+                                                      deltaX, deltaY);
+        if (res & MappingDisplay::KEYRANGE_CHANGED)
             lastMousePos.x = e.position.x;
-            kr.keyStart += nx;
-            kr.keyEnd += nx;
-
-            display->mappingView.rootKey = std::clamp(display->mappingView.rootKey + nx, 0, 127);
-        }
-
-        auto dy = -(e.position.y - lastMousePos.y);
-        auto &vr = display->mappingView.velocityRange;
-        auto vy = (int)(dy / vh);
-
-        if (vr.velStart + vy < 0)
-            vy = -vr.velStart;
-        else if (vr.velEnd + vy > 127)
-            vy = 127 - vr.velEnd;
-        if (vy != 0)
-        {
+        if (res & MappingDisplay::VELOCITY_CHANGED)
             lastMousePos.y = e.position.y;
-            vr.velStart += vy;
-            vr.velEnd += vy;
-        }
 
-        display->mappingChangedFromGUI();
-        repaint();
+        if (res != MappingDisplay::NO_CHANGE)
+        {
+            updateCacheFromDisplay();
+            display->repaint();
+        }
     }
 
-    if (mouseState == DRAG_VELOCITY || mouseState == DRAG_KEY || mouseState == DRAG_KEY_AND_VEL)
+    if (mouseState == DRAG_VELOCITY)
     {
-        auto lb = getLocalBounds().toFloat();
-        auto displayRegion = lb;
-        auto kw =
-            hZoom * displayRegion.getWidth() /
-            (ZoneLayoutKeyboard::lastMidiNote -
-             ZoneLayoutKeyboard::firstMidiNote); // this had a +1, which doesn't seem to be needed?
-        auto vh = vZoom * displayRegion.getHeight() / 127.0;
+        auto dd = engine::Zone::ChangeDimension::VEL_RANGE_END;
+        if (dragFrom[1] == FROM_START)
+            dd = engine::Zone::ChangeDimension::VEL_RANGE_START;
 
-        auto newX = e.position.x / kw + hPct * 128;
-        auto newXRounded = std::clamp((int)std::round(newX), 0, 128);
-        // These previously had + Keyboard::firstMidiNote, and I don't know why? They don't seem to
-        // need it.
+        int zero{0};
+        auto res = display->applyDeltaToSelectedZones(dd, zero, deltaY);
+        if (res & MappingDisplay::VELOCITY_CHANGED)
+            lastMousePos.y = e.position.y;
 
-        auto newY = 127 - e.position.y / vh - vPct * 128;
-        auto newYRounded = std::clamp((int)std::round(newY), 0, 128);
-
-        // clamps to 128 on purpose, for reasons that'll get clear below
-
-        auto &vr = display->mappingView.velocityRange;
-        auto &kr = display->mappingView.keyboardRange;
-
-        bool updatedMapping{false};
-        if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_KEY)
+        if (res != MappingDisplay::NO_CHANGE)
         {
-            auto keyEndRightEdge =
-                kr.keyEnd + 1; // that's where right edge is drawn, so that's what we compare to
-
-            auto newKeyStart{kr.keyStart};
-            auto newKeyEnd{kr.keyEnd};
-
-            if (dragFrom[0] == FROM_START)
-            {
-                if (newX < (kr.keyStart -
-                            0.5)) // change at halfway points, else we can't get to 1 key span
-                    newKeyStart = newXRounded;
-                else if (newX > (kr.keyStart + 0.5))
-                    newKeyStart = newXRounded;
-                newKeyStart = std::min(newKeyStart, kr.keyEnd);
-            }
-            else
-            {
-                if (newX > (keyEndRightEdge + 0.5))
-                    newKeyEnd =
-                        newXRounded - 1; // this is -1 to make up for the +1 in keyEndRightEdge,
-                // without it the right edge behavior is super weird. Hence
-                // the clamp to 128, else we can't drag to the top note.
-                else if (newX < (keyEndRightEdge - 0.5))
-                    newKeyEnd = newXRounded - 1;
-
-                newKeyEnd = std::max(newKeyEnd, kr.keyStart);
-            }
-
-            if (newKeyStart != kr.keyStart || newKeyEnd != kr.keyEnd)
-            {
-                updatedMapping = true;
-            }
-
-            if (updatedMapping)
-            {
-                bool startChanged = (newKeyStart != kr.keyStart);
-                kr.keyStart = newKeyStart;
-                kr.keyEnd = newKeyEnd;
-                constrainMappingFade(kr, startChanged);
-            }
+            updateCacheFromDisplay();
+            display->repaint();
         }
-        // Same changes to up/down as to right/left.
-        if (mouseState == DRAG_KEY_AND_VEL || mouseState == DRAG_VELOCITY)
+    }
+
+    if (mouseState == DRAG_KEY)
+    {
+        auto dd = engine::Zone::ChangeDimension::KEY_RANGE_END;
+        if (dragFrom[0] == FROM_START)
+            dd = engine::Zone::ChangeDimension::KEY_RANGE_START;
+
+        int zero{0};
+        auto res = display->applyDeltaToSelectedZones(dd, deltaX, zero);
+        if (res & MappingDisplay::KEYRANGE_CHANGED)
+            lastMousePos.x = e.position.x;
+
+        if (res != MappingDisplay::NO_CHANGE)
         {
-            auto velTopEdge = vr.velEnd + 1;
-
-            auto newVelStart{vr.velStart};
-            auto newVelEnd{vr.velEnd};
-
-            if (dragFrom[1] == FROM_START)
-            {
-                if (newY < (vr.velStart - 0.5))
-                    newVelStart = newYRounded;
-                else if (newY > (vr.velStart + 0.5))
-                    newVelStart = newYRounded;
-                newVelStart = std::min(newVelStart, vr.velEnd);
-            }
-            else
-            {
-                if (newY > (velTopEdge + 0.5))
-                    newVelEnd = newYRounded - 1;
-                else if (newY < (velTopEdge - 0.5))
-                    newVelEnd = newYRounded - 1;
-                newVelEnd = std::max(newVelEnd, vr.velStart);
-            }
-
-            if (newVelStart != vr.velStart || newVelEnd != vr.velEnd)
-            {
-                updatedMapping = true;
-            }
-
-            if (updatedMapping)
-            {
-                bool startChanged = (newVelStart != vr.velStart);
-                vr.velStart = newVelStart;
-                vr.velEnd = newVelEnd;
-                constrainMappingFade(vr, startChanged);
-            }
+            updateCacheFromDisplay();
+            display->repaint();
         }
-        if (updatedMapping)
+    }
+
+    if (mouseState == DRAG_KEY_AND_VEL)
+    {
+        int dd = engine::Zone::ChangeDimension::VEL_RANGE_END;
+        if (dragFrom[1] == FROM_START)
+            dd = engine::Zone::ChangeDimension::VEL_RANGE_START;
+
+        if (dragFrom[0] == FROM_START)
+            dd |= engine::Zone::ChangeDimension::KEY_RANGE_START;
+        else
+            dd |= engine::Zone::ChangeDimension::KEY_RANGE_END;
+
+        auto res =
+            display->applyDeltaToSelectedZones((engine::Zone::ChangeDimension)dd, deltaX, deltaY);
+        if (res & MappingDisplay::VELOCITY_CHANGED)
+            lastMousePos.y = e.position.y;
+        if (res & MappingDisplay::KEYRANGE_CHANGED)
+            lastMousePos.x = e.position.x;
+
+        if (res != MappingDisplay::NO_CHANGE)
         {
-            display->mappingChangedFromGUI();
-            repaint();
+            updateCacheFromDisplay();
+            display->repaint();
         }
     }
 
@@ -742,6 +678,9 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
     }
     mouseState = NONE;
     repaint();
+
+    namespace cmsg = scxt::messaging::client;
+    sendToSerialization(cmsg::RequestZoneMapping({editor->selectedPart}));
 }
 
 bool ZoneLayoutDisplay::isEditorInGroupMode() const
@@ -908,10 +847,105 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
                 }
             }
 
-            g.setColour(fillColor);
-            g.fillRect(r);
-            g.setColour(borderColor);
-            g.drawRect(r, 1.f);
+            if (drawSelected)
+            {
+                auto c2{borderColor.withAlpha(0.3f)};
+                bool hasKeyFade{false}, hasVelFade{false};
+                if (z.kr.fadeStart > 0 || z.kr.fadeEnd > 0)
+                    hasKeyFade = true;
+                if (z.vr.fadeStart > 0 || z.vr.fadeEnd > 0)
+                    hasVelFade = true;
+                if (!hasKeyFade && !hasVelFade)
+                {
+                    g.setColour(fillColor);
+                    g.fillRect(r);
+                    g.setColour(borderColor);
+                    g.drawRect(r, 1.f);
+                }
+                else
+                {
+                    auto ctr = rectangleForRange(
+                        z.kr.keyStart + z.kr.fadeStart, z.kr.keyEnd - z.kr.fadeEnd,
+                        z.vr.velStart + z.vr.fadeStart, z.vr.velEnd - z.vr.fadeEnd);
+                    g.setColour(fillColor);
+                    g.fillRect(ctr);
+
+                    auto off = borderColor.withAlpha(0.2f);
+                    if (z.vr.fadeStart > 0)
+                    {
+                        // full width bottom stripe
+                        auto bx = rectangleForRange(z.kr.keyStart, z.kr.keyEnd, z.vr.velStart,
+                                                    z.vr.velStart + z.vr.fadeStart);
+                        g.setColour(off);
+                        g.fillRect(bx);
+                    }
+                    if (z.vr.fadeEnd > 0)
+                    {
+                        // full width bottom stripe
+                        auto bx = rectangleForRange(z.kr.keyStart, z.kr.keyEnd,
+                                                    z.vr.velEnd - z.vr.fadeEnd, z.vr.velEnd);
+                        g.setColour(off);
+                        g.fillRect(bx);
+                    }
+                    if (z.kr.fadeStart > 0)
+                    {
+                        // Side but within vel end
+                        auto bx = rectangleForRangeSkipEnd(
+                            z.kr.keyStart, z.kr.keyStart + z.kr.fadeStart,
+                            z.vr.velStart + z.vr.fadeStart, z.vr.velEnd - z.vr.fadeEnd);
+                        g.setColour(off);
+                        g.fillRect(bx);
+                    }
+                    if (z.kr.fadeEnd > 0)
+                    {
+                        // Side but within vel end
+                        auto bx = rectangleForRange(z.kr.keyEnd - z.kr.fadeEnd + 1, z.kr.keyEnd,
+                                                    z.vr.velStart + z.vr.fadeStart,
+                                                    z.vr.velEnd - z.vr.fadeEnd);
+                        g.setColour(off);
+                        g.fillRect(bx);
+                    }
+
+                    if (z.kr.fadeStart > 0)
+                    {
+                        auto rr =
+                            rectangleForRangeSkipEnd(z.kr.keyStart, z.kr.keyStart + z.kr.fadeStart,
+                                                     z.vr.velStart, z.vr.velEnd);
+                        g.setColour(c2);
+                        g.drawVerticalLine(rr.getX() + rr.getWidth(), rr.getY(), rr.getBottom());
+                    }
+                    if (z.kr.fadeEnd > 0)
+                    {
+                        auto rr = rectangleForRangeSkipEnd(z.kr.keyEnd - z.kr.fadeEnd + 1,
+                                                           z.kr.keyEnd, z.vr.velStart, z.vr.velEnd);
+                        g.setColour(c2);
+                        g.drawVerticalLine(rr.getX(), rr.getY(), rr.getBottom());
+                    }
+                    if (z.vr.velStart > 0)
+                    {
+                        auto rr = rectangleForRange(z.kr.keyStart, z.kr.keyEnd, z.vr.velStart,
+                                                    z.vr.velStart + z.vr.fadeStart);
+                        g.setColour(c2);
+                        g.drawHorizontalLine(rr.getY(), rr.getX(), rr.getRight());
+                    }
+                    if (z.vr.velEnd > 0)
+                    {
+                        auto rr = rectangleForRange(z.kr.keyStart, z.kr.keyEnd, z.vr.velStart,
+                                                    z.vr.velEnd - z.vr.fadeEnd);
+                        g.setColour(c2);
+                        g.drawHorizontalLine(rr.getY(), rr.getX(), rr.getRight());
+                    }
+                    g.setColour(borderColor);
+                    g.drawRect(r, 1.f);
+                }
+            }
+            else
+            {
+                g.setColour(fillColor);
+                g.fillRect(r);
+                g.setColour(borderColor);
+                g.drawRect(r, 1.f);
+            }
 
             labelZoneRectangle(g, r, z.name, textColor);
 
@@ -1467,4 +1501,12 @@ void ZoneLayoutDisplay::mappingWasReset()
     repaint();
 }
 
+void ZoneLayoutDisplay::updateCacheFromDisplay()
+{
+    if (cacheLastZone.has_value())
+    {
+        cacheLastZone->kr = display->mappingView.keyboardRange;
+        cacheLastZone->vr = display->mappingView.velocityRange;
+    }
+}
 } // namespace scxt::ui::app::edit_screen

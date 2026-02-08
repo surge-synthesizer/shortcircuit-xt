@@ -31,6 +31,7 @@
 #include "sst/jucegui/screens/ModalBase.h"
 #include "ZoneLayoutDisplay.h"
 #include "ZoneLayoutKeyboard.h"
+#include "engine/zone.h"
 
 #include <app/edit-screen/EditScreen.h>
 
@@ -87,33 +88,6 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
         ffac::attachAndAdd(mappingView, v, this, a, w);
     };
 
-    auto iAddFadeConstraint = [this](auto &a, auto &r, bool isStart) {
-        if constexpr (std::is_same_v<std::remove_reference_t<decltype(r)>,
-                                     scxt::engine::KeyboardRange>)
-        {
-            connectors::addGuiStepBeforeSend(*a, [&aWrite = a, &r, isStart](const auto &a) {
-                auto span = r.keyEnd - r.keyStart;
-                auto fadeSpan = a.value + (isStart ? r.fadeEnd : r.fadeStart) + 1;
-                if (fadeSpan > span + 1)
-                {
-                    aWrite->value = a.prevValue;
-                }
-            });
-        }
-        if constexpr (std::is_same_v<std::remove_reference_t<decltype(r)>,
-                                     scxt::engine::VelocityRange>)
-        {
-            connectors::addGuiStepBeforeSend(*a, [&aWrite = a, &r, isStart](const auto &a) {
-                auto span = r.velEnd - r.velStart;
-                auto fadeSpan = a.value + (isStart ? r.fadeEnd : r.fadeStart) + 1;
-                if (fadeSpan > span + 1)
-                {
-                    aWrite->value = a.prevValue;
-                }
-            });
-        }
-    };
-
     iAdd(mappingView.rootKey, intAttachments.RootKey, textEds.RootKey);
     makeLabel(labels.RootKey, "Root Key");
 
@@ -123,18 +97,90 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
                             return true;
                         return v <= w->mappingView.keyboardRange.keyEnd;
                     });
+
+    auto addDeltas = [this](auto &to, auto &wid, auto dir) {
+        auto og = to->onGuiValueChanged;
+        to->onGuiValueChanged = [dr = dir, w = juce::Component::SafePointer(wid.get()), og,
+                                 this](const auto &a) {
+            auto isDrag = true;
+            auto isCtrl = false;
+            if (w)
+            {
+                isDrag = w->isSetFromDrag();
+                isCtrl = juce::ModifierKeys::getCurrentModifiers().isCtrlDown();
+            }
+            if (isDrag || !isCtrl)
+            {
+                int d = a.value - a.prevValue;
+                int dx{0}, dy{0};
+                if (dr == engine::Zone::ChangeDimension::KEY_RANGE_START ||
+                    dr == engine::Zone::ChangeDimension::KEY_RANGE_END ||
+                    dr == engine::Zone::ChangeDimension::KEY_FADE_START ||
+                    dr == engine::Zone::ChangeDimension::KEY_FADE_END)
+                    dx = d;
+                else
+                    dy = d;
+                auto res = applyDeltaToSelectedZones(dr, dx, dy, true);
+
+                if ((dr == engine::Zone::ChangeDimension::KEY_RANGE_START ||
+                     dr == engine::Zone::ChangeDimension::KEY_RANGE_END ||
+                     dr == engine::Zone::ChangeDimension::KEY_FADE_START ||
+                     dr == engine::Zone::ChangeDimension::KEY_FADE_END) &&
+                    (res == KEYRANGE_CHANGED))
+                    d = dx;
+                else if (res == VELOCITY_CHANGED)
+                    d = dy;
+                else
+                    d = 0;
+
+                a.value = a.prevValue + d;
+                // explicitly dont call og here since above delta applies to lead
+                // and we don't need server round trip during drag for constraints
+                repaint();
+            }
+            else
+            {
+                int v = a.value;
+                int vx{0}, vy{0};
+                if (dr == engine::Zone::ChangeDimension::KEY_RANGE_START ||
+                    dr == engine::Zone::ChangeDimension::KEY_RANGE_END ||
+                    dr == engine::Zone::ChangeDimension::KEY_FADE_START ||
+                    dr == engine::Zone::ChangeDimension::KEY_FADE_END)
+                    vx = v;
+                else
+                    vy = v;
+                if (!applyAbsoluteToSelectedZones(dr, vx, vy, false))
+                {
+                    a.value = a.prevValue;
+                }
+                else
+                {
+                    og(a);
+                }
+            }
+        };
+        wid->onEndEdit = [this]() {
+            sendToSerialization(cmsg::RequestZoneMapping({editor->selectedPart}));
+        };
+    };
+    addDeltas(intAttachments.KeyStart, textEds.KeyStart,
+              engine::Zone::ChangeDimension::KEY_RANGE_START);
+
     iAddConstrained(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, textEds.KeyEnd,
                     [w = juce::Component::SafePointer(this)](auto v) {
                         if (!w)
                             return true;
                         return v >= w->mappingView.keyboardRange.keyStart;
                     });
+    addDeltas(intAttachments.KeyEnd, textEds.KeyEnd, engine::Zone::ChangeDimension::KEY_RANGE_END);
 
     makeLabel(labels.KeyStart, "Key Range");
     iAdd(mappingView.keyboardRange.fadeStart, intAttachments.FadeStart, textEds.FadeStart);
-    iAddFadeConstraint(intAttachments.FadeStart, mappingView.keyboardRange, true);
+    addDeltas(intAttachments.FadeStart, textEds.FadeStart,
+              engine::Zone::ChangeDimension::KEY_FADE_START);
+
     iAdd(mappingView.keyboardRange.fadeEnd, intAttachments.FadeEnd, textEds.FadeEnd);
-    iAddFadeConstraint(intAttachments.FadeEnd, mappingView.keyboardRange, false);
+    addDeltas(intAttachments.FadeEnd, textEds.FadeEnd, engine::Zone::ChangeDimension::KEY_FADE_END);
     makeLabel(labels.FadeStart, "Crossfade");
 
     iAddConstrained(mappingView.velocityRange.velStart, intAttachments.VelStart, textEds.VelStart,
@@ -143,18 +189,24 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
                             return true;
                         return v <= w->mappingView.velocityRange.velEnd;
                     });
+    addDeltas(intAttachments.VelStart, textEds.VelStart,
+              engine::Zone::ChangeDimension::VEL_RANGE_START);
     iAddConstrained(mappingView.velocityRange.velEnd, intAttachments.VelEnd, textEds.VelEnd,
                     [w = juce::Component::SafePointer(this)](auto v) {
                         if (!w)
                             return true;
                         return v >= w->mappingView.velocityRange.velStart;
                     });
+    addDeltas(intAttachments.VelEnd, textEds.VelEnd, engine::Zone::ChangeDimension::VEL_RANGE_END);
+
     makeLabel(labels.VelStart, "Vel Range");
 
     iAdd(mappingView.velocityRange.fadeStart, intAttachments.VelFadeStart, textEds.VelFadeStart);
-    iAddFadeConstraint(intAttachments.VelFadeStart, mappingView.velocityRange, true);
+    addDeltas(intAttachments.VelFadeStart, textEds.VelFadeStart,
+              engine::Zone::ChangeDimension::VEL_FADE_START);
     iAdd(mappingView.velocityRange.fadeEnd, intAttachments.VelFadeEnd, textEds.VelFadeEnd);
-    iAddFadeConstraint(intAttachments.VelFadeEnd, mappingView.velocityRange, false);
+    addDeltas(intAttachments.VelFadeEnd, textEds.VelFadeEnd,
+              engine::Zone::ChangeDimension::VEL_FADE_END);
 
     makeLabel(labels.VelFadeStart, "CrossFade");
 
@@ -653,4 +705,140 @@ bool MappingDisplay::keyPressed(const juce::KeyPress &key)
     return false;
 }
 
+MappingDisplay::DeltaResult
+MappingDisplay::applyDeltaToSelectedZones(engine::Zone::ChangeDimension dim, int &deltaX,
+                                          int &deltaY, bool updateLead)
+{
+    auto mv = (int)(DeltaResult::NO_CHANGE);
+
+    for (const auto &z : summary)
+    {
+        if (editor->isSelected(z.address))
+        {
+            auto pdx = deltaX;
+            adjustDeltasToMakeSureTheyWillFit(dim, deltaX, deltaY, z.kr, z.vr);
+        }
+    }
+
+    // And once clamped we evaluate
+    if (!evaluateCanApplyUISide(dim, deltaX, deltaY))
+        return NO_CHANGE;
+
+    if (deltaX == 0 && deltaY == 0)
+    {
+        return NO_CHANGE;
+    }
+
+    if (deltaX != 0)
+    {
+        mv |= (int)(DeltaResult::KEYRANGE_CHANGED);
+    }
+
+    if (deltaY != 0)
+    {
+        mv |= (int)(DeltaResult::VELOCITY_CHANGED);
+    }
+
+    if (updateLead)
+    {
+        // Update the lead zone so the sidebar updates
+        engine::Zone::applyChange(dim, deltaX, deltaY, mappingView);
+    }
+
+    // it'll be a minute until we get this back from the server so keep local cache
+    // ready for fast drags
+
+    auto leadOnly = juce::ModifierKeys::getCurrentModifiers().isAltDown();
+    if (!leadOnly)
+    {
+        for (auto &z : summary)
+        {
+            if (editor->isSelected(z.address))
+            {
+                auto zmd = engine::Zone::ZoneMappingData();
+                zmd.rootKey = 0;
+                zmd.keyboardRange = z.kr;
+                zmd.velocityRange = z.vr;
+                engine::Zone::applyChange(dim, deltaX, deltaY, zmd);
+                z.kr = zmd.keyboardRange;
+                z.vr = zmd.velocityRange;
+            }
+        }
+    }
+
+    // this is absolute, lead-only, part, dim, dx, dy
+    sendToSerialization(
+        cmsg::ApplyZoneDelta({false, leadOnly, editor->selectedPart, dim, deltaX, deltaY}));
+
+    return (DeltaResult)mv;
+}
+
+void MappingDisplay::adjustDeltasToMakeSureTheyWillFit(engine::Zone::ChangeDimension dim,
+                                                       int &deltaX, int &deltaY,
+                                                       const engine::KeyboardRange &kr,
+                                                       const engine::VelocityRange &vr) const
+{
+    // You'd think we could avoid this by checking the constraint
+    // but this true up helps us make sure fast mouse movements near
+    // the edge get clamped appropriatley
+    auto iDim = (int)dim;
+    auto isMove = dim == engine::Zone::MOVE_CTR;
+    if (kr.keyStart + deltaX < 0 &&
+        (isMove || (dim & engine::Zone::ChangeDimension::KEY_RANGE_START)))
+        deltaX = -kr.keyStart;
+    if (kr.keyEnd + deltaX > 127 &&
+        (isMove || (dim & engine::Zone::ChangeDimension::KEY_RANGE_END)))
+        deltaX = 127 - kr.keyEnd;
+    if (vr.velStart + deltaY < 0 &&
+        (isMove || (dim & engine::Zone::ChangeDimension::VEL_RANGE_START)))
+        deltaY = -vr.velStart;
+    if (vr.velEnd + deltaY >= 127 &&
+        (isMove || (dim & engine::Zone::ChangeDimension::VEL_RANGE_END)))
+        deltaY = 127 - vr.velEnd;
+}
+
+bool MappingDisplay::applyAbsoluteToSelectedZones(engine::Zone::ChangeDimension dim, int newX,
+                                                  int newY, bool updateLead)
+{
+    assert(!updateLead);
+    if (updateLead)
+    {
+        SCLOG_IF(warnings, "Warning: Update Lead on applyAbsolute not implemented (because we "
+                           "didn't need it yet)");
+    }
+
+    bool doApply = true;
+    for (const auto &z : summary)
+    {
+        if (editor->isSelected(z.address))
+        {
+            doApply =
+                doApply && engine::Zone::canApplyAbsoluteBoundEdit(dim, newX, newY, z.kr, z.vr);
+        }
+    }
+
+    if (!doApply)
+        return false;
+
+    auto leadOnly = juce::ModifierKeys::getCurrentModifiers().isAltDown();
+    sendToSerialization(
+        cmsg::ApplyZoneDelta({true, leadOnly, editor->selectedPart, dim, newX, newY}));
+    return true;
+}
+
+bool MappingDisplay::evaluateCanApplyUISide(engine::Zone::ChangeDimension dim, int deltaX,
+                                            int deltaY) const
+{
+    bool doApply = true;
+
+    for (const auto &z : summary)
+    {
+        if (editor->isSelected(z.address))
+        {
+            doApply = doApply && engine::Zone::canApplyChange(dim, deltaX, deltaY, z.kr, z.vr);
+        }
+    }
+
+    return doApply;
+}
 } // namespace scxt::ui::app::edit_screen
