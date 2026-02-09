@@ -589,6 +589,10 @@ void Sample::dumpInformationToLog()
     case GIG_FILE:
         SCLOG_IF(sampleLoadAndPurge, "GIG File : " << getPath().u8string());
         break;
+    case EXS_FILE:
+        SCLOG_IF(sampleLoadAndPurge,
+                 "EXS File : " << getPath().u8string() << " Sample=" << getCompoundRegion());
+        break;
     case SCXT_FILE:
         SCLOG_IF(sampleLoadAndPurge, "SCXT File : " << getPath().u8string());
         break;
@@ -664,6 +668,8 @@ Sample::SourceType Sample::sourceTypeFromPath(const fs::path &path)
         return SourceType::MULTISAMPLE_FILE;
     if (extensionMatches(path, ".gig"))
         return SourceType::GIG_FILE;
+    if (extensionMatches(path, ".exs"))
+        return SourceType::EXS_FILE;
 
     SCLOG_IF(sampleLoadAndPurge, "Unmatched extension : " << path.u8string());
     return WAV_FILE;

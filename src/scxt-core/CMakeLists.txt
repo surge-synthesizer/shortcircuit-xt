@@ -33,6 +33,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/loaders/load_mp3.cpp
 
         sample/exs_support/exs_import.cpp
+        sample/exs_support/exs_compound_file_impl.cpp
         sample/akai_support/akai_import.cpp
         sample/multisample_support/multisample_compound_file_impl.cpp
         sample/multisample_support/multisample_import.cpp

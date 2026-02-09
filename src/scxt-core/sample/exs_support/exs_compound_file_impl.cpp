@@ -25,42 +25,28 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#ifndef SCXT_SRC_SCXT_CORE_SAMPLE_COMPOUND_FILE_H
-#define SCXT_SRC_SCXT_CORE_SAMPLE_COMPOUND_FILE_H
-
-#include "sample/sample.h"
-
-namespace scxt::engine
-{
-struct Engine;
-}
+#include "sample/compound_file.h"
+#include "sample/exs_support/exs_import.h"
 
 namespace scxt::sample::compound
 {
-struct CompoundElement
+std::vector<CompoundElement> getEXSCompoundList(const fs::path &p)
 {
-    enum Type : int32_t
+    auto elts = exs_support::getEXSCompoundElements(p);
+
+    std::vector<CompoundElement> result;
+
+    for (const auto &e : elts)
     {
-        SAMPLE,
-        INSTRUMENT,
-        ERROR_SENTINEL // because MSVC has a #define ERROR somewhere
-    } type{SAMPLE};
+        CompoundElement res;
+        res.type = CompoundElement::Type::SAMPLE;
+        res.name = e.name;
 
-    std::string name;
-    std::string emsg{};
-    Sample::SampleFileAddress sampleAddress;
-};
+        res.sampleAddress = {Sample::EXS_FILE, p, "", -1, -1, e.sampleIndex};
+        result.push_back(res);
+    }
 
-std::vector<CompoundElement> getSF2SampleAddresses(const fs::path &);
-std::vector<CompoundElement> getSF2InstrumentAddresses(const fs::path &);
-
-std::vector<CompoundElement> getSFZCompoundList(const fs::path &);
-
-std::vector<CompoundElement> getGIGCompoundList(const fs::path &);
-
-std::vector<CompoundElement> getEXSCompoundList(const fs::path &);
-
-std::vector<CompoundElement> getMultisampleCompoundList(const fs::path &);
+    return result;
+}
 
 } // namespace scxt::sample::compound
-#endif // COMPOUND_FILE_H
