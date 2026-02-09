@@ -608,9 +608,10 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
     // TODO: make an option to allow this
     if (isEditorInGroupMode())
     {
-        mouseState = NONE;
-        repaint();
-        return;
+        if (editor->editScreen->partSidebar)
+        {
+            editor->editScreen->partSidebar->setSelectedTab(2);
+        }
     }
 
     if (mouseState == MULTI_SELECT)
