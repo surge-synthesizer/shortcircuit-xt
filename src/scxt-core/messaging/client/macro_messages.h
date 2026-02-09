@@ -46,6 +46,12 @@ inline void updateMacroFullState(const macroFullState_t &t, const engine::Engine
                                  MessageController &cont)
 {
     const auto &[p, i, m] = t;
+    if (p < 0 || p >= numParts || i < 0 || i >= macrosPerPart)
+    {
+        SCLOG_IF(warnings, "Invalid part/index in updateMacroFullState: " << p << "/" << i);
+        return;
+    }
+
     cont.scheduleAudioThreadCallback(
         [part = p, index = i, macro = m](auto &e) {
             // Set everything except the value
