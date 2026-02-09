@@ -33,7 +33,7 @@
 
 namespace scxt::akai_support
 {
-// bool importAkai(const fs::path &, engine::Engine &);
+bool importAKP(const fs::path &, engine::Engine &);
 
 void dumpAkaiToLog(const fs::path &);
 

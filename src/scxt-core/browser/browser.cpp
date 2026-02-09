@@ -79,7 +79,7 @@ const std::vector<std::string> Browser::LoadableFile::singleSample{".wav", ".fla
                                                                    ".aiff"};
 
 const std::vector<std::string> Browser::LoadableFile::multiSample{".sf2", ".sfz", ".multisample",
-                                                                  ".exs", ".gig"};
+                                                                  ".exs", ".gig", ".akp"};
 // ".exs"};
 const std::vector<std::string> Browser::LoadableFile::shortcircuitFormats{".scm", ".scp"};
 
