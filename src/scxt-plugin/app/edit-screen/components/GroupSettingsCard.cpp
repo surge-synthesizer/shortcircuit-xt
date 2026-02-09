@@ -109,6 +109,7 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
 
     tuneGlyph = mkg(jcmp::GlyphPainter::GlyphType::TUNING);
     fac::attachAndAdd(info, info.tuning, this, tuneAttachment, tuneDrag);
+    tuneDrag->setDragScaleFromMinMaxHeuristic();
 
     ifac::attachAndAdd(info, info.pbDown, this, pbDnA, pbDnVal);
     ifac::attachAndAdd(info, info.pbUp, this, pbUpA, pbUpVal);
