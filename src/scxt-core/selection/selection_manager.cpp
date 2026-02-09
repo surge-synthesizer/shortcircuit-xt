@@ -481,7 +481,7 @@ void SelectionManager::sendSelectedZonesToClient()
 
 bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e) const
 {
-    if (part < 0 || part > numParts)
+    if (part < 0 || part >= numParts)
         return false;
     const auto &p = e.getPatch()->getPart(part);
     if (group < 0 || group >= p->getGroups().size())
@@ -494,7 +494,7 @@ bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e) const
 
 bool SelectionManager::ZoneAddress::isInPartGroup(const engine::Engine &e) const
 {
-    if (part < 0 || part > numParts)
+    if (part < 0 || part >= numParts)
         return false;
     const auto &p = e.getPatch()->getPart(part);
     if (group < 0 || group >= p->getGroups().size())
@@ -504,7 +504,7 @@ bool SelectionManager::ZoneAddress::isInPartGroup(const engine::Engine &e) const
 
 bool SelectionManager::ZoneAddress::isInWithPartials(const engine::Engine &e) const
 {
-    if (part < 0 || part > numParts)
+    if (part < 0 || part >= numParts)
         return false;
     if (group == -1)
         return true;
