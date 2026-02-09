@@ -54,7 +54,6 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     zoneHeader = std::make_unique<MappingZoneHeader>(editor);
     addAndMakeVisible(*zoneHeader);
 
-    // Start here tomorrow
     using ffac =
         connectors::SingleValueFactory<floatAttachment_t, cmsg::UpdateZoneMappingFloatValue>;
     using ifac =
@@ -486,6 +485,10 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
             }
         }
     }
+    if (editor->editScreen->partSidebar)
+    {
+        editor->editScreen->partSidebar->setSelectedTab(2);
+    }
     isUndertakingDrop = false;
     repaint();
 }
@@ -564,6 +567,10 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
         {
             promptForMultiInstrument(inst);
         }
+    }
+    if (editor->editScreen->partSidebar)
+    {
+        editor->editScreen->partSidebar->setSelectedTab(2);
     }
     isUndertakingDrop = false;
     repaint();
