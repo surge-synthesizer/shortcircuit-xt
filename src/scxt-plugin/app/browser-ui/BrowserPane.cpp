@@ -363,6 +363,12 @@ struct DriveFSArea : juce::Component, HasEditor
                 else
                     return false;
             }
+            auto e1 = a.dirent.path().extension().u8string();
+            auto e2 = b.dirent.path().extension().u8string();
+            auto se1e2 = strnatcasecmp(e1.c_str(), e2.c_str());
+            if (se1e2)
+                return strnatcasecmp(e1.c_str(), e2.c_str()) < 0;
+
             return strnatcasecmp(a.dirent.path().u8string().c_str(),
                                  b.dirent.path().u8string().c_str()) < 0;
         });
