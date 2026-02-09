@@ -221,6 +221,7 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     makeGlyph(glyphs.Pan, sst::jucegui::components::GlyphPainter::PAN);
 
     fAdd(mappingView.pitchOffset, floatAttachments.Pitch, textEds.Pitch);
+    textEds.Pitch->setDragScaleFromMinMaxHeuristic();
     makeGlyph(glyphs.Pitch, sst::jucegui::components::GlyphPainter::TUNING);
 
     fAdd(mappingView.tracking, floatAttachments.Tracking, textEds.Tracking);

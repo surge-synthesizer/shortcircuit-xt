@@ -289,6 +289,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     addGlyph(pan, jcmp::GlyphPainter::GlyphType::PAN);
 
     attachFloatSamplePoint(tune, "Tuning", variantView.variants[selectedVariation].pitchOffset);
+    sampleEditors[tune]->setDragScaleFromMinMaxHeuristic();
     addGlyph(tune, jcmp::GlyphPainter::GlyphType::TUNING);
 
     if (loopActive)
