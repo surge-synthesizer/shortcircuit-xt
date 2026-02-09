@@ -87,6 +87,8 @@ struct SelectionManager
 
         // PGZ is in the engine
         bool isIn(const engine::Engine &e) const;
+        // PG is in the engine, Z is anything
+        bool isInPartGroup(const engine::Engine &e) const;
         // PGZ is in the engine or G and-or Z are -1
         bool isInWithPartials(const engine::Engine &e) const;
 
@@ -192,13 +194,13 @@ struct SelectionManager
     {
         if (leadZone[selectedPart].isIn(e))
             return leadZone[selectedPart];
-        return {};
+        return std::nullopt;
     }
     std::optional<ZoneAddress> currentLeadGroup(const engine::Engine &e) const
     {
-        if (leadGroup[selectedPart].isInWithPartials(e))
+        if (leadGroup[selectedPart].isInPartGroup(e))
             return leadGroup[selectedPart];
-        return {};
+        return std::nullopt;
     }
     std::pair<int, int> bestPartGroupForNewSample(const engine::Engine &e);
 

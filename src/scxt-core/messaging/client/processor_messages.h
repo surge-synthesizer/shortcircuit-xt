@@ -55,7 +55,7 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
         auto sg = engine.getSelectionManager()->currentlySelectedGroups();
         auto lg = engine.getSelectionManager()->currentLeadGroup(engine);
         assert(sg.empty() || lg.has_value());
-        if (!sg.empty())
+        if (!sg.empty() && lg.has_value())
         {
             cont.scheduleAudioThreadCallback(
                 [gs = sg, which = w, type = id](auto &e) {
@@ -127,7 +127,7 @@ inline void setFullProcessorStorage(sendFullProcessorStorage_t payload, engine::
         auto sg = engine.getSelectionManager()->currentlySelectedGroups();
         auto lg = engine.getSelectionManager()->currentLeadGroup(engine);
         assert(sg.empty() || lg.has_value());
-        if (!sg.empty())
+        if (!sg.empty() && lg.has_value())
         {
             cont.scheduleAudioThreadCallback(
                 [gs = sg, which = w, st = storage](auto &e) {
