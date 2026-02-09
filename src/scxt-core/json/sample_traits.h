@@ -72,6 +72,9 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                  case sample::Sample::GIG_FILE:
                      v = "gig";
                      break;
+                 case sample::Sample::EXS_FILE:
+                     v = "exs";
+                     break;
                  case sample::Sample::SCXT_FILE:
                      v = "scxt";
                      break;
@@ -118,6 +121,8 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                          to = sample::Sample::MULTISAMPLE_FILE;
                      if (k == "gig")
                          to = sample::Sample::GIG_FILE;
+                     if (k == "exs")
+                         to = sample::Sample::EXS_FILE;
                      if (k == "scxt")
                          to = sample::Sample::SCXT_FILE;
                  }
@@ -135,6 +140,7 @@ SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
                  if (from.type == sample::Sample::SF2_FILE ||
                      from.type == sample::Sample::MULTISAMPLE_FILE ||
                      from.type == sample::Sample::GIG_FILE ||
+                     from.type == sample::Sample::EXS_FILE ||
                      from.type == sample::Sample::SCXT_FILE)
                  {
                      addToObject<val_t>(v, "preset", from.preset);

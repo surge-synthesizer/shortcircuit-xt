@@ -50,6 +50,19 @@ bool importEXS(const fs::path &, engine::Engine &);
 
 void dumpEXSToLog(const fs::path &);
 
+struct EXSInfo;
+EXSInfo parseEXS(const fs::path &p);
+
+struct EXSCompoundElement
+{
+    std::string name;
+    int sampleIndex;
+};
+std::vector<EXSCompoundElement> getEXSCompoundElements(const fs::path &p);
+
+std::optional<scxt::SampleID> loadSampleFromEXS(const fs::path &p, int sampleIndex,
+                                                sample::SampleManager *sm);
+
 } // namespace scxt::exs_support
 
 #endif // SHORTCIRCUITXT_EXS_IMPORT_H

@@ -29,6 +29,7 @@
 #include "configuration.h"
 #include "sample_manager.h"
 #include "infrastructure/md5support.h"
+#include "sample/exs_support/exs_import.h"
 
 namespace scxt::sample
 {
@@ -125,6 +126,11 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
     {
         nid = loadSampleFromSCXTMonolith(addr.path, addr.md5sum, nullptr, addr.preset,
                                          addr.instrument, addr.region);
+    }
+    break;
+    case Sample::EXS_FILE:
+    {
+        nid = exs_support::loadSampleFromEXS(addr.path, addr.region, this);
     }
     break;
     case Sample::SFZ_FILE:

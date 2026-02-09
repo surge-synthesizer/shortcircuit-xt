@@ -644,6 +644,30 @@ EXSInfo parseEXS(const fs::path &p)
     return res;
 }
 
+std::vector<EXSCompoundElement> getEXSCompoundElements(const fs::path &p)
+{
+    auto info = parseEXS(p);
+    std::vector<EXSCompoundElement> res;
+    int idx = 0;
+    for (const auto &s : info.samples)
+    {
+        res.push_back({s.within.name, idx++});
+    }
+    return res;
+}
+
+std::optional<scxt::SampleID> loadSampleFromEXS(const fs::path &p, int sampleIndex,
+                                                sample::SampleManager *sm)
+{
+    auto info = parseEXS(p);
+    if (sampleIndex < 0 || sampleIndex >= info.samples.size())
+        return std::nullopt;
+
+    auto &s = info.samples[sampleIndex];
+    auto sp = fs::path{s.filePath} / s.fileName;
+    return sm->loadSampleByPath(sp);
+}
+
 bool importEXS(const fs::path &p, engine::Engine &e)
 {
     auto &messageController = e.getMessageController();
@@ -661,8 +685,8 @@ bool importEXS(const fs::path &p, engine::Engine &e)
 
     for (auto &s : info.samples)
     {
-        auto p = fs::path{s.filePath} / s.fileName;
-        auto lsid = e.getSampleManager()->loadSampleByPath(p);
+        auto sp = fs::path{s.filePath} / s.fileName;
+        auto lsid = e.getSampleManager()->loadSampleByPath(sp);
         if (lsid.has_value())
         {
             sampleIDByOrder.push_back(*lsid);
@@ -679,6 +703,9 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         ++gidx;
     }
 
+    std::vector<selection::SelectionManager::SelectActionContents> selectionActions;
+
+    int zi{0};
     for (auto &z : info.zones)
     {
         auto exsgi = z.groupIndex;
@@ -708,6 +735,14 @@ bool importEXS(const fs::path &p, engine::Engine &e)
 
         zone->attachToSample(*(e.getSampleManager()));
         group->addZone(std::move(zone));
+
+        selectionActions.emplace_back(pt, gi, zi++, true, false, false);
+    }
+
+    if (!selectionActions.empty())
+    {
+        selectionActions.back().selectingAsLead = true;
+        e.getSelectionManager()->applySelectActions(selectionActions);
     }
 
     return true;

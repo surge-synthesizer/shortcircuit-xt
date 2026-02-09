@@ -49,13 +49,15 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         AIFF_FILE,
         MULTISAMPLE_FILE,
         GIG_FILE,
+        EXS_FILE,
         SCXT_FILE, // Part or Multi have embedded samples
     } type{WAV_FILE};
 
     static SourceType sourceTypeFromPath(const fs::path &path);
     static bool isSourceTypeSubSampleFromMonolith(SourceType st)
     {
-        return st == SF2_FILE || st == GIG_FILE || st == MULTISAMPLE_FILE || st == SCXT_FILE;
+        return st == SF2_FILE || st == GIG_FILE || st == MULTISAMPLE_FILE || st == SCXT_FILE ||
+               st == EXS_FILE;
     }
 
     Sample() {}
