@@ -114,9 +114,15 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
         }
     }
 
-    // In group mode, we don't undertake selection actions or morph in the grid
+    // We only undertake selection actions or morph in the grid in zone mode
+    // TODO: Make an option to allow it in group mode also
     if (isEditorInGroupMode())
-        return;
+    {
+        if (editor->editScreen->partSidebar)
+        {
+            editor->editScreen->partSidebar->setSelectedTab(2);
+        }
+    }
 
     if (!keyboardHotZones.empty() && keyboardHotZones[0].contains(e.position))
     {
@@ -598,7 +604,8 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         tooltipActive = false;
     }
 
-    // In group mode we don't select
+    // We only edit these in zone mode
+    // TODO: make an option to allow this
     if (isEditorInGroupMode())
     {
         mouseState = NONE;

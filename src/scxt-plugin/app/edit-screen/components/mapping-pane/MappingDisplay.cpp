@@ -790,7 +790,7 @@ void MappingDisplay::adjustDeltasToMakeSureTheyWillFit(engine::Zone::ChangeDimen
 {
     // You'd think we could avoid this by checking the constraint
     // but this true up helps us make sure fast mouse movements near
-    // the edge get clamped appropriatley
+    // the edge get clamped appropriately
     auto iDim = (int)dim;
     auto isMove = dim == engine::Zone::MOVE_CTR;
     if (kr.keyStart + deltaX < 0 &&
