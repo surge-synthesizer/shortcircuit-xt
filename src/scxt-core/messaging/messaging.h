@@ -172,7 +172,7 @@ struct MessageController : MoveableOnly<MessageController>
     std::atomic<bool> isClientConnected{false}, isAudioRunning{false};
     std::atomic<int64_t> engineProcessRuns{0}; // each time process is called this updates
     std::atomic<bool> forceStatusUpdate{false};
-    bool updateAudioRunning(); // returns true if there is a state change
+    bool updateAudioRunning(bool includeCountdown); // returns true if there is a state change
 
     /**
      * start. Called from the startup thread after the engine is created.
