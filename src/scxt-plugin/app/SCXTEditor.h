@@ -381,6 +381,11 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::unique_ptr<melatonin::Inspector> melatoninInspector;
 #endif
 
+    // Developer testing functions
+
+    // Sweep the entire keybad from 0-127 using the gui note.
+    void devSweepKeys(int msBetween, int key = 0);
+
   public:
     std::unique_ptr<juce::FileChooser> fileChooser;
 

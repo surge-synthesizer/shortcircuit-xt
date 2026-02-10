@@ -75,6 +75,19 @@ void SCXTEditor::showMainMenu()
     addUIThemesMenu(skin);
     m.addSubMenu("UI Behavior", skin);
 
+    m.addSeparator();
+    m.addItem("Release all Voices", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::StopSounds{false});
+    });
+    m.addItem("Stop all Sounds", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::StopSounds{true});
+    });
+    m.addSeparator();
+
     m.addItem("Show Log", [w = juce::Component::SafePointer(this)] {
         if (w)
             w->showLogOverlay();
@@ -128,18 +141,7 @@ void SCXTEditor::showMainMenu()
     dp.addSeparator();
     dp.addItem("Dump Colormap JSON", [this]() { SCLOG_IF(always, themeApplier.colors->toJson()); });
     dp.addSeparator();
-    dp.addItem("Raise Dummy Error", [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->sendToSerialization(cmsg::RaiseDebugError{true});
-    });
-    dp.addItem("Raise Dummy OK Cancel", [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->promptOKCancel(
-            "Dummy OK Cancel", "This is the dummy OK Cancel Message",
-            []() { SCLOG_IF(always, "OK Pressed"); }, []() { SCLOG_IF(always, "Cancel Pressed"); });
-    });
+
     dp.addSeparator();
     dp.addItem("Toggle Focus Debugger", [w = juce::Component::SafePointer(this)]() {
         if (!w)
@@ -173,16 +175,37 @@ void SCXTEditor::showMainMenu()
     }
 #endif
 
-    dp.addItem("Release all Voices", [w = juce::Component::SafePointer(this)]() {
+    auto devpm = juce::PopupMenu();
+
+    devpm.addItem("Raise Dummy OK Cancel", [w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
-        w->sendToSerialization(cmsg::StopSounds{false});
+        w->promptOKCancel(
+            "Dummy OK Cancel", "This is the dummy OK Cancel Message",
+            []() { SCLOG_IF(always, "OK Pressed"); }, []() { SCLOG_IF(always, "Cancel Pressed"); });
     });
-    dp.addItem("Stop all Sounds", [w = juce::Component::SafePointer(this)]() {
+    devpm.addItem("Raise Dummy Error", [w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
-        w->sendToSerialization(cmsg::StopSounds{true});
+        w->sendToSerialization(cmsg::RaiseDebugError{true});
     });
+    devpm.addSeparator();
+    devpm.addItem("Sweep keys (30ms)", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->devSweepKeys(30);
+    });
+    devpm.addItem("Sweep keys (3ms)", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->devSweepKeys(3);
+    });
+    devpm.addItem("Sweep keys (0ms)", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->devSweepKeys(0);
+    });
+    dp.addSubMenu("Test Tools", devpm);
 
     m.addSubMenu("Developer", dp);
 
