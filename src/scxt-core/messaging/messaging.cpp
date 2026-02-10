@@ -213,7 +213,8 @@ void MessageController::runSerialization()
                    (audioToSerializationQueue.empty()) && !audioStateChanged)
             {
                 clientToSerializationConditionVar.wait_for(lock, 50ms);
-                audioStateChanged = updateAudioRunning();
+                audioStateChanged = updateAudioRunning(clientToSerializationQueue.empty() &&
+                                                       audioToSerializationQueue.empty());
             }
             if (!clientToSerializationQueue.empty())
             {
@@ -265,7 +266,7 @@ void MessageController::runSerialization()
     }
 }
 
-bool MessageController::updateAudioRunning()
+bool MessageController::updateAudioRunning(bool includeCountdown)
 {
     assert(threadingChecker.isSerialThread());
     bool retval = false;
@@ -274,7 +275,8 @@ bool MessageController::updateAudioRunning()
         isAudioRunning = true;
         retval = true;
     }
-    else if (isAudioRunning && localCopyOfEngineProcessRuns == engineProcessRuns)
+    else if (isAudioRunning && localCopyOfEngineProcessRuns == engineProcessRuns &&
+             includeCountdown)
     {
         engineOffCountdown--;
         if (engineOffCountdown <= 0)

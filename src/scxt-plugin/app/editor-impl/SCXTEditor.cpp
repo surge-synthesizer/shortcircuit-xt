@@ -626,8 +626,11 @@ void SCXTEditor::devSweepKeys(int msBetween, int key)
     namespace cmsg = scxt::messaging::client;
     if (key != 0)
     {
-        SCLOG_IF(debug, "Note OFF << key=" << key - 1);
         sendToSerialization(cmsg::NoteFromGUI({key - 1, 0.9, false}));
+    }
+    else
+    {
+        SCLOG_IF(debug, "Starting keysweep");
     }
 
     if (key == 127)
@@ -636,7 +639,6 @@ void SCXTEditor::devSweepKeys(int msBetween, int key)
         return;
     }
 
-    SCLOG_IF(debug, "Note ON  >> key=" << key);
     sendToSerialization(cmsg::NoteFromGUI({key, 0.9, true}));
     juce::Timer::callAfterDelay(msBetween,
                                 [this, nk = key + 1, ms = msBetween]() { devSweepKeys(ms, nk); });
