@@ -190,6 +190,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     int32_t checkWelcomeCountdown{20};
 
     int currentOmniFlavor{0};
+    bool shouldApplyOmniOnSelect{false};
+
+    void setupOmniFlavorFromEngine(std::pair<int, bool> f);
+    void setupOmniApplyDefault(bool b);
     void setOmniFlavor(int f);
     void setOmniFlavorDefault(int f);
 

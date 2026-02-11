@@ -332,24 +332,6 @@ void PartSidebarCard::showMidiModeMenu()
     {
         p.addItem("Ch. " + std::to_string(i + 1), true, ch == i, makeMenuCallback(i));
     }
-    p.addSeparator();
-    auto msm = juce::PopupMenu();
-    msm.addSectionHeader("MPE Settings");
-    msm.addSeparator();
-    for (auto d : {12, 24, 48, 96})
-    {
-        msm.addItem(std::to_string(d) + " semi bend range", true,
-                    d == editor->partConfigurations[part].mpePitchBendRange,
-                    [d, w = juce::Component::SafePointer(this)] {
-                        if (!w)
-                            return;
-                        w->editor->partConfigurations[w->part].mpePitchBendRange = d;
-                        w->resetFromEditorCache();
-                        w->sendToSerialization(cmsg::UpdatePartFullConfig(
-                            {w->part, w->editor->partConfigurations[w->part]}));
-                    });
-    }
-    p.addSubMenu("MPE Settings", msm);
     p.showMenuAsync(editor->defaultPopupMenuOptions(midiMode.get()));
 }
 

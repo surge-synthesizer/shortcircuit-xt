@@ -266,6 +266,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         TuningZoneResolution tuningZoneResolution{TuningZoneResolution::RESOLVE_TUNED_PITCH};
         OmniFlavor omniFlavor{OmniFlavor::OMNI};
         OmniFlavor defaultOmniFlavor{OmniFlavor::OMNI};
+        bool applyOmniToAllPartsOnSelect{false};
     } runtimeConfig;
 
     void resetTuningFromRuntimeConfig();

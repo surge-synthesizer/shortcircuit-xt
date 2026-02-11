@@ -430,11 +430,23 @@ void SCXTEditor::parentHierarchyChanged()
 #endif
 }
 
+void SCXTEditor::setupOmniFlavorFromEngine(std::pair<int, bool> f)
+{
+    setupOmniApplyDefault(f.second);
+    setOmniFlavor(f.first);
+}
+
+void SCXTEditor::setupOmniApplyDefault(bool b)
+{
+    shouldApplyOmniOnSelect = b;
+    defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::applyOmniToAllOnSelect, b);
+}
+
 void SCXTEditor::setOmniFlavor(int f)
 {
-    this->currentOmniFlavor = f;
+    currentOmniFlavor = f;
     std::string on;
-    switch (f)
+    switch (currentOmniFlavor)
     {
     case 0:
         on = "OMNI";
@@ -452,10 +464,16 @@ void SCXTEditor::setOmniFlavor(int f)
         headerRegion->omniButton->setTitle(on);
     }
 
-    editScreen->partSidebar->updateMidiMenuLabel();
-
-    sendToSerialization(
-        messaging::client::SetOmniFlavor(static_cast<scxt::engine::Engine::OmniFlavor>(f)));
+    if (shouldApplyOmniOnSelect)
+    {
+        editScreen->partSidebar->setAllToOmniFlavor(f);
+    }
+    else
+    {
+        editScreen->partSidebar->updateMidiMenuLabel();
+        sendToSerialization(
+            messaging::client::SetOmniFlavor(static_cast<scxt::engine::Engine::OmniFlavor>(f)));
+    }
 }
 
 void SCXTEditor::setOmniFlavorDefault(int f)

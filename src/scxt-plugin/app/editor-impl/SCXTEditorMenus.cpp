@@ -256,8 +256,29 @@ void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
                   if (w)
                       w->setOmniFlavorDefault(w->currentOmniFlavor);
               });
-
-    repaint();
+    p.addSeparator();
+    p.addItem("Set all parts on selection", true, shouldApplyOmniOnSelect,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setupOmniApplyDefault(!w->shouldApplyOmniOnSelect);
+              });
+    p.addSeparator();
+    auto msm = juce::PopupMenu();
+    msm.addSectionHeader("MPE Settings");
+    msm.addSeparator();
+    for (auto d : {12, 24, 48, 96})
+    {
+        msm.addItem(std::to_string(d) + " semi bend range", true,
+                    d == this->partConfigurations[0].mpePitchBendRange,
+                    [d, w = juce::Component::SafePointer(this)] {
+                        if (!w)
+                            return;
+                        w->editScreen->partSidebar->setMpeBendRange(d);
+                    });
+    }
+    p.addSubMenu("MPE Settings", msm);
+    // I think this is not useful, but leaving it here in case we change our mind
+    // p.showMenuAsync(this->defaultPopupMenuOptions(this->headerRegion->omniButton.get()));
 }
 
 void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
@@ -412,9 +433,10 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
             return;
         w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::useSoftwareRenderer,
                                                    !swr);
-        juce::AlertWindow::showMessageBoxAsync(
-            juce::AlertWindow::WarningIcon, "Software Renderer Change",
-            "A software renderer change is only active once you restart/reload the plugin.");
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                               "Software Renderer Change",
+                                               "A software renderer change is only active "
+                                               "once you restart/reload the plugin.");
     });
 #endif
 }
