@@ -390,6 +390,13 @@ void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &s)
 {
     const auto &[part, index, value] = s;
     macroCache[part][index].value = value;
+
+    if (editScreen && part == selectedPart)
+    {
+        editScreen->macroDataChanged(part, index);
+    }
+    playScreen->macroDataChanged(part, index);
+
     editScreen->mappingPane->repaint();
     editScreen->partSidebar->repaint();
     playScreen->repaint();

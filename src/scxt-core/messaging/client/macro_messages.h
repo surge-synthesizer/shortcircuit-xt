@@ -103,6 +103,8 @@ inline void updateMacroValue(const macroValue_t &t, const engine::Engine &engine
             // Set the value
             auto &partO = e.getPatch()->getPart(part); // ->macros[index];
             partO->macroLagHandler.setTargetOnMacro(index, value);
+            if (!partO->isActive())
+                partO->macroLagHandler.instantlySnap();
             // macro.setValueConstrained(value);
         },
         [part = p, index = i, value = f](auto &e) {
