@@ -122,11 +122,15 @@ SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
                           {"tz", from.tuningZoneResolution},
                           {"of", from.omniFlavor}};
                  }
+                 else
+                 {
+                     v = {{"tm", from.tuningMode}, {"tz", from.tuningZoneResolution}};
+                 }
              }),
              SC_TO({
                  findIf(v, "tm", to.tuningMode);
                  findIf(v, "tz", to.tuningZoneResolution);
-                 findIf(v, "of", to.omniFlavor);
+                 findOrSet(v, "of", to.defaultOmniFlavor, to.omniFlavor);
              }));
 
 SC_STREAMDEF(scxt::engine::Patch,

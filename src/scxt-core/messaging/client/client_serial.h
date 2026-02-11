@@ -248,7 +248,7 @@ enum SerializationToClientMessageIds
 
     s2c_send_tuning_status,
 
-    s2c_send_omni_flavor,
+    s2c_update_omni_flavor,
 
     num_serializationToClientMessages
 };

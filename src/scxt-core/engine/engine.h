@@ -265,6 +265,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         TuningMode tuningMode{TuningMode::MTS_CONTINOUS};
         TuningZoneResolution tuningZoneResolution{TuningZoneResolution::RESOLVE_TUNED_PITCH};
         OmniFlavor omniFlavor{OmniFlavor::OMNI};
+        OmniFlavor defaultOmniFlavor{OmniFlavor::OMNI};
     } runtimeConfig;
 
     void resetTuningFromRuntimeConfig();

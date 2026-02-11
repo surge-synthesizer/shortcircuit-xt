@@ -130,12 +130,13 @@ CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, tuningStatusPayload_t,
 using omniFlavor_t = scxt::engine::Engine::OmniFlavor;
 inline void applyOmniFlavorPayload(const omniFlavor_t &payload, messaging::MessageController &cont)
 {
-    cont.scheduleAudioThreadCallback([payload](scxt::engine::Engine &e) {
-        e.setOmniFlavor(payload);
-    });
+    cont.scheduleAudioThreadCallback(
+        [payload](scxt::engine::Engine &e) { e.setOmniFlavor(payload); });
 }
+CLIENT_TO_SERIAL(SetOmniFlavor, c2s_set_omni_flavor, omniFlavor_t,
+                 applyOmniFlavorPayload(payload, cont));
 
-CLIENT_TO_SERIAL(SetOmniFlavor, c2s_set_omni_flavor, omniFlavor_t, applyOmniFlavorPayload(payload, cont));
+SERIAL_TO_CLIENT(UpdateOmniFlavor, s2c_update_omni_flavor, int, setOmniFlavor);
 
 } // namespace scxt::messaging::client
 

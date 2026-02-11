@@ -157,6 +157,9 @@ Engine::Engine()
 
     previewVoice = std::make_unique<voice::PreviewVoice>();
 
+    runtimeConfig.defaultOmniFlavor = static_cast<OmniFlavor>(
+        defaults->getUserDefaultValue(scxt::infrastructure::DefaultKeys::omniFlavor, 0));
+
     onPartConfigurationUpdated();
 }
 
@@ -1240,6 +1243,10 @@ void Engine::sendFullRefreshToClient() const
         }
     }
 
+    auto cof = static_cast<int>(this->runtimeConfig.omniFlavor);
+    serializationSendToClient(messaging::client::s2c_update_omni_flavor, cof,
+                              *getMessageController());
+
     getSelectionManager()->sendGroupZoneMappingForSelectedPart();
     getSelectionManager()->sendClientDataForLeadSelectionState();
     getSelectionManager()->sendSelectedZonesToClient();
@@ -1430,8 +1437,6 @@ void Engine::setOmniFlavor(const OmniFlavor &of)
     int16_t nof{0};
     switch (of)
     {
-    default:
-        nof = defaults->getUserDefaultValue(scxt::infrastructure::DefaultKeys::omniFlavor, 0);
     case OmniFlavor::OMNI:
         nof = engine::Part::PartConfiguration::omniChannel;
         break;

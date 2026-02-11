@@ -169,7 +169,6 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     omniButton->setLabel(on);
     omniButton->setTitle(on);
 
-
     omniButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
