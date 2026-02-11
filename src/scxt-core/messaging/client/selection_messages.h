@@ -83,6 +83,12 @@ inline void doBeginEndEdit(bool isBegin, const editGestureFor_t &payload,
             engine.getSelectionManager()->configureAndSendZoneOrGroupModMatrixMetadata(
                 lz->part, lz->group, lz->zone);
         }
+        auto lg = engine.getSelectionManager()->currentLeadGroup(engine);
+        if (lg.has_value())
+        {
+            engine.getSelectionManager()->configureAndSendZoneOrGroupModMatrixMetadata(
+                lg->part, lg->group, -1);
+        }
     }
 }
 CLIENT_TO_SERIAL(BeginEdit, c2s_begin_edit, editGestureFor_t,
