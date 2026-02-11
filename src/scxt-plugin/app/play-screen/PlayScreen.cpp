@@ -235,51 +235,61 @@ void PlayScreen::resized()
 
     viewportContents->setBounds(0, 0, w,
                                 shared::PartSidebarCard::height * npt * (tallMode ? 2 : 1));
+    int rectIdx{0};
     for (int i = 0; i < scxt::numParts; ++i)
     {
-        auto rb = rectangleForPart(i);
+        if (editor->partConfigurations[i].active)
+        {
+            auto rb = rectangleForPart(rectIdx);
+            rectIdx++;
 
-        partSidebars[i]->setBounds(rb.withWidth(shared::PartSidebarCard::width)
-                                       .withHeight(tallMode ? shared::PartSidebarCard::tallHeight
-                                                            : shared::PartSidebarCard::height));
+            partSidebars[i]->setBounds(rb.withWidth(shared::PartSidebarCard::width)
+                                           .withHeight(tallMode
+                                                           ? shared::PartSidebarCard::tallHeight
+                                                           : shared::PartSidebarCard::height));
+        }
     }
 
-    int pt{0};
+    int pt{0}, ptPos{0};
 
     for (const auto &ped : macroEditors)
     {
         int knobMargin{5};
 
-        auto pBox = rectangleForPart(pt);
-        // write it this way to make tall mode easier in the future
-        auto totalS = w - shared::PartSidebarCard::width - knobMargin;
-        int switchW = 32;
-        if (!tallMode)
-            totalS -= switchW - 2 * knobMargin;
-        int off = 5;
-        auto wid = (totalS - 2 * off) / (macrosPerPart / 2);
-        for (int idx = 0; idx < macrosPerPart; idx++)
+        if (editor->partConfigurations[pt].active)
         {
-            int xPos = shared::PartSidebarCard::width + knobMargin + off +
-                       wid * (idx % (macrosPerPart / 2));
-            int yPos = pBox.getY();
-            if (tallMode)
+            auto pBox = rectangleForPart(ptPos);
+            // write it this way to make tall mode easier in the future
+            auto totalS = w - shared::PartSidebarCard::width - knobMargin;
+            int switchW = 32;
+            if (!tallMode)
+                totalS -= switchW - 2 * knobMargin;
+            int off = 5;
+            auto wid = (totalS - 2 * off) / (macrosPerPart / 2);
+            for (int idx = 0; idx < macrosPerPart; idx++)
             {
-                if (idx >= macrosPerPart / 2)
+                int xPos = shared::PartSidebarCard::width + knobMargin + off +
+                           wid * (idx % (macrosPerPart / 2));
+                int yPos = pBox.getY();
+                if (tallMode)
                 {
-                    yPos += shared::PartSidebarCard::height;
+                    if (idx >= macrosPerPart / 2)
+                    {
+                        yPos += shared::PartSidebarCard::height;
+                    }
                 }
+                auto bx = juce::Rectangle<int>(xPos, yPos, 92, shared::PartSidebarCard::height);
+                macroEditors[pt][idx]->setBounds(bx.reduced(3));
             }
-            auto bx = juce::Rectangle<int>(xPos, yPos, 92, shared::PartSidebarCard::height);
-            macroEditors[pt][idx]->setBounds(bx.reduced(3));
-        }
-        if (!tallMode)
-        {
-            auto rr = pBox.withTrimmedLeft(pBox.getWidth() - switchW - knobMargin)
-                          .withTrimmedRight(knobMargin);
-            auto ht = (rr.getHeight() - switchW) / 2;
-            rr = rr.reduced(0, ht);
-            skinnyPageSwitches[pt]->widget->setBounds(rr);
+            if (!tallMode)
+            {
+                auto rr = pBox.withTrimmedLeft(pBox.getWidth() - switchW - knobMargin)
+                              .withTrimmedRight(knobMargin);
+                auto ht = (rr.getHeight() - switchW) / 2;
+                rr = rr.reduced(0, ht);
+                skinnyPageSwitches[pt]->widget->setBounds(rr);
+            }
+            ptPos++;
         }
         pt++;
     }
