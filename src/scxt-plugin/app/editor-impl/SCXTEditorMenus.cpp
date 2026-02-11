@@ -234,6 +234,32 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
               });
 }
 
+void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
+{
+    p.addSectionHeader("MIDI Channel usage");
+    p.addSeparator();
+
+    std::string n[3] = {"Omni", "MPE", "Channel/Octave"};
+
+    for (int i = 0; i < 3; ++i)
+    {
+        p.addItem(n[i], true, this->currentOmniFlavor == i,
+                  [w = juce::Component::SafePointer(this), i]() {
+                      if (w)
+                          w->setOmniFlavor(i);
+                  });
+    }
+    p.addSeparator();
+
+    p.addItem("Use " + n[this->currentOmniFlavor] + " as default for new instances", true, false,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setOmniFlavorDefault(w->currentOmniFlavor);
+              });
+
+    repaint();
+}
+
 void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
 {
     if (addTitle)

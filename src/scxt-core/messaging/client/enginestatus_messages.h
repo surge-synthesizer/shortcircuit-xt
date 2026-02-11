@@ -127,6 +127,16 @@ inline void applyTuningStatusPayload(const tuningStatusPayload_t &payload,
 CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, tuningStatusPayload_t,
                  applyTuningStatusPayload(payload, cont));
 
+using omniFlavor_t = scxt::engine::Engine::OmniFlavor;
+inline void applyOmniFlavorPayload(const omniFlavor_t &payload, messaging::MessageController &cont)
+{
+    cont.scheduleAudioThreadCallback([payload](scxt::engine::Engine &e) {
+        e.setOmniFlavor(payload);
+    });
+}
+
+CLIENT_TO_SERIAL(SetOmniFlavor, c2s_set_omni_flavor, omniFlavor_t, applyOmniFlavorPayload(payload, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_ENGINESTATUS_MESSAGES_H

@@ -547,6 +547,27 @@ void PartGroupSidebar::groupTriggerConditionChanged(const scxt::engine::GroupTri
     groupSidebar->groupTriggers->setGroupTriggerConditions(c);
 }
 
+void PartGroupSidebar::updateMidiMenuLabel()
+{
+    std::string cof;
+    switch (editor->currentOmniFlavor)
+    {
+    case 0:
+        cof = "Omni";
+        break;
+    case 1:
+        cof = "MPE";
+        break;
+    case 2:
+        cof = "Ch/Oct";
+        break;
+    }
+    for (int i = 0; i < scxt::numParts; ++i)
+    {
+        this->partSidebar->parts[i]->midiMode->setLabel(cof);
+    }
+}
+
 void PartGroupSidebar::showHamburgerMenu()
 {
     if (selectedTab == 0)
@@ -575,31 +596,26 @@ void PartGroupSidebar::showHamburgerMenu()
                       }
                   });
         p.addSeparator();
-        p.addItem("Set All to Omni", [w = juce::Component::SafePointer(this)]() {
+        std::string cof;
+        switch (editor->currentOmniFlavor)
+        {
+        case 0:
+            cof = "Omni";
+            break;
+        case 1:
+            cof = "MPE";
+            break;
+        case 2:
+            cof = "Channel/Octave";
+            break;
+        }
+        p.addItem("Set All to " + cof, [w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;
             auto &psb = w->partSidebar;
             for (int i = 0; i < scxt::numParts; ++i)
             {
                 psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::omniChannel);
-            }
-        });
-        p.addItem("Set All to MPE", [w = juce::Component::SafePointer(this)]() {
-            if (!w)
-                return;
-            auto &psb = w->partSidebar;
-            for (int i = 0; i < scxt::numParts; ++i)
-            {
-                psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::mpeChannel);
-            }
-        });
-        p.addItem("Set All to Ch/Oct", [w = juce::Component::SafePointer(this)]() {
-            if (!w)
-                return;
-            auto &psb = w->partSidebar;
-            for (int i = 0; i < scxt::numParts; ++i)
-            {
-                psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::chPerOctaveChannel);
             }
         });
         p.addItem("Set to Incremental MIDI Channels", [w = juce::Component::SafePointer(this)]() {

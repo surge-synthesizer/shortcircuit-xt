@@ -64,6 +64,8 @@ STREAM_ENUM(engine::Engine::TuningZoneResolution, engine::Engine::toStringTuning
             engine::Engine::fromStringTuningZoneResolution);
 STREAM_ENUM(engine::Engine::TuningMode, engine::Engine::toStringTuningMode,
             engine::Engine::fromStringTuningMode);
+STREAM_ENUM(engine::Engine::OmniFlavor, engine::Engine::toStringOmniFlavor,
+            engine::Engine::fromStringOmniFlavor);
 
 SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  if (SC_STREAMING_FOR_IN_PROCESS)
@@ -113,10 +115,18 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  to.getPatch()->setSampleRate(to.getSampleRate());
              }))
 
-SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig,
-             SC_FROM({ v = {{"tm", from.tuningMode}, {"tz", from.tuningZoneResolution}}; }), SC_TO({
+SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
+                 if (SC_STREAMING_FOR_DAW)
+                 {
+                     v = {{"tm", from.tuningMode},
+                          {"tz", from.tuningZoneResolution},
+                          {"of", from.omniFlavor}};
+                 }
+             }),
+             SC_TO({
                  findIf(v, "tm", to.tuningMode);
                  findIf(v, "tz", to.tuningZoneResolution);
+                 findIf(v, "of", to.omniFlavor);
              }));
 
 SC_STREAMDEF(scxt::engine::Patch,

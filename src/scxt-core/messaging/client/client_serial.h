@@ -180,6 +180,8 @@ enum ClientToSerializationMessagesIds
     c2s_set_macro_full_state,
     c2s_set_macro_value,
 
+    c2s_set_omni_flavor,
+
     c2s_request_host_callback,
     c2s_macro_begin_end_edit,
 
@@ -245,6 +247,8 @@ enum SerializationToClientMessageIds
     s2c_send_missing_resolution_workitem_list,
 
     s2c_send_tuning_status,
+
+    s2c_send_omni_flavor,
 
     num_serializationToClientMessages
 };

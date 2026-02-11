@@ -1423,4 +1423,56 @@ void Engine::resetTuningFromRuntimeConfig()
     }
 }
 
+void Engine::setOmniFlavor(const OmniFlavor &of)
+{
+    this->runtimeConfig.omniFlavor = of;
+
+    int16_t nof{0};
+    switch (of)
+    {
+    default:
+        nof = defaults->getUserDefaultValue(scxt::infrastructure::DefaultKeys::omniFlavor, 0);
+    case OmniFlavor::OMNI:
+        nof = engine::Part::PartConfiguration::omniChannel;
+        break;
+    case OmniFlavor::MPE:
+        nof = engine::Part::PartConfiguration::mpeChannel;
+        break;
+    case OmniFlavor::CHOCT:
+        nof = engine::Part::PartConfiguration::chPerOctaveChannel;
+        break;
+    }
+    for (auto &part : *getPatch())
+    {
+        if (part->configuration.channel < 0)
+        {
+            part->configuration.channel = nof;
+        }
+    }
+}
+
+std::string Engine::toStringOmniFlavor(const OmniFlavor &z)
+{
+    switch (z)
+    {
+    case OmniFlavor::OMNI:
+        return "omni";
+    case OmniFlavor::MPE:
+        return "mpe";
+    case OmniFlavor::CHOCT:
+        return "choct";
+    }
+    return "wtf";
+}
+
+Engine::OmniFlavor Engine::fromStringOmniFlavor(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Engine::OmniFlavor, Engine::toStringOmniFlavor>(
+        Engine::OmniFlavor::OMNI, Engine::OmniFlavor::CHOCT);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return OmniFlavor::MPE;
+    return p->second;
+}
+
 } // namespace scxt::engine

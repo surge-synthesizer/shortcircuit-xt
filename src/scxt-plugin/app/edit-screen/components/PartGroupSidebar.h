@@ -61,6 +61,8 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     void partConfigurationChanged(int i);
     void groupTriggerConditionChanged(const scxt::engine::GroupTriggerConditions &);
 
+    void updateMidiMenuLabel();
+
     void showHamburgerMenu();
 
     void resized() override;

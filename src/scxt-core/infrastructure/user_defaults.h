@@ -34,6 +34,7 @@ namespace scxt::infrastructure
 {
 enum DefaultKeys
 {
+    omniFlavor,
     zoomLevel,
     octave0,
     invertScroll,
@@ -53,6 +54,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
 {
     switch (k)
     {
+    case omniFlavor:
+        return "omniFlavor";
     case zoomLevel:
         return "zoomLevel";
     case colormapId:

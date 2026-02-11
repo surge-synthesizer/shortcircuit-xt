@@ -303,19 +303,30 @@ void PartSidebarCard::showMidiModeMenu()
         return [w, ch]() {
             if (!w)
                 return;
-            w->setMidiChannel(ch);
+            w->setMidiChannel(ch - (w->editor->currentOmniFlavor * (ch < 0)));
         };
     };
+
+    std::string cof;
+    switch (editor->currentOmniFlavor)
+    {
+    case 0:
+        cof = "Omni";
+        break;
+    case 1:
+        cof = "MPE";
+        break;
+    case 2:
+        cof = "Channel/Octave";
+        break;
+    }
+
     auto p = juce::PopupMenu();
     auto ch = editor->partConfigurations[part].channel;
     p.addSectionHeader("MIDI");
     p.addSeparator();
-    p.addItem("OMNI", true, ch == engine::Part::PartConfiguration::omniChannel,
+    p.addItem(cof, true, ch == engine::Part::PartConfiguration::omniChannel,
               makeMenuCallback(engine::Part::PartConfiguration::omniChannel));
-    p.addItem("MPE", true, ch == engine::Part::PartConfiguration::mpeChannel,
-              makeMenuCallback(engine::Part::PartConfiguration::mpeChannel));
-    p.addItem("Channel/Oct", true, ch == engine::Part::PartConfiguration::chPerOctaveChannel,
-              makeMenuCallback(engine::Part::PartConfiguration::chPerOctaveChannel));
     p.addSeparator();
     for (int i = 0; i < 16; ++i)
     {
@@ -416,17 +427,24 @@ void PartSidebarCard::resetFromEditorCache()
 {
     const auto &conf = editor->partConfigurations[part];
     auto mc = conf.channel;
-    if (mc == engine::Part::PartConfiguration::omniChannel)
+
+    std::string cof;
+    switch (editor->currentOmniFlavor)
     {
-        midiMode->setLabel("OMNI");
+    case 0:
+        cof = "Omni";
+        break;
+    case 1:
+        cof = "MPE";
+        break;
+    case 2:
+        cof = "Ch/Oct";
+        break;
     }
-    else if (mc == engine::Part::PartConfiguration::mpeChannel)
+
+    if (mc < 0)
     {
-        midiMode->setLabel("MPE");
-    }
-    else if (mc == engine::Part::PartConfiguration::chPerOctaveChannel)
-    {
-        midiMode->setLabel("C/OCT");
+        midiMode->setLabel(cof);
     }
     else
     {

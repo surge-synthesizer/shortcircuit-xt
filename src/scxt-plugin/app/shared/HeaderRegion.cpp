@@ -153,17 +153,31 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*tuningButton);
 
-    zoomButton = std::make_unique<jcmp::TextPushButton>();
-    zoomButton->setLabel("Zoom");
-    zoomButton->setTitle("Zoom");
-    zoomButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+    omniButton = std::make_unique<jcmp::TextPushButton>();
+    std::string on;
+    switch (editor->currentOmniFlavor)
+    {
+    case 0:
+        on = "OMNI";
+        break;
+    case 1:
+        on = "MPE";
+        break;
+    case 2:
+        on = "Ch/Oct";
+    }
+    omniButton->setLabel(on);
+    omniButton->setTitle(on);
+
+
+    omniButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
         juce::PopupMenu p;
-        w->editor->addZoomMenu(p, true);
-        p.showMenuAsync(w->editor->defaultPopupMenuOptions(w->zoomButton.get()));
+        w->editor->addOmniFlavorMenu(p);
+        p.showMenuAsync(w->editor->defaultPopupMenuOptions(w->omniButton.get()));
     });
-    addAndMakeVisible(*zoomButton);
+    addAndMakeVisible(*omniButton);
 
     if (hasFeature::memoryUsageExplanation)
     {
@@ -238,7 +252,7 @@ void HeaderRegion::resized()
     }
 
     tuningButton->setBounds(b.withTrimmedLeft(823).withWidth(48));
-    zoomButton->setBounds(b.withTrimmedLeft(823 + 50).withWidth(48));
+    omniButton->setBounds(b.withTrimmedLeft(823 + 50).withWidth(48));
 
     if (hasFeature::memoryUsageExplanation)
     {

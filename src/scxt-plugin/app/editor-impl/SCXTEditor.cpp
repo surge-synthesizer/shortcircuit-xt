@@ -430,6 +430,39 @@ void SCXTEditor::parentHierarchyChanged()
 #endif
 }
 
+void SCXTEditor::setOmniFlavor(int f)
+{
+    this->currentOmniFlavor = f;
+    std::string on;
+    switch (f)
+    {
+    case 0:
+        on = "OMNI";
+        break;
+    case 1:
+        on = "MPE";
+        break;
+    case 2:
+        on = "Ch/Oct";
+    }
+
+    if (headerRegion)
+    {
+        headerRegion->omniButton->setLabel(on);
+        headerRegion->omniButton->setTitle(on);
+    }
+
+    editScreen->partSidebar->updateMidiMenuLabel();
+
+    sendToSerialization(
+        messaging::client::SetOmniFlavor(static_cast<scxt::engine::Engine::OmniFlavor>(f)));
+}
+
+void SCXTEditor::setOmniFlavorDefault(int f)
+{
+    defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::omniFlavor, f);
+}
+
 void SCXTEditor::setZoomFactor(float zf)
 {
     zoomFactor = zf;

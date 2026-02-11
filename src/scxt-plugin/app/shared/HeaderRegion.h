@@ -54,7 +54,7 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     std::unique_ptr<sst::jucegui::data::Discrete> selectedPageData;
     std::unique_ptr<sst::jucegui::components::VUMeter> vuMeter;
     std::unique_ptr<sst::jucegui::components::TextPushButton> undoButton, redoButton, tuningButton,
-        zoomButton;
+        omniButton;
     std::unique_ptr<sst::jucegui::components::Label> cpuLevel, ramLevel;
     std::unique_ptr<sst::jucegui::components::Label> cpuLabel, ramLabel;
 
