@@ -547,6 +547,58 @@ void PartGroupSidebar::groupTriggerConditionChanged(const scxt::engine::GroupTri
     groupSidebar->groupTriggers->setGroupTriggerConditions(c);
 }
 
+void PartGroupSidebar::setAllToOmniFlavor(engine::Engine::OmniFlavor of)
+{
+    int16_t nof{0};
+    switch (of)
+    {
+    case engine::Engine::OmniFlavor::OMNI:
+        nof = engine::Part::PartConfiguration::omniChannel;
+        break;
+    case engine::Engine::OmniFlavor::MPE:
+        nof = engine::Part::PartConfiguration::mpeChannel;
+        break;
+    case engine::Engine::OmniFlavor::CHOCT:
+        nof = engine::Part::PartConfiguration::chPerOctaveChannel;
+        break;
+    }
+    for (int i = 0; i < scxt::numParts; ++i)
+    {
+        this->partSidebar->parts[i]->setMidiChannel(nof);
+    }
+}
+
+void PartGroupSidebar::updateMidiMenuLabel()
+{
+    std::string cof;
+    switch (editor->currentOmniFlavor)
+    {
+    case engine::Engine::OmniFlavor::OMNI:
+        cof = "Omni";
+        break;
+    case engine::Engine::OmniFlavor::MPE:
+        cof = "MPE";
+        break;
+    case engine::Engine::OmniFlavor::CHOCT:
+        cof = "Ch/Oct";
+        break;
+    }
+    for (int i = 0; i < scxt::numParts; ++i)
+    {
+        if (editor->partConfigurations[i].channel < 0)
+            this->partSidebar->parts[i]->midiMode->setLabel(cof);
+    }
+}
+
+void PartGroupSidebar::setMpeBendRange(int r)
+{
+    for (int i = 0; i < scxt::numParts; ++i)
+    {
+        editor->partConfigurations[i].mpePitchBendRange = r;
+        sendToSerialization(cmsg::UpdatePartFullConfig({i, editor->partConfigurations[i]}));
+    }
+}
+
 void PartGroupSidebar::showHamburgerMenu()
 {
     if (selectedTab == 0)
@@ -575,32 +627,23 @@ void PartGroupSidebar::showHamburgerMenu()
                       }
                   });
         p.addSeparator();
-        p.addItem("Set All to Omni", [w = juce::Component::SafePointer(this)]() {
+        std::string cof;
+        switch (editor->currentOmniFlavor)
+        {
+        case engine::Engine::OmniFlavor::OMNI:
+            cof = "Omni";
+            break;
+        case engine::Engine::OmniFlavor::MPE:
+            cof = "MPE";
+            break;
+        case engine::Engine::OmniFlavor::CHOCT:
+            cof = "Channel/Octave";
+            break;
+        }
+        p.addItem("Set All to " + cof, [w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;
-            auto &psb = w->partSidebar;
-            for (int i = 0; i < scxt::numParts; ++i)
-            {
-                psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::omniChannel);
-            }
-        });
-        p.addItem("Set All to MPE", [w = juce::Component::SafePointer(this)]() {
-            if (!w)
-                return;
-            auto &psb = w->partSidebar;
-            for (int i = 0; i < scxt::numParts; ++i)
-            {
-                psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::mpeChannel);
-            }
-        });
-        p.addItem("Set All to Ch/Oct", [w = juce::Component::SafePointer(this)]() {
-            if (!w)
-                return;
-            auto &psb = w->partSidebar;
-            for (int i = 0; i < scxt::numParts; ++i)
-            {
-                psb->parts[i]->setMidiChannel(engine::Part::PartConfiguration::chPerOctaveChannel);
-            }
+            w->setAllToOmniFlavor(w->editor->currentOmniFlavor);
         });
         p.addItem("Set to Incremental MIDI Channels", [w = juce::Component::SafePointer(this)]() {
             if (!w)

@@ -430,6 +430,55 @@ void SCXTEditor::parentHierarchyChanged()
 #endif
 }
 
+void SCXTEditor::setupOmniApplyDefault(bool b)
+{
+    shouldApplyOmniOnSelect = b;
+    defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::applyOmniToAllOnSelect, b);
+}
+
+void SCXTEditor::setOmniFlavor(engine::Engine::OmniFlavor of, bool onStartup)
+{
+    currentOmniFlavor = of;
+    std::string on;
+    switch (currentOmniFlavor)
+    {
+    case engine::Engine::OmniFlavor::OMNI:
+        on = "OMNI";
+        break;
+    case engine::Engine::OmniFlavor::MPE:
+        on = "MPE";
+        break;
+    case engine::Engine::OmniFlavor::CHOCT:
+        on = "Ch/Oct";
+    }
+
+    if (headerRegion)
+    {
+        headerRegion->omniButton->setLabel(on);
+        headerRegion->omniButton->setTitle(on);
+    }
+
+    // On startup the UI gets the data from the engine. No need to send it back again.
+    if (onStartup)
+        return;
+
+    if (shouldApplyOmniOnSelect)
+    {
+        editScreen->partSidebar->setAllToOmniFlavor(of);
+    }
+    else
+    {
+        editScreen->partSidebar->updateMidiMenuLabel();
+        sendToSerialization(
+            messaging::client::SetOmniFlavor(static_cast<scxt::engine::Engine::OmniFlavor>(of)));
+    }
+}
+
+void SCXTEditor::setOmniFlavorDefault(int f)
+{
+    defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::omniFlavor, f);
+}
+
 void SCXTEditor::setZoomFactor(float zf)
 {
     zoomFactor = zf;

@@ -189,6 +189,14 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void showWelcomeOverlay();
     int32_t checkWelcomeCountdown{20};
 
+    engine::Engine::OmniFlavor currentOmniFlavor{engine::Engine::OmniFlavor::OMNI};
+    bool shouldApplyOmniOnSelect{false};
+
+    void onOmniFlavorFromEngine(std::pair<int, bool> f);
+    void setupOmniApplyDefault(bool b);
+    void setOmniFlavor(engine::Engine::OmniFlavor of, bool onStartup = false);
+    void setOmniFlavorDefault(int f);
+
     float zoomFactor{1.f};
     void setZoomFactor(float zoomFactor); // 1.0 == 100%
     std::function<void(float)> onZoomChanged{nullptr};
@@ -333,6 +341,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void showMainMenu();
     void addTuningMenu(juce::PopupMenu &into, bool addTitle = true);
     void addZoomMenu(juce::PopupMenu &into, bool addTitle = true);
+    void addOmniFlavorMenu(juce::PopupMenu &p);
     void addUIThemesMenu(juce::PopupMenu &p, bool addTitle = true);
 
     void processorBypassToggled(int which);

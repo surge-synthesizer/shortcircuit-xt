@@ -250,15 +250,28 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     };
     DECLARE_ENUM_STRING(TuningZoneResolution);
 
+    enum struct OmniFlavor
+    {
+        OMNI,
+        MPE,
+        CHOCT
+    };
+    DECLARE_ENUM_STRING(OmniFlavor);
+
     // Post 1.0 we probably want this per-part changable but that makes
     // a variety of things harder in resolution
     struct RuntimeConfig
     {
         TuningMode tuningMode{TuningMode::MTS_CONTINOUS};
         TuningZoneResolution tuningZoneResolution{TuningZoneResolution::RESOLVE_TUNED_PITCH};
+        OmniFlavor omniFlavor{OmniFlavor::OMNI};
+        OmniFlavor defaultOmniFlavor{OmniFlavor::OMNI};
+        bool applyOmniToAllPartsOnSelect{false};
     } runtimeConfig;
 
     void resetTuningFromRuntimeConfig();
+
+    void setOmniFlavor(const OmniFlavor &of);
 
     enum struct MidiZoneAction
     {

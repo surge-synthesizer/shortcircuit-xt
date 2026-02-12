@@ -257,6 +257,72 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
               });
 }
 
+void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
+{
+    p.addSectionHeader("MIDI Channel usage");
+    p.addSeparator();
+
+    p.addItem("Omni", true, currentOmniFlavor == engine::Engine::OmniFlavor::OMNI,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setOmniFlavor(engine::Engine::OmniFlavor::OMNI);
+              });
+    p.addItem("MPE", true, currentOmniFlavor == engine::Engine::OmniFlavor::MPE,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setOmniFlavor(engine::Engine::OmniFlavor::MPE);
+              });
+    p.addItem("Channel/Octave", true, currentOmniFlavor == engine::Engine::OmniFlavor::CHOCT,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setOmniFlavor(engine::Engine::OmniFlavor::CHOCT);
+              });
+    p.addSeparator();
+
+    std::string cof;
+    switch (currentOmniFlavor)
+    {
+    case engine::Engine::OmniFlavor::OMNI:
+        cof = "Omni";
+        break;
+    case engine::Engine::OmniFlavor::MPE:
+        cof = "MPE";
+        break;
+    case engine::Engine::OmniFlavor::CHOCT:
+        cof = "Channel/Octave";
+        break;
+    }
+
+    p.addItem("Use " + cof + " as default for new instances", true, false,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setOmniFlavorDefault(static_cast<int>(w->currentOmniFlavor));
+              });
+    p.addSeparator();
+    p.addItem("Set all parts on selection", true, shouldApplyOmniOnSelect,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setupOmniApplyDefault(!w->shouldApplyOmniOnSelect);
+              });
+    p.addSeparator();
+    auto msm = juce::PopupMenu();
+    msm.addSectionHeader("MPE Settings");
+    msm.addSeparator();
+    for (auto d : {12, 24, 48, 96})
+    {
+        msm.addItem(std::to_string(d) + " semi bend range", true,
+                    d == this->partConfigurations[0].mpePitchBendRange,
+                    [d, w = juce::Component::SafePointer(this)] {
+                        if (!w)
+                            return;
+                        w->editScreen->partSidebar->setMpeBendRange(d);
+                    });
+    }
+    p.addSubMenu("MPE Settings", msm);
+    // I think this is not useful, but leaving it here in case we change our mind
+    // p.showMenuAsync(this->defaultPopupMenuOptions(this->headerRegion->omniButton.get()));
+}
+
 void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
 {
     if (addTitle)
@@ -409,9 +475,10 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
             return;
         w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::useSoftwareRenderer,
                                                    !swr);
-        juce::AlertWindow::showMessageBoxAsync(
-            juce::AlertWindow::WarningIcon, "Software Renderer Change",
-            "A software renderer change is only active once you restart/reload the plugin.");
+        juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::WarningIcon,
+                                               "Software Renderer Change",
+                                               "A software renderer change is only active "
+                                               "once you restart/reload the plugin.");
     });
 #endif
 }
