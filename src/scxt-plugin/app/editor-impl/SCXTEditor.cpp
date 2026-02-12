@@ -430,31 +430,25 @@ void SCXTEditor::parentHierarchyChanged()
 #endif
 }
 
-void SCXTEditor::setupOmniFlavorFromEngine(std::pair<int, bool> f)
-{
-    setupOmniApplyDefault(f.second);
-    setOmniFlavor(f.first);
-}
-
 void SCXTEditor::setupOmniApplyDefault(bool b)
 {
     shouldApplyOmniOnSelect = b;
     defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::applyOmniToAllOnSelect, b);
 }
 
-void SCXTEditor::setOmniFlavor(int f)
+void SCXTEditor::setOmniFlavor(engine::Engine::OmniFlavor f)
 {
     currentOmniFlavor = f;
     std::string on;
     switch (currentOmniFlavor)
     {
-    case 0:
+    case engine::Engine::OmniFlavor::OMNI:
         on = "OMNI";
         break;
-    case 1:
+    case engine::Engine::OmniFlavor::MPE:
         on = "MPE";
         break;
-    case 2:
+    case engine::Engine::OmniFlavor::CHOCT:
         on = "Ch/Oct";
     }
 

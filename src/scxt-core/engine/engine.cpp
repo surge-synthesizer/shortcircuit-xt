@@ -157,8 +157,10 @@ Engine::Engine()
 
     previewVoice = std::make_unique<voice::PreviewVoice>();
 
-    runtimeConfig.defaultOmniFlavor = static_cast<OmniFlavor>(
-        defaults->getUserDefaultValue(scxt::infrastructure::DefaultKeys::omniFlavor, 0));
+    int ofdef = defaults->getUserDefaultValue(scxt::infrastructure::DefaultKeys::omniFlavor, 0);
+    runtimeConfig.defaultOmniFlavor = static_cast<OmniFlavor>(ofdef);
+
+    std::cout << "setup default, it is = " << ofdef << std::endl;
 
     runtimeConfig.applyOmniToAllPartsOnSelect = defaults->getUserDefaultValue(
         scxt::infrastructure::DefaultKeys::applyOmniToAllOnSelect, false);
@@ -1245,6 +1247,8 @@ void Engine::sendFullRefreshToClient() const
                 *(getMessageController()));
         }
     }
+
+    std::cout << "sent full refresh" << std::endl;
 
     std::pair<int, bool> ofu = {static_cast<int>(this->runtimeConfig.omniFlavor),
                                 this->runtimeConfig.applyOmniToAllPartsOnSelect};

@@ -239,22 +239,41 @@ void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
     p.addSectionHeader("MIDI Channel usage");
     p.addSeparator();
 
-    std::string n[3] = {"Omni", "MPE", "Channel/Octave"};
-
-    for (int i = 0; i < 3; ++i)
-    {
-        p.addItem(n[i], true, this->currentOmniFlavor == i,
-                  [w = juce::Component::SafePointer(this), i]() {
-                      if (w)
-                          w->setOmniFlavor(i);
-                  });
-    }
-    p.addSeparator();
-
-    p.addItem("Use " + n[this->currentOmniFlavor] + " as default for new instances", true, false,
+    p.addItem("Omni", true, currentOmniFlavor == engine::Engine::OmniFlavor::OMNI,
               [w = juce::Component::SafePointer(this)]() {
                   if (w)
-                      w->setOmniFlavorDefault(w->currentOmniFlavor);
+                      w->setOmniFlavor(engine::Engine::OmniFlavor::OMNI);
+              });
+    p.addItem("MPE", true, currentOmniFlavor == engine::Engine::OmniFlavor::MPE,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setOmniFlavor(engine::Engine::OmniFlavor::MPE);
+              });
+    p.addItem("Channel/Octave", true, currentOmniFlavor == engine::Engine::OmniFlavor::CHOCT,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setOmniFlavor(engine::Engine::OmniFlavor::CHOCT);
+              });
+    p.addSeparator();
+
+    std::string cof;
+    switch (currentOmniFlavor)
+    {
+    case engine::Engine::OmniFlavor::OMNI:
+        cof = "Omni";
+        break;
+    case engine::Engine::OmniFlavor::MPE:
+        cof = "MPE";
+        break;
+    case engine::Engine::OmniFlavor::CHOCT:
+        cof = "Channel/Octave";
+        break;
+    }
+
+    p.addItem("Use " + cof + " as default for new instances", true, false,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->setOmniFlavorDefault(static_cast<int>(w->currentOmniFlavor));
               });
     p.addSeparator();
     p.addItem("Set all parts on selection", true, shouldApplyOmniOnSelect,

@@ -138,7 +138,7 @@ CLIENT_TO_SERIAL(SetOmniFlavor, c2s_set_omni_flavor, omniFlavor_t,
 
 using omniFlavorUpdate_t = std::pair<int, bool>;
 SERIAL_TO_CLIENT(UpdateOmniFlavor, s2c_update_omni_flavor, omniFlavorUpdate_t,
-                 setupOmniFlavorFromEngine);
+                 onOmniFlavorFromEngine);
 
 } // namespace scxt::messaging::client
 

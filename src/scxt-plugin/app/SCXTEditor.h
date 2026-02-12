@@ -189,12 +189,12 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void showWelcomeOverlay();
     int32_t checkWelcomeCountdown{20};
 
-    int currentOmniFlavor{0};
+    engine::Engine::OmniFlavor currentOmniFlavor{engine::Engine::OmniFlavor::OMNI};
     bool shouldApplyOmniOnSelect{false};
 
-    void setupOmniFlavorFromEngine(std::pair<int, bool> f);
+    void onOmniFlavorFromEngine(std::pair<int, bool> f);
     void setupOmniApplyDefault(bool b);
-    void setOmniFlavor(int f);
+    void setOmniFlavor(engine::Engine::OmniFlavor f);
     void setOmniFlavorDefault(int f);
 
     float zoomFactor{1.f};

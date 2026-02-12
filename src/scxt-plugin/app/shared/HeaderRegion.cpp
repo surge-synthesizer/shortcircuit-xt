@@ -157,13 +157,13 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     std::string on;
     switch (editor->currentOmniFlavor)
     {
-    case 0:
+    case engine::Engine::OmniFlavor::OMNI:
         on = "OMNI";
         break;
-    case 1:
+    case engine::Engine::OmniFlavor::MPE:
         on = "MPE";
         break;
-    case 2:
+    case engine::Engine::OmniFlavor::CHOCT:
         on = "Ch/Oct";
     }
     omniButton->setLabel(on);

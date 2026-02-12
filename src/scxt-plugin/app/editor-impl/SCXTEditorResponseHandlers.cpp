@@ -501,4 +501,10 @@ void SCXTEditor::onTuningStatus(const scxt::messaging::client::tuningStatusPaylo
     tuningStatus = t;
 }
 
+void SCXTEditor::onOmniFlavorFromEngine(std::pair<int, bool> f)
+{
+    setupOmniApplyDefault(f.second);
+    setOmniFlavor(static_cast<engine::Engine::OmniFlavor>(f.first));
+}
+
 } // namespace scxt::ui::app

@@ -303,20 +303,27 @@ void PartSidebarCard::showMidiModeMenu()
         return [w, ch]() {
             if (!w)
                 return;
-            w->setMidiChannel(ch - (w->editor->currentOmniFlavor * (ch < 0)));
+            if (ch >= 0)
+            {
+                w->setMidiChannel(ch);
+            }
+            else
+            {
+                w->setMidiChannel(-1 * static_cast<int>(w->editor->currentOmniFlavor) - 1);
+            }
         };
     };
 
     std::string cof;
     switch (editor->currentOmniFlavor)
     {
-    case 0:
+    case engine::Engine::OmniFlavor::OMNI:
         cof = "Omni";
         break;
-    case 1:
+    case engine::Engine::OmniFlavor::MPE:
         cof = "MPE";
         break;
-    case 2:
+    case engine::Engine::OmniFlavor::CHOCT:
         cof = "Channel/Octave";
         break;
     }
@@ -413,13 +420,13 @@ void PartSidebarCard::resetFromEditorCache()
     std::string cof;
     switch (editor->currentOmniFlavor)
     {
-    case 0:
+    case engine::Engine::OmniFlavor::OMNI:
         cof = "Omni";
         break;
-    case 1:
+    case engine::Engine::OmniFlavor::MPE:
         cof = "MPE";
         break;
-    case 2:
+    case engine::Engine::OmniFlavor::CHOCT:
         cof = "Ch/Oct";
         break;
     }
