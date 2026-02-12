@@ -84,7 +84,7 @@ struct PlayScreen : juce::Component, HasEditor
     void partConfigurationChanged();
 
     bool tallMode{true};
-    static constexpr size_t interPartMargin{3};
+    static constexpr size_t interPartMargin{0};
     juce::Rectangle<int> rectangleForPart(int part);
 
     static constexpr size_t sidebarWidth{180};

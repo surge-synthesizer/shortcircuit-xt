@@ -40,7 +40,7 @@ struct ViewportComponent : juce::Component, HasEditor
     PlayScreen *playScreen{nullptr};
     ViewportComponent(PlayScreen *p, SCXTEditor *e) : playScreen(p), HasEditor(e) {}
 
-    void paint(juce::Graphics &g)
+    void paintOverChildren(juce::Graphics &g)
     {
         auto viz = [this](int i) { return editor->partConfigurations[i].active; };
 
@@ -50,7 +50,7 @@ struct ViewportComponent : juce::Component, HasEditor
             if (!viz(i))
                 continue;
 
-            auto col = editor->themeColor(theme::ColorMap::grid_secondary);
+            auto col = editor->themeColor(theme::ColorMap::accent_1a).withAlpha(0.34f);
             if (i == editor->selectedPart)
             {
                 col = editor->themeColor(theme::ColorMap::accent_1a);
@@ -58,9 +58,14 @@ struct ViewportComponent : juce::Component, HasEditor
             g.setColour(col);
             auto bx =
                 playScreen->rectangleForPart(ct).withTrimmedBottom(PlayScreen::interPartMargin);
-            g.drawRoundedRectangle(bx.toFloat(), 2, 1);
-            g.drawVerticalLine(bx.getX() + shared::PartSidebarCard::width, bx.getY(),
-                               bx.getY() + bx.getHeight());
+            bx = bx.reduced(0, 1);
+            auto cr = bx.expanded(2, 2).withTrimmedLeft(shared::PartSidebarCard::width);
+            {
+                auto gs = juce::Graphics::ScopedSaveState(g);
+                g.reduceClipRegion(cr);
+                g.drawRoundedRectangle(bx.toFloat(), 2, 1);
+            }
+
             ++ct;
         }
     }
@@ -86,7 +91,7 @@ PlayScreen::PlayScreen(SCXTEditor *e) : HasEditor(e)
     for (int i = 0; i < scxt::numParts; ++i)
     {
         partSidebars[i] = std::make_unique<shared::PartSidebarCard>(i, editor);
-        partSidebars[i]->selfAccent = false;
+        // partSidebars[i]->selfAccent = false;
         viewportContents->addChildComponent(*partSidebars[i]);
 
         skinnyPage[i] = 0;
@@ -227,7 +232,7 @@ void PlayScreen::resized()
                        getHeight() - 3 * pad);
     playNamedPanel->setBounds(getLocalBounds().withTrimmedRight(browserPanelWidth));
 
-    viewport->setBounds(playNamedPanel->getContentArea());
+    viewport->setBounds(playNamedPanel->getContentArea().withTrimmedLeft(3));
     auto w = viewport->getWidth() - viewport->getScrollBarThickness() - 2;
     int npt{0};
     for (int i = 0; i < scxt::numParts; ++i)
