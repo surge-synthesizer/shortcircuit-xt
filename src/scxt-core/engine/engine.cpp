@@ -157,10 +157,9 @@ Engine::Engine()
 
     previewVoice = std::make_unique<voice::PreviewVoice>();
 
-    int ofdef = defaults->getUserDefaultValue(scxt::infrastructure::DefaultKeys::omniFlavor, 0);
-    runtimeConfig.defaultOmniFlavor = static_cast<OmniFlavor>(ofdef);
-
-    std::cout << "setup default, it is = " << ofdef << std::endl;
+    runtimeConfig.defaultOmniFlavor = static_cast<OmniFlavor>(
+        defaults->getUserDefaultValue(scxt::infrastructure::DefaultKeys::omniFlavor, 0));
+    runtimeConfig.omniFlavor = runtimeConfig.defaultOmniFlavor;
 
     runtimeConfig.applyOmniToAllPartsOnSelect = defaults->getUserDefaultValue(
         scxt::infrastructure::DefaultKeys::applyOmniToAllOnSelect, false);
@@ -1221,6 +1220,11 @@ void Engine::sendFullRefreshToClient() const
 {
     auto &cont = getMessageController();
     assert(cont->threadingChecker.isSerialThread());
+    std::pair<int, bool> ofu = {static_cast<int>(this->runtimeConfig.omniFlavor),
+                                this->runtimeConfig.applyOmniToAllPartsOnSelect};
+    serializationSendToClient(messaging::client::s2c_update_omni_flavor, ofu,
+                              *getMessageController());
+
     sendMetadataToClient();
     serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                               getPartGroupZoneStructure(), *cont);
@@ -1247,13 +1251,6 @@ void Engine::sendFullRefreshToClient() const
                 *(getMessageController()));
         }
     }
-
-    std::cout << "sent full refresh" << std::endl;
-
-    std::pair<int, bool> ofu = {static_cast<int>(this->runtimeConfig.omniFlavor),
-                                this->runtimeConfig.applyOmniToAllPartsOnSelect};
-    serializationSendToClient(messaging::client::s2c_update_omni_flavor, ofu,
-                              *getMessageController());
 
     getSelectionManager()->sendGroupZoneMappingForSelectedPart();
     getSelectionManager()->sendClientDataForLeadSelectionState();
@@ -1484,7 +1481,7 @@ Engine::OmniFlavor Engine::fromStringOmniFlavor(const std::string &s)
         Engine::OmniFlavor::OMNI, Engine::OmniFlavor::CHOCT);
     auto p = inverse.find(s);
     if (p == inverse.end())
-        return OmniFlavor::MPE;
+        return OmniFlavor::OMNI;
     return p->second;
 }
 

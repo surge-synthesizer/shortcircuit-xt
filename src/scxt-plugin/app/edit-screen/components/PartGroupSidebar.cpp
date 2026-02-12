@@ -547,12 +547,24 @@ void PartGroupSidebar::groupTriggerConditionChanged(const scxt::engine::GroupTri
     groupSidebar->groupTriggers->setGroupTriggerConditions(c);
 }
 
-void PartGroupSidebar::setAllToOmniFlavor(engine::Engine::OmniFlavor f)
+void PartGroupSidebar::setAllToOmniFlavor(engine::Engine::OmniFlavor of)
 {
-    auto id = -1 * static_cast<int>(f) - 1;
+    int16_t nof{0};
+    switch (of)
+    {
+    case engine::Engine::OmniFlavor::OMNI:
+        nof = engine::Part::PartConfiguration::omniChannel;
+        break;
+    case engine::Engine::OmniFlavor::MPE:
+        nof = engine::Part::PartConfiguration::mpeChannel;
+        break;
+    case engine::Engine::OmniFlavor::CHOCT:
+        nof = engine::Part::PartConfiguration::chPerOctaveChannel;
+        break;
+    }
     for (int i = 0; i < scxt::numParts; ++i)
     {
-        this->partSidebar->parts[i]->setMidiChannel(id);
+        this->partSidebar->parts[i]->setMidiChannel(nof);
     }
 }
 

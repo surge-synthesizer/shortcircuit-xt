@@ -194,7 +194,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     void onOmniFlavorFromEngine(std::pair<int, bool> f);
     void setupOmniApplyDefault(bool b);
-    void setOmniFlavor(engine::Engine::OmniFlavor f);
+    void setOmniFlavor(engine::Engine::OmniFlavor of, bool onStartup = false);
     void setOmniFlavorDefault(int f);
 
     float zoomFactor{1.f};

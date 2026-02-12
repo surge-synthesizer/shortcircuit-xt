@@ -309,7 +309,20 @@ void PartSidebarCard::showMidiModeMenu()
             }
             else
             {
-                w->setMidiChannel(-1 * static_cast<int>(w->editor->currentOmniFlavor) - 1);
+                int16_t nof{0};
+                switch (w->editor->currentOmniFlavor)
+                {
+                case engine::Engine::OmniFlavor::OMNI:
+                    nof = engine::Part::PartConfiguration::omniChannel;
+                    break;
+                case engine::Engine::OmniFlavor::MPE:
+                    nof = engine::Part::PartConfiguration::mpeChannel;
+                    break;
+                case engine::Engine::OmniFlavor::CHOCT:
+                    nof = engine::Part::PartConfiguration::chPerOctaveChannel;
+                    break;
+                }
+                w->setMidiChannel(nof);
             }
         };
     };

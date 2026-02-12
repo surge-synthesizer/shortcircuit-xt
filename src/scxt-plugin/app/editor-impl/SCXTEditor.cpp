@@ -436,9 +436,9 @@ void SCXTEditor::setupOmniApplyDefault(bool b)
     defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::applyOmniToAllOnSelect, b);
 }
 
-void SCXTEditor::setOmniFlavor(engine::Engine::OmniFlavor f)
+void SCXTEditor::setOmniFlavor(engine::Engine::OmniFlavor of, bool onStartup)
 {
-    currentOmniFlavor = f;
+    currentOmniFlavor = of;
     std::string on;
     switch (currentOmniFlavor)
     {
@@ -458,15 +458,19 @@ void SCXTEditor::setOmniFlavor(engine::Engine::OmniFlavor f)
         headerRegion->omniButton->setTitle(on);
     }
 
+    // On startup the UI gets the data from the engine. No need to send it back again.
+    if (onStartup)
+        return;
+
     if (shouldApplyOmniOnSelect)
     {
-        editScreen->partSidebar->setAllToOmniFlavor(f);
+        editScreen->partSidebar->setAllToOmniFlavor(of);
     }
     else
     {
         editScreen->partSidebar->updateMidiMenuLabel();
         sendToSerialization(
-            messaging::client::SetOmniFlavor(static_cast<scxt::engine::Engine::OmniFlavor>(f)));
+            messaging::client::SetOmniFlavor(static_cast<scxt::engine::Engine::OmniFlavor>(of)));
     }
 }
 
