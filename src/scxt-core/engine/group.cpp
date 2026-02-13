@@ -577,6 +577,7 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
             dsp::processor::unspawnProcessor(processors[w]);
         }
         // FIXME - replace the float params with something modulatable
+        endpoints.processorTarget[w].snapValues();
         processors[w] = dsp::processor::spawnProcessorInPlace(
             t, asT()->getEngine(), asT()->getEngine()->getMemoryPool().get(),
             processorPlacementStorage[w], dsp::processor::processorMemoryBufferSize,
