@@ -76,9 +76,6 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
     std::unique_ptr<jcmp::HSliderFilled> velocitySensitivitySlider;
     std::unique_ptr<jcmp::Label> velocitySensitivityLabel;
 
-    std::unique_ptr<bool_attachment_t> oversampleAttachment;
-    std::unique_ptr<jcmp::ToggleButton> oversampleButton;
-
     std::unique_ptr<juce::Component> routingLayoutComp;
     struct RC : juce::Component
     {
@@ -115,17 +112,20 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
         ofac::attachAndAdd(info, info.amplitude, this, outputAttachment, outputKnob);
         ofac::attachAndAdd(info, info.pan, this, panAttachment, panKnob);
 
-        if constexpr (!RPTraits::forZone)
+        velocitySensitivityLabel = std::make_unique<jcmp::Label>();
+        velocitySensitivityLabel->setText("Vel");
+        addAndMakeVisible(*velocitySensitivityLabel);
+        if constexpr (RPTraits::forZone)
+        {
+            velocitySensitivitySlider = connectors::makeConnectedToDummy<jcmp::HSliderFilled>(
+                'gvel', "Velocity Sensitivity", 1, false,
+                editor->makeComingSoon("Vel Adjust from zone"));
+            addAndMakeVisible(*velocitySensitivitySlider);
+        }
+        else
         {
             ofac::attachAndAdd(info, info.velocitySensitivity, this, velocitySensitivityAttachment,
                                velocitySensitivitySlider);
-            velocitySensitivityLabel = std::make_unique<jcmp::Label>();
-            velocitySensitivityLabel->setText("Vel");
-            addAndMakeVisible(*velocitySensitivityLabel);
-            using bfac = connectors::BooleanSingleValueFactory<
-                bool_attachment_t, scxt::messaging::client::UpdateGroupOutputBoolValue>;
-            bfac::attachAndAdd(info, info.oversample, this, oversampleAttachment, oversampleButton);
-            oversampleButton->setLabel("o/s");
         }
 
         outputRouting = std::make_unique<jcmp::MenuButton>();
@@ -263,25 +263,20 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
 
         auto rside = getLocalBounds().reduced(0, 2).withTrimmedLeft(getWidth() - 134);
 
-        auto outb = rside.withHeight(22);
+        auto outb = rside.withTrimmedTop(105).withTrimmedLeft(20).withTrimmedRight(10);
         outputRouting->setBounds(outb.withHeight(22));
-        rside = rside.withTrimmedTop(30);
 
-        auto ok = rside.withWidth(55).withHeight(75).translated(8, 0);
+        auto ok = rside.withTrimmedTop(35).withWidth(40).withHeight(60).translated(25, 0);
         outputKnob->setBounds(ok);
-        ok = ok.translated(65, 0);
+        ok = ok.translated(50, 0);
         panKnob->setBounds(ok);
 
-        auto nb = rside.withTrimmedTop(75);
-        if constexpr (!RPTraits::forZone)
-        {
-            nb = nb.withHeight(22);
-            velocitySensitivityLabel->setBounds(nb.withWidth(25));
-            velocitySensitivityLabel->setText("vel");
-            velocitySensitivitySlider->setBounds(
-                nb.withTrimmedLeft(28).withWidth(60).reduced(0, 3));
-            oversampleButton->setBounds(nb.withTrimmedLeft(90).withWidth(45));
-        }
+        auto nb = rside.withHeight(22);
+        velocitySensitivityLabel->setBounds(nb.withWidth(22));
+        velocitySensitivityLabel->setText("vel");
+        nb.setHeight(12);
+        velocitySensitivitySlider->setBounds(
+            nb.withTrimmedLeft(28).withWidth(80).translated(0, 5.));
     }
 
     std::string getRoutingName(typename RPTraits::route_t r)
@@ -530,6 +525,25 @@ template <typename RPTraits>
 RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e) : jcmp::NamedPanel("ROUTING"), HasEditor(e)
 {
     hasHamburger = false;
+    clearAdditionalHamburgerComponents();
+
+    if constexpr (!RPTraits::forZone)
+    {
+        oversampleButton = std::make_unique<jcmp::ToggleButton>();
+        oversampleButton->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+        oversampleButton->setGlyph(jcmp::GlyphPainter::GlyphType::PLUS);
+        addAndMakeVisible(*oversampleButton);
+
+        typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t>
+            boolAttachment_t;
+        oversampleAttachment =
+            std::make_unique<boolAttachment_t>("2x Oversample", RPTraits::outputInfo(e).oversample);
+
+        oversampleButton->setSource(oversampleAttachment.get());
+        setupWidgetForValueTooltip(oversampleButton.get(), oversampleAttachment);
+        addAdditionalHamburgerComponent(std::move(oversampleButton));
+    }
+
     contents = std::make_unique<RoutingPaneContents<RPTraits>>(editor, this);
     addAndMakeVisible(*contents);
 }
@@ -538,6 +552,7 @@ template <typename RPTraits> RoutingPane<RPTraits>::~RoutingPane() {}
 
 template <typename RPTraits> void RoutingPane<RPTraits>::resized()
 {
+    NamedPanel::resized();
     contents->setBounds(getContentArea());
 }
 

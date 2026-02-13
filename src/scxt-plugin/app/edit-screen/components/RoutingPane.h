@@ -33,6 +33,7 @@
 #include "engine/zone.h"
 #include "engine/group.h"
 #include "messaging/messaging.h"
+#include "connectors/PayloadDataAttachment.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -78,6 +79,9 @@ template <typename RPTraits> struct RoutingPane : sst::jucegui::components::Name
 
     void updateFromOutputInfo();
 
+    typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t> bool_attachment_t;
+    std::unique_ptr<bool_attachment_t> oversampleAttachment;
+    std::unique_ptr<sst::jucegui::components::ToggleButton> oversampleButton;
     std::unique_ptr<RoutingPaneContents<RPTraits>> contents;
     bool active{false};
 
