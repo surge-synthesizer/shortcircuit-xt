@@ -112,13 +112,20 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
         ofac::attachAndAdd(info, info.amplitude, this, outputAttachment, outputKnob);
         ofac::attachAndAdd(info, info.pan, this, panAttachment, panKnob);
 
-        if constexpr (!RPTraits::forZone)
+        velocitySensitivityLabel = std::make_unique<jcmp::Label>();
+        velocitySensitivityLabel->setText("Vel");
+        addAndMakeVisible(*velocitySensitivityLabel);
+        if constexpr (RPTraits::forZone)
+        {
+            velocitySensitivitySlider = connectors::makeConnectedToDummy<jcmp::HSliderFilled>(
+                'gvel', "Velocity Sensitivity", 1, false,
+                editor->makeComingSoon("Vel Adjust from zone"));
+            addAndMakeVisible(*velocitySensitivitySlider);
+        }
+        else
         {
             ofac::attachAndAdd(info, info.velocitySensitivity, this, velocitySensitivityAttachment,
                                velocitySensitivitySlider);
-            velocitySensitivityLabel = std::make_unique<jcmp::Label>();
-            velocitySensitivityLabel->setText("Vel");
-            addAndMakeVisible(*velocitySensitivityLabel);
         }
 
         outputRouting = std::make_unique<jcmp::MenuButton>();
@@ -259,19 +266,17 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
         auto outb = rside.withTrimmedTop(105).withTrimmedLeft(20).withTrimmedRight(10);
         outputRouting->setBounds(outb.withHeight(22));
 
-        auto ok = rside.withTrimmedTop(35).withWidth(40).withHeight(60).translated(20, 0);
+        auto ok = rside.withTrimmedTop(35).withWidth(40).withHeight(60).translated(25, 0);
         outputKnob->setBounds(ok);
-        ok = ok.translated(55, 0);
+        ok = ok.translated(50, 0);
         panKnob->setBounds(ok);
 
-        if constexpr (!RPTraits::forZone)
-        {
-            auto nb = rside.withHeight(22);
-            velocitySensitivityLabel->setBounds(nb.withWidth(25));
-            velocitySensitivityLabel->setText("vel");
-            velocitySensitivitySlider->setBounds(
-                nb.withTrimmedLeft(28).withWidth(60).reduced(0, 3));
-        }
+        auto nb = rside.withHeight(22);
+        velocitySensitivityLabel->setBounds(nb.withWidth(22));
+        velocitySensitivityLabel->setText("vel");
+        nb.setHeight(12);
+        velocitySensitivitySlider->setBounds(
+            nb.withTrimmedLeft(28).withWidth(80).translated(0, 5.));
     }
 
     std::string getRoutingName(typename RPTraits::route_t r)
@@ -525,12 +530,14 @@ RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e) : jcmp::NamedPanel("ROUTING"),
     if constexpr (!RPTraits::forZone)
     {
         oversampleButton = std::make_unique<jcmp::ToggleButton>();
-        oversampleButton->setLabel("2x OS");
-        oversampleButton->setSize(20, 15);
+        oversampleButton->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
+        oversampleButton->setGlyph(jcmp::GlyphPainter::GlyphType::PLUS);
         addAndMakeVisible(*oversampleButton);
 
-        typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t> boolAttachment_t;
-        oversampleAttachment = std::make_unique<boolAttachment_t>("OS", RPTraits::outputInfo(e).oversample);
+        typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t>
+            boolAttachment_t;
+        oversampleAttachment =
+            std::make_unique<boolAttachment_t>("2x Oversample", RPTraits::outputInfo(e).oversample);
 
         oversampleButton->setSource(oversampleAttachment.get());
         setupWidgetForValueTooltip(oversampleButton.get(), oversampleAttachment);
@@ -545,6 +552,7 @@ template <typename RPTraits> RoutingPane<RPTraits>::~RoutingPane() {}
 
 template <typename RPTraits> void RoutingPane<RPTraits>::resized()
 {
+    NamedPanel::resized();
     contents->setBounds(getContentArea());
 }
 
