@@ -321,7 +321,7 @@ struct Group : MoveableOnly<Group>,
 
 SC_DESCRIBE(
     scxt::engine::Group::GroupOutputInfo,
-    SC_FIELD(amplitude, pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
+    SC_FIELD(amplitude, pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Volume"));
     SC_FIELD(tuning,
              pmd().asFloat().withRange(-24, 24).withSemitoneFormatting().withDefault(0.f).withName(
                  "Tuning"));
@@ -334,7 +334,7 @@ SC_DESCRIBE(
                          .withRange(0, 48)
                          .withLinearScaleFormatting("keys"));
     SC_FIELD(procRouting, pmd().asInt().withRange(0, 6).withUnorderedMapFormatting({
-                              {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "LIN"},
+                              {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "S1"},
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_ser2, "S2"},
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_ser3, "S3"},
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_par1, "P1"},

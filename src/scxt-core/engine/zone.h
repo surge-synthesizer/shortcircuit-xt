@@ -328,11 +328,11 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
 SC_DESCRIBE(scxt::engine::Zone::ZoneOutputInfo,
             SC_FIELD(amplitude,
-                     pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
+                     pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Volume"));
             SC_FIELD(pan, pmd().asPan().withName("Pan"));
             SC_FIELD(procRouting,
                      pmd().asInt().withRange(0, 6).withUnorderedMapFormatting({
-                         {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "LIN"},
+                         {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "S1"},
                          {scxt::engine::Zone::ProcRoutingPath::procRoute_ser2, "S2"},
                          {scxt::engine::Zone::ProcRoutingPath::procRoute_ser3, "S3"},
                          {scxt::engine::Zone::ProcRoutingPath::procRoute_par1, "P1"},
