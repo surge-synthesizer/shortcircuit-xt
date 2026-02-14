@@ -378,7 +378,8 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     {
         prevValue = value;
         value = (ValueType)f;
-        onGuiValueChanged(*this);
+        if (onGuiValueChanged)
+            onGuiValueChanged(*this);
     }
     void setValueFromModel(const int &f) override
     {

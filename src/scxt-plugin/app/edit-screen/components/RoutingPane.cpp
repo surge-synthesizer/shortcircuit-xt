@@ -530,8 +530,9 @@ RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e) : jcmp::NamedPanel("ROUTING"),
     if constexpr (!RPTraits::forZone)
     {
         oversampleButton = std::make_unique<jcmp::ToggleButton>();
-        oversampleButton->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
-        oversampleButton->setGlyph(jcmp::GlyphPainter::GlyphType::PLUS);
+        oversampleButton->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
+        oversampleButton->setLabel("2xOS");
+        oversampleButton->setLabelDrawsBackground(false);
         addAndMakeVisible(*oversampleButton);
 
         typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t>
@@ -541,7 +542,7 @@ RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e) : jcmp::NamedPanel("ROUTING"),
 
         oversampleButton->setSource(oversampleAttachment.get());
         setupWidgetForValueTooltip(oversampleButton.get(), oversampleAttachment);
-        addAdditionalHamburgerComponent(std::move(oversampleButton));
+        addAdditionalHamburgerComponent(std::move(oversampleButton), 28);
     }
 
     contents = std::make_unique<RoutingPaneContents<RPTraits>>(editor, this);
