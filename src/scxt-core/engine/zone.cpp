@@ -204,7 +204,12 @@ void Zone::setupOnUnstream(const engine::Engine &e)
             variantData.variants[i].sampleID = nid;
         }
 
-        attachToSample(*(e.getSampleManager()), i, Zone::NONE);
+        if (!attachToSample(*(e.getSampleManager()), i, Zone::NONE))
+        {
+            e.getMessageController()->reportErrorToClient(
+                "Sample Unstream Error", std::string() + "Unable to attach zone to sample " +
+                                             oid.to_string() + " at index " + std::to_string(i));
+        }
     }
     for (int p = 0; p < processorCount; ++p)
     {
@@ -221,6 +226,7 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index, int s
     }
     else
     {
+        SCLOG_IF(sampleLoadAndPurge, getName() << " : No sample ID for variant " << index);
         samplePointers[index].reset();
     }
 

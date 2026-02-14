@@ -113,7 +113,13 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
 
 bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
 {
-    engine->getSampleManager()->purgeUnreferencedSamples();
+    // Thie entire function needs to send and wait on serialization
+    // thread, but that's a big change. For now its entire read-only
+    // except for this purge, which I beleive causes #2205 so comment
+    // out to get beta not flaky with the mild cost that a daw could
+    // reference a sample a zone does not if a delete absent a purge
+    // happens in the code path.
+    // engine->getSampleManager()->purgeUnreferencedSamples();
     engine->prepareToStream();
     try
     {

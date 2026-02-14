@@ -184,6 +184,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
             return givenName;
         if (samplePointers[0])
             return samplePointers[0]->getDisplayName();
+        if (!samplePointers[0] && variantData.variants[0].active)
+            return fmt::format("{}/BadVariant", id.to_string());
         return id.to_string();
     }
 

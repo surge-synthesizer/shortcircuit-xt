@@ -179,6 +179,7 @@ Engine::~Engine()
         }
     }
     messageController->stop();
+    messageController->threadingChecker.bypassThreadChecks = true;
     sampleManager->purgeUnreferencedSamples();
 
     /*
