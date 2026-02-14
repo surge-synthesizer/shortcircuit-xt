@@ -491,6 +491,9 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
 
 void SampleManager::purgeUnreferencedSamples()
 {
+    assert(threadingChecker.isSerialThread());
+    SCLOG_IF(sampleLoadAndPurge,
+             "Attempting to Purge Unreferenced Samples " << std::this_thread::get_id());
     auto lk = acquireMapLock();
     auto preSize{samples.size()};
     auto b = samples.begin();
