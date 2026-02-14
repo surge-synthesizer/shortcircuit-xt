@@ -1249,6 +1249,10 @@ void Engine::sendFullRefreshToClient() const
     serializationSendToClient(messaging::client::s2c_update_omni_flavor, ofu,
                               *getMessageController());
 
+    messaging::client::serializationSendToClient(messaging::client::s2c_update_mpe_tuning_awareness,
+                                                 runtimeConfig.tuningAwareMPEGlides,
+                                                 *getMessageController());
+
     sendMetadataToClient();
     serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                               getPartGroupZoneStructure(), *cont);
@@ -1458,6 +1462,8 @@ void Engine::resetTuningFromRuntimeConfig()
         break;
     }
 }
+
+void Engine::setMpeTuningAwareness(bool a) { this->runtimeConfig.tuningAwareMPEGlides = a; }
 
 void Engine::setOmniFlavor(const OmniFlavor &of)
 {

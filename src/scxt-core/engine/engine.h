@@ -264,12 +264,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         TuningMode tuningMode{TuningMode::MTS_CONTINOUS};
         TuningZoneResolution tuningZoneResolution{TuningZoneResolution::RESOLVE_TUNED_PITCH};
+        bool tuningAwareMPEGlides{true};
         OmniFlavor omniFlavor{OmniFlavor::OMNI};
         OmniFlavor defaultOmniFlavor{OmniFlavor::OMNI};
         bool applyOmniToAllPartsOnSelect{false};
     } runtimeConfig;
 
     void resetTuningFromRuntimeConfig();
+    void setMpeTuningAwareness(bool a);
 
     void setOmniFlavor(const OmniFlavor &of);
 
