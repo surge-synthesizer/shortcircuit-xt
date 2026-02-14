@@ -1033,14 +1033,14 @@ float Voice::calculateVoicePitch()
 
     fpitch += zone->parentGroup->outputInfo.tuning;
 
+    fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
+    fpitch += mpePitchBend;
     float retuner{retunedKeyAtAttack};
     if (retuneContinuous)
         retuner =
             zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
 
     fpitch += retuner;
-    fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
-    fpitch += mpePitchBend;
 
     keytrackPerOct = (key + retuner - zone->mapping.rootKey) / 12.0;
     return fpitch;
