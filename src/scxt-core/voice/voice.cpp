@@ -1033,12 +1033,24 @@ float Voice::calculateVoicePitch()
 
     fpitch += zone->parentGroup->outputInfo.tuning;
 
-    fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
-    fpitch += mpePitchBend;
     float retuner{retunedKeyAtAttack};
-    if (retuneContinuous)
-        retuner =
-            zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
+
+    if (zone->parentGroup->getEngine()->runtimeConfig.tuningAwareMPEGlides)
+    {
+        fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
+        fpitch += mpePitchBend;
+        if (retuneContinuous)
+            retuner =
+                zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
+    }
+    else
+    {
+        if (retuneContinuous)
+            retuner =
+                zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
+        fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
+        fpitch += mpePitchBend;
+    }
 
     fpitch += retuner;
 

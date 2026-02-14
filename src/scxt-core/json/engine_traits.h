@@ -120,6 +120,7 @@ SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
                  {
                      v = {{"tm", from.tuningMode},
                           {"tz", from.tuningZoneResolution},
+                          {"ma", from.tuningAwareMPEGlides},
                           {"of", from.omniFlavor}};
                  }
                  else
@@ -127,12 +128,14 @@ SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
                      v = {
                          {"tm", from.tuningMode},
                          {"tz", from.tuningZoneResolution},
+                         {"ma", from.tuningAwareMPEGlides},
                      };
                  }
              }),
              SC_TO({
                  findIf(v, "tm", to.tuningMode);
                  findIf(v, "tz", to.tuningZoneResolution);
+                 findIf(v, "ma" to.tuningAwareMPEGlides);
                  findOrSet(v, "of", to.defaultOmniFlavor, to.omniFlavor);
              }));
 

@@ -255,6 +255,15 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
                       w->sendToSerialization(cmsg::SetTuningMode(s));
                   }
               });
+    p.addSeparator();
+    p.addItem("Tuning-Aware MPE/NE glides", true, tuningAwareMPE,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                  {
+                      w->tuningAwareMPE = !w->tuningAwareMPE;
+                      w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
+                  }
+              });
 }
 
 void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
@@ -318,6 +327,15 @@ void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
                         w->editScreen->partSidebar->setMpeBendRange(d);
                     });
     }
+    msm.addSeparator();
+    msm.addItem("Tuning-Aware MPE glides", true, tuningAwareMPE,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                  {
+                      w->tuningAwareMPE = !w->tuningAwareMPE;
+                      w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
+                  }
+              });
     p.addSubMenu("MPE Settings", msm);
     // I think this is not useful, but leaving it here in case we change our mind
     // p.showMenuAsync(this->defaultPopupMenuOptions(this->headerRegion->omniButton.get()));

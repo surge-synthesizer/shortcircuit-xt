@@ -508,6 +508,8 @@ void SCXTEditor::onTuningStatus(const scxt::messaging::client::tuningStatusPaylo
     tuningStatus = t;
 }
 
+void SCXTEditor::onMpeTuningAwarenessFromEngine(bool a) { tuningAwareMPE = a; }
+
 void SCXTEditor::onOmniFlavorFromEngine(std::pair<int, bool> f)
 {
     setupOmniApplyDefault(f.second);
