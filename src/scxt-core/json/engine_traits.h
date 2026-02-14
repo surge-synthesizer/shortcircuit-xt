@@ -135,7 +135,7 @@ SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
              SC_TO({
                  findIf(v, "tm", to.tuningMode);
                  findIf(v, "tz", to.tuningZoneResolution);
-                 findIf(v, "ma" to.tuningAwareMPEGlides);
+                 findIf(v, "ma", to.tuningAwareMPEGlides);
                  findOrSet(v, "of", to.defaultOmniFlavor, to.omniFlavor);
              }));
 
