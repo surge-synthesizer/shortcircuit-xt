@@ -60,7 +60,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     constexpr float square_rms = square_amp;
     const auto squareSample = std::make_shared<sample::Sample>();
     squareSample->allocateF32(0, squareBuffer.size());
-    for (int i = 0; i < squareBuffer.size(); i++)
+    for (  int i = 0; i < squareBuffer.size(); i++)
     {
         const float t = float(i) / squareBuffer.size();
         squareBuffer[i] = 0.8f * (std::modf(220.0f * t, &_scratch) > 0.5 ? -1.0f : 1.0f);

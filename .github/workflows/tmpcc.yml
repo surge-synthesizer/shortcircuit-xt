@@ -1,0 +1,28 @@
+name: Temp Format Check
+on: [ pull_request ]
+jobs:
+  formatting-check:
+    name: Clang Format Check Local
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        path: [ 'src', 'tests' ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install clang-format
+        run: pip3 install clang-format==18.1.8
+
+      - name: Run clang format
+        run: |
+          which clang-format
+          clang-format --version
+          
+          pushd ${{ matrix.path }}
+          find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|h\|c\|m\|mm)' -exec clang-format -style=file --dry-run --Werror {} +
