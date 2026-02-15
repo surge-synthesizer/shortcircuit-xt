@@ -33,6 +33,8 @@
 #include <vector>
 #include <filesystem>
 #include "filesystem/import.h"
+#include "utils.h"
+#include "configuration.h"
 
 namespace scxt::sfz_support
 {
@@ -66,6 +68,9 @@ struct SFZParser
     typedef std::pair<Header, opCodes_t> section_t;
     typedef std::vector<section_t> document_t;
 
+    std::function<void(const std::string &)> onError = [](auto s) {
+        SCLOG_IF(warnings, "SFZParser error: " << s);
+    };
     document_t parse(const std::string &contents);
     document_t parse(const fs::path &file);
 };
