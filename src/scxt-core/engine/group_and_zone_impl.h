@@ -150,7 +150,7 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
 
         assert(tmpProcessor);
         assert(asT()->getEngine());
-        if (asT()->getEngine()->isSampleRateSet())
+        if (tmpProcessor && asT()->getEngine()->isSampleRateSet())
         {
             tmpProcessor->setSampleRate(asT()->getEngine()->getSampleRate());
             tmpProcessor->setTempoPointer(&(asT()->getEngine()->transport.tempo));
@@ -164,7 +164,7 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
                 tmpProcessor->setKeytrack(ps.isKeytracked);
                 tmpProcessor->init_params(); // thos blows out with default}
 
-                if (tmpProcessor && tmpProcessor->supportsMakingParametersConsistent())
+                if (tmpProcessor->supportsMakingParametersConsistent())
                 {
                     tmpProcessor->makeParametersConsistent();
                 }
