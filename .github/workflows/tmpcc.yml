@@ -17,7 +17,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install clang-format
-        run: pip3 install clang-format==18.1.8
+        run: pip3 install clang-format==21.1.5
 
       - name: Run clang format
         run: |
