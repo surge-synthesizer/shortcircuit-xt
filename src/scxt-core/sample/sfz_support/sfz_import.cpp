@@ -74,6 +74,9 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         "Loading SFZ '" + f.filename().u8string() + "'", *(messageController));
 
     SFZParser parser;
+    parser.onError = [&e](const auto &s) {
+        e.getMessageController()->reportErrorToClient("SFZ Import Error", s);
+    };
 
     auto doc = parser.parse(f);
     auto rootDir = f.parent_path();
