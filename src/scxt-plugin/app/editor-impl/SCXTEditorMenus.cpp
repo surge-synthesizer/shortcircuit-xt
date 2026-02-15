@@ -329,13 +329,13 @@ void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
     }
     msm.addSeparator();
     msm.addItem("Tuning-Aware MPE glides", true, tuningAwareMPE,
-              [w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                  {
-                      w->tuningAwareMPE = !w->tuningAwareMPE;
-                      w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
-                  }
-              });
+                [w = juce::Component::SafePointer(this)]() {
+                    if (w)
+                    {
+                        w->tuningAwareMPE = !w->tuningAwareMPE;
+                        w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
+                    }
+                });
     p.addSubMenu("MPE Settings", msm);
     // I think this is not useful, but leaving it here in case we change our mind
     // p.showMenuAsync(this->defaultPopupMenuOptions(this->headerRegion->omniButton.get()));
