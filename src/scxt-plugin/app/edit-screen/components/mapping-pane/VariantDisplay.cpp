@@ -729,7 +729,13 @@ void VariantDisplay::showFileBrowser()
     }
     filePattern.erase(filePattern.size() - 1);
 
-    fileChooser.reset(new juce::FileChooser("Select an audio file...", {}, filePattern));
+    juce::File initDirectory{};
+    auto cSamp = editor->sampleManager.getSample(variantView.variants[selectedVariation].sampleID);
+    if (cSamp && !cSamp->getPath().empty() && !cSamp->getPath().parent_path().empty())
+    {
+        initDirectory = shared::fsPathToJuceFile(cSamp->getPath().parent_path());
+    }
+    fileChooser.reset(new juce::FileChooser("Select an audio file...", initDirectory, filePattern));
 
     fileChooser->launchAsync(
         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
