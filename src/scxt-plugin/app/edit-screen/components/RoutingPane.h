@@ -97,6 +97,8 @@ template <typename RPTraits> struct RoutingPane : sst::jucegui::components::Name
     void updateFromProcessorPanes();
     std::array<juce::Component::SafePointer<ProcessorPane>, scxt::processorsPerZoneAndGroup>
         procWeakRefs;
+
+    typename RPTraits::info_t &info;
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
