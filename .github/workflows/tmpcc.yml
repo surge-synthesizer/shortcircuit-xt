@@ -25,4 +25,4 @@ jobs:
           clang-format --version
           
           pushd ${{ matrix.path }}
-          find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|h\|c\|m\|mm)' -exec clang-format -style=file --dry-run --Werror {} +
+          find . -regex '.*\.\(cpp\|hpp\|cc\|cxx\|h\|c\|m\|mm\)' -exec clang-format -style=file --dry-run --Werror {} +
