@@ -4,8 +4,7 @@
 
 Welcome to Shortcircuit XT!
 
-**You can download the beta of Shortcircuit
-XT [here](https://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly)**
+# You can download the beta of Shortcircuit [here](https://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly)
 
 Shortcircuit was a popular creative sampler in the mid 2000s from vembertech, the
 company that originally created surge. In 2021, Claes Johansen, the principle
@@ -21,6 +20,8 @@ Shortcircuit XT (SCXT) and is underway.
 Right now, you can download our alpha version of the
 instrument [here](https://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly)
 or you can build it using the instructions below.
+
+# For Developers: 
 
 ## What Works, and How Can I Help?
 
@@ -42,6 +43,9 @@ are welcome to come and see what we are thinking is different and the same, and 
 determine if we are right!
 
 ## I would love to build it myself. What do I do?
+
+If you just want to use it for music and are not a developer, you are probably better to download a binary
+[here](https://github.com/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly)
 
 Given a configured machine,
 
