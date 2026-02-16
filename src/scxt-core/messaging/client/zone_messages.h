@@ -33,6 +33,7 @@
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
 #include "selection/selection_manager.h"
+#include "undo_manager/zone_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -336,6 +337,16 @@ inline void doInitiateMidiZoneAction(const initiateMidiZoneAction_t &payload,
 }
 CLIENT_TO_SERIAL(InitiateMidiZoneAction, c2s_initiate_midizone_action, initiateMidiZoneAction_t,
                  doInitiateMidiZoneAction(payload, engine, cont));
+
+inline void doBeginZoneMappingModification(const bool &payload, engine::Engine &engine,
+                                           MessageController &cont)
+{
+    auto undoItem = std::make_unique<undo::ZoneMappingDataUndoableItem>();
+    undoItem->store(engine);
+    engine.undoManager.storeUndoStep(std::move(undoItem));
+}
+CLIENT_TO_SERIAL(BeginZoneMappingModification, c2s_begin_zone_mapping_modification, bool,
+                 doBeginZoneMappingModification(payload, engine, cont));
 
 } // namespace scxt::messaging::client
 

@@ -59,6 +59,8 @@
 #include "modulation/voice_matrix.h"
 #include "modulation/group_matrix.h"
 
+#include "undo_manager/undo.h"
+
 #define DEBUG_VOICE_LIFECYCLE 0
 
 namespace scxt::voice
@@ -687,6 +689,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                                 gmodSrcStrFn_t pathFn, gmodSrcStrFn_t nameFn);
 
     void remapZonesToNewSample(const SampleID &oldId, const SampleID &newId, int forPart);
+
+    undo::UndoManager undoManager;
 
     /*
      * Accelerated voice termination

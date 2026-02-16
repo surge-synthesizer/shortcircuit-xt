@@ -275,7 +275,7 @@ void SingleMacroEditor::updateFromEditorData()
     const auto &macro = editor->macroCache[part][index];
     if (macroNameEditor)
     {
-        macroNameEditor->setText(macro.name, juce::NotificationType::dontSendNotification);
+        macroNameEditor->setText(macro.name, false);
     }
     if (macroNameLabel)
     {
@@ -286,11 +286,14 @@ void SingleMacroEditor::updateFromEditorData()
 void SingleMacroEditor::textEditorReturnKeyPressed(juce::TextEditor &e)
 {
     auto &macro = editor->macroCache[part][index];
-    macro.name = e.getText().toStdString();
+    auto txtname = e.getText().toStdString();
+    if (txtname == macro.name)
+        return;
+    macro.name = txtname;
     if (macro.name.empty())
     {
         macro.name = engine::Macro::defaultNameFor(index);
-        e.setText(macro.name, juce::NotificationType::dontSendNotification);
+        e.setText(macro.name, false);
     }
     sendToSerialization(scxt::messaging::client::SetMacroFullState({part, index, macro}));
 }
@@ -298,18 +301,24 @@ void SingleMacroEditor::textEditorReturnKeyPressed(juce::TextEditor &e)
 void SingleMacroEditor::textEditorEscapeKeyPressed(juce::TextEditor &e)
 {
     const auto &macro = editor->macroCache[part][index];
-    macroNameEditor->setText(macro.name, juce::NotificationType::dontSendNotification);
+    macroNameEditor->setText(macro.name, false);
 }
 
 void SingleMacroEditor::textEditorFocusLost(juce::TextEditor &e)
 {
     auto &macro = editor->macroCache[part][index];
-    macro.name = e.getText().toStdString();
+    auto txtname = e.getText().toStdString();
+    if (txtname == macro.name)
+    {
+        return;
+    }
+    macro.name = txtname;
     if (macro.name.empty())
     {
         macro.name = engine::Macro::defaultNameFor(index);
-        e.setText(macro.name, juce::NotificationType::dontSendNotification);
+        e.setText(macro.name, false);
     }
+
     sendToSerialization(scxt::messaging::client::SetMacroFullState({part, index, macro}));
 }
 

@@ -546,6 +546,18 @@ inline void doRequestZoneDataRefresh(const engine::Engine &eng, messaging::Messa
 CLIENT_TO_SERIAL(RequestZoneDataRefresh, c2s_request_zone_data_refresh, bool,
                  doRequestZoneDataRefresh(engine, cont));
 
+inline void doUndo(engine::Engine &engine, messaging::MessageController &cont)
+{
+    engine.undoManager.applyUndoStep(engine);
+}
+CLIENT_TO_SERIAL(Undo, c2s_undo, bool, doUndo(engine, cont));
+
+inline void doRedo(engine::Engine &engine, messaging::MessageController &cont)
+{
+    engine.undoManager.applyRedoStep(engine);
+}
+CLIENT_TO_SERIAL(Redo, c2s_redo, bool, doRedo(engine, cont));
+
 } // namespace scxt::messaging::client
 
 #endif // SHORTCIRCUIT_STRUCTURE_MESSAGES_H

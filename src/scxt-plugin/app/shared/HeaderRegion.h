@@ -119,6 +119,8 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
 
     void addResetMenuItems(juce::PopupMenu &menu);
 
+    void setShowUndoRedo(bool show);
+
     void onActivityNotification(int idx, const std::string &msg);
 
     std::unique_ptr<juce::FileChooser> fileChooser;

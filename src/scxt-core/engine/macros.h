@@ -32,6 +32,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <algorithm>
+#include <string>
 #include <fmt/core.h>
 
 #include "sst/basic-blocks/params/ParamMetadata.h"

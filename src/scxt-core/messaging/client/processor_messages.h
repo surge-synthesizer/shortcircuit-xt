@@ -31,6 +31,7 @@
 #include <cassert>
 #include "client_macros.h"
 #include "selection/selection_manager.h"
+#include "undo_manager/processor_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -46,7 +47,7 @@ SERIAL_TO_CLIENT(ProcessorMetadataAndData, s2c_respond_single_processor_metadata
 // C2S set processor type (sends back data and metadata)
 // tuple is forzone, whichprocessor, type
 typedef std::tuple<bool, int32_t, int32_t> setProcessorPayload_t;
-inline void setProcessorType(const setProcessorPayload_t &whichToType, const engine::Engine &engine,
+inline void setProcessorType(const setProcessorPayload_t &whichToType, engine::Engine &engine,
                              messaging::MessageController &cont)
 {
     const auto &[forZone, w, id] = whichToType;
@@ -57,6 +58,10 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
         assert(sg.empty() || lg.has_value());
         if (!sg.empty() && lg.has_value())
         {
+            auto undoItem = std::make_unique<undo::GroupProcessorTypeChangeItem>();
+            undoItem->store(engine, w, {sg.begin(), sg.end()});
+            engine.undoManager.storeUndoStep(std::move(undoItem));
+
             cont.scheduleAudioThreadCallback(
                 [gs = sg, which = w, type = id](auto &e) {
                     for (const auto &a : gs)
@@ -89,6 +94,10 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, const eng
 
         if (!sz.empty() && lz.has_value())
         {
+            auto undoItem = std::make_unique<undo::ZoneProcessorTypeChangeItem>();
+            undoItem->store(engine, w, {sz.begin(), sz.end()});
+            engine.undoManager.storeUndoStep(std::move(undoItem));
+
             cont.scheduleAudioThreadCallback(
                 [zs = sz, which = w, type = id](auto &e) {
                     for (const auto &a : zs)

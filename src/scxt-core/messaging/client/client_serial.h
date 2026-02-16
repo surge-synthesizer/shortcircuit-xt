@@ -199,6 +199,11 @@ enum ClientToSerializationMessagesIds
     c2s_activate_next_part,
     c2s_deactivate_part,
 
+    c2s_undo,
+    c2s_redo,
+
+    c2s_begin_zone_mapping_modification,
+
     num_clientToSerializationMessages
 };
 
