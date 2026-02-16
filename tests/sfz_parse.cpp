@@ -113,6 +113,30 @@ TEST_CASE("SFZ Tokens", "[sfz]")
         REQUIRE((kv[1].value) == "d4.wav");
     }
 
+    SECTION("UTF-8 in sample path")
+    {
+        auto p = scxt::sfz_support::SFZParser();
+
+        // café.wav: c a f é(0xC3 0xA9) . w a v
+        std::string samplePath = "caf\xc3\xa9.wav";
+        std::string anSFZ = "<region>sample=" + samplePath + " key=60";
+        auto res = p.parse(anSFZ);
+        REQUIRE(res.size() == 1);
+        REQUIRE(res[0].second.size() == 2);
+        REQUIRE(res[0].second[0].name == "sample");
+        REQUIRE(res[0].second[0].value == samplePath);
+        REQUIRE(res[0].second[1].name == "key");
+        REQUIRE(res[0].second[1].value == "60");
+    }
+
+    SECTION("UTF-8 validation")
+    {
+        REQUIRE(scxt::isValidUtf("abc"));
+        REQUIRE(scxt::isValidUtf("caf\xc3\xa9.wav")); // café.wav
+        REQUIRE(!scxt::isValidUtf("caf\xe9.wav"));    // invalid café (latin1)
+        REQUIRE(!scxt::isValidUtf("\xff\xff"));       // invalid
+    }
+
     SECTION("A Region with two blank keywords")
     {
         auto p = scxt::sfz_support::SFZParser();
