@@ -685,7 +685,8 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
             messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
                 auto res = sfz_support::importSFZ(p.sampleAddress.path, *this);
                 if (!res)
-                    messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
+                    messageController->reportErrorToClient("SFZ Import Failed",
+                                                           "Check log for errors");
                 messageController->restartAudioThreadFromSerial();
                 serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                           getPartGroupZoneStructure(), *messageController);
@@ -790,7 +791,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = sfz_support::importSFZ(p, *this);
             if (!res)
-                messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
+                messageController->reportErrorToClient("SFZ Import Failed",
+                                                       "Check log for further errors");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
@@ -803,7 +805,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = exs_support::importEXS(p, *this);
             if (!res)
-                messageController->reportErrorToClient("EXS Import Failed", "Dunno why");
+                messageController->reportErrorToClient("EXS Import Failed",
+                                                       "Check log for subsequent errors");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
@@ -815,7 +818,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = multisample_support::importMultisample(p, *this);
             if (!res)
-                messageController->reportErrorToClient("SFZ Import Failed", "Dunno why");
+                messageController->reportErrorToClient("Multisample Import Failed",
+                                                       "Check log for subsequent errors");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
@@ -827,7 +831,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = akai_support::importAKP(p, *this);
             if (!res)
-                messageController->reportErrorToClient("AKP Import Failed", "Dunno why");
+                messageController->reportErrorToClient("AKP Import Failed",
+                                                       "Check log for subsequent errors");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);

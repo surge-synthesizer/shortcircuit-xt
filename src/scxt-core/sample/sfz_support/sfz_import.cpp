@@ -88,6 +88,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
     int groupId = -1;
     int firstGroupWithZonesAdded = -1;
+    int regionCount{0};
     SFZParser::opCodes_t currentGroupOpcodes;
     for (const auto &[r, list] : doc)
     {
@@ -120,6 +121,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         break;
         case SFZParser::Header::region:
         {
+            regionCount++;
             if (groupId < 0)
             {
                 groupId = part->addGroup() - 1;
@@ -142,6 +144,17 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     sampleFileString = oc.value;
                 }
             }
+
+            if (!scxt::isValidUtf(sampleFileString))
+            {
+                SCLOG_IF(warnings, "Original file name is `" << sampleFileString << "`");
+                e.getMessageController()->reportErrorToClient(
+                    "SFZ Import Error", "Sample filename in region " + std::to_string(regionCount) +
+                                            " contains invalid UTF-8 sequence. "
+                                            "Stopping SFZ import");
+                return false;
+            }
+
             // fs always works with / and on windows also works with back. Quotes are
             // stripped by the parser now
             std::replace(sampleFileString.begin(), sampleFileString.end(), '\\', '/');
