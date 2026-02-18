@@ -134,9 +134,19 @@ inline void applyMPETuningAwarenessPayload(const bool &payload, messaging::Messa
 }
 CLIENT_TO_SERIAL(SetMpeTuningAwareness, c2s_set_mpe_tuning_awareness, bool,
                  applyMPETuningAwarenessPayload(payload, cont));
-
 SERIAL_TO_CLIENT(UpdateMpeTuningAwareness, s2c_update_mpe_tuning_awareness, bool,
                  onMpeTuningAwarenessFromEngine);
+
+inline void applyPitchBendTuningAwarenessPayload(const bool &paylaod,
+                                                 messaging::MessageController &cont)
+{
+    cont.scheduleAudioThreadCallback(
+        [payload = paylaod](scxt::engine::Engine &e) { e.setPBTuningAwareness(payload); });
+}
+CLIENT_TO_SERIAL(SetPitchBendTuningAwareness, c2s_set_pitchbend_tuning_awareness, bool,
+                 applyMPETuningAwarenessPayload(payload, cont));
+SERIAL_TO_CLIENT(UpdatePitchBendTuningAwareness, s2c_update_pitchbend_tuning_awareness, bool,
+                 onPitchBendTuningAwarenessFromEngine);
 
 using omniFlavor_t = scxt::engine::Engine::OmniFlavor;
 inline void applyOmniFlavorPayload(const omniFlavor_t &payload, messaging::MessageController &cont)

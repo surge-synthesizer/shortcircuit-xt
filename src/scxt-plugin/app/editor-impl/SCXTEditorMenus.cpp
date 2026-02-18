@@ -236,7 +236,7 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
                       w->sendToSerialization(cmsg::SetTuningMode(s));
                   }
               });
-    p.addItem("MTS-ESP (if active)", true, st.first == engine::Engine::TuningMode::MTS_CONTINOUS,
+    p.addItem("MTS-ESP Continuous", true, st.first == engine::Engine::TuningMode::MTS_CONTINOUS,
               [st, w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
@@ -245,8 +245,7 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
                       w->sendToSerialization(cmsg::SetTuningMode(s));
                   }
               });
-    p.addItem("MTS-ESP NoteOn (if active)", true,
-              st.first == engine::Engine::TuningMode::MTS_NOTE_ON,
+    p.addItem("MTS-ESP Note-On Only", true, st.first == engine::Engine::TuningMode::MTS_NOTE_ON,
               [st, w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
@@ -256,12 +255,20 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
                   }
               });
     p.addSeparator();
-    p.addItem("Tuning-Aware MPE/NE glides", true, tuningAwareMPE,
-              [w = juce::Component::SafePointer(this)]() {
+    p.addItem("Tuning-Aware Pitch Bend", st.first == engine::Engine::TuningMode::MTS_CONTINOUS,
+              tuningAwareMPE, [w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
                       w->tuningAwareMPE = !w->tuningAwareMPE;
                       w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
+                  }
+              });
+    p.addItem("Tuning-Aware MPE/NE glides", st.first == engine::Engine::TuningMode::MTS_CONTINOUS,
+              tuningAwarePitchBends, [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                  {
+                      w->tuningAwarePitchBends = !w->tuningAwarePitchBends;
+                      w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwarePitchBends));
                   }
               });
 }
@@ -328,14 +335,15 @@ void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
                     });
     }
     msm.addSeparator();
-    msm.addItem("Tuning-Aware MPE glides", true, tuningAwareMPE,
-              [w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                  {
-                      w->tuningAwareMPE = !w->tuningAwareMPE;
-                      w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
-                  }
-              });
+    msm.addItem("Tuning-Aware MPE glides",
+                editScreen->editor->tuningStatus.first == engine::Engine::TuningMode::MTS_CONTINOUS,
+                tuningAwareMPE, [w = juce::Component::SafePointer(this)]() {
+                    if (w)
+                    {
+                        w->tuningAwareMPE = !w->tuningAwareMPE;
+                        w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
+                    }
+                });
     p.addSubMenu("MPE Settings", msm);
     // I think this is not useful, but leaving it here in case we change our mind
     // p.showMenuAsync(this->defaultPopupMenuOptions(this->headerRegion->omniButton.get()));

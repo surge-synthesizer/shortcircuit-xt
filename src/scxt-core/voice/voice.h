@@ -89,7 +89,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     float keyChangedInLegatoModeTrigger{0.f};
 
-    float retunedKeyAtAttack{0.f};
+    float retuningForKeyAtAttack{0.f};
     bool retuneContinuous{true};
 
     float normalizationAmplitudeLinear; // in multiples not db

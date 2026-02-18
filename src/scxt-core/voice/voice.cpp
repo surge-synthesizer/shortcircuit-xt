@@ -200,8 +200,8 @@ void Voice::voiceStarted()
         // only the AEG needs oversampling since EG2 3 4 is only used at endpoint
     }
 
-    retunedKeyAtAttack =
-        zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
+    retuningForKeyAtAttack =
+        zone->getEngine()->midikeyRetuner.retuningForRemappedKey(channel, key, originalMidiKey);
     retuneContinuous =
         zone->getEngine()->runtimeConfig.tuningMode != engine::Engine::TuningMode::MTS_NOTE_ON;
 
@@ -1017,9 +1017,8 @@ void Voice::initializeGenerator()
 
 float Voice::calculateVoicePitch()
 {
-    auto kd = (key - zone->mapping.rootKey) * zone->mapping.tracking + zone->mapping.rootKey;
+    auto pitchTuned{0.f}, pitchUntuned{0.f};
 
-    auto fpitch = kd + *endpoints->mappingTarget.pitchOffsetP;
     auto pitchWheel = zone->parentGroup->parentPart->pitchBendValue;
     auto pu = zone->mapping.pbUp;
     auto pd = zone->mapping.pbDown;
@@ -1027,37 +1026,48 @@ float Voice::calculateVoicePitch()
         pu = zone->parentGroup->outputInfo.pbUp;
     if (pd < 0)
         pd = zone->parentGroup->outputInfo.pbDown;
+    pitchWheel *= pitchWheel > 0 ? pu : pd;
 
-    auto pitchMv = pitchWheel > 0 ? pu : pd;
-    fpitch += pitchWheel * pitchMv;
+    pitchUntuned += (key - zone->mapping.rootKey) * zone->mapping.tracking + zone->mapping.rootKey;
+    pitchUntuned += *endpoints->mappingTarget.pitchOffsetP;
+    pitchUntuned += zone->parentGroup->outputInfo.tuning;
 
-    fpitch += zone->parentGroup->outputInfo.tuning;
-
-    fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
-    fpitch += mpePitchBend;
-    float retuner{retunedKeyAtAttack};
-
-    if (zone->parentGroup->getEngine()->runtimeConfig.tuningAwareMPEGlides)
+    if (retuneContinuous)
     {
-        fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
-        fpitch += mpePitchBend;
-        if (retuneContinuous)
-            retuner =
-                zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
+        if (zone->parentGroup->getEngine()->runtimeConfig.tuningAwareMPEGlides)
+        {
+            pitchTuned += noteExpressions[(int)ExpressionIDs::TUNING];
+            pitchTuned += mpePitchBend;
+        }
+        else
+        {
+            pitchUntuned += noteExpressions[(int)ExpressionIDs::TUNING];
+            pitchUntuned += mpePitchBend;
+        }
+
+        if (zone->parentGroup->getEngine()->runtimeConfig.tuningAwarePitchBends)
+        {
+            pitchTuned += pitchWheel;
+        }
+        else
+        {
+            pitchUntuned += pitchWheel;
+        }
+
+        pitchTuned += zone->getEngine()->midikeyRetuner.retuningForRemappedKeyWithInterpolation(
+            channel, key, originalMidiKey, pitchTuned);
     }
     else
     {
-        if (retuneContinuous)
-            retuner =
-                zone->getEngine()->midikeyRetuner.retuneRemappedKey(channel, key, originalMidiKey);
-        fpitch += noteExpressions[(int)ExpressionIDs::TUNING];
-        fpitch += mpePitchBend;
+        pitchUntuned += noteExpressions[(int)ExpressionIDs::TUNING];
+        pitchUntuned += mpePitchBend;
+        pitchUntuned += pitchWheel;
+
+        pitchTuned = retuningForKeyAtAttack;
     }
 
-    fpitch += retuner;
-
-    keytrackPerOct = (key + retuner - zone->mapping.rootKey) / 12.0;
-    return fpitch;
+    keytrackPerOct = (key + pitchTuned - zone->mapping.rootKey) / 12.0;
+    return pitchTuned + pitchUntuned;
 }
 
 void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generatorIndex)
