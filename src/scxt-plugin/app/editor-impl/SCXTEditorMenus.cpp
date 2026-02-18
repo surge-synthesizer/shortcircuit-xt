@@ -227,7 +227,8 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
         p.addSeparator();
     }
     auto st = editScreen->editor->tuningStatus;
-    p.addItem("Twelve TET", true, st.first == engine::Engine::TuningMode::TWELVE_TET,
+    p.addItem("Twelve-Tone Equal Temperament", true,
+              st.first == engine::Engine::TuningMode::TWELVE_TET,
               [st, w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
@@ -263,8 +264,9 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
                       w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
                   }
               });
-    p.addItem("Tuning-Aware MPE/NE glides", st.first == engine::Engine::TuningMode::MTS_CONTINOUS,
-              tuningAwarePitchBends, [w = juce::Component::SafePointer(this)]() {
+    p.addItem("Tuning-Aware MPE/Note Expression glides",
+              st.first == engine::Engine::TuningMode::MTS_CONTINOUS, tuningAwarePitchBends,
+              [w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
                       w->tuningAwarePitchBends = !w->tuningAwarePitchBends;
