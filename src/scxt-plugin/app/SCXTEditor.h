@@ -190,11 +190,13 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     int32_t checkWelcomeCountdown{20};
 
     bool tuningAwareMPE{true};
+    bool tuningAwarePitchBends{true};
+
+    void onMpeTuningAwarenessFromEngine(bool);
+    void onPitchBendTuningAwarenessFromEngine(bool);
 
     engine::Engine::OmniFlavor currentOmniFlavor{engine::Engine::OmniFlavor::OMNI};
     bool shouldApplyOmniOnSelect{false};
-
-    void onMpeTuningAwarenessFromEngine(bool);
 
     void onOmniFlavorFromEngine(std::pair<int, bool> f);
     void setupOmniApplyDefault(bool b);

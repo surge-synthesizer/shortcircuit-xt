@@ -509,6 +509,7 @@ void SCXTEditor::onTuningStatus(const scxt::messaging::client::tuningStatusPaylo
 }
 
 void SCXTEditor::onMpeTuningAwarenessFromEngine(bool a) { tuningAwareMPE = a; }
+void SCXTEditor::onPitchBendTuningAwarenessFromEngine(bool a) { tuningAwarePitchBends = a; }
 
 void SCXTEditor::onOmniFlavorFromEngine(std::pair<int, bool> f)
 {

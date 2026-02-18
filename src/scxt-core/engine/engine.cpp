@@ -1257,6 +1257,9 @@ void Engine::sendFullRefreshToClient() const
     messaging::client::serializationSendToClient(messaging::client::s2c_update_mpe_tuning_awareness,
                                                  runtimeConfig.tuningAwareMPEGlides,
                                                  *getMessageController());
+    messaging::client::serializationSendToClient(
+        messaging::client::s2c_update_pitchbend_tuning_awareness,
+        runtimeConfig.tuningAwarePitchBends, *getMessageController());
 
     sendMetadataToClient();
     serializationSendToClient(messaging::client::s2c_send_pgz_structure,
@@ -1469,6 +1472,7 @@ void Engine::resetTuningFromRuntimeConfig()
 }
 
 void Engine::setMpeTuningAwareness(bool a) { this->runtimeConfig.tuningAwareMPEGlides = a; }
+void Engine::setPBTuningAwareness(bool a) { this->runtimeConfig.tuningAwarePitchBends = a; }
 
 void Engine::setOmniFlavor(const OmniFlavor &of)
 {

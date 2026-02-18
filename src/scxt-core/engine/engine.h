@@ -258,13 +258,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     };
     DECLARE_ENUM_STRING(OmniFlavor);
 
-    // Post 1.0 we probably want this per-part changable but that makes
+    // Post 1.0 we probably want this per-part changeable but that makes
     // a variety of things harder in resolution
     struct RuntimeConfig
     {
         TuningMode tuningMode{TuningMode::MTS_CONTINOUS};
         TuningZoneResolution tuningZoneResolution{TuningZoneResolution::RESOLVE_TUNED_PITCH};
         bool tuningAwareMPEGlides{true};
+        bool tuningAwarePitchBends{true};
         OmniFlavor omniFlavor{OmniFlavor::OMNI};
         OmniFlavor defaultOmniFlavor{OmniFlavor::OMNI};
         bool applyOmniToAllPartsOnSelect{false};
@@ -272,6 +273,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     void resetTuningFromRuntimeConfig();
     void setMpeTuningAwareness(bool a);
+    void setPBTuningAwareness(bool a);
 
     void setOmniFlavor(const OmniFlavor &of);
 

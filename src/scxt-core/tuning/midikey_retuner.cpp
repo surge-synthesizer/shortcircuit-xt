@@ -92,10 +92,25 @@ int MidikeyRetuner::remapKeyTo(int channel, int key)
     return (int)std::round(offsetKeyBy(channel, key) + key);
 }
 
-float MidikeyRetuner::retuneRemappedKey(int channel, int key, int preRemappedKey)
+float MidikeyRetuner::retuningForRemappedKey(int channel, int key, int preRemappedKey)
 {
     auto r = offsetKeyBy(channel, preRemappedKey);
     return r - key + preRemappedKey;
+}
+
+float MidikeyRetuner::retuningForRemappedKeyWithInterpolation(int channel, int key,
+                                                              int preRemappedKey, float mods)
+{
+    auto actualKeyPlusMods = preRemappedKey + mods;
+    auto ik = (int)(actualKeyPlusMods);
+    auto frac = actualKeyPlusMods - ik;
+
+    auto r1 = offsetKeyBy(channel, ik);
+    auto r2 = offsetKeyBy(channel, ik + 1);
+    auto r = r1 + frac * (r2 - r1);
+
+    auto res = r - (int)(key + mods) + ik;
+    return res;
 }
 
 } // namespace scxt::tuning

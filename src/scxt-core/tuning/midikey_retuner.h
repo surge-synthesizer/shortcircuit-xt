@@ -58,7 +58,9 @@ struct MidikeyRetuner
      * int part and frac part really.
      */
     int remapKeyTo(int channel, int key);
-    float retuneRemappedKey(int channel, int key, int preRemappedKey);
+    float retuningForRemappedKey(int channel, int key, int preRemappedKey);
+    float retuningForRemappedKeyWithInterpolation(int channel, int key, int preRemappedKey,
+                                                  float mods);
 
   private:
     MTSClient *mtsClient{nullptr};
