@@ -522,25 +522,22 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
 };
 
 template <typename RPTraits>
-RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e) : jcmp::NamedPanel("ROUTING"), HasEditor(e)
+RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e)
+    : jcmp::NamedPanel("ROUTING"), HasEditor(e), info(RPTraits::outputInfo(e))
 {
     hasHamburger = false;
     clearAdditionalHamburgerComponents();
 
     if constexpr (!RPTraits::forZone)
     {
-        oversampleButton = std::make_unique<jcmp::ToggleButton>();
+        using bfac = connectors::BooleanSingleValueFactory<
+            bool_attachment_t, scxt::messaging::client::UpdateGroupOutputBoolValue>;
+        bfac::attachAndAdd(info, info.oversample, this, oversampleAttachment, oversampleButton);
+
         oversampleButton->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
         oversampleButton->setLabel("2xOS");
         oversampleButton->setLabelDrawsBackground(false);
-        addAndMakeVisible(*oversampleButton);
 
-        typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t>
-            boolAttachment_t;
-        oversampleAttachment =
-            std::make_unique<boolAttachment_t>("2x Oversample", RPTraits::outputInfo(e).oversample);
-
-        oversampleButton->setSource(oversampleAttachment.get());
         setupWidgetForValueTooltip(oversampleButton.get(), oversampleAttachment);
         addAdditionalHamburgerComponent(std::move(oversampleButton), 28);
     }

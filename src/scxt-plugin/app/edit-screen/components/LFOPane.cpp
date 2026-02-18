@@ -1415,7 +1415,7 @@ struct MiscPanel : juce::Component, HasEditor
                 phLab = "SONG" + phLab;
                 break;
             }
-            syncButtons[i]->setLabel(phLab.c_str());
+            syncButtons[i]->setLabel(phLab);
 
             switch (ps.division)
             {
