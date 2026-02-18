@@ -59,6 +59,15 @@ inline fs::path juceFileToFSPath(const juce::File &f)
     return juceStringToFSPath(fullPathName);
 }
 
+inline juce::File fsPathToJuceFile(const fs::path &p)
+{
+#if JUCE_WINDOWS
+    return juce::File(juce::String((wchar_t *)p.u16string().c_str()));
+#else
+    return juce::File(p.u8string());
+#endif
+}
+
 } // namespace scxt::ui::app::shared
 
 #endif // SHORTCIRCUITXT_UIHELPERS_H

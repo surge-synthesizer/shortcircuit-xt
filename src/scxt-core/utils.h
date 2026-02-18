@@ -398,6 +398,8 @@ inline std::string humanReadableVersion(uint64_t v)
     return fmt::format("{:04x}-{:02x}-{:02x}", (v >> 16) & 0xFFFF, (v >> 8) & 0xFF, v & 0xFF);
 }
 
+bool isValidUtf(const std::string &s);
+
 } // namespace scxt
 
 // Make the ID hashable so we can use it as a map key

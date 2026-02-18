@@ -120,4 +120,37 @@ std::string logTimestamp()
            << current_milliseconds;
     return stream.str();
 }
+
+bool isValidUtf(const std::string &s)
+{
+    auto it = s.begin();
+    while (it != s.end())
+    {
+        unsigned char c = static_cast<unsigned char>(*it);
+        int n = 0;
+        if ((c & 0x80) == 0)
+            n = 0;
+        else if ((c & 0xE0) == 0xC0)
+            n = 1;
+        else if ((c & 0xF0) == 0xE0)
+            n = 2;
+        else if ((c & 0xF8) == 0xF0)
+            n = 3;
+        else
+            return false;
+
+        for (int i = 0; i < n; ++i)
+        {
+            it++;
+            if (it == s.end())
+                return false;
+            unsigned char nextC = static_cast<unsigned char>(*it);
+            if ((nextC & 0xC0) != 0x80)
+                return false;
+        }
+        it++;
+    }
+    return true;
+}
+
 } // namespace scxt
