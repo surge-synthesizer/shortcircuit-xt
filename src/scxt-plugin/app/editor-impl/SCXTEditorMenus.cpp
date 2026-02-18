@@ -227,7 +227,8 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
         p.addSeparator();
     }
     auto st = editScreen->editor->tuningStatus;
-    p.addItem("Twelve-Tone Equal Temperament", true, st.first == engine::Engine::TuningMode::TWELVE_TET,
+    p.addItem("Twelve-Tone Equal Temperament", true,
+              st.first == engine::Engine::TuningMode::TWELVE_TET,
               [st, w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
