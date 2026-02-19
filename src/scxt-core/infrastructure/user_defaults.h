@@ -48,6 +48,7 @@ enum DefaultKeys
     browserAutoPreviewEnabled,
     browserPreviewAmplitude,
     useSoftwareRenderer,
+    showUndoRedo,
 
     nKeys // must be last K?
 };
@@ -85,6 +86,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "browserPreviewAmplitude";
     case useSoftwareRenderer:
         return "useSoftwareRenderer";
+    case showUndoRedo:
+        return "showUndoRedo";
     default:
         std::terminate(); // for now
     }

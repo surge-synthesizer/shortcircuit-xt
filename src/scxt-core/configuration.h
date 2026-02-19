@@ -87,6 +87,8 @@ static constexpr size_t modMatrixRowsPerGroup{12};
 // For tail detection use a full block below this level as silence
 static constexpr float silenceThresh{1e-10f};
 
+static constexpr size_t maxUndoRedoStackSize{64};
+
 static constexpr const char *relativeSentinel = "SCXT_RELATIVE_PATH_MARKER";
 
 /*
@@ -112,6 +114,7 @@ static constexpr bool streaming{false};
 static constexpr bool sqlDb{false};
 static constexpr bool groupTrigggers{false};
 static constexpr bool zoneLayout{true};
+static constexpr bool undoRedo{true};
 
 static constexpr bool patchIO{false};
 static constexpr bool jsonUI{false};

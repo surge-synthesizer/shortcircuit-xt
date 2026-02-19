@@ -28,6 +28,8 @@
 #ifndef SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_GROUP_OR_ZONE_MESSAGES_H
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_GROUP_OR_ZONE_MESSAGES_H
 
+#include "undo_manager/undoable_items.h"
+
 namespace scxt::messaging::client
 {
 // structure here is (forZone, whichEG, active, data)
@@ -224,10 +226,15 @@ CLIENT_TO_SERIAL(UpdateFullModStorageForGroupsOrZones,
                  doFullModStorageUpdateForGroupsOrZones(payload, engine, cont));
 
 using renameGroupZonePayload_t = std::tuple<selection::SelectionManager::ZoneAddress, std::string>;
-inline void doRenameGroup(const renameGroupZonePayload_t &payload, const engine::Engine &engine,
+inline void doRenameGroup(const renameGroupZonePayload_t &payload, engine::Engine &engine,
                           MessageController &cont)
 {
     const auto &[p, g, z] = std::get<0>(payload);
+
+    auto undoItem = std::make_unique<undo::GroupRenameItem>();
+    undoItem->store(engine, p, g);
+    engine.undoManager.storeUndoStep(std::move(undoItem));
+
     engine.getPatch()->getPart(p)->getGroup(g)->name = std::get<1>(payload);
     serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(), cont);
 }

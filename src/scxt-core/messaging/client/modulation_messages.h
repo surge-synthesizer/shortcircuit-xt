@@ -34,6 +34,7 @@
 #include "selection/selection_manager.h"
 #include "voice/voice.h"
 #include "detail/message_helpers.h"
+#include "undo_manager/modulation_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -51,8 +52,8 @@ SERIAL_TO_CLIENT(UpdateGroupMatrix, s2c_update_group_matrix, modulation::GroupMa
 // which row, what data, and force a full update
 typedef std::tuple<int, voice::modulation::Matrix::RoutingTable::Routing, bool>
     zoneRoutingRowPayload_t;
-inline void doUpdateZoneRoutingRow(const zoneRoutingRowPayload_t &payload,
-                                   const engine::Engine &engine, MessageController &cont)
+inline void doUpdateZoneRoutingRow(const zoneRoutingRowPayload_t &payload, engine::Engine &engine,
+                                   MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &[i, r, b] = payload;
@@ -60,6 +61,10 @@ inline void doUpdateZoneRoutingRow(const zoneRoutingRowPayload_t &payload,
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     if (!sz.empty())
     {
+        auto undoItem = std::make_unique<undo::ZoneModRowChangeItem>();
+        undoItem->store(engine, i, {sz.begin(), sz.end()});
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+
         cont.scheduleAudioThreadCallback(
             [index = i, row = r, zs = sz](auto &eng) {
                 for (const auto &z : zs)
@@ -94,13 +99,17 @@ CLIENT_TO_SERIAL(UpdateZoneRoutingRow, c2s_update_zone_routing_row, zoneRoutingR
 typedef std::tuple<int, modulation::GroupMatrix::RoutingTable::Routing, bool>
     updateGroupRoutingRowPayload_t;
 inline void doUpdateGroupRoutingRow(const updateGroupRoutingRowPayload_t &payload,
-                                    const engine::Engine &engine, MessageController &cont)
+                                    engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &[i, r, b] = payload;
     auto sg = engine.getSelectionManager()->currentlySelectedGroups();
     if (!sg.empty())
     {
+        auto undoItem = std::make_unique<undo::GroupModRowChangeItem>();
+        undoItem->store(engine, i, {sg.begin(), sg.end()});
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+
         cont.scheduleAudioThreadCallback(
             [index = i, row = r, gs = sg](auto &eng) {
                 for (const auto &z : gs)

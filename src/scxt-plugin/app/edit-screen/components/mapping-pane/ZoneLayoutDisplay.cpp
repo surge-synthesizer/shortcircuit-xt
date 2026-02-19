@@ -41,6 +41,7 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     if (!display)
         return;
     mouseState = NONE;
+    display->mayBeAboutToMutate = true;
 
     if (e.mods.isPopupMenu())
     {
@@ -689,6 +690,7 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         }
     }
     mouseState = NONE;
+    display->mayBeAboutToMutate = false;
     repaint();
 
     namespace cmsg = scxt::messaging::client;

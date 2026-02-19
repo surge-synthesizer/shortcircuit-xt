@@ -119,6 +119,8 @@ struct MappingDisplay : juce::Component,
     bool isMovingZones{false};
     bool isResizingZones{false};
 
+    bool mayBeAboutToMutate{false};
+
     std::unique_ptr<MappingZoneHeader> zoneHeader;
 
     enum Ctrl

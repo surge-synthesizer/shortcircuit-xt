@@ -886,6 +886,13 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
 
+    // Push an undo step for the group before modifying it
+    {
+        auto undoItem = std::make_unique<undo::GroupChangeItem>();
+        undoItem->store(*this, sp, sg);
+        undoManager.storeUndoStep(std::move(undoItem));
+    }
+
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [sp = sp, sg = sg, zone = zptr.release()](auto &e) {

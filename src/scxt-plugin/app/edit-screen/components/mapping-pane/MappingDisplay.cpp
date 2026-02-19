@@ -73,6 +73,20 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     // Just a little shorthand to save the two args repeating
     auto iAdd = [this](auto &v, auto &a, auto &w) {
         ifac::attachAndAdd(mappingView, v, this, a, w);
+        auto origOnBeginEdit = w->onBeginEdit;
+        auto origOnEndEdit = w->onEndEdit;
+        w->onBeginEdit = [this, origOnBeginEdit]() {
+            SCLOG_IF(undoRedo, "about to mutate");
+            mayBeAboutToMutate = true;
+            if (origOnBeginEdit)
+                origOnBeginEdit();
+        };
+        w->onEndEdit = [this, origOnEndEdit]() {
+            SCLOG_IF(undoRedo, "about to mutate over");
+            mayBeAboutToMutate = false;
+            if (origOnEndEdit)
+                origOnEndEdit();
+        };
     };
     auto iAddConstrained = [this, iAdd](auto &v, auto &a, auto &w,
                                         std::function<bool(int)> accept) {
@@ -776,6 +790,12 @@ MappingDisplay::applyDeltaToSelectedZones(engine::Zone::ChangeDimension dim, int
         }
     }
 
+    if (mayBeAboutToMutate)
+    {
+        sendToSerialization(cmsg::BeginZoneMappingModification(true));
+        mayBeAboutToMutate = false;
+    }
+
     // this is absolute, lead-only, part, dim, dx, dy
     sendToSerialization(
         cmsg::ApplyZoneDelta({false, leadOnly, editor->selectedPart, dim, deltaX, deltaY}));
@@ -829,6 +849,12 @@ bool MappingDisplay::applyAbsoluteToSelectedZones(engine::Zone::ChangeDimension 
 
     if (!doApply)
         return false;
+
+    if (mayBeAboutToMutate)
+    {
+        sendToSerialization(cmsg::BeginZoneMappingModification(true));
+        mayBeAboutToMutate = false;
+    }
 
     auto leadOnly = juce::ModifierKeys::getCurrentModifiers().isAltDown();
     sendToSerialization(

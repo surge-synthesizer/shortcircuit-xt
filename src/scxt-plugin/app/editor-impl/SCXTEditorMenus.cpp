@@ -207,6 +207,20 @@ void SCXTEditor::showMainMenu()
     });
     dp.addSubMenu("Test Tools", devpm);
 
+    dp.addSeparator();
+    {
+        auto showUR = defaultsProvider.getUserDefaultValue(infrastructure::showUndoRedo, 0) != 0;
+        dp.addItem("Show Undo/Redo", true, showUR,
+                   [w = juce::Component::SafePointer(this), showUR]() {
+                       if (!w)
+                           return;
+                       w->defaultsProvider.updateUserDefaultValue(infrastructure::showUndoRedo,
+                                                                  showUR ? 0 : 1);
+                       if (w->headerRegion)
+                           w->headerRegion->setShowUndoRedo(!showUR);
+                   });
+    }
+
     m.addSubMenu("Developer", dp);
 
     if (headerRegion && headerRegion->scMenu)

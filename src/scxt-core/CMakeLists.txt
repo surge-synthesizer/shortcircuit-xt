@@ -65,6 +65,13 @@ add_library(${PROJECT_NAME} STATIC
 
         patch_io/patch_io.cpp
 
+        undo_manager/undo.cpp
+        undo_manager/group_undoable_items.cpp
+        undo_manager/modulation_undoable_items.cpp
+        undo_manager/processor_undoable_items.cpp
+        undo_manager/macro_undoable_items.cpp
+        undo_manager/zone_undoable_items.cpp
+
         utils.cpp
         )
 

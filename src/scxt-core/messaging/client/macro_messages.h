@@ -32,6 +32,7 @@
 #include "engine/group.h"
 #include "selection/selection_manager.h"
 #include "messaging/client/detail/message_helpers.h"
+#include "undo_manager/macro_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -42,25 +43,33 @@ SERIAL_TO_CLIENT(UpdateMacroFullState, s2c_update_macro_full_state, macroFullSta
 using macroValue_t = std::tuple<int16_t, int16_t, float>;
 SERIAL_TO_CLIENT(UpdateMacroValue, s2c_update_macro_value, macroValue_t, onMacroValue);
 
-inline void updateMacroFullState(const macroFullState_t &t, const engine::Engine &engine,
-                                 MessageController &cont)
+inline void updateMacroFullStateApply(int16_t part, int16_t index, const engine::Macro &macroR,
+                                      bool fromUndo, MessageController &cont)
 {
-    const auto &[p, i, m] = t;
-    if (p < 0 || p >= numParts || i < 0 || i >= macrosPerPart)
-    {
-        SCLOG_IF(warnings, "Invalid part/index in updateMacroFullState: " << p << "/" << i);
-        return;
-    }
-
     cont.scheduleAudioThreadCallback(
-        [part = p, index = i, macro = m](auto &e) {
-            // Set everything except the value
-            auto v = e.getPatch()->getPart(part)->macros[index].value;
+        [part, index, macro = macroR, fromUndo](auto &e) {
             engine::Macro macroCopy = macro;
-            macroCopy.setValueConstrained(v);
+            if (!fromUndo)
+            {
+                // Set everything except the value except when undoing (to avoid colliding with
+                // automation)
+                auto v = e.getPatch()->getPart(part)->macros[index].value;
+                macroCopy.setValueConstrained(v);
+            }
             e.getPatch()->getPart(part)->macros[index] = macroCopy;
         },
-        [](const auto &e) {
+        [fromUndo, part, index](const auto &e) {
+            if (fromUndo)
+            {
+                auto &macro = e.getPatch()->getPart(part)->macros[index];
+                serializationSendToClient(messaging::client::s2c_update_macro_full_state,
+                                          macroFullState_t{part, index, macro},
+                                          *(e.getMessageController()));
+                serializationSendToClient(messaging::client::s2c_update_macro_value,
+                                          macroValue_t{part, index, macro.value},
+                                          *(e.getMessageController()));
+            }
+
             const auto &lz = e.getSelectionManager()->currentLeadZone(e);
             if (lz.has_value())
             {
@@ -90,6 +99,25 @@ inline void updateMacroFullState(const macroFullState_t &t, const engine::Engine
             s2am.id = audio::s2a_param_refresh;
             e.getMessageController()->sendSerializationToAudio(s2am);
         });
+}
+
+inline void updateMacroFullState(const macroFullState_t &t, engine::Engine &engine,
+                                 MessageController &cont)
+{
+    const auto &[p, i, m] = t;
+    if (p < 0 || p >= numParts || i < 0 || i >= macrosPerPart)
+    {
+        SCLOG_IF(warnings, "Invalid part/index in updateMacroFullState: " << p << "/" << i);
+        return;
+    }
+
+    {
+        auto undoItem = std::make_unique<undo::MacroFullStateItem>();
+        undoItem->store(engine, p, i);
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+    }
+
+    updateMacroFullStateApply(p, i, m, false, cont);
 }
 CLIENT_TO_SERIAL(SetMacroFullState, c2s_set_macro_full_state, macroFullState_t,
                  updateMacroFullState(payload, engine, cont));
@@ -123,10 +151,18 @@ CLIENT_TO_SERIAL(SetMacroValue, c2s_set_macro_value, macroValue_t,
                  updateMacroValue(payload, engine, cont));
 
 using macroBeginEndEdit_t = std::tuple<bool, int16_t, int16_t>; // begin=true, id, val
-inline void doMacroBeginEndEdit(const macroBeginEndEdit_t &payload, const engine::Engine &e,
+inline void doMacroBeginEndEdit(const macroBeginEndEdit_t &payload, engine::Engine &e,
                                 messaging::MessageController &cont)
 {
     auto [doIt, part, index] = payload;
+
+    if (doIt)
+    {
+        auto undoItem = std::make_unique<undo::MacroFullStateItem>();
+        undoItem->store(e, part, index);
+        e.undoManager.storeUndoStep(std::move(undoItem));
+    }
+
     messaging::audio::SerializationToAudio s2am;
     s2am.id = audio::s2a_param_beginendedit;
     s2am.payloadType = audio::SerializationToAudio::FOUR_FOUR_MIX;

@@ -27,6 +27,7 @@
 
 #include "HeaderRegion.h"
 #include "app/SCXTEditor.h"
+#include "infrastructure/user_defaults.h"
 #include "app/shared/PatchMultiIO.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/ToggleButtonRadioGroup.h"
@@ -128,17 +129,25 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*scMenu);
 
-    if (hasFeature::undoRedo)
     {
         undoButton = std::make_unique<jcmp::TextPushButton>();
         undoButton->setLabel("Undo");
-        undoButton->setOnCallback(editor->makeComingSoon());
+        undoButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->sendToSerialization(cmsg::Undo(true));
+        });
         addAndMakeVisible(*undoButton);
 
         redoButton = std::make_unique<jcmp::TextPushButton>();
         redoButton->setLabel("Redo");
-        redoButton->setOnCallback(editor->makeComingSoon());
+        redoButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->sendToSerialization(cmsg::Redo(true));
+        });
         addAndMakeVisible(*redoButton);
+
+        auto showUR = editor->defaultsProvider.getUserDefaultValue(infrastructure::showUndoRedo, 0);
+        setShowUndoRedo(showUR != 0);
     }
 
     tuningButton = std::make_unique<jcmp::TextPushButton>();
@@ -231,6 +240,14 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     editor->themeApplier.setLabelToHighlight(cpuLevel.get());
     editor->themeApplier.setLabelToHighlight(ramLevel.get());
     editor->themeApplier.applyHeaderSCButtonTheme(scMenu.get());
+}
+
+void HeaderRegion::setShowUndoRedo(bool show)
+{
+    if (undoButton)
+        undoButton->setVisible(show);
+    if (redoButton)
+        redoButton->setVisible(show);
 }
 
 HeaderRegion::~HeaderRegion()
