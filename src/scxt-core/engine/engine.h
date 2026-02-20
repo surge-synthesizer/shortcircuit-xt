@@ -294,6 +294,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         static constexpr int maxVoiceCount{maxVoices};
         using voice_t = voice::Voice;
+
+        struct ContinuationData
+        {
+            uint8_t key{60};
+            float pitch{0.f};
+        };
+        using continuationData_t = ContinuationData;
     };
     struct VoiceManagerResponder
     {
@@ -358,6 +365,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
         void setNoteExpression(voice::Voice *v, int32_t expression, double value);
         void setPolyphonicAftertouch(voice::Voice *v, int8_t pat);
+
+        VMConfig::ContinuationData getContinuationData(voice::Voice *v);
 
       private:
         bool transactionValid{false};
