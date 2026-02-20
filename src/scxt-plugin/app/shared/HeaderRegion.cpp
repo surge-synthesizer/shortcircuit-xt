@@ -261,11 +261,8 @@ void HeaderRegion::resized()
     auto b = getBounds().reduced(6);
     selectedPage->setBounds(b.withWidth(196));
 
-    if (hasFeature::undoRedo)
-    {
-        undoButton->setBounds(b.withTrimmedLeft(246).withWidth(48));
-        redoButton->setBounds(b.withTrimmedLeft(246 + 50).withWidth(48));
-    }
+    undoButton->setBounds(b.withTrimmedLeft(246).withWidth(48));
+    redoButton->setBounds(b.withTrimmedLeft(246 + 50).withWidth(48));
 
     tuningButton->setBounds(b.withTrimmedLeft(823).withWidth(48));
     omniButton->setBounds(b.withTrimmedLeft(823 + 50).withWidth(48));
