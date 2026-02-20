@@ -150,7 +150,7 @@ struct ModulatorStorage
         LFO_ENV,
 
         MSEG, // for a variety of reasons, if this isn't last some menus and stuff will be wonky.
-    } modulatorShape{ModulatorShape::STEP};
+    } modulatorShape{ModulatorShape::LFO_SINE};
     DECLARE_ENUM_STRING(ModulatorShape);
 
     // These enum values are streamed. Do not change them.
