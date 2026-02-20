@@ -1743,19 +1743,16 @@ void LfoPane::showModulatorShapeMenu()
     auto p = juce::PopupMenu();
     p.addSectionHeader("Modulator Shapes");
     p.addSeparator();
+    p.addItem("Sine", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SINE));
+    p.addItem("Triangle", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_PULSE, 1.0));
+    p.addItem("Saw",
+              makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SAW_TRI_RAMP, -1.0));
+    p.addItem("Pulse", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_PULSE));
+    p.addItem("Smooth Noise",
+              makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SMOOTH_NOISE));
+    p.addItem("S&H Noise", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SH_NOISE));
     p.addItem("Step Sequencer", makeInit(modulation::ModulatorStorage::ModulatorShape::STEP));
     p.addItem("Envelope", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_ENV));
-    auto c = juce::PopupMenu();
-    c.addItem("Sine", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SINE));
-    c.addItem("Saw", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SAW_TRI_RAMP, 1.0));
-    c.addItem("Ramp",
-              makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SAW_TRI_RAMP, -1.0));
-    c.addItem("Pulse", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_PULSE));
-    c.addItem("Tri", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_PULSE, 1.0));
-    c.addItem("Smooth Noise",
-              makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SMOOTH_NOISE));
-    c.addItem("S&H Noise", makeInit(modulation::ModulatorStorage::ModulatorShape::LFO_SH_NOISE));
-    p.addSubMenu("Curves", c);
     p.addSeparator();
     p.addItem("Factory Presets", editor->makeComingSoon("Factory LFO Presets"));
     p.addItem("User Presets", editor->makeComingSoon("Factory LFO Presets"));
