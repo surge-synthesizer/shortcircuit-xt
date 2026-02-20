@@ -238,12 +238,10 @@ void GroupSettingsCard::rebuildFromInfo()
         }
     }
 
-    bool isLegato =
-        (info.vmPlayModeInt == (int32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES) &&
-        (info.vmPlayModeFeaturesInt &
-         (int32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::MONO_LEGATO);
-    glideDrag->setEnabled(isLegato);
-    glideMenu->setEnabled(isLegato);
+    bool isMono =
+        (info.vmPlayModeInt == (int32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES);
+    glideDrag->setEnabled(isMono);
+    glideMenu->setEnabled(isMono);
     glideMenu->setLabel(info.glideRateMode == engine::Group::CONSTANT_RATE ? "RATE" : "TIME");
 
     repaint();

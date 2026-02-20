@@ -103,6 +103,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             outIdx++;
             continue;
         }
+
         const auto &[path, variantIndex] = voiceCreationWorkingBuffer[idx];
         auto &z = engine.zoneByPath(path);
         auto key = inkey + z->parentGroup->parentPart->configuration.transpose +
@@ -117,9 +118,16 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             {
                 v->velocity = velocity;
                 v->originalMidiKey = key;
+
                 v->attack();
+
+                if (voiceInstructionBuffer[idx].fromPlayingVoice)
+                {
+                    v->startGlideFrom(voiceInstructionBuffer[idx].continuationData.pitch);
+                }
                 actualCreated++;
             }
+
             voiceInitWorkingBuffer[outIdx].voice = v;
             outIdx++;
             SCLOG_IF(voiceResponder, "-- Created single voice for single zone ("
@@ -249,6 +257,23 @@ void Engine::VoiceManagerResponder::setNoteExpression(voice::Voice *v, int32_t e
 void Engine::VoiceManagerResponder::setPolyphonicAftertouch(voice::Voice *v, int8_t pat)
 {
     v->polyAT = pat * 1.0 / 127.0;
+}
+
+Engine::VMConfig::ContinuationData
+Engine::VoiceManagerResponder::getContinuationData(voice::Voice *v)
+{
+    VMConfig::ContinuationData cd;
+    cd.key = v->key;
+    if (v->isVoicePlaying)
+    {
+        cd.pitch = v->calculateVoicePitch();
+    }
+    else
+    {
+        cd.pitch = (float)v->key;
+    }
+    SCLOG_IF(voiceResponder, "Generating continuation data for " << cd.pitch);
+    return cd;
 }
 
 void Engine::VoiceManagerResponder::terminateVoice(voice::Voice *v)

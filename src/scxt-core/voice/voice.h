@@ -110,6 +110,16 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         inGlide = true;
     }
 
+    void startGlideFrom(float pitch)
+    {
+        inGlide = false;
+        auto p = calculateVoicePitch();
+        auto diff = pitch - p;
+        glideSemitones = diff;
+        glideProgress = 0.f;
+        inGlide = true;
+    }
+
     // Advance glide state and return the pitch offset to apply
     float updateGlide()
     {
