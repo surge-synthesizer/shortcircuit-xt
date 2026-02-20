@@ -292,6 +292,7 @@ void Engine::VoiceManagerResponder::moveVoice(VMConfig::voice_t *v, uint16_t por
                                               uint16_t key, float vel)
 {
     auto dkey = v->key - v->originalMidiKey;
+    v->initiateGlide(key);
     v->key = key;
     v->originalMidiKey = key - dkey;
     v->keyChangedInLegatoModeTrigger = 1.f;
@@ -302,6 +303,7 @@ void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, 
                                                           uint16_t channel, uint16_t key, float vel)
 {
     auto dkey = v->key - v->originalMidiKey;
+    v->initiateGlide(key);
     v->key = key;
     v->originalMidiKey = key - dkey;
     v->calculateVoicePitch();

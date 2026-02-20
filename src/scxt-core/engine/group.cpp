@@ -789,5 +789,27 @@ void Group::resetPolyAndPlaymode(engine::Engine &e)
     }
 }
 
+std::string Group::toStringGlideRateMode(const GlideRateMode &m)
+{
+    switch (m)
+    {
+    case CONSTANT_RATE:
+        return "rate";
+    case CONSTANT_TIME:
+        return "time";
+    }
+    return "time";
+}
+
+Group::GlideRateMode Group::fromStringGlideRateMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Group::GlideRateMode, Group::toStringGlideRateMode>(
+        Group::GlideRateMode::CONSTANT_TIME, Group::GlideRateMode::CONSTANT_RATE);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return CONSTANT_TIME;
+    return p->second;
+}
+
 template struct HasGroupZoneProcessors<Group>;
 } // namespace scxt::engine

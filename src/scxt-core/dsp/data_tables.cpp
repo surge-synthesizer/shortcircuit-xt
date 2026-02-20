@@ -37,4 +37,5 @@ DbTable dbTable;
 TwoToTheXTable twoToTheXTable;
 PmSineTable pmSineTable{false};
 SimpleSineTable simpleSineTable;
+TwentyFiveSecondExpTable twentyFiveSecondExpTable;
 } // namespace scxt::dsp

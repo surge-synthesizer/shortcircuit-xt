@@ -37,6 +37,7 @@
 #include "sst/basic-blocks/tables/TwoToTheXProvider.h"
 #include "sst/basic-blocks/tables/SixSinesWaveProvider.h"
 #include "sst/basic-blocks/tables/SimpleSineProvider.h"
+#include "sst/basic-blocks/tables/ExpTimeProvider.h"
 #include "resampling.h"
 
 namespace scxt::dsp
@@ -63,6 +64,9 @@ extern PmSineTable pmSineTable;
 // for the voice flanger LFO
 using SimpleSineTable = sst::basic_blocks::tables::SimpleSineProvider;
 extern SimpleSineTable simpleSineTable;
+
+using TwentyFiveSecondExpTable = sst::basic_blocks::tables::TwentyFiveSecondExpTable;
+extern TwentyFiveSecondExpTable twentyFiveSecondExpTable;
 } // namespace scxt::dsp
 
 #endif // SCXT_SRC_SCXT_CORE_DSP_DATA_TABLES_H

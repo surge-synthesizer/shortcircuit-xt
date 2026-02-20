@@ -75,6 +75,13 @@ struct Group : MoveableOnly<Group>,
     std::string name{};
     Part *parentPart{nullptr};
 
+    enum GlideRateMode : int32_t
+    {
+        CONSTANT_TIME = 0,
+        CONSTANT_RATE
+    };
+    DECLARE_ENUM_STRING(GlideRateMode);
+
     struct GroupOutputInfo
     {
         float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f}, tuning{0.f};
@@ -99,6 +106,9 @@ struct Group : MoveableOnly<Group>,
         int16_t pbUp{2}, pbDown{2};
 
         int16_t midiChannel{-1}; // -1 means "Follow Part"
+
+        float glideTime{0.f}; // portamento glide time as 0..1 param for 25-second exp scale
+        GlideRateMode glideRateMode{CONSTANT_TIME};
     } outputInfo;
 
     GroupTriggerConditions triggerConditions;
@@ -344,6 +354,7 @@ SC_DESCRIBE(
                           }));
     SC_FIELD(oversample, pmd().asBool().withName("Oversample"));
     SC_FIELD(velocitySensitivity,
-             pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));)
+             pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));
+    SC_FIELD(glideTime, pmd().as25SecondExpTime().withDefault(0.f).withName("Glide Time"));)
 
 #endif
