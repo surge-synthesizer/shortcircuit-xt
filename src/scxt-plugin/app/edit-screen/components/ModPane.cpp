@@ -383,9 +383,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
         sl += vl;
 
-        std::vector<jcmp::ToolTip::Row> rows;
         auto lineOne = sl + " " + u8"\U00002192" + " " + tl;
-        rows.push_back(jcmp::ToolTip::Row(lineOne));
 
         auto &epo = parent->routingTable.routes[index].extraPayload;
         if (!epo.has_value())

@@ -306,11 +306,11 @@ void ProcessorPane::layoutControlsEQNBandParm()
         ms->setBounds(cols[0].withHeight(50).withWidth(cols[0].getWidth() / 2));
         otherEditors.push_back(std::move(ms));
     }
-    std::vector<std::string> lab = {"Gain", "Freq", "BW"};
+    auto lab = std::array{"Gain", "Freq", "BW"};
     for (int i = 0; i < 3 * eqdisp->nBands; ++i)
     {
-        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i],
-                                                 lab[i % 3] + " " + std::to_string(i / 3 + 1));
+        floatEditors[i] = createWidgetAttachedTo(
+            floatAttachments[i], std::string(lab[i % 3]) + " " + std::to_string(i / 3 + 1));
         auto orig = floatAttachments[i]->onGuiValueChanged;
         floatAttachments[i]->onGuiValueChanged =
             [orig, w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
@@ -391,10 +391,11 @@ void ProcessorPane::layoutControlsEQMorph()
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
 
-    std::vector<std::string> lab{"Morph", "Freq1", "Freq2", "Gain", "BW"};
+    auto lab = std::array{"Morph", "Freq1", "Freq2", "Gain", "BW"};
     auto cols = lo::columns(presets.translated(0, 18).withHeight(38), 5);
 
-    for (int i = 0; i < 5; ++i)
+    static_assert(lab.size() < maxProcessorFloatParams);
+    for (int i = 0; i < lab.size(); ++i)
     {
         floatEditors[i] = createWidgetAttachedTo(floatAttachments[i], lab[i]);
         floatAttachments[i]->andThenOnGui(thenRecalc);

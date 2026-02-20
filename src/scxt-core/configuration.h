@@ -113,8 +113,8 @@ static constexpr bool ringout{false};
 static constexpr bool streaming{false};
 static constexpr bool sqlDb{false};
 static constexpr bool groupTrigggers{false};
-static constexpr bool zoneLayout{true};
-static constexpr bool undoRedo{true};
+static constexpr bool zoneLayout{false};
+static constexpr bool undoRedo{false};
 
 static constexpr bool patchIO{false};
 static constexpr bool jsonUI{false};
@@ -143,7 +143,6 @@ namespace hasFeature
  */
 static constexpr bool geometryChangesAdjustFade{false};
 
-static constexpr bool undoRedo{false};               // undo-redo
 static constexpr bool memoryUsageExplanation{false}; // that chip in the header
 static constexpr bool mappingPane11Controls{false};  // zone mapping header skipped for 1.0
 static constexpr bool hasBrowserSearch{false};
