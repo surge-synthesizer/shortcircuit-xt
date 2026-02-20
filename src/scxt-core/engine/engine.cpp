@@ -87,6 +87,7 @@ Engine::Engine()
     dsp::sincTable.init();
     dsp::dbTable.init();
     dsp::twoToTheXTable.init();
+    dsp::twentyFiveSecondExpTable.init();
     tuning::equalTuning.init();
 
     sampleManager = std::make_unique<sample::SampleManager>(messageController->threadingChecker);

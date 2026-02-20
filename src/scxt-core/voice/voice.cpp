@@ -1067,6 +1067,9 @@ float Voice::calculateVoicePitch()
     }
 
     keytrackPerOct = (key + pitchTuned - zone->mapping.rootKey) / 12.0;
+
+    pitchUntuned += updateGlide();
+
     return pitchTuned + pitchUntuned;
 }
 

@@ -89,6 +89,62 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     float keyChangedInLegatoModeTrigger{0.f};
 
+    float glideSemitones{0.f};
+    float glideProgress{0.f};
+    bool inGlide{false};
+
+    void initiateGlide(uint8_t newKey)
+    {
+        auto glideTime = zone->parentGroup->outputInfo.glideTime;
+        if (glideTime <= 0.f)
+        {
+            inGlide = false;
+            glideSemitones = 0.f;
+            glideProgress = 0.f;
+            return;
+        }
+        // If already gliding, start from the current sounding pitch, not the target key
+        float currentOffset = inGlide ? glideSemitones * (1.f - glideProgress) : 0.f;
+        glideSemitones = (float)key + currentOffset - (float)newKey;
+        glideProgress = 0.f;
+        inGlide = true;
+    }
+
+    // Advance glide state and return the pitch offset to apply
+    float updateGlide()
+    {
+        if (!inGlide)
+            return 0.f;
+
+        auto glideTime = zone->parentGroup->outputInfo.glideTime;
+        if (glideTime > 0.f)
+        {
+            auto rate = dsp::twentyFiveSecondExpTable.lookupRate(glideTime, dsp::twoToTheXTable);
+
+            // In constant rate mode, scale rate by interval so larger intervals take longer
+            if (zone->parentGroup->outputInfo.glideRateMode == engine::Group::CONSTANT_RATE)
+            {
+                auto semis = std::fabs(glideSemitones);
+                if (semis > 0.f)
+                    rate /= (semis / 12.f);
+            }
+
+            float glideIncrement = blockSize * sampleRateInv * rate;
+            glideProgress += glideIncrement;
+            if (glideProgress >= 1.f)
+            {
+                glideProgress = 1.f;
+                inGlide = false;
+            }
+            return glideSemitones * (1.f - glideProgress);
+        }
+        else
+        {
+            inGlide = false;
+            return 0.f;
+        }
+    }
+
     float retuningForKeyAtAttack{0.f};
     bool retuneContinuous{true};
 

@@ -99,8 +99,14 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     addAndMakeVisible(*prioMenu);
 
     glideGlpyh = mkg(jcmp::GlyphPainter::GlyphType::CURVE);
-    glideMenu = mkm("RATE", "Glide Mode");
-    glideDrag = mkd('gdrg', "Glide");
+    glideMenu = std::make_unique<jcmp::TextPushButton>();
+    glideMenu->setLabel("TIME");
+    glideMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showGlideRateModeMenu();
+    });
+    addAndMakeVisible(*glideMenu);
+    fac::attachAndAdd(info, info.glideTime, this, glideAttachment, glideDrag);
 
     volGlyph = mkg(jcmp::GlyphPainter::GlyphType::VOLUME);
     fac::attachAndAdd(info, info.amplitude, this, volAttachment, volDrag);
@@ -172,7 +178,7 @@ void GroupSettingsCard::resized()
     spair(prioGlyph, prioMenu);
     r = r.translated(0, rowHeight);
     spair(glideGlpyh, glideMenu);
-    glideDrag->setBounds(r.translated(r.getWidth() + 2, 0).withTrimmedRight(componentHeight + 2));
+    glideDrag->setBounds(r.translated(r.getWidth() + 2, 0));
 
     auto ospair = [&osr, componentHeight](auto &g, auto &m) {
         g->setBounds(osr.withWidth(componentHeight));
@@ -231,6 +237,14 @@ void GroupSettingsCard::rebuildFromInfo()
             midiMenu->setLabel(std::to_string(info.midiChannel + 1));
         }
     }
+
+    bool isLegato =
+        (info.vmPlayModeInt == (int32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES) &&
+        (info.vmPlayModeFeaturesInt &
+         (int32_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::MONO_LEGATO);
+    glideDrag->setEnabled(isLegato);
+    glideMenu->setEnabled(isLegato);
+    glideMenu->setLabel(info.glideRateMode == engine::Group::CONSTANT_RATE ? "RATE" : "TIME");
 
     repaint();
 }
@@ -401,6 +415,32 @@ void GroupSettingsCard::showNotePrioMenu()
             w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
         });
 
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void GroupSettingsCard::showGlideRateModeMenu()
+{
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Glide Rate Mode");
+    p.addSeparator();
+    p.addItem("Time", true, info.glideRateMode == engine::Group::CONSTANT_TIME,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  w->info.glideRateMode = engine::Group::CONSTANT_TIME;
+                  w->rebuildFromInfo();
+                  w->sendToSerialization(
+                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+              });
+    p.addItem("Rate", true, info.glideRateMode == engine::Group::CONSTANT_RATE,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  w->info.glideRateMode = engine::Group::CONSTANT_RATE;
+                  w->rebuildFromInfo();
+                  w->sendToSerialization(
+                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+              });
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 

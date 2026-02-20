@@ -405,6 +405,9 @@ inline uint64_t groupInfoPlayModeFeatureFrom(const std::string &x)
 }
 #undef PMTS
 
+STREAM_ENUM(engine::Group::GlideRateMode, engine::Group::toStringGlideRateMode,
+            engine::Group::fromStringGlideRateMode);
+
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},
                       {"pan", t.pan},
@@ -423,7 +426,9 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"pbu", t.pbUp},
                       {"pbd", t.pbDown},
                       {"vpm", groupInfoPlayModeTo(t.vmPlayModeInt)},
-                      {"vpf", groupInfoPlayModeFeatureTo(t.vmPlayModeFeaturesInt)}};
+                      {"vpf", groupInfoPlayModeFeatureTo(t.vmPlayModeFeaturesInt)},
+                      {"glt", t.glideTime},
+                      {"grm", t.glideRateMode}};
              }),
              SC_TO({
                  findIf(v, "amplitude", result.amplitude);
@@ -450,6 +455,8 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  result.vmPlayModeInt = groupInfoPlayModeFrom(tmp);
                  findIf(v, "vpf", tmp);
                  result.vmPlayModeFeaturesInt = groupInfoPlayModeFeatureFrom(tmp);
+                 findOrSet(v, "glt", 0.f, result.glideTime);
+                 findIf(v, "grm", result.glideRateMode);
              }));
 
 SC_STREAMDEF(scxt::engine::Group, SC_FROM({

@@ -65,7 +65,7 @@ struct GroupSettingsCard : juce::Component, HasEditor
     typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo, int16_t>
         iattachment_t;
 
-    std::unique_ptr<attachment_t> volAttachment, panAttachment, tuneAttachment;
+    std::unique_ptr<attachment_t> volAttachment, panAttachment, tuneAttachment, glideAttachment;
     std::unique_ptr<iattachment_t> pbDnA, pbUpA;
 
     engine::Group::GroupOutputInfo &info;
@@ -74,6 +74,7 @@ struct GroupSettingsCard : juce::Component, HasEditor
     void showPolyModeMenu();
     void showNotePrioMenu();
     void showMidiChannelMenu();
+    void showGlideRateModeMenu();
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // GROUPSETTINGSCARD_H
