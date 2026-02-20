@@ -1,128 +1,128 @@
 {
-  "include": "voicefx-layouts/voicefx-classes.json",
-  "controls": {
-    "hamburger-stereo": {
-      "class": "hamburger-stereo",
-      "binding": {
-        "type": "int",
-        "index": 0
-      },
-      "position": {}
-    },
-    "frequency-m": {
-      "class": "knob40",
-      "label": "Cutoff",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 8,
-        "y": 38
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          0
-        ]
-      }
-    },
-    "frequency-l": {
-      "class": "knob40",
-      "label": "Cutoff L",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 8,
-        "y": 8
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          1
-        ]
-      }
-    },
-    "frequency-r": {
-      "class": "knob40",
-      "label": "Cutoff R",
-      "binding": {
-        "type": "float",
-        "index": 1
-      },
-      "position": {
-        "x": 10,
-        "y": 65
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          1
-        ]
-      }
-    },
-    "fm-depth": {
-      "class": "knob60",
-      "label": "FM Depth",
-      "binding": {
-        "type": "float",
-        "index": 2
-      },
-      "position": {
-        "x": 75,
-        "y": 25
-      }
-    },
-    "resonance": {
-      "class": "knob40",
-      "label": "Reso",
-      "binding": {
-        "type": "float",
-        "index": 3
-      },
-      "position": {
-        "x": 160,
-        "y": 8
-      }
-    },
-    "mod-freq": {
-      "class": "knob40",
-      "label": "Mod Tune",
-      "binding": {
-        "type": "float",
-        "index": 4
-      },
-      "position": {
-        "x": 160,
-        "y": 65
-      }
-    },
-    "filter-header": {
-      "class": "ruled-label",
-      "label": "Filter",
-      "position": {
-        "x": 78,
-        "y": 106,
-        "w": 60,
-        "h": 15
-      }
-    },
-    "filter-mode": {
-      "class": "jog-updown",
-      "binding": {
-        "type": "int",
-        "index": 1
-      },
-      "position": {
-        "x": 64,
-        "y": 124,
-        "w": 88
-      }
+    "include": "voicefx-layouts/voicefx-classes.json",
+    "controls": {
+        "hamburger-stereo": {
+            "class": "hamburger-stereo",
+            "binding": {
+                "type": "int",
+                "index": 0
+            },
+            "position": {}
+        },
+        "frequency-m": {
+            "class": "knob40",
+            "label": "Cutoff",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 8,
+                "y": 38
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 0,
+                "values": [
+                    0
+                ]
+            }
+        },
+        "frequency-l": {
+            "class": "knob40",
+            "label": "Cutoff L",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 8,
+                "y": 8
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 0,
+                "values": [
+                    1
+                ]
+            }
+        },
+        "frequency-r": {
+            "class": "knob40",
+            "label": "Cutoff R",
+            "binding": {
+                "type": "float",
+                "index": 1
+            },
+            "position": {
+                "x": 10,
+                "y": 65
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 0,
+                "values": [
+                    1
+                ]
+            }
+        },
+        "fm-depth": {
+            "class": "knob60",
+            "label": "FM Depth",
+            "binding": {
+                "type": "float",
+                "index": 2
+            },
+            "position": {
+                "x": 75,
+                "y": 25
+            }
+        },
+        "resonance": {
+            "class": "knob40",
+            "label": "Resonance",
+            "binding": {
+                "type": "float",
+                "index": 3
+            },
+            "position": {
+                "x": 160,
+                "y": 8
+            }
+        },
+        "mod-freq": {
+            "class": "knob40",
+            "label": "Mod Tune",
+            "binding": {
+                "type": "float",
+                "index": 4
+            },
+            "position": {
+                "x": 160,
+                "y": 65
+            }
+        },
+        "filter-header": {
+            "class": "ruled-label",
+            "label": "Filter",
+            "position": {
+                "x": 78,
+                "y": 106,
+                "w": 60,
+                "h": 15
+            }
+        },
+        "filter-mode": {
+            "class": "jog-updown",
+            "binding": {
+                "type": "int",
+                "index": 1
+            },
+            "position": {
+                "x": 64,
+                "y": 124,
+                "w": 88
+            }
+        }
     }
-  }
 }
