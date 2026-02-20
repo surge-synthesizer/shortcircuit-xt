@@ -40,15 +40,20 @@ namespace scxt::messaging::client
 typedef std::pair<std::string, std::string> s2cError_t;
 SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 
-inline void raiseDebugError(MessageController &c)
+inline void raiseDebugError(MessageController &c, int count)
 {
-    c.reportErrorToClient("A Dummy Error",
-                          "This is a dummy error. I chose to have it have "
-                          "a very long message like this one so I can test multiline "
-                          "string rendering in the error box. So this one has details like "
-                          "this and that");
+    for (int i = 0; i < count; ++i)
+    {
+        c.reportErrorToClient("A Dummy Error " + std::to_string(i),
+                              "This is a dummy error " + std::to_string(i) +
+                                  ". I chose to have it have "
+                                  "a very long message like this one so I can test multiline "
+                                  "string rendering in the error box. So this one has details "
+                                  "like "
+                                  "this and that");
+    }
 }
-CLIENT_TO_SERIAL(RaiseDebugError, c2s_raise_debug_error, bool, raiseDebugError(cont))
+CLIENT_TO_SERIAL(RaiseDebugError, c2s_raise_debug_error, int, raiseDebugError(cont, payload))
 
 // note, 0...1 velocity, onoff
 typedef std::tuple<int32_t, float, bool> noteOnOff_t;

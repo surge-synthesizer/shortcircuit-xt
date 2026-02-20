@@ -184,10 +184,15 @@ void SCXTEditor::showMainMenu()
             "Dummy OK Cancel", "This is the dummy OK Cancel Message",
             []() { SCLOG_IF(always, "OK Pressed"); }, []() { SCLOG_IF(always, "Cancel Pressed"); });
     });
-    devpm.addItem("Raise Dummy Error", [w = juce::Component::SafePointer(this)]() {
+    devpm.addItem("Raise Dummy Error (1)", [w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
-        w->sendToSerialization(cmsg::RaiseDebugError{true});
+        w->sendToSerialization(cmsg::RaiseDebugError{1});
+    });
+    devpm.addItem("Raise Dummy Error (4)", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(cmsg::RaiseDebugError{4});
     });
     devpm.addSeparator();
     devpm.addItem("Sweep keys (30ms)", [w = juce::Component::SafePointer(this)]() {
