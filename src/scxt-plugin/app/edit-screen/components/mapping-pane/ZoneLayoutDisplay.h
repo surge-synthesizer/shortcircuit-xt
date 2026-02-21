@@ -128,16 +128,41 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         lastSelectedZone.clear();
         lastSelectedZone.push_back(r);
 
+        static constexpr int zoneSize{8};
+
         // if you change the population order here also change the from settings in mouseDown
-        auto side = r.withWidth(8).translated(0, -2).withTrimmedTop(10).withTrimmedBottom(10);
+        auto side = r.withWidth(0);
+        auto side2 = side.translated(r.getWidth(), 0);
+        side = side.expanded(zoneSize / 2, 0).translated(-zoneSize / 4, 0);
+        side2 = side2.expanded(zoneSize / 2, 0).translated(zoneSize / 4, 0);
+
+        if (side2.getX() < side.getRight())
+        {
+            auto overlap = side2.getRight() - side.getRight();
+            auto sh = overlap / 2 + 1;
+            side = side.translated(-sh, 0);
+            side2 = side2.translated(sh, 0);
+        }
+
         keyboardHotZones.clear();
         keyboardHotZones.push_back(side);
-        keyboardHotZones.push_back(side.translated(r.getWidth() - 6, 0));
+        keyboardHotZones.push_back(side2);
 
-        auto top = r.withHeight(8).translated(-2, 0).withTrimmedLeft(10).withTrimmedRight(10);
+        auto top = r.withHeight(0);
+        auto bot = top.translated(0, r.getHeight());
+        top = top.expanded(0, zoneSize / 2).translated(0, -zoneSize / 4);
+        bot = bot.expanded(0, zoneSize / 2).translated(0, zoneSize / 4);
+
+        if (bot.getY() < top.getBottom())
+        {
+            auto overlap = bot.getY() - top.getBottom();
+            auto sh = overlap / 2 + 1;
+            top = top.translated(0, -sh);
+            bot = bot.translated(0, sh);
+        }
         velocityHotZones.clear();
         velocityHotZones.push_back(top);
-        velocityHotZones.push_back(top.translated(0, r.getHeight() - 6));
+        velocityHotZones.push_back(bot);
 
         auto corner = r.withWidth(10).withHeight(10).translated(-2, -2);
         // This order matters both in mouse cursor above and from-setting in the cpp
