@@ -67,7 +67,13 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                       {"svA", t.svA},
                       {"svB", t.svB},
                       {"svC", t.svC},
-                      {"svD", t.svD}};
+                      {"svD", t.svD},
+                      {"asw", (int)t.alternateScaleWhen},
+                      {"asc", t.alternateScaleCutoff},
+                      {"asr", t.alternateScaleRescaling},
+                      {"asu", t.alternateScaleUnits},
+                      {"asd", t.alternateScaleIsDefaultFromString},
+                      {"asdp", t.alternateScaleDecimalPlaces}};
              }),
              SC_TO({
                  findEnumIf(v, "t", to.type);
@@ -99,6 +105,13 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                  findIf(v, "svB", to.svB);
                  findIf(v, "svC", to.svC);
                  findIf(v, "svD", to.svD);
+
+                 findEnumIf(v, "asw", to.alternateScaleWhen);
+                 findIf(v, "asc", to.alternateScaleCutoff);
+                 findIf(v, "asr", to.alternateScaleRescaling);
+                 findIf(v, "asu", to.alternateScaleUnits);
+                 findIf(v, "asd", to.alternateScaleIsDefaultFromString);
+                 findIf(v, "asdp", to.alternateScaleDecimalPlaces);
              }));
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_DATAMODEL_TRAITS_H
