@@ -230,19 +230,21 @@ struct MatrixEndpoints
     struct SampleTarget
     {
         SampleTarget(engine::Engine *e)
-            : startPosT('samp', 'spos', 0), playSampleT('samp', 'plsm', 0)
+            : startPosT('samp', 'spos', 0), playSampleT('samp', 'plsm', 0),
+              sampleTuneT('samp', 'tune', 0)
         {
             registerVoiceModTarget(e, startPosT, "Sample", "Start Pos");
             registerVoiceModTarget(e, playSampleT, "Sample", "Play Sample (Gate)");
+            registerVoiceModTarget(e, sampleTuneT, "Sample", "Tune");
         }
         void bind(Matrix &m, engine::Zone &z);
 
-        TG startPosT, playSampleT;
+        TG startPosT, playSampleT, sampleTuneT;
 
-        const float *startPosP{nullptr}, *playSampleP{nullptr};
+        const float *startPosP{nullptr}, *playSampleP{nullptr}, *sampleTuneP{nullptr};
 
         float zeroBase{0.f}; // this is a base zero value for things which are not in the mod map
-        float oneBase{1.f};  // and this is for gates with a separte unmod value
+        float oneBase{1.f};  // and this is for gates with a separate unmod value
     } sampleTarget;
 
     struct Sources
