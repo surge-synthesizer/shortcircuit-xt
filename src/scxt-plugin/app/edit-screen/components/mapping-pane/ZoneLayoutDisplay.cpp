@@ -964,6 +964,30 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             g.drawRect(r, 2);
         }
     }
+
+    static constexpr bool debugHotzones{false};
+    if (debugHotzones)
+    {
+        int idx{0};
+        for (const auto &h : {keyboardHotZones, velocityHotZones, bothHotZones})
+        {
+            g.setColour(juce::Colours::red);
+            switch (idx)
+            {
+            case 1:
+                g.setColour(juce::Colours::blue);
+                break;
+            case 2:
+                g.setColour(juce::Colours::green);
+                break;
+            }
+            idx++;
+            for (auto &z : h)
+            {
+                g.fillRect(z);
+            }
+        }
+    }
 }
 
 void ZoneLayoutDisplay::resized() {}
