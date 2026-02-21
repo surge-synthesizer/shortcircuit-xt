@@ -81,7 +81,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float velocity{1.f};
     float releaseVelocity{0.f};
     float velKeyFade{1.f};
-    float keytrackPerOct{0.f}; // resolvee key - pitch cnter / 12
+    float keytrackPerOct{0.f}; // resolve key - pitch center / 12
     float polyAT{0.f};
     float mpePitchBend{0.f}; // in semis
     float mpeTimbre{0.f};    // 0..1 normalized

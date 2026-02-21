@@ -95,6 +95,8 @@ void MatrixEndpoints::SampleTarget::bind(Matrix &m, engine::Zone &z)
     // need a bindEl with an extra nonmod default value
     shmo::bindEl(m, mt, playSampleT, zeroBase, oneBase, playSampleP,
                  datamodel::pmd().asBool().withName("Sample Playing Gate"));
+    shmo::bindEl(m, mt, sampleTuneT, zeroBase, sampleTuneP,
+                 datamodel::pmd().asSemitoneRange().withName("Sample Tune").withDefault(0.0));
 }
 
 void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)

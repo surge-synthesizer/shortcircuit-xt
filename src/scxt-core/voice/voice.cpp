@@ -330,7 +330,7 @@ template <bool OS> bool Voice::processWithOS()
                                     *aegp.asP, *aegp.dsP, *aegp.rsP, aegGate, true);
     }
 
-    // But We need to run the undersample AEG no matter what since it is a modulatino source
+    // But We need to run the undersample AEG no matter what since it is a modulation source
     if (rtaeg)
     {
         aeg.attackFromWithDelay(aeg.outBlock0, *aegp.dlyP, *aegp.aP);
@@ -410,7 +410,8 @@ template <bool OS> bool Voice::processWithOS()
                 assert(i < zone->samplePointers.size());
                 if (zone->samplePointers[i])
                 {
-                    calculateGeneratorRatio(fpitch, i, i - firstIndex);
+                    calculateGeneratorRatio(fpitch + *endpoints->sampleTarget.sampleTuneP, i,
+                                            i - firstIndex);
                 }
             }
         }
