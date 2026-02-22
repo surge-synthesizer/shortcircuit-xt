@@ -144,6 +144,7 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     lfoSources.bind(m, v, zeroSource);
     glfoSources.bind(m, *(z.parentGroup), zeroSource);
     midiCCSources.bind(m, *(z.parentGroup->parentPart));
+    keyAndPitchSources.bind(m, v);
 
     for (int i = 0; i < egsPerZone; ++i)
         m.bindSourceValue(egSources[i], v.eg[i].outBlock0);
@@ -153,7 +154,6 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(midiSources.pbpm1Source, z.parentGroup->parentPart->pitchBendValue);
     m.bindSourceValue(midiSources.velocitySource, v.velocity);
     m.bindSourceValue(midiSources.releaseVelocitySource, v.releaseVelocity);
-    m.bindSourceValue(midiSources.keytrackSource, v.keytrackPerOct);
     m.bindSourceValue(midiSources.polyATSource, v.polyAT);
     m.bindSourceValue(midiSources.keyChangedLeg, v.keyChangedInLegatoModeTrigger);
 
@@ -430,5 +430,16 @@ MatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
             [i](auto &zone, auto &s) { return zone.parentGroup->parentPart->macros[i].name; });
         MatrixConfig::setDefaultLagFor(macros[i], 25);
     }
+}
+
+void MatrixEndpoints::Sources::KeyAndPitchSources::bind(Matrix &m, voice::Voice &v)
+{
+    m.bindSourceValue(keyTrackSource, v.keyTrackPerOct);
+    m.bindSourceValue(pitchTrackSource, v.pitchTrackPerOct);
+    m.bindSourceValue(midiKeyTrackSource, v.midiKeyTrackPerOct);
+
+    m.bindSourceValue(keySource, v.keyFloat);
+    m.bindSourceValue(pitchSource, v.pitchFloat);
+    m.bindSourceValue(midiKeySource, v.midiKeyFloat);
 }
 } // namespace scxt::voice::modulation

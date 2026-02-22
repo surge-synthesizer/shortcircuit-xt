@@ -76,12 +76,23 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     int16_t channel{0};
     uint8_t key{60};
     int32_t noteId{-1};
+    uint64_t voiceCreationId{0};
     uint8_t originalMidiKey{
         60}; // the actual physical key pressed not the one I resolved to after tuning
     float velocity{1.f};
     float releaseVelocity{0.f};
     float velKeyFade{1.f};
-    float keytrackPerOct{0.f}; // resolve key - pitch center / 12
+
+    // key and pitch values
+    float midiKeyFloat{0.f}; // midi keybed key. Press note 60 it is always 60
+    float keyFloat{0.f};     // retuned midi keybed key in non-equal systems. keyFloat + MTS
+    float pitchFloat{0.f};   // full pitch. Including note expressions, glide, pitch bend.
+
+    // each of the keytracks are above value - root / 12
+    float midiKeyTrackPerOct{0.f};
+    float keyTrackPerOct{0.f};
+    float pitchTrackPerOct{0.f};
+
     float polyAT{0.f};
     float mpePitchBend{0.f}; // in semis
     float mpeTimbre{0.f};    // 0..1 normalized

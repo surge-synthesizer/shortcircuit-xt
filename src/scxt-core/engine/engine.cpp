@@ -225,6 +225,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->channel = path.channel;
             voices[idx]->key = path.key;
             voices[idx]->noteId = path.noteid;
+            voices[idx]->voiceCreationId = nextVoiceCreationId++;
             voices[idx]->setSampleRate(sampleRate, sampleRateInv);
             voices[idx]->endpoints = std::move(mp);
             activeVoices++;
@@ -249,6 +250,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->channel = path.channel;
             voices[idx]->key = path.key;
             voices[idx]->noteId = path.noteid;
+            voices[idx]->voiceCreationId = nextVoiceCreationId++;
             voices[idx]->setSampleRate(sampleRate, sampleRateInv);
             voices[idx]->endpoints = std::move(mp);
             activeVoices++;

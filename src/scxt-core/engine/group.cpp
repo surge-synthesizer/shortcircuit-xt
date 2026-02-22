@@ -84,7 +84,13 @@ void Group::rePrepareAndBindGroupMatrix()
         {
             lfosActive[source.index] = true;
         }
+        if (modulation::GroupMatrixEndpoints::Sources::KeyAndPitchSources::isKeyAndPitchSource(
+                source))
+        {
+            matrixContainsKeyAndPitchSources = true;
+        }
     };
+    matrixContainsKeyAndPitchSources = false;
     for (auto route : routingTable.routes)
     {
         // Inactive or target free routes can be ignored
@@ -158,6 +164,33 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     fAnyGated = (fGatedCount > 0) * 1.f;
     fAnySounding = (fVoiceCount > 0) * 1.f;
+
+    // Compute group-level voice tracking: last/high/low for pitch, key, midiKey
+    if (matrixContainsKeyAndPitchSources)
+    {
+        uint64_t newestCreationId = 0;
+        pitchTrack.clear();
+        keyTrack.clear();
+        float vc = 0.f;
+
+        for (const auto &z : zones)
+        {
+            if (z->activeVoices == 0)
+                continue;
+            for (int i = 0; i < z->activeVoices; ++i)
+            {
+                auto v = z->voiceWeakPointers[i];
+                if (!v)
+                    continue;
+                pitchTrack.push(v->pitchFloat, v->voiceCreationId);
+                keyTrack.push(v->keyFloat, v->voiceCreationId);
+                vc += 1.f;
+            }
+        }
+        pitchTrack.normalize();
+        keyTrack.normalize();
+        voiceCount = vc;
+    }
 
     for (auto i = 0; i < engine::lfosPerGroup; ++i)
     {

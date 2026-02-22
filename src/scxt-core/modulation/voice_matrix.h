@@ -259,7 +259,8 @@ struct MatrixEndpoints
                                                              {'zneg', 'eg3 ', 0},
                                                              {'zneg', 'eg4 ', 0},
                                                              {'zneg', 'eg5 ', 0}}},
-              transportSources(e), rngSources(e), macroSources(e), mpeSources(e), voiceSources(e)
+              transportSources(e), rngSources(e), macroSources(e), mpeSources(e), voiceSources(e),
+              keyAndPitchSources(e)
         {
             registerVoiceModSource(e, egSources[0], "EG", "AEG");
             for (int i = 1; i < egsPerZone; ++i)
@@ -273,19 +274,38 @@ struct MatrixEndpoints
         scxt::modulation::shared::MIDICCBase<MatrixConfig, SR, 'zncc', registerVoiceModSource>
             midiCCSources;
 
+        struct KeyAndPitchSources
+        {
+            KeyAndPitchSources(engine::Engine *e)
+                : keyTrackSource{'zmid', 'ktrk'}, pitchTrackSource{'zkap', 'ptrk'},
+                  keySource{'zkap', 'key '}, pitchSource{'zkap', 'pitc'},
+                  midiKeyTrackSource{'zkap', 'mktk'}, midiKeySource{'zkap', 'mkey'}
+            {
+                registerVoiceModSource(e, keyTrackSource, "KeyTracking", "KeyTrack");
+                registerVoiceModSource(e, pitchTrackSource, "KeyTracking", "KeyTrack+PB+Glide");
+                registerVoiceModSource(e, keySource, "KeyTracking", "Key");
+                registerVoiceModSource(e, pitchSource, "KeyTracking", "Key+PB+Glide");
+
+                // registerVoiceModSource(e, midiKeyTrackSource, "Key and Pitch", "MIDI Keytrack");
+                // registerVoiceModSource(e, midiKeySource, "Key and Pitch", "MIDI Key");
+            }
+            SR keyTrackSource, pitchTrackSource, keySource, pitchSource;
+            SR midiKeyTrackSource, midiKeySource;
+
+            void bind(Matrix &m, voice::Voice &v);
+        } keyAndPitchSources;
+
         struct MIDISources
         {
             MIDISources(engine::Engine *e)
                 : modWheelSource{'zmid', 'modw'}, velocitySource{'zmid', 'velo'},
-                  releaseVelocitySource{'zmid', 'rvel'}, keytrackSource{'zmid', 'ktrk'},
-                  chanATSource{'zmid', 'chat'}, pbpm1Source{'zmid', 'pb11'},
-                  keyChangedLeg{'zmid', 'kclg'}
+                  releaseVelocitySource{'zmid', 'rvel'}, chanATSource{'zmid', 'chat'},
+                  pbpm1Source{'zmid', 'pb11'}, keyChangedLeg{'zmid', 'kclg'}
             {
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 MatrixConfig::setDefaultLagFor(modWheelSource, 25);
                 registerVoiceModSource(e, velocitySource, "MIDI", "Velocity");
                 registerVoiceModSource(e, releaseVelocitySource, "MIDI", "Release Vel");
-                registerVoiceModSource(e, keytrackSource, "MIDI", "KeyTrack");
                 registerVoiceModSource(e, chanATSource, "MIDI", "Channel AT");
                 registerVoiceModSource(e, polyATSource, "MIDI", "Poly AT");
                 MatrixConfig::setDefaultLagFor(polyATSource, 100);
@@ -293,8 +313,8 @@ struct MatrixEndpoints
                 MatrixConfig::setDefaultLagFor(pbpm1Source, 10);
                 registerVoiceModSource(e, keyChangedLeg, "MIDI", "Key Changed");
             }
-            SR modWheelSource, velocitySource, releaseVelocitySource, keytrackSource, polyATSource,
-                chanATSource, pbpm1Source, keyChangedLeg;
+            SR modWheelSource, velocitySource, releaseVelocitySource, polyATSource, chanATSource,
+                pbpm1Source, keyChangedLeg;
         } midiSources;
 
         struct MPESources

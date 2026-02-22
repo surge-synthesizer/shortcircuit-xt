@@ -248,7 +248,8 @@ struct GroupMatrixEndpoints
         Sources(engine::Engine *e)
             : lfoSources(e, "GLFO", "GLFO"), midiCCSources(e),
               egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e),
-              rngSources(e), macroSources(e), subordinateVoiceSources(e), midiSources(e)
+              rngSources(e), macroSources(e), subordinateVoiceSources(e), midiSources(e),
+              keyAndPitchSources(e)
         {
             registerGroupModSource(e, egSource[0], "EG", "EG1");
             registerGroupModSource(e, egSource[1], "EG", "EG2");
@@ -258,6 +259,33 @@ struct GroupMatrixEndpoints
             lfoSources;
         scxt::modulation::shared::MIDICCBase<GroupMatrixConfig, SR, 'gncc', registerGroupModSource>
             midiCCSources;
+
+        struct KeyAndPitchSources
+        {
+            KeyAndPitchSources(engine::Engine *e)
+                : lowPitch{'gkap', 'lpit'}, highPitch{'gkap', 'hpit'}, lastPitch{'gkap', 'apit'},
+                  lowKey{'gkap', 'lkey'}, highKey{'gkap', 'hkey'}, lastKey{'gkap', 'akey'},
+                  lowMidiKey{'gkap', 'lmky'}, highMidiKey{'gkap', 'hmky'},
+                  lastMidiKey{'gkap', 'amky'}, voiceCount{'gkap', 'vcnt'}
+            {
+                registerGroupModSource(e, lowPitch, "KeyTracking", "Low Key+PB+Glide");
+                registerGroupModSource(e, highPitch, "KeyTracking", "High Key+PB+Glide");
+                registerGroupModSource(e, lastPitch, "KeyTracking", "Last Key+PB+Glide");
+                registerGroupModSource(e, lowKey, "KeyTracking", "Low Key");
+                registerGroupModSource(e, highKey, "KeyTracking", "High Key");
+                registerGroupModSource(e, lastKey, "KeyTracking", "Last Key");
+                // registerGroupModSource(e, lowMidiKey, "KeyTracking", "Low MIDI Key");
+                // registerGroupModSource(e, highMidiKey, "KeyTracking", "High MIDI Key");
+                // registerGroupModSource(e, lastMidiKey, "KeyTracking", "Last MIDI Key");
+                registerGroupModSource(e, voiceCount, "KeyTracking", "Voice Count");
+            }
+            SR lowPitch, highPitch, lastPitch, lowKey, highKey, lastKey;
+            SR lowMidiKey, highMidiKey, lastMidiKey, voiceCount;
+
+            void bind(GroupMatrix &m, engine::Group &g);
+
+            static bool isKeyAndPitchSource(const SR &sr) { return sr.gid == 'gkap'; }
+        } keyAndPitchSources;
 
         struct MIDISources
         {
