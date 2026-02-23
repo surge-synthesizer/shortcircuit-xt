@@ -146,6 +146,21 @@ void Zone::removeVoice(voice::Voice *v)
                 mUILag.instantlySnap();
                 parentGroup->removeActiveZone(this);
             }
+
+            // Compact: remove holes so active pointers are contiguous at the front
+            size_t write = 0;
+            for (size_t read = 0; read < voiceWeakPointers.size(); ++read)
+            {
+                if (voiceWeakPointers[read])
+                {
+                    voiceWeakPointers[write++] = voiceWeakPointers[read];
+                }
+            }
+            for (size_t i = write; i < voiceWeakPointers.size(); ++i)
+            {
+                voiceWeakPointers[i] = nullptr;
+            }
+
             return;
         }
     }

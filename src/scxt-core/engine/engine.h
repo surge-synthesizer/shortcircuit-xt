@@ -406,6 +406,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     // TODO: All this gets ripped out when voice management is fixed
     void assertActiveVoiceCount();
     std::atomic<uint32_t> activeVoices{0};
+    uint64_t nextVoiceCreationId{1};
 
     std::unique_ptr<voice::PreviewVoice> previewVoice;
 

@@ -1018,6 +1018,23 @@ void Voice::initializeGenerator()
 
 float Voice::calculateVoicePitch()
 {
+    /*
+     * This function calculates the voice pitch.
+     * It does so in two stages
+     * - pitchTuned is the portion of the voice pitch which is retuned in non-12tet systems
+     * - pitcnUntuned is the portion which is unadjusted and evaluated in 12tet space
+     * Since this returns semitones, when to apply tuning is expressed by the choice of
+     * which to acucmulate onto.
+     *
+     * pitchUntuned contains the root key (so in the no tuning case pressing note 60
+     * will have pitchUntuned == 60 and pitchTuned == 0). pitchTuned is the tuning adjustment
+     * from that key.
+     *
+     * It also updates internal state which has three variables
+     * - midiKeyTrack : actual key - root / 12
+     * - keyTrack : actual key + tuning adjustment - root / 12
+     * - pitchTrack : resulting pitch - root / 12
+     */
     auto pitchTuned{0.f}, pitchUntuned{0.f};
 
     auto pitchWheel = zone->parentGroup->parentPart->pitchBendValue;
@@ -1032,6 +1049,8 @@ float Voice::calculateVoicePitch()
     pitchUntuned += (key - zone->mapping.rootKey) * zone->mapping.tracking + zone->mapping.rootKey;
     pitchUntuned += *endpoints->mappingTarget.pitchOffsetP;
     pitchUntuned += zone->parentGroup->outputInfo.tuning;
+
+    float tuningSystemAdjustment{0};
 
     if (retuneContinuous)
     {
@@ -1055,8 +1074,12 @@ float Voice::calculateVoicePitch()
             pitchUntuned += pitchWheel;
         }
 
-        pitchTuned += zone->getEngine()->midikeyRetuner.retuningForRemappedKeyWithInterpolation(
-            channel, key, originalMidiKey, pitchTuned);
+        tuningSystemAdjustment =
+            zone->getEngine()->midikeyRetuner.retuningForRemappedKeyWithInterpolation(
+                channel, key, originalMidiKey, pitchTuned);
+        pitchTuned += tuningSystemAdjustment;
+        keyFloat = key + tuningSystemAdjustment;
+        keyTrackPerOct = (key + tuningSystemAdjustment - zone->mapping.rootKey) / 12.0;
     }
     else
     {
@@ -1065,11 +1088,16 @@ float Voice::calculateVoicePitch()
         pitchUntuned += pitchWheel;
 
         pitchTuned = retuningForKeyAtAttack;
+        keyFloat = key + retuningForKeyAtAttack;
+        keyTrackPerOct = (key + retuningForKeyAtAttack - zone->mapping.rootKey) / 12.0;
     }
 
-    keytrackPerOct = (key + pitchTuned - zone->mapping.rootKey) / 12.0;
-
     pitchUntuned += updateGlide();
+
+    pitchFloat = pitchTuned + pitchUntuned;
+    pitchTrackPerOct = (pitchFloat - zone->mapping.rootKey) / 12.0;
+    midiKeyTrackPerOct = (key - zone->mapping.rootKey) / 12.0f;
+    midiKeyFloat = (float)key;
 
     return pitchTuned + pitchUntuned;
 }

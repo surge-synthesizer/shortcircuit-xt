@@ -207,6 +207,7 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
 {
     lfoSources.bind(m, g, zeroSource);
     midiCCSources.bind(m, *(g.parentPart));
+    keyAndPitchSources.bind(m, g);
 
     int idx{0};
     auto *part = g.parentPart;
@@ -236,6 +237,18 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
     m.bindSourceValue(subordinateVoiceSources.anyVoiceSounding, g.fAnySounding);
     m.bindSourceValue(subordinateVoiceSources.voiceCount, g.fVoiceCount);
     m.bindSourceValue(subordinateVoiceSources.gatedVoiceCount, g.fGatedCount);
+}
+
+void GroupMatrixEndpoints::Sources::KeyAndPitchSources::bind(GroupMatrix &m, engine::Group &g)
+{
+    m.bindSourceValue(lowPitch, g.pitchTrack.low);
+    m.bindSourceValue(highPitch, g.pitchTrack.high);
+    m.bindSourceValue(lastPitch, g.pitchTrack.last);
+    m.bindSourceValue(lowKey, g.keyTrack.low);
+    m.bindSourceValue(highKey, g.keyTrack.high);
+    m.bindSourceValue(lastKey, g.keyTrack.last);
+
+    m.bindSourceValue(voiceCount, g.voiceCount);
 }
 
 void GroupMatrixEndpoints::registerGroupModTarget(

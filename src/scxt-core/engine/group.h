@@ -249,6 +249,7 @@ struct Group : MoveableOnly<Group>,
     modulation::GroupMatrix::RoutingTable routingTable;
     void onRoutingChanged();
     void rePrepareAndBindGroupMatrix();
+    bool matrixContainsKeyAndPitchSources{false};
 
     inline float envelope_rate_linear_nowrap(float f)
     {
@@ -315,6 +316,46 @@ struct Group : MoveableOnly<Group>,
     bool gated{false};
 
     float fGatedCount{0}, fVoiceCount{0}, fAnyGated{0}, fAnySounding{0};
+
+    // Group-level voice tracking: last/high/low for pitch, key, and MIDI key
+    struct LowHighLast
+    {
+        float low{0.f}, high{0.f}, last{0.f};
+        void clear()
+        {
+            low = high = last = 0.f;
+            txnId = 0;
+            first = true;
+        }
+        void normalize()
+        {
+            if (!first)
+            {
+                low = (low - 60) / 12.f;
+                high = (high - 60) / 12.f;
+                last = (last - 60) / 12.f;
+            }
+        }
+
+        uint64_t txnId;
+        bool first{true};
+        void push(float value, uint64_t asOf)
+        {
+            if (first)
+            {
+                low = high = last = value;
+                first = false;
+                return;
+            }
+            if (asOf > txnId)
+                last = value;
+            low = std::min(low, value);
+            high = std::max(high, value);
+            txnId = asOf;
+        }
+    };
+    LowHighLast pitchTrack, keyTrack;
+    float voiceCount{0.f};
 
     static constexpr int32_t blocksToTerminateAt48k{16};
     int32_t blocksToTerminate{-1}, terminationSequence{-1};
