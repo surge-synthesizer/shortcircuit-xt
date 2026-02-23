@@ -39,7 +39,7 @@
         },
         "depth": {
             "class": "vslider",
-            "label": "Depth",
+            "label": "Amount",
             "binding": {
                 "type": "float",
                 "index": 3

@@ -17,7 +17,7 @@
                 "index": 0
             },
             "position": {
-                "x": 8,
+                "x": 16,
                 "y": 38
             },
             "visible-if": {
@@ -36,7 +36,7 @@
                 "index": 0
             },
             "position": {
-                "x": 8,
+                "x": 16,
                 "y": 8
             },
             "visible-if": {
@@ -55,7 +55,7 @@
                 "index": 1
             },
             "position": {
-                "x": 8,
+                "x": 16,
                 "y": 65
             },
             "visible-if": {
@@ -74,7 +74,7 @@
                 "index": 2
             },
             "position": {
-                "x": 75,
+                "x": 79,
                 "y": 25
             }
         },
@@ -104,7 +104,7 @@
         },
         "filter-header": {
             "class": "ruled-label",
-            "label": "Filter",
+            "label": "Type",
             "position": {
                 "x": 78,
                 "y": 108,

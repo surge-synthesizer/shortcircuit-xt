@@ -30,13 +30,13 @@
         },
         "cutoffL": {
             "class": "knob55",
-            "label": "Cutoff L",
+            "label": "L",
             "binding": {
                 "type": "float",
                 "index": 0
             },
             "position": {
-                "x": 8,
+                "x": 12,
                 "y": 20
             },
             "visible-if": {
@@ -49,14 +49,30 @@
         },
         "cutoffR": {
             "class": "knob55",
-            "label": "Cutoff R",
+            "label": "R",
             "binding": {
                 "type": "float",
                 "index": 1
             },
             "position": {
-                "x": 65,
+                "x": 80,
                 "y": 20
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 0,
+                "values": [
+                    1
+                ]
+            }
+        },
+        "cutoff-stereo": {
+            "class": "ruled-label",
+            "label": "Cutoff",
+            "position": {
+                "x": 48,
+                "y": 74,
+                "w": 50
             },
             "visible-if": {
                 "type": "int",

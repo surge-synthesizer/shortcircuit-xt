@@ -1,98 +1,97 @@
 {
-  "include": "voicefx-layouts/voicefx-classes.json",
-  "controls": {
-    "hamburger-stereo": {
-      "class": "hamburger-stereo",
-      "binding": {
-        "type": "int",
-        "index": 1
-      },
-      "position": {}
-    },
-    "shape-switch": {
-      "class": "vertical-multiswitch",
-      "binding": {
-        "type": "int",
-        "index": 0
-      },
-      "position": {
-        "x": 130,
-        "y": 75,
-        "w": 55,
-        "h": 70
-      }
-    },
-    "knob0": {
-      "class": "knob40",
-      "label": "F/back",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 4,
-        "y": 4
-      }
-    },
-    "knob2": {
-      "class": "knob40",
-      "label": "Res",
-      "binding": {
-        "type": "float",
-        "index": 2
-      },
-      "position": {
-        "x": 50,
-        "y": 20
-      }
-    },
-    "knob1": {
-      "class": "knob40",
-      "label": "Spacing",
-      "binding": {
-        "type": "float",
-        "index": 1
-      },
-      "position": {
-        "x": 95,
-        "y": 0
-      }
-    },
-    "knob5": {
-      "class": "knob40",
-      "label": "Center",
-      "binding": {
-        "type": "float",
-        "index": 5
-      },
-      "position": {
-        "x": 140,
-        "y": 20
-      }
-    },
-    "knob3": {
-      "class": "knob50",
-      "label": "Rate",
-      "binding": {
-        "type": "float",
-        "index": 3
-      },
-      "position": {
-        "x": 5,
-        "y": 80
-      }
-    },
-    "knob4": {
-      "class": "knob50",
-      "label": "Depth",
-      "binding": {
-        "type": "float",
-        "index": 4
-      },
-      "position": {
-        "x": 65,
-        "y": 80
-      }
+    "include": "voicefx-layouts/voicefx-classes.json",
+    "controls": {
+        "hamburger-stereo": {
+            "class": "hamburger-stereo",
+            "binding": {
+                "type": "int",
+                "index": 1
+            },
+            "position": {}
+        },
+        "shape-switch": {
+            "class": "jog-updown",
+            "binding": {
+                "type": "int",
+                "index": 0
+            },
+            "position": {
+                "x": 64,
+                "y": 124,
+                "w": 88
+            }
+        },
+        "knob0": {
+            "class": "knob40",
+            "label": "Feedback",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 16,
+                "y": 8
+            }
+        },
+        "knob2": {
+            "class": "knob40",
+            "label": "Resonance",
+            "binding": {
+                "type": "float",
+                "index": 2
+            },
+            "position": {
+                "x": 16,
+                "y": 65
+            }
+        },
+        "knob1": {
+            "class": "knob40",
+            "label": "Spacing",
+            "binding": {
+                "type": "float",
+                "index": 1
+            },
+            "position": {
+                "x": 160,
+                "y": 65
+            }
+        },
+        "knob5": {
+            "class": "knob40",
+            "label": "Center",
+            "binding": {
+                "type": "float",
+                "index": 5
+            },
+            "position": {
+                "x": 160,
+                "y": 8
+            }
+        },
+        "knob3": {
+            "class": "knob40",
+            "label": "Rate",
+            "binding": {
+                "type": "float",
+                "index": 3
+            },
+            "position": {
+                "x": 88,
+                "y": 8
+            }
+        },
+        "knob4": {
+            "class": "knob40",
+            "label": "Depth",
+            "binding": {
+                "type": "float",
+                "index": 4
+            },
+            "position": {
+                "x": 88,
+                "y": 65
+            }
+        }
     }
-  }
 }
