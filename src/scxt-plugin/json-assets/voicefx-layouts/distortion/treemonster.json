@@ -1,0 +1,53 @@
+{
+    "include": "voicefx-layouts/voicefx-classes.json",
+    "controls": {
+        "threshold": {
+            "class": "vslider",
+            "label": "Threshold",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 32,
+                "y": 8
+            }
+        },
+        "tilt": {
+            "class": "knob50",
+            "label": "Speed",
+            "binding": {
+                "type": "float",
+                "index": 1
+            },
+            "position": {
+                "x": 84,
+                "y": 4
+            }
+        },
+        "envelope": {
+            "class": "knob50",
+            "label": "Pitch",
+            "binding": {
+                "type": "float",
+                "index": 2
+            },
+            "position": {
+                "x": 84,
+                "y": 74
+            }
+        },
+        "depth": {
+            "class": "vslider",
+            "label": "Depth",
+            "binding": {
+                "type": "float",
+                "index": 3
+            },
+            "position": {
+                "x": 160,
+                "y": 8
+            }
+        }
+    }
+}

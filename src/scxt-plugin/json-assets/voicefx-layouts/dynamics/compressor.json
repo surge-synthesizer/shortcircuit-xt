@@ -1,0 +1,102 @@
+{
+    "include": "voicefx-layouts/voicefx-classes.json",
+    "controls": {
+        "sc-tilt": {
+            "class": "knob40",
+            "label": "SC Tilt",
+            "binding": {
+                "type": "float",
+                "index": 5
+            },
+            "position": {
+                "x": 8,
+                "y": 8
+            }
+        },
+        "sc-freq": {
+            "class": "knob40",
+            "label": "Tilt Freq",
+            "binding": {
+                "type": "float",
+                "index": 6
+            },
+            "position": {
+                "x": 8,
+                "y": 65
+            }
+        },
+        "threshold": {
+            "class": "knob50",
+            "label": "Threshold",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 82,
+                "y": 8
+            }
+        },
+
+        "attack": {
+            "class": "knob30",
+            "label": "Attack",
+            "binding": {
+                "type": "float",
+                "index": 2
+            },
+            "position": {
+                "x": 68,
+                "y": 76
+            }
+        },
+        "release": {
+            "class": "knob30",
+            "label": "Release",
+            "binding": {
+                "type": "float",
+                "index": 3
+            },
+            "position": {
+                "x": 114,
+                "y": 76
+            }
+        },
+        "ratio": {
+            "class": "knob40",
+            "label": "Ratio",
+            "binding": {
+                "type": "float",
+                "index": 1
+            },
+            "position": {
+                "x": 160,
+                "y": 8
+            }
+        },
+        "make-up": {
+            "class": "knob40",
+            "label": "Makeup",
+            "binding": {
+                "type": "float",
+                "index": 4
+            },
+            "position": {
+                "x": 160,
+                "y": 65
+            }
+        },
+        "detector": {
+            "class": "jog-updown",
+            "binding": {
+                "type": "int",
+                "index": 0
+            },
+            "position": {
+                "x": 64,
+                "y": 124,
+                "w": 88
+            }
+        }
+    }
+}
