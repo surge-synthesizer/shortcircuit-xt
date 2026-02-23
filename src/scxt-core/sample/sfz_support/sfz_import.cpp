@@ -242,12 +242,30 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     else if (oc.name == "lokey")
                     {
                         zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value, octaveOffset);
+                        if (zn->mapping.keyboardRange.keyStart > zn->mapping.keyboardRange.keyEnd)
+                        {
+                            e.getMessageController()->reportErrorToClient(
+                                "SFZ Keyrange Error",
+                                "SFZ Keyrange Autofix for../ : lokey > hikey (" + oc.value + " > " +
+                                    std::to_string(zn->mapping.keyboardRange.keyEnd) + ")");
+                            std::swap(zn->mapping.keyboardRange.keyStart,
+                                      zn->mapping.keyboardRange.keyEnd);
+                        }
                         loadInfo = loadInfo & ~engine::Zone::MAPPING;
                     }
                     else if (oc.name == "hikey")
                     {
                         zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value, octaveOffset);
                         loadInfo = loadInfo & ~engine::Zone::MAPPING;
+                        if (zn->mapping.keyboardRange.keyEnd < zn->mapping.keyboardRange.keyStart)
+                        {
+                            e.getMessageController()->reportErrorToClient(
+                                "SFZ Keyrange Error",
+                                "SFZ Keyrange Autofix for : hikey < lokey (" + oc.value + " < " +
+                                    std::to_string(zn->mapping.keyboardRange.keyStart) + ")");
+                            std::swap(zn->mapping.keyboardRange.keyStart,
+                                      zn->mapping.keyboardRange.keyEnd);
+                        }
                     }
                     else if (oc.name == "key")
                     {
@@ -261,11 +279,30 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     {
                         zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
                         loadInfo = loadInfo & ~engine::Zone::MAPPING;
+                        if (zn->mapping.velocityRange.velStart > zn->mapping.velocityRange.velEnd)
+                        {
+                            e.getMessageController()->reportErrorToClient(
+                                "SFZ Velocity Error",
+                                "SFZ Velocity Autifix for : lovel > hivel (" + oc.value + " > " +
+                                    std::to_string(zn->mapping.velocityRange.velEnd) + ")");
+                            std::swap(zn->mapping.velocityRange.velStart,
+                                      zn->mapping.velocityRange.velEnd);
+                        }
                     }
                     else if (oc.name == "hivel")
                     {
                         zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
                         loadInfo = loadInfo & ~engine::Zone::MAPPING;
+                        if (zn->mapping.velocityRange.velEnd < zn->mapping.velocityRange.velStart)
+                        {
+                            e.getMessageController()->reportErrorToClient(
+                                "SFZ Velocity Error",
+                                "SFZ Velocity Error AutoFix for : hivel < lovel (" + oc.value +
+                                    " < " + std::to_string(zn->mapping.velocityRange.velStart) +
+                                    ")");
+                            std::swap(zn->mapping.velocityRange.velStart,
+                                      zn->mapping.velocityRange.velEnd);
+                        }
                     }
                     else if (oc.name == "loop_start")
                     {
