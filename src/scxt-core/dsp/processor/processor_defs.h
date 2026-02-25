@@ -282,8 +282,8 @@ DEFINE_PROC(EllipticBlepWaveforms,
 PROC_DEFAULT_MIX(proct_osc_EBWaveforms, 0.5);
 
 DEFINE_PROC(SinePlus, sst::voice_effects::generator::SinePlus<SCXTVFXConfig<1>>,
-            sst::voice_effects::generator::SinePlus<SCXTVFXConfig<2>>, proct_osc_sineplus,
-            "Sine Plus", "Generators");
+            sst::voice_effects::generator::SinePlus<SCXTVFXConfig<2>>, proct_osc_sineplus, "Sine +",
+            "Generators");
 PROC_DEFAULT_MIX(proct_osc_sineplus, 0.5);
 
 DEFINE_PROC(GenCorrelatedNoise, sst::voice_effects::generator::GenCorrelatedNoise<SCXTVFXConfig<1>>,

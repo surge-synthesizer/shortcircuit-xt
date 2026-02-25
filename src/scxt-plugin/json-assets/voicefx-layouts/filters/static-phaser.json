@@ -1,128 +1,128 @@
 {
-  "include": "voicefx-layouts/voicefx-classes.json",
-  "controls": {
-    "hamburger-stereo": {
-      "class": "hamburger-stereo",
-      "binding": {
-        "type": "int",
-        "index": 1
-      },
-      "position": {}
-    },
-    "frequency-m": {
-      "class": "knob40",
-      "label": "Cutoff",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 8,
-        "y": 38
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 1,
-        "values": [
-          0
-        ]
-      }
-    },
-    "frequency-l": {
-      "class": "knob40",
-      "label": "Cutoff L",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 8,
-        "y": 8
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 1,
-        "values": [
-          1
-        ]
-      }
-    },
-    "frequency-r": {
-      "class": "knob40",
-      "label": "Cutoff R",
-      "binding": {
-        "type": "float",
-        "index": 1
-      },
-      "position": {
-        "x": 10,
-        "y": 65
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 1,
-        "values": [
-          1
-        ]
-      }
-    },
-    "resonance": {
-      "class": "knob40",
-      "label": "Reso",
-      "binding": {
-        "type": "float",
-        "index": 3
-      },
-      "position": {
-        "x": 160,
-        "y": 8
-      }
-    },
-    "spacing": {
-      "class": "knob60",
-      "label": "Feedback",
-      "binding": {
-        "type": "float",
-        "index": 4
-      },
-      "position": {
-        "x": 75,
-        "y": 25
-      }
-    },
-    "feedback": {
-      "class": "knob40",
-      "label": "Spacing",
-      "binding": {
-        "type": "float",
-        "index": 2
-      },
-      "position": {
-        "x": 160,
-        "y": 65
-      }
-    },
-    "stages-header": {
-      "class": "ruled-label",
-      "label": "Stages",
-      "position": {
-        "x": 78,
-        "y": 106,
-        "w": 60,
-        "h": 15
-      }
-    },
-    "stages": {
-      "class": "jog-updown",
-      "binding": {
-        "type": "int",
-        "index": 0
-      },
-      "position": {
-        "x": 78,
-        "y": 124,
-        "w": 60
-      }
+    "include": "voicefx-layouts/voicefx-classes.json",
+    "controls": {
+        "hamburger-stereo": {
+            "class": "hamburger-stereo",
+            "binding": {
+                "type": "int",
+                "index": 1
+            },
+            "position": {}
+        },
+        "frequency-m": {
+            "class": "knob40",
+            "label": "Cutoff",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 8,
+                "y": 38
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 1,
+                "values": [
+                    0
+                ]
+            }
+        },
+        "frequency-l": {
+            "class": "knob40",
+            "label": "Cutoff L",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 16,
+                "y": 8
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 1,
+                "values": [
+                    1
+                ]
+            }
+        },
+        "frequency-r": {
+            "class": "knob40",
+            "label": "Cutoff R",
+            "binding": {
+                "type": "float",
+                "index": 1
+            },
+            "position": {
+                "x": 16,
+                "y": 65
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 1,
+                "values": [
+                    1
+                ]
+            }
+        },
+        "resonance": {
+            "class": "knob40",
+            "label": "Reso",
+            "binding": {
+                "type": "float",
+                "index": 3
+            },
+            "position": {
+                "x": 160,
+                "y": 8
+            }
+        },
+        "spacing": {
+            "class": "knob60",
+            "label": "Feedback",
+            "binding": {
+                "type": "float",
+                "index": 4
+            },
+            "position": {
+                "x": 79,
+                "y": 25
+            }
+        },
+        "feedback": {
+            "class": "knob40",
+            "label": "Spacing",
+            "binding": {
+                "type": "float",
+                "index": 2
+            },
+            "position": {
+                "x": 160,
+                "y": 65
+            }
+        },
+        "stages-header": {
+            "class": "ruled-label",
+            "label": "Stages",
+            "position": {
+                "x": 78,
+                "y": 106,
+                "w": 60,
+                "h": 15
+            }
+        },
+        "stages": {
+            "class": "jog-updown",
+            "binding": {
+                "type": "int",
+                "index": 0
+            },
+            "position": {
+                "x": 78,
+                "y": 124,
+                "w": 60
+            }
+        }
     }
-  }
 }

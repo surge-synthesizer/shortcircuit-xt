@@ -497,6 +497,10 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_fx_bitcrusher, "distortion/bitcrusher.json");
     a(dsp::processor::proct_fx_waveshaper, "distortion/waveshaper.json");
     a(dsp::processor::proct_fx_slewer, "distortion/slewer.json");
+    a(dsp::processor::proct_fx_treemonster, "distortion/treemonster.json");
+
+    a(dsp::processor::proct_Compressor, "dynamics/compressor.json");
+    a(dsp::processor::proct_autowah, "dynamics/autowah.json");
 
 #if DEBUG
     for (auto &[_, s] : jsonDefinitions)
@@ -1142,8 +1146,11 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
     }
     else if (auto nw = connectors::jsonlayout::createAndPositionNonDataWidget(ctrl, cls, onError))
     {
-        getContentAreaComponent()->addAndMakeVisible(*nw);
-        jsonLabels.push_back(std::move(nw));
+        if (scxt::ui::connectors::jsonlayout::isVisible(ctrl, intAttI, onError))
+        {
+            getContentAreaComponent()->addAndMakeVisible(*nw);
+            jsonLabels.push_back(std::move(nw));
+        }
     }
     else
     {

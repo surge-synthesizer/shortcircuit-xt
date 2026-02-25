@@ -1,94 +1,110 @@
 {
-  "include": "voicefx-layouts/voicefx-classes.json",
-  "controls": {
-    "stereo": {
-      "class": "hamburger-stereo",
-      "binding": {
-        "type": "int",
-        "index": 0
-      },
-      "position": {}
-    },
-    "cutoff": {
-      "class": "knob80",
-      "label": "Cutoff",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 20,
-        "y": 15
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          0
-        ]
-      }
-    },
-    "cutoffL": {
-      "class": "knob55",
-      "label": "Cutoff L",
-      "binding": {
-        "type": "float",
-        "index": 0
-      },
-      "position": {
-        "x": 5,
-        "y": 25
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          1
-        ]
-      }
-    },
-    "cutoffR": {
-      "class": "knob55",
-      "label": "Cutoff R",
-      "binding": {
-        "type": "float",
-        "index": 1
-      },
-      "position": {
-        "x": 65,
-        "y": 25
-      },
-      "visible-if": {
-        "type": "int",
-        "index": 0,
-        "values": [
-          1
-        ]
-      }
-    },
-    "param2": {
-      "class": "knob40",
-      "label": "Resonance",
-      "binding": {
-        "type": "float",
-        "index": 2
-      },
-      "position": {
-        "x": 138,
-        "y": 5
-      }
-    },
-    "param3": {
-      "class": "knob40",
-      "label": "Blend -/+",
-      "binding": {
-        "type": "float",
-        "index": 3
-      },
-      "position": {
-        "x": 138,
-        "y": 65
-      }
+    "include": "voicefx-layouts/voicefx-classes.json",
+    "controls": {
+        "stereo": {
+            "class": "hamburger-stereo",
+            "binding": {
+                "type": "int",
+                "index": 0
+            },
+            "position": {}
+        },
+        "cutoff": {
+            "class": "knob80",
+            "label": "Cutoff",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 20,
+                "y": 15
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 0,
+                "values": [
+                    0
+                ]
+            }
+        },
+        "cutoffL": {
+            "class": "knob55",
+            "label": "L",
+            "binding": {
+                "type": "float",
+                "index": 0
+            },
+            "position": {
+                "x": 12,
+                "y": 20
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 0,
+                "values": [
+                    1
+                ]
+            }
+        },
+        "cutoffR": {
+            "class": "knob55",
+            "label": "R",
+            "binding": {
+                "type": "float",
+                "index": 1
+            },
+            "position": {
+                "x": 80,
+                "y": 20
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 0,
+                "values": [
+                    1
+                ]
+            }
+        },
+        "cutoff-stereo": {
+            "class": "ruled-label",
+            "label": "Cutoff",
+            "position": {
+                "x": 48,
+                "y": 74,
+                "w": 50
+            },
+            "visible-if": {
+                "type": "int",
+                "index": 0,
+                "values": [
+                    1
+                ]
+            }
+        },
+        "param2": {
+            "class": "knob40",
+            "label": "Resonance",
+            "binding": {
+                "type": "float",
+                "index": 2
+            },
+            "position": {
+                "x": 138,
+                "y": 5
+            }
+        },
+        "param3": {
+            "class": "knob40",
+            "label": "Blend -/+",
+            "binding": {
+                "type": "float",
+                "index": 3
+            },
+            "position": {
+                "x": 138,
+                "y": 65
+            }
+        }
     }
-  }
 }

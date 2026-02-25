@@ -89,28 +89,37 @@
         ]
       }
     },
+    "cutl": {
+      "class": "ruled-label",
+      "label": "Cut",
+      "position": {
+        "x": 125,
+        "y": 119,
+        "w": 40
+      }
+    },
     "locut": {
       "class": "knob40",
-      "label": "Low Cut",
+      "label": "Low",
       "binding": {
         "index": 4,
         "type": "float"
       },
       "position": {
         "x": 88,
-        "y": 84
+        "y": 80
       }
     },
     "hicut": {
       "class": "knob40",
-      "label": "High Cut",
+      "label": "High",
       "binding": {
         "index": 5,
         "type": "float"
       },
       "position": {
-        "x": 164,
-        "y": 84
+        "x": 165,
+        "y": 80
       }
     },
     "stereo": {

@@ -1,9 +1,18 @@
 {
   "include": "voicefx-layouts/voicefx-classes.json",
   "controls": {
+    "tl": {
+      "class": "ruled-label",
+      "label": "Time",
+      "position": {
+        "x": 36,
+        "y": 51,
+        "w": 40
+      }
+    },
     "left": {
       "class": "knob50",
-      "label": "Left",
+      "label": "L",
       "binding": {
         "index": 0,
         "type": "float"
@@ -15,7 +24,7 @@
     },
     "right": {
       "class": "knob50",
-      "label": "Right",
+      "label": "R",
       "binding": {
         "index": 1,
         "type": "float"
