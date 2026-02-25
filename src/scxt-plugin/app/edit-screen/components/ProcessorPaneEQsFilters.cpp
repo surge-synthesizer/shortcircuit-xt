@@ -130,7 +130,7 @@ struct EqDisplayBase : juce::Component
 
 template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
 {
-    const ProcessorPane &mProcessorPane;
+    ProcessorPane &mProcessorPane;
     Proc mProcessor;
 
     std::function<void(Proc &, int)> mPrepareBand{nullptr};
@@ -148,6 +148,11 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
     };
     using ptvec_t = std::vector<pt>;
     std::array<ptvec_t, nSub + 1> curves; // 0 is total response 1..nis per band
+    std::array<juce::Rectangle<float>, nSub> bandHitRects;
+    std::array<bool, nSub> isBandHovered{};
+    int draggingBand{-1};
+    static constexpr int hotzoneSize = 4;
+    bool paintHotzones{true};
     bool curvesBuilt{false};
     void rebuildCurves() override
     {
@@ -199,11 +204,88 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
                 }
             }
         }
+        // Compute band hit rectangles from processor storage frequencies
+        for (int band = 0; band < nSub; ++band)
+        {
+            // Freq param is at index band*3+1, stored as semitones with 0=440Hz
+            auto freqParam = mProcessor.mStorage->floatParams[band * 3 + 1];
+            auto freqHz = 440.f * std::pow(2.f, freqParam / 12.f);
+            auto freqNorm = (std::log2(freqHz) - fStart) / fRange;
+            auto xPos = freqNorm * (np - 1);
+
+            auto freqArg = freqHz * EqAdapter::getSampleRateInv(nullptr);
+            auto response = mProcessor.getBandFrequencyGraph(band, freqArg);
+            auto yPos = getHeight() * centerPoint - std::log2(response) * 9;
+
+            bandHitRects[band] = juce::Rectangle<float>(
+                xPos - hotzoneSize / 2.f, yPos - hotzoneSize / 2.f, hotzoneSize, hotzoneSize);
+        }
+
         curvesBuilt = true;
         repaint();
     }
 
     float centerPoint{0.5f};
+
+    void mouseMove(const juce::MouseEvent &e) override
+    {
+        bool anyChanged = false;
+        for (int i = 0; i < nSub; ++i)
+        {
+            bool hovered = bandHitRects[i].expanded(hotzoneSize).contains(e.position);
+            if (hovered != isBandHovered[i])
+            {
+                isBandHovered[i] = hovered;
+                anyChanged = true;
+            }
+        }
+        if (anyChanged)
+            repaint();
+    }
+
+    void mouseDown(const juce::MouseEvent &e) override
+    {
+        draggingBand = -1;
+        for (int i = 0; i < nSub; ++i)
+        {
+            if (bandHitRects[i].expanded(hotzoneSize).contains(e.position))
+            {
+                draggingBand = i;
+                break;
+            }
+        }
+    }
+
+    void mouseDrag(const juce::MouseEvent &e) override
+    {
+        if (draggingBand < 0)
+            return;
+
+        auto fStart = 3.0f;
+        auto fRange = 11.5f;
+        if (std::is_same<Proc, sst::voice_effects::eq::EqGraphic6Band<EqAdapter>>::value)
+        {
+            fStart = 5.0f;
+            fRange = 9.3f;
+        }
+
+        auto np = getWidth();
+        auto logfreqHz = fStart + (e.position.x / (np - 1)) * fRange;
+        auto freqParam = 12.f * (logfreqHz - std::log2(440.f));
+        auto gain = -e.position.y / getHeight() * 24;
+
+        {
+            auto &a = mProcessorPane.floatAttachments[draggingBand * 3 + 1];
+            if (freqParam >= a->getMin() && freqParam <= a->getMax())
+                a->setValueFromGUI(freqParam);
+        }
+        {
+            auto &a = mProcessorPane.floatAttachments[draggingBand * 3 + 0];
+            if (gain >= a->getMin() && gain <= a->getMax())
+                a->setValueFromGUI(gain);
+        }
+        repaint();
+    }
 
     void paint(juce::Graphics &g) override
     {
@@ -249,17 +331,81 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         auto p = c2p(curves[0]);
         g.setColour(ed->themeColor(theme::ColorMap::accent_1a));
         g.strokePath(p, juce::PathStrokeType(3));
+
+        if (paintHotzones)
+        {
+            for (int i = 0; i < nSub; ++i)
+            {
+                auto col = ed->themeColor(theme::ColorMap::accent_1a).withAlpha(0.7f);
+                g.setColour(col);
+                g.fillEllipse(bandHitRects[i].expanded(hotzoneSize));
+                if (isBandHovered[i])
+                {
+                    auto c2 = ed->themeColor(theme::ColorMap::generic_content_high);
+                    g.setColour(c2);
+                    g.drawEllipse(bandHitRects[i].expanded(hotzoneSize), 1);
+                }
+            }
+        }
     }
 };
 
-template <typename Proc, int nSub> struct EqNBandDisplay : EqDisplaySupport<Proc, nSub>
+template <typename Proc, int nSub, bool showHotzones = true>
+struct EqNBandDisplay : EqDisplaySupport<Proc, nSub>
 {
     EqNBandDisplay(ProcessorPane &p) : EqDisplaySupport<Proc, nSub>(p)
     {
         this->bandSelect = std::make_unique<EqDisplayBase::BandSelect>(nSub);
+        this->paintHotzones = showHotzones;
     }
 
     void resized() override { this->rebuildCurves(); }
+
+    void mouseMove(const juce::MouseEvent &e) override
+    {
+        if constexpr (showHotzones)
+            EqDisplaySupport<Proc, nSub>::mouseMove(e);
+    }
+    void mouseDown(const juce::MouseEvent &e) override
+    {
+        if constexpr (showHotzones)
+        {
+            EqDisplaySupport<Proc, nSub>::mouseDown(e);
+            if (this->draggingBand >= 0 && this->bandSelect &&
+                this->bandSelect->getValue() != this->draggingBand)
+            {
+                this->bandSelect->setValueFromGUI(this->draggingBand);
+                this->mProcessorPane.repaint();
+            }
+        }
+    }
+    void mouseDrag(const juce::MouseEvent &e) override
+    {
+        if constexpr (showHotzones)
+            EqDisplaySupport<Proc, nSub>::mouseDrag(e);
+    }
+    void mouseWheelMove(const juce::MouseEvent &e, const juce::MouseWheelDetails &wheel) override
+    {
+        if constexpr (showHotzones)
+        {
+            for (int i = 0; i < nSub; ++i)
+            {
+                if (this->isBandHovered[i])
+                {
+                    SCLOG_IF(debug,
+                             "mouseWheelMove: band " << i << " wheel delta " << wheel.deltaY);
+                    if (this->bandSelect && this->bandSelect->getValue() != i)
+                        this->bandSelect->setValueFromGUI(i);
+                    auto &a = this->mProcessorPane.floatAttachments[i * 3 + 2];
+                    auto newVal = a->getValue() - wheel.deltaY * 5;
+                    if (newVal >= a->getMin() && newVal <= a->getMax())
+                        a->setValueFromGUI(newVal);
+                    this->mProcessorPane.repaint();
+                    break;
+                }
+            }
+        }
+    }
 };
 
 void ProcessorPane::layoutControlsEQNBandParm()
@@ -362,7 +508,7 @@ void ProcessorPane::layoutControlsEQNBandParm()
 void ProcessorPane::layoutControlsEQMorph()
 {
     auto eqdisp = std::make_unique<
-        EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2>>(*this);
+        EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2, false>>(*this);
     auto eq = getContentAreaComponent()->getLocalBounds();
 
     eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
