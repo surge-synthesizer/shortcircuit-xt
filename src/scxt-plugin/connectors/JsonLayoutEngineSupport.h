@@ -297,7 +297,7 @@ createAndPositionNonDataWidget(const sst::jucegui::layouts::json_document::Contr
             onError("Label has no 'label' member " + ctrl.name);
             return nullptr;
         }
-        auto lab = std::make_unique<jcmp::RuledLabel>();
+        auto lab = std::make_unique<jcmp::RuledLabel>(3);
         lab->setText(*ctrl.label);
         lab->setBounds(ctrl.position.x + zeroPoint.x, ctrl.position.y + zeroPoint.y,
                        ctrl.position.w, ctrl.position.h);

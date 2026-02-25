@@ -1146,8 +1146,11 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
     }
     else if (auto nw = connectors::jsonlayout::createAndPositionNonDataWidget(ctrl, cls, onError))
     {
-        getContentAreaComponent()->addAndMakeVisible(*nw);
-        jsonLabels.push_back(std::move(nw));
+        if (scxt::ui::connectors::jsonlayout::isVisible(ctrl, intAttI, onError))
+        {
+            getContentAreaComponent()->addAndMakeVisible(*nw);
+            jsonLabels.push_back(std::move(nw));
+        }
     }
     else
     {

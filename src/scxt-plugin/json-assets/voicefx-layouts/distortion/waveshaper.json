@@ -42,9 +42,18 @@
         "y": 8
       }
     },
+    "cutl": {
+      "class": "ruled-label",
+      "label": "Cut",
+      "position": {
+        "x": 134,
+        "y": 107,
+        "w": 30
+      }
+    },
     "lowcut": {
       "class": "knob40",
-      "label": "Low Cut",
+      "label": "Low",
       "binding": {
         "index": 3,
         "type": "float"
@@ -56,7 +65,7 @@
     },
     "highcut": {
       "class": "knob40",
-      "label": "High Cut",
+      "label": "High",
       "binding": {
         "index": 4,
         "type": "float"
