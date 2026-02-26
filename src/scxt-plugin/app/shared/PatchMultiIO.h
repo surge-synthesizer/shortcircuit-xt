@@ -82,9 +82,12 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
 {
     namespace cmsg = scxt::messaging::client;
 
+    std::string ext = "*.scp";
+    if (style == patch_io::SaveStyles::AS_SFZ)
+        ext = "*.sfz";
+
     fileChooser = std::make_unique<juce::FileChooser>(
-        "Save Selected Part", juce::File(that->editor->browser.patchIODirectory.u8string()),
-        "*.scp");
+        "Save Selected Part", juce::File(that->editor->browser.patchIODirectory.u8string()), ext);
     fileChooser->launchAsync(
         juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
             juce::FileBrowserComponent::warnAboutOverwriting,

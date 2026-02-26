@@ -37,7 +37,9 @@ enum SaveStyles
 {
     NO_SAMPLES = 0,
     COLLECT_SAMPLES,
-    AS_MONOLITH
+    AS_MONOLITH,
+
+    AS_SFZ // implies collect samples
 };
 
 std::optional<std::pair<std::string, std::string>> retrieveSCManifestAndPayload(const fs::path &);
@@ -48,6 +50,9 @@ bool savePart(const fs::path &toFile, scxt::engine::Engine &, int part, SaveStyl
 bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
 
 bool initFromResourceBundle(scxt::engine::Engine &e, const std::string &file);
+
+// use -1 for all parts
+void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part);
 
 struct SCMonolithSampleReader
 {

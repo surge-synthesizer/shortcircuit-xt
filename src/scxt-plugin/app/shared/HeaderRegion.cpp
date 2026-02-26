@@ -431,6 +431,13 @@ void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
               });
 
     p.addSeparator();
+    p.addItem("Export Part " + std::to_string(editor->selectedPart + 1) + " as SFZ",
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      w->doSaveSelectedPart(patch_io::SaveStyles::AS_SFZ);
+              });
+
+    p.addSeparator();
     p.addItem("Load Multi", [w = juce::Component::SafePointer(this)]() {
         if (w)
             w->doLoadMulti();
