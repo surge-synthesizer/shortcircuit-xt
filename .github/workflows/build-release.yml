@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -51,6 +51,8 @@ jobs:
           p12-password: ${{ secrets.CERT_PWD }}
 
       - uses: surge-synthesizer/sst-githubactions/install-innosetup@main
+        with:
+          version: "6.7.1"
 
       - name: Prepare for JUCE
         uses: surge-synthesizer/sst-githubactions/prepare-for-juce@main
@@ -93,7 +95,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -142,7 +144,7 @@ jobs:
           subtitle: "Shortcircuit XT is beta software. Let us know what you think!"
 
       - name: Checkout for git info
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 5
 
