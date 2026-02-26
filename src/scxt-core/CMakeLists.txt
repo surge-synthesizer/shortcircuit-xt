@@ -44,6 +44,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/sfz_support/sfz_compound_file_impl.cpp
         sample/sfz_support/sfz_parse.cpp
         sample/sfz_support/sfz_import.cpp
+        sample/sfz_support/sfz_export.cpp
 
         tuning/equal.cpp
         tuning/midikey_retuner.cpp

@@ -29,6 +29,7 @@
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_PATCH_IO_MESSAGES_H
 
 #include "patch_io/patch_io.h"
+#include "sample/sfz_support/sfz_export.h"
 
 namespace scxt::messaging::client
 {
@@ -56,7 +57,14 @@ inline void doSavePart(const savePartPayload_t &pl, engine::Engine &engine, Mess
     if (part < 0)
         part = engine.getSelectionManager()->selectedPart;
 
-    patch_io::savePart(fs::path(fs::u8path(s)), engine, part, style);
+    if (style == patch_io::SaveStyles::AS_SFZ)
+    {
+        sfz_support::exportSFZ(fs::path(fs::u8path(s)), engine, part);
+    }
+    else
+    {
+        patch_io::savePart(fs::path(fs::u8path(s)), engine, part, style);
+    }
     // engine.getBrowser()->doSomething;
 }
 CLIENT_TO_SERIAL(SavePart, c2s_save_part, savePartPayload_t, doSavePart(payload, engine, cont));
