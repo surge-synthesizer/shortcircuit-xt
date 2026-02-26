@@ -393,19 +393,13 @@ struct TransportSourceBase
     std::array<SR, scxt::phasorsPerGroupOrZone> phasors;
 };
 
-template <typename SR, uint32_t gid,
-          void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
-                                 const std::string &)>
-struct RNGSourceBase
+template <typename SR, uint32_t gid> struct RNGSourceBase
 {
     RNGSourceBase(scxt::engine::Engine *e)
     {
         for (uint32_t i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
         {
             randoms[i] = SR{gid, 'rnds', i};
-            std::string lab = "A";
-            lab[0] += i;
-            registerSource(e, randoms[i], "Random", "Random " + lab);
         }
     }
 

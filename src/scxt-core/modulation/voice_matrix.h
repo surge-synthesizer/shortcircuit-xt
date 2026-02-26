@@ -252,20 +252,7 @@ struct MatrixEndpoints
         static_assert(scxt::egsPerZone == 5, "Clean up the egSources constructor if this fails");
         // so we can reach them from external multisamples
         static constexpr SR eg2A{'zneg', 'eg2 ', 0};
-        Sources(engine::Engine *e)
-            : lfoSources(e), glfoSources(e, "LFO (Group)", "GLFO"), midiCCSources(e),
-              midiSources(e), noteExpressions(e), egSources{{{'zneg', 'aeg ', 0},
-                                                             eg2A,
-                                                             {'zneg', 'eg3 ', 0},
-                                                             {'zneg', 'eg4 ', 0},
-                                                             {'zneg', 'eg5 ', 0}}},
-              transportSources(e), rngSources(e), macroSources(e), mpeSources(e), voiceSources(e),
-              keyAndPitchSources(e)
-        {
-            registerVoiceModSource(e, egSources[0], "EG", "AEG");
-            for (int i = 1; i < egsPerZone; ++i)
-                registerVoiceModSource(e, egSources[i], "EG", "EG" + std::to_string(i + 1));
-        }
+        Sources(engine::Engine *e);
 
         scxt::modulation::shared::LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource>
             lfoSources;
@@ -381,7 +368,7 @@ struct MatrixEndpoints
 
         scxt::modulation::shared::TransportSourceBase<SR, 'ztsp', registerVoiceModSource>
             transportSources;
-        scxt::modulation::shared::RNGSourceBase<SR, 'zrng', registerVoiceModSource> rngSources;
+        scxt::modulation::shared::RNGSourceBase<SR, 'zrng'> rngSources;
 
         struct MacroSources
         {

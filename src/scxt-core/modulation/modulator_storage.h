@@ -190,6 +190,22 @@ struct MiscSourceStorage
 {
     std::array<modulators::PhasorStorage, scxt::phasorsPerGroupOrZone> phasors;
     std::array<modulators::RandomStorage, scxt::randomsPerGroupOrZone> randoms;
+    std::string randomDisplayName(int i) const
+    {
+        switch (randoms[i].style)
+        {
+        case modulators::RandomStorage::UNIFORM_01:
+            return "Unipolar";
+        case modulators::RandomStorage::UNIFORM_BIPOLAR:
+            return "Bipolar";
+        case modulators::RandomStorage::NORMAL:
+            return "Normal";
+        case modulators::RandomStorage::HALF_NORMAL:
+            return "Half-Normal";
+        default:
+            return "Unknown";
+        }
+    }
 };
 
 inline double secondsToNormalizedEnvTime(double s)

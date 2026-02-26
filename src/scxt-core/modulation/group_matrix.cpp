@@ -203,6 +203,23 @@ void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, 
     shmo::bindEl(m, g.outputInfo, panT, g.outputInfo.pan, panP);
 }
 
+GroupMatrixEndpoints::Sources::Sources(engine::Engine *e)
+    : lfoSources(e, "GLFO", "GLFO"), midiCCSources(e),
+      egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e), rngSources(e),
+      macroSources(e), subordinateVoiceSources(e), midiSources(e), keyAndPitchSources(e)
+{
+    registerGroupModSource(e, egSource[0], "EG", "EG1");
+    registerGroupModSource(e, egSource[1], "EG", "EG2");
+
+    for (int i = 0; i < randomsPerGroupOrZone; ++i)
+        registerGroupModSource(
+            e, rngSources.randoms[i], [](auto &a, auto &b) { return "Random"; },
+            [i](auto &a, auto &b) {
+                return "Rnd " + std::string(1, (char)('A' + i)) + " " +
+                       a.miscSourceStorage.randomDisplayName(i);
+            });
+}
+
 void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engine::Group &g)
 {
     lfoSources.bind(m, g, zeroSource);
