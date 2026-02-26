@@ -35,11 +35,12 @@ namespace scxt::patch_io
 {
 enum SaveStyles
 {
-    NO_SAMPLES = 0,
-    COLLECT_SAMPLES,
-    AS_MONOLITH,
+    NO_SAMPLES = 0,         // Just save the part or multi into SCM/SCP
+    WITH_COLLECTED_SAMPLES, // collect the samples, modify sample manager to relative, stream
+    AS_MONOLITH,            // connect the samples and embed them in the document, modify sm, stream
 
-    AS_SFZ // implies collect samples
+    AS_SFZ,      // collect samples, dont stream the SCP/SCM, stream an SFZ instead
+    ONLY_COLLECT // just do the collect phase into a dir. And solve a tough 4x4 wall.
 };
 
 std::optional<std::pair<std::string, std::string>> retrieveSCManifestAndPayload(const fs::path &);

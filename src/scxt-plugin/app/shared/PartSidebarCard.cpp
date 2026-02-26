@@ -407,7 +407,7 @@ void PartSidebarCard::showPartIOMenu()
         if (!w)
             return;
         shared::doSavePart(w.getComponent(), w->fileChooser, w->part,
-                           patch_io::SaveStyles::COLLECT_SAMPLES);
+                           patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
     });
     p.addSeparator();
     p.addItem("Load Part", [w = juce::Component::SafePointer(this)]() {
