@@ -78,10 +78,26 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
                     "Zones multiple variants are not yet supported in SFZ export");
             }
             oss << "\n<region>\n";
-            oss << "lokey=" << z->mapping.keyboardRange.keyStart << "\n";
+            oss << "// zone name: " << z->getName() << "\n";
+            oss << "lokey=" << z->mapping.keyboardRange.keyStart << " ";
             oss << "hikey=" << z->mapping.keyboardRange.keyEnd << "\n";
-            oss << "lovel=" << z->mapping.velocityRange.velStart << "\n";
+            oss << "pitch_keycenter=" << z->mapping.rootKey << "\n";
+            oss << "lovel=" << z->mapping.velocityRange.velStart << " ";
             oss << "hivel=" << z->mapping.velocityRange.velEnd << "\n";
+
+            auto &ts = dsp::twentyFiveSecondExpTable;
+            auto &aegs = z->egStorage[0];
+            auto fm = [](auto flt) -> std::string {
+                if (flt < 1e-6)
+                    return "0.0";
+                return fmt::format("{:.3f}", flt);
+            };
+            oss << "amp_delay=" << fm(ts.timeInSecondsFromParam(aegs.dly)) << " ";
+            oss << "amp_attack=" << fm(ts.timeInSecondsFromParam(aegs.a)) << " ";
+            oss << "amp_hold=" << fm(ts.timeInSecondsFromParam(aegs.h)) << " ";
+            oss << "amp_decay=" << fm(ts.timeInSecondsFromParam(aegs.d)) << " ";
+            oss << "amp_sustain=" << aegs.s * 100 << " ";
+            oss << "amp_release=" << fm(ts.timeInSecondsFromParam(aegs.r)) << "\n";
 
             auto cmf = collectMap.find(z->variantData.variants[0].sampleID);
             if (cmf == collectMap.end())
@@ -92,8 +108,24 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
             }
             auto pt = cmf->second;
             auto rp = pt.lexically_relative(dir.parent_path());
-            ;
             oss << "sample=" << rp.u8string() << "\n";
+            oss << "start=" << z->variantData.variants[0].startSample << " ";
+            oss << "end=" << z->variantData.variants[0].endSample << "\n";
+
+            if (z->variantData.variants[0].loopActive)
+            {
+                switch (z->variantData.variants[0].loopMode)
+                {
+                case engine::Zone::LoopMode::LOOP_WHILE_GATED:
+                    oss << "loop_mode=loop_sustain ";
+                    break;
+                default:
+                    oss << "loop_mode=loop_continuous ";
+                    break;
+                }
+                oss << "loop_start=" << z->variantData.variants[0].startLoop << " ";
+                oss << "loop_end=" << z->variantData.variants[0].endLoop << "\n";
+            }
         }
     }
 

@@ -468,8 +468,10 @@ std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collec
         collectedFilenames.insert(c.filename());
         try
         {
-            fs::copy_file(c, collectDir / c.filename(), fs::copy_options::overwrite_existing);
-            res.insert({sid, collectDir / c.filename()});
+            auto to = collectDir / c.filename();
+            if (c != to)
+                fs::copy_file(c, collectDir / c.filename(), fs::copy_options::overwrite_existing);
+            res.insert({sid, to});
         }
         catch (fs::filesystem_error &fse)
         {
