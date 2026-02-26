@@ -40,12 +40,25 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
 {
     namespace cmsg = scxt::messaging::client;
 
+    auto flags = juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
+                 juce::FileBrowserComponent::warnAboutOverwriting;
+
+    std::string ext = "*.scm";
+    std::string title = "Save Multi";
+    if (style == patch_io::SaveStyles::AS_SFZ)
+    {
+        SCLOG_IF(warnings, "Software error. MULTI as SFZ should not occur");
+        return;
+    }
+    if (style == patch_io::SaveStyles::ONLY_COLLECT)
+    {
+        flags = juce::FileBrowserComponent::canSelectDirectories;
+        title = "Collect Samples";
+    }
     fileChooser = std::make_unique<juce::FileChooser>(
-        "Save Multi", juce::File(that->editor->browser.patchIODirectory.u8string()), "*.scm");
+        title, juce::File(that->editor->browser.patchIODirectory.u8string()), "*.scm");
     fileChooser->launchAsync(
-        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
-            juce::FileBrowserComponent::warnAboutOverwriting,
-        [style, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
+        flags, [style, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
             auto result = c.getResults();
             if (result.isEmpty() || result.size() > 1)
             {
@@ -82,16 +95,25 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
 {
     namespace cmsg = scxt::messaging::client;
 
+    auto flags = juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
+                 juce::FileBrowserComponent::warnAboutOverwriting;
     std::string ext = "*.scp";
+    std::string title = "Save Part";
     if (style == patch_io::SaveStyles::AS_SFZ)
+    {
         ext = "*.sfz";
+        title = "Export to SFZ";
+    }
+    if (style == patch_io::SaveStyles::ONLY_COLLECT)
+    {
+        flags = juce::FileBrowserComponent::canSelectDirectories;
+        title = "Collect Samples";
+    }
 
     fileChooser = std::make_unique<juce::FileChooser>(
-        "Save Selected Part", juce::File(that->editor->browser.patchIODirectory.u8string()), ext);
+        title, juce::File(that->editor->browser.patchIODirectory.u8string()), ext);
     fileChooser->launchAsync(
-        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
-            juce::FileBrowserComponent::warnAboutOverwriting,
-        [style, part, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
+        flags, [style, part, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
             auto result = c.getResults();
             if (result.isEmpty() || result.size() > 1)
             {

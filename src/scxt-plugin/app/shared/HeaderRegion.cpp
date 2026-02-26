@@ -410,7 +410,7 @@ void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
     });
     p.addItem("Save Multi with Collected Samples", [w = juce::Component::SafePointer(this)]() {
         if (w)
-            w->doSaveMulti(patch_io::SaveStyles::COLLECT_SAMPLES);
+            w->doSaveMulti(patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
     });
     p.addSeparator();
     p.addItem("Save Part " + std::to_string(editor->selectedPart + 1) + " Only",
@@ -427,26 +427,43 @@ void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
     p.addItem("Save Part " + std::to_string(editor->selectedPart + 1) + " with Collected Samples",
               [w = juce::Component::SafePointer(this)]() {
                   if (w)
-                      w->doSaveSelectedPart(patch_io::SaveStyles::COLLECT_SAMPLES);
+                      w->doSaveSelectedPart(patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
               });
 
     p.addSeparator();
-    p.addItem("Export Part " + std::to_string(editor->selectedPart + 1) + " as SFZ",
-              [w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                  {
-                      w->editor->promptOKCancel(
-                          "Export Part as SFZ",
-                          "Export Part as SFZ will save a tiny subset of ShortCircuit's features. "
-                          "Use this feature just to export geometry and samples in a portable "
-                          "format. Do not use it to preserve "
-                          "and transmit complete short circuit programs.",
-                          [ww = w]() {
-                              if (ww)
-                                  ww->doSaveSelectedPart(patch_io::SaveStyles::AS_SFZ);
-                          });
-                  }
-              });
+    auto exm = juce::PopupMenu();
+    exm.addItem(
+        "Export Part " + std::to_string(editor->selectedPart + 1) + " as SFZ",
+        [w = juce::Component::SafePointer(this)]() {
+            if (w)
+            {
+                w->editor->promptOKCancel(
+                    "Export Part as SFZ",
+                    "Export Part as SFZ will save a tiny subset of ShortCircuit's features. "
+                    "Use this feature just to export geometry and samples in a portable "
+                    "format. Do not use it to preserve "
+                    "and transmit complete short circuit programs.",
+                    [ww = w]() {
+                        if (ww)
+                            ww->doSaveSelectedPart(patch_io::SaveStyles::AS_SFZ);
+                    });
+            }
+        });
+    exm.addSeparator();
+    exm.addItem("Collect All Samples", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+        {
+            w->doSaveMulti(patch_io::SaveStyles::ONLY_COLLECT);
+        }
+    });
+    exm.addItem("Collect Part " + std::to_string(editor->selectedPart + 1) + " Samples",
+                [w = juce::Component::SafePointer(this)]() {
+                    if (w)
+                    {
+                        w->doSaveSelectedPart(patch_io::SaveStyles::ONLY_COLLECT);
+                    }
+                });
+    p.addSubMenu("Export", exm);
 
     p.addSeparator();
     p.addItem("Load Multi", [w = juce::Component::SafePointer(this)]() {

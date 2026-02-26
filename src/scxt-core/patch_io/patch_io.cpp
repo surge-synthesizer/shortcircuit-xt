@@ -492,8 +492,35 @@ std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collec
     return res;
 }
 
+bool onlyCollect(const fs::path &p, scxt::engine::Engine &e, int part)
+{
+    try
+    {
+        if (!fs::is_directory(p))
+            fs::create_directories(p);
+    }
+    catch (const fs::filesystem_error &fse)
+    {
+        e.getMessageController()->reportErrorToClient("Unable to create directory",
+                                                      p.u8string() + "\n" + fse.what());
+        return false;
+    }
+    auto collectMap = patch_io::collectSamplesInto(p, e, part);
+    if (collectMap.empty())
+    {
+        e.getMessageController()->reportErrorToClient("No Samples Collected",
+                                                      "No samples were saved to " + p.u8string());
+        return false;
+    }
+    return true;
+}
+
 bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
 {
+    if (style == SaveStyles::ONLY_COLLECT)
+    {
+        return onlyCollect(p, e, -1);
+    }
     fs::path riffPath = p;
     fs::path collectDir;
 
@@ -501,7 +528,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
     e.prepareToStream();
 
     std::string reparentInto;
-    if (style == SaveStyles::COLLECT_SAMPLES)
+    if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
     {
         auto [r, c, rp, emsg] = setupForCollection(p);
         if (emsg.empty())
@@ -518,7 +545,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
 
     try
     {
-        if (style == SaveStyles::COLLECT_SAMPLES)
+        if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
         {
             collectSamplesInto(collectDir, e, -1);
             e.getSampleManager()->reparentSamplesOnStreamToRelative(reparentInto);
@@ -557,7 +584,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
 
         f->Save(riffPath.u8string());
 
-        if (style == SaveStyles::COLLECT_SAMPLES)
+        if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
         {
             e.getSampleManager()->clearReparenting();
         }
@@ -572,13 +599,20 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
 
 bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::SaveStyles style)
 {
+    if (style == SaveStyles::ONLY_COLLECT)
+    {
+        if (part < 0 || part >= numParts)
+            return false;
+        return onlyCollect(p, e, part);
+    }
+
     fs::path riffPath = p;
     fs::path collectDir;
     std::string reparentInto;
 
     e.getSampleManager()->remapIds.clear();
     e.prepareToStream();
-    if (style == SaveStyles::COLLECT_SAMPLES)
+    if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
     {
         auto [r, c, rp, emsg] = setupForCollection(p);
         if (emsg.empty())
@@ -595,7 +629,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
 
     try
     {
-        if (style == SaveStyles::COLLECT_SAMPLES)
+        if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
         {
             collectSamplesInto(collectDir, e, part);
             e.getSampleManager()->reparentSamplesOnStreamToRelative(reparentInto);
@@ -672,7 +706,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
 
         f->Save(riffPath.u8string());
 
-        if (style == SaveStyles::COLLECT_SAMPLES)
+        if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
         {
             e.getSampleManager()->clearReparenting();
         }
