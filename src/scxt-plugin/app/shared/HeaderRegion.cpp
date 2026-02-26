@@ -434,7 +434,18 @@ void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
     p.addItem("Export Part " + std::to_string(editor->selectedPart + 1) + " as SFZ",
               [w = juce::Component::SafePointer(this)]() {
                   if (w)
-                      w->doSaveSelectedPart(patch_io::SaveStyles::AS_SFZ);
+                  {
+                      w->editor->promptOKCancel(
+                          "Export Part as SFZ",
+                          "Export Part as SFZ will save a tiny subset of ShortCircuit's features. "
+                          "Use this feature just to export geometry and samples in a portable "
+                          "format. Do not use it to preserve "
+                          "and transmit complete short circuit programs.",
+                          [ww = w]() {
+                              if (ww)
+                                  ww->doSaveSelectedPart(patch_io::SaveStyles::AS_SFZ);
+                          });
+                  }
               });
 
     p.addSeparator();

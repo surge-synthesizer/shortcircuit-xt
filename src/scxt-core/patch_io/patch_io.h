@@ -52,7 +52,8 @@ bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
 bool initFromResourceBundle(scxt::engine::Engine &e, const std::string &file);
 
 // use -1 for all parts
-void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part);
+std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collectDir,
+                                                          const scxt::engine::Engine &e, int part);
 
 struct SCMonolithSampleReader
 {

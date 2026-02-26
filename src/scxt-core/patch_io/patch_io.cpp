@@ -429,9 +429,11 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
     return toCollect;
 }
 
-void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part)
+std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collectDir,
+                                                          const scxt::engine::Engine &e, int part)
 {
     std::vector<fs::path> tempFilesCreated;
+    std::unordered_map<SampleID, fs::path> res;
     auto toCollect = getSamplePathsFor(e, part, tempFilesCreated);
     if (part < 0)
     {
@@ -443,14 +445,14 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
                  "Collecting samples for part " << part << " to '" << collectDir.u8string() << "'");
     }
 
-    std::set<fs::path> uniquePaths;
+    std::map<fs::path, SampleID> uniquePaths;
     for (const auto &[sid, sample] : toCollect)
     {
-        uniquePaths.insert(sample->getPath());
+        uniquePaths.insert({sample->getPath(), sid});
     }
 
     std::set<fs::path> collectedFilenames;
-    for (const auto &c : uniquePaths)
+    for (const auto &[c, sid] : uniquePaths)
     {
         SCLOG_IF(patchIO, "   - " << c.u8string());
         if (collectedFilenames.find(c.filename()) != collectedFilenames.end())
@@ -461,18 +463,19 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
                                              c.filename().u8string() + "' with " +
                                              "different paths. This is currently unsupported for "
                                              "collect mode and needs fixing soonish!");
-            return;
+            return {};
         }
         collectedFilenames.insert(c.filename());
         try
         {
             fs::copy_file(c, collectDir / c.filename(), fs::copy_options::overwrite_existing);
+            res.insert({sid, collectDir / c.filename()});
         }
         catch (fs::filesystem_error &fse)
         {
             SCLOG_IF(patchIO, "Unable to copy " << c.u8string() << " " << fse.what());
             e.getMessageController()->reportErrorToClient("Unable to copy sample", fse.what());
-            return;
+            return {};
         }
     }
     for (auto &f : tempFilesCreated)
@@ -486,6 +489,7 @@ void collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &
             SCLOG_IF(patchIO, "Unable to remove " << f.u8string() << " " << fse.what());
         }
     }
+    return res;
 }
 
 bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
