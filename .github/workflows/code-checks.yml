@@ -3,13 +3,13 @@ on: [ pull_request ]
 jobs:
   formatting-check:
     name: Clang Format Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     strategy:
       matrix:
         path: [ 'src', 'tests' ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Run clang-format style check
         uses: surge-synthesizer/sst-githubactions/clang-format-check@main
