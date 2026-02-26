@@ -31,6 +31,7 @@
 #include "configuration.h"
 #include "utils.h"
 #include "patch_io/patch_io.h"
+#include "messaging/messaging.h"
 
 namespace scxt::sfz_support
 {
