@@ -1381,7 +1381,7 @@ struct MiscPanel : juce::Component, HasEditor
                       });
         };
 
-        gen(modulation::modulators::RandomStorage::Style::UNIFORM_01, "Uniform 0-1");
+        gen(modulation::modulators::RandomStorage::Style::UNIFORM_01, "Uniform Unipolar");
         gen(modulation::modulators::RandomStorage::Style::UNIFORM_BIPOLAR, "Uniform Bipolar");
         gen(modulation::modulators::RandomStorage::Style::NORMAL, "Normal");
         gen(modulation::modulators::RandomStorage::Style::HALF_NORMAL, "Half Normal");
@@ -1449,16 +1449,18 @@ struct MiscPanel : juce::Component, HasEditor
             switch (rs.style)
             {
             case modulation::modulators::RandomStorage::UNIFORM_01:
-                randomModeButtons[i]->setLabel("UNIFORM 0-1");
+                randomModeButtons[i]->setLabel("UNIFORM UNIPOLAR");
                 break;
             case modulation::modulators::RandomStorage::UNIFORM_BIPOLAR:
-                randomModeButtons[i]->setLabel(std::string("UNIFORM ") + u8"\U000000B1" + "1");
+                // randomModeButtons[i]->setLabel(std::string("UNIFORM ") + u8"\U000000B1" + "1");
+                randomModeButtons[i]->setLabel(std::string("UNIFORM BIPOLAR"));
                 break;
             case modulation::modulators::RandomStorage::NORMAL:
                 randomModeButtons[i]->setLabel("NORMAL");
                 break;
             case modulation::modulators::RandomStorage::HALF_NORMAL:
-                randomModeButtons[i]->setLabel(std::string() + u8"\U000000BD" + " NORMAL");
+                // randomModeButtons[i]->setLabel(std::string() + u8"\U000000BD" + " NORMAL");
+                randomModeButtons[i]->setLabel("HALF NORMAL");
                 break;
             }
         }

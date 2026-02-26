@@ -158,14 +158,28 @@ inline void doMiscmodUpdate(const gzMiscStorageUpdate_t &payload, const engine::
         auto sz = e.getSelectionManager()->currentlySelectedZones();
         if (!sz.empty())
         {
-            cont.scheduleAudioThreadCallback([index = 0, storage = storage, zs = sz](auto &eng) {
-                for (const auto &z : zs)
-                {
-                    auto &zone =
-                        eng.getPatch()->getPart(z.part)->getGroup(z.group)->getZone(z.zone);
-                    zone->miscSourceStorage = storage;
-                }
-            });
+            cont.scheduleAudioThreadCallback(
+                [storage = storage, zs = sz](auto &eng) {
+                    for (const auto &z : zs)
+                    {
+                        auto &zone =
+                            eng.getPatch()->getPart(z.part)->getGroup(z.group)->getZone(z.zone);
+                        zone->miscSourceStorage = storage;
+                    }
+                },
+                [](const auto &engine) {
+                    auto lz = engine.getSelectionManager()->currentLeadZone(engine);
+                    if (lz.has_value())
+                    {
+                        auto &z =
+                            engine.getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(
+                                lz->zone);
+                        serializationSendToClient(
+                            messaging::client::s2c_update_zone_matrix_metadata,
+                            voice::modulation::getVoiceMatrixMetadata(*z),
+                            *(engine.getMessageController()));
+                    }
+                });
         }
     }
     else
@@ -173,14 +187,26 @@ inline void doMiscmodUpdate(const gzMiscStorageUpdate_t &payload, const engine::
         auto sg = e.getSelectionManager()->currentlySelectedGroups();
         if (!sg.empty())
         {
-            cont.scheduleAudioThreadCallback([index = 0, storage = storage, gs = sg](auto &eng) {
-                for (const auto &z : gs)
-                {
-                    auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
-                    grp->miscSourceStorage = storage;
-                    SCLOG_IF(warnings, "Probably need to restart something here");
-                }
-            });
+            cont.scheduleAudioThreadCallback(
+                [storage = storage, gs = sg](auto &eng) {
+                    for (const auto &z : gs)
+                    {
+                        auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
+                        grp->miscSourceStorage = storage;
+                        SCLOG_IF(warnings, "Probably need to restart something here");
+                    }
+                },
+                [](const auto &engine) {
+                    auto lg = engine.getSelectionManager()->currentLeadGroup(engine);
+                    if (lg.has_value())
+                    {
+                        auto &g = engine.getPatch()->getPart(lg->part)->getGroup(lg->group);
+                        serializationSendToClient(
+                            messaging::client::s2c_update_group_matrix_metadata,
+                            modulation::getGroupMatrixMetadata(*g),
+                            *(engine.getMessageController()));
+                    }
+                });
         }
     }
 }
