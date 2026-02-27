@@ -36,6 +36,9 @@
 
 #include "messaging/client/client_serial.h"
 #include "messaging/client/client_messages.h"
+
+#include "sst/jucegui/components/MultiSwitch.h"
+#include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/RuledLabel.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
@@ -463,6 +466,7 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_utilfilt, "filters/utility-filter.json");
 
     a(dsp::processor::proct_eq_tilt, "eq/tilt-eq.json");
+    a(dsp::processor::proct_eq_3band_parametric_A, "eq/3-band-eq.json");
 
     a(dsp::processor::proct_osc_correlatednoise, "generators/correlated-noise.json");
     a(dsp::processor::proct_osc_sineplus, "generators/sineplus.json");
@@ -622,10 +626,6 @@ void ProcessorPane::rebuildControlsFromDescription()
     {
         switch (processorControlDescription.type)
         {
-        case dsp::processor::proct_eq_3band_parametric_A:
-            layoutControlsEQNBandParm();
-            break;
-
         case dsp::processor::proct_eq_morph:
             layoutControlsEQMorph();
             break;
@@ -1002,6 +1002,94 @@ void ProcessorPane::layoutControlsWithJsonEngine(const std::string &jsonpath)
         editor->displayError("JSON Parsing Error", *res.error);
 }
 
+void ProcessorPane::layoutControlsEQMorph()
+{
+    namespace lo = theme::layout;
+    namespace locon = lo::constants;
+
+    auto eqdisp = std::make_unique<
+        EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2, false>>(*this);
+    auto eq = getContentAreaComponent()->getLocalBounds();
+
+    eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
+
+    auto presets = eq.withHeight(16);
+
+    auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
+        if (w)
+        {
+            w->rebuildCurves();
+        }
+    };
+
+    intEditors[0] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0], "S0");
+    getContentAreaComponent()->addAndMakeVisible(*intEditors[0]->item);
+    intEditors[0]->item->setBounds(presets.withWidth(presets.getWidth() / 2).reduced(0, 2));
+    intAttachments[0]->andThenOnGui(thenRecalc);
+
+    intEditors[1] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1], "S0");
+    getContentAreaComponent()->addAndMakeVisible(*intEditors[1]->item);
+
+    intEditors[1]->item->setBounds(presets.withWidth(presets.getWidth() / 2)
+                                       .translated(presets.getWidth() / 2, 0)
+                                       .reduced(0, 2));
+    intAttachments[1]->andThenOnGui(thenRecalc);
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
+
+    auto lab = std::array{"Morph", "Freq1", "Freq2", "Gain", "BW"};
+    auto cols = lo::columns(presets.translated(0, 18).withHeight(38), 5);
+
+    static_assert(lab.size() < maxProcessorFloatParams);
+    for (int i = 0; i < lab.size(); ++i)
+    {
+        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i], lab[i]);
+        floatAttachments[i]->andThenOnGui(thenRecalc);
+
+        lo::knobCX<locon::mediumSmallKnob>(*floatEditors[i], cols[i].getCentreX(), cols[i].getY());
+    }
+
+    eqdisp->setBounds(eq.withTrimmedTop(65));
+    getContentAreaComponent()->addAndMakeVisible(*eqdisp);
+
+    otherEditors.push_back(std::move(eqdisp));
+}
+
+void ProcessorPane::layoutControlsEQGraphic()
+{
+    namespace lo = theme::layout;
+
+    auto eqdisp = std::make_unique<
+        EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
+    auto eq = getContentAreaComponent()->getLocalBounds();
+    auto sliderHeight = 65;
+
+    auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
+        if (w)
+        {
+            w->rebuildCurves();
+        }
+    };
+
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
+
+    auto cols = lo::columns(eq.withHeight(sliderHeight), 6);
+
+    for (int i = 0; i < 6; ++i)
+    {
+        floatEditors[i] = createWidgetAttachedTo<jcmp::VSlider>(floatAttachments[i],
+                                                                floatAttachments[i]->getLabel());
+        floatAttachments[i]->andThenOnGui(thenRecalc);
+
+        floatEditors[i]->item->setBounds(cols[i].reduced(3, 0));
+    }
+
+    eqdisp->setBounds(eq.withTrimmedTop(sliderHeight));
+    getContentAreaComponent()->addAndMakeVisible(*eqdisp);
+
+    otherEditors.push_back(std::move(eqdisp));
+}
+
 void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_document::Control &ctrl,
                                           const sst::jucegui::layouts::json_document::Class &cls)
 {
@@ -1143,6 +1231,27 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         }
 
         jsonIntEditors[idx] = std::move(ed);
+    }
+    else if (cls.controlType == "eq-display")
+    {
+        using eq_t = sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>;
+        auto eqdisp = std::make_unique<EqNBandDisplay<eq_t, 3>>(*this);
+
+        auto bd = getContentAreaComponent()->getLocalBounds();
+        eqdisp->setBounds(bd.withTrimmedTop(65));
+
+        eqdisp->rebuildCurves();
+
+        getContentAreaComponent()->addAndMakeVisible(*eqdisp);
+        eqDisplays.push_back(std::move(eqdisp));
+
+        for (int i = 0; i < 9; i++)
+        {
+            connectors::addGuiStep(*floatAttachments[i], [&](const auto &a) {
+                editor->hideTooltip();
+                eqDisplays.back()->rebuildCurves();
+            });
+        }
     }
     else if (auto nw = connectors::jsonlayout::createAndPositionNonDataWidget(ctrl, cls, onError))
     {
