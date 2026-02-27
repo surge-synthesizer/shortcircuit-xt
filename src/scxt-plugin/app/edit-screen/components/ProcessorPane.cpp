@@ -52,6 +52,8 @@
 
 #include "sst/voice-effects/VoiceEffectsPresetSupport.h"
 
+#include "EQDisplay.h"
+
 #include <sstream>
 #include <fstream>
 
@@ -1234,12 +1236,10 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
     }
     else if (cls.controlType == "eq-display")
     {
-        using eq_t = sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>;
-        auto eqdisp = std::make_unique<EqNBandDisplay<eq_t, 3>>(*this);
+        auto eqdisp = std::make_unique<EqRenderer3Band>(*this);
 
         auto bd = getContentAreaComponent()->getLocalBounds();
         eqdisp->setBounds(bd.withTrimmedTop(65));
-
         eqdisp->rebuildCurves();
 
         getContentAreaComponent()->addAndMakeVisible(*eqdisp);
