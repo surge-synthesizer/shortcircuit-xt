@@ -32,6 +32,7 @@
 #include "engine/engine.h"
 #include "configuration.h"
 #include <cctype>
+#include <sstream>
 
 namespace scxt::sfz_support
 {
@@ -64,6 +65,208 @@ int parseMidiNote(const std::string &s, int offset)
     return std::atol(s.c_str());
 }
 
+using opCodeMap_t = std::map<std::string, std::pair<std::string, bool>>;
+
+std::optional<std::string> consumeOpcode(opCodeMap_t &opCodes, const std::string &key)
+{
+    auto it = opCodes.find(key);
+    if (it == opCodes.end())
+        return std::nullopt;
+    it->second.second = true;
+    return it->second.first;
+}
+
+void zoneGeometry(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes, int &loadInfo,
+                  const std::function<void(const std::string &, const std::string &)> &onError,
+                  int octaveOffset)
+{
+    auto &mp = zn->mapping;
+
+    if (auto v = consumeOpcode(opCodes, "key"); v.has_value())
+    {
+        auto pmn = parseMidiNote(*v, octaveOffset);
+        mp.rootKey = pmn;
+        mp.keyboardRange.keyStart = pmn;
+        mp.keyboardRange.keyEnd = pmn;
+        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+    }
+
+    if (auto v = consumeOpcode(opCodes, "pitch_keycenter"); v.has_value())
+    {
+        mp.rootKey = parseMidiNote(*v, octaveOffset);
+        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+    }
+
+    if (auto v = consumeOpcode(opCodes, "lokey"); v.has_value())
+    {
+        mp.keyboardRange.keyStart = parseMidiNote(*v, octaveOffset);
+        if (mp.keyboardRange.keyStart > mp.keyboardRange.keyEnd)
+        {
+            onError("SFZ Keyrange Error", "SFZ Keyrange Autofix for../ : lokey > hikey (" + *v +
+                                              " > " + std::to_string(mp.keyboardRange.keyEnd) +
+                                              ")");
+            std::swap(mp.keyboardRange.keyStart, mp.keyboardRange.keyEnd);
+        }
+        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+    }
+
+    if (auto v = consumeOpcode(opCodes, "hikey"); v.has_value())
+    {
+        mp.keyboardRange.keyEnd = parseMidiNote(*v, octaveOffset);
+        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+        if (mp.keyboardRange.keyEnd < mp.keyboardRange.keyStart)
+        {
+            onError("SFZ Keyrange Error", "SFZ Keyrange Autofix for : hikey < lokey (" + *v +
+                                              " < " + std::to_string(mp.keyboardRange.keyStart) +
+                                              ")");
+            std::swap(mp.keyboardRange.keyStart, mp.keyboardRange.keyEnd);
+        }
+    }
+
+    if (auto v = consumeOpcode(opCodes, "lovel"); v.has_value())
+    {
+        mp.velocityRange.velStart = std::atol(v->c_str());
+        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+        if (mp.velocityRange.velStart > mp.velocityRange.velEnd)
+        {
+            onError("SFZ Velocity Error", "SFZ Velocity Autifix for : lovel > hivel (" + *v +
+                                              " > " + std::to_string(mp.velocityRange.velEnd) +
+                                              ")");
+            std::swap(mp.velocityRange.velStart, mp.velocityRange.velEnd);
+        }
+    }
+
+    if (auto v = consumeOpcode(opCodes, "hivel"); v.has_value())
+    {
+        mp.velocityRange.velEnd = std::atol(v->c_str());
+        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+        if (mp.velocityRange.velEnd < mp.velocityRange.velStart)
+        {
+            onError("SFZ Velocity Error", "SFZ Velocity Error AutoFix for : hivel < lovel (" + *v +
+                                              " < " + std::to_string(mp.velocityRange.velStart) +
+                                              ")");
+            std::swap(mp.velocityRange.velStart, mp.velocityRange.velEnd);
+        }
+    }
+
+    // OK so xfin_lovel xfin_hivel is how velocity fades occur but they
+    // are distinct from the geometry so
+    auto l = consumeOpcode(opCodes, "xfin_lovel");
+    auto h = consumeOpcode(opCodes, "xfin_hivel");
+    if (l.has_value() && h.has_value())
+    {
+        auto lv = std::atol(l->c_str());
+        auto hv = std::atol(h->c_str());
+        if (hv < lv)
+        {
+            onError("SFZ Velocity Error",
+                    "SFZ Velocity Error AutoFix for : xfin_hivel < xfin_lovel (" + *h + " < " + *l +
+                        ")");
+            std::swap(lv, hv);
+        }
+        mp.velocityRange.velStart = lv;
+        mp.velocityRange.fadeStart = hv - lv;
+    }
+
+    l = consumeOpcode(opCodes, "xfout_lovel");
+    h = consumeOpcode(opCodes, "xfout_hivel");
+    if (l.has_value() && h.has_value())
+    {
+        auto lv = std::atol(l->c_str());
+        auto hv = std::atol(h->c_str());
+        if (hv < lv)
+        {
+            onError("SFZ Velocity Error",
+                    "SFZ Velocity Error AutoFix for : xfout_hivel < xfout_lovel (" + *h + " < " +
+                        *l + ")");
+            std::swap(lv, hv);
+        }
+        mp.velocityRange.velEnd = hv;
+        mp.velocityRange.fadeEnd = hv - lv;
+    }
+}
+
+void zonePlayback(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes)
+{
+    auto &mp = zn->mapping;
+
+    if (auto v = consumeOpcode(opCodes, "volume"); v.has_value())
+    {
+        mp.amplitude = std::atof(v->c_str()); // decibels
+    }
+
+    if (auto v = consumeOpcode(opCodes, "tune"); v.has_value())
+    {
+        // Tune is supplied in cents. Our pitch offset is in semitones
+        mp.pitchOffset = std::atof(v->c_str()) * 0.01;
+    }
+
+    if (auto v = consumeOpcode(opCodes, "transpose"); v.has_value())
+    {
+        mp.pitchOffset = std::atoi(v->c_str());
+    }
+}
+
+void zoneLoop(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes, int &loadInfo,
+              int64_t &loop_start, int64_t &loop_end)
+{
+    if (auto v = consumeOpcode(opCodes, "loop_start"); v.has_value())
+    {
+        loop_start = std::atol(v->c_str());
+        loadInfo = loadInfo & ~engine::Zone::LOOP;
+    }
+
+    if (auto v = consumeOpcode(opCodes, "loop_end"); v.has_value())
+    {
+        loop_end = std::atol(v->c_str());
+        loadInfo = loadInfo & ~engine::Zone::LOOP;
+    }
+
+    if (auto v = consumeOpcode(opCodes, "loop_mode"); v.has_value())
+    {
+        if (*v == "loop_continuous")
+        {
+            // FIXME: In round robin looping modes this is probably wrong
+            zn->variantData.variants[0].loopActive = true;
+            zn->variantData.variants[0].loopMode = engine::Zone::LOOP_DURING_VOICE;
+        }
+        else
+        {
+            SCLOG_IF(sampleCompoundParsers, "SFZ Unsupported loop_mode : " << *v);
+        }
+    }
+}
+
+void zoneEnvelope(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes, int slot,
+                  const std::string &prefix)
+{
+    auto &eg = zn->egStorage[slot];
+
+    if (auto v = consumeOpcode(opCodes, prefix + "_sustain"); v.has_value())
+        eg.s = std::atof(v->c_str()) * 0.01;
+
+    if (auto v = consumeOpcode(opCodes, prefix + "_delay"); v.has_value())
+        eg.dly = scxt::modulation::secondsToNormalizedEnvTime(std::atof(v->c_str()));
+
+    if (auto v = consumeOpcode(opCodes, prefix + "_attack"); v.has_value())
+        eg.a = scxt::modulation::secondsToNormalizedEnvTime(std::atof(v->c_str()));
+
+    if (auto v = consumeOpcode(opCodes, prefix + "_decay"); v.has_value())
+    {
+        eg.d = scxt::modulation::secondsToNormalizedEnvTime(std::atof(v->c_str()));
+        eg.dShape = -1;
+    }
+
+    if (auto v = consumeOpcode(opCodes, prefix + "_hold"); v.has_value())
+        eg.h = scxt::modulation::secondsToNormalizedEnvTime(std::atof(v->c_str()));
+
+    if (auto v = consumeOpcode(opCodes, prefix + "_release"); v.has_value())
+    {
+        eg.r = scxt::modulation::secondsToNormalizedEnvTime(std::atof(v->c_str()));
+        eg.rShape = -1;
+    }
+}
+
 bool importSFZ(const fs::path &f, engine::Engine &e)
 {
     int octaveOffset{0};
@@ -90,6 +293,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     int firstGroupWithZonesAdded = -1;
     int regionCount{0};
     SFZParser::opCodes_t currentGroupOpcodes;
+    std::set<std::string> unusedZoneOpcodes;
     for (const auto &[r, list] : doc)
     {
         if (r.type != SFZParser::Header::region)
@@ -229,148 +433,30 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
             int64_t loop_start{-1}, loop_end{-1};
 
-            for (const auto &[n, ls] :
-                 {std::make_pair(std::string("Group"), currentGroupOpcodes), {"Region", list}})
+            opCodeMap_t mergedOpcodes;
+            for (const auto &oc : currentGroupOpcodes)
+                mergedOpcodes[oc.name] = {oc.value, false};
+            for (const auto &oc : list)
+                mergedOpcodes[oc.name] = {oc.value, false};
+
+            // Already used
+            consumeOpcode(mergedOpcodes, "sample");
+            consumeOpcode(mergedOpcodes, "seq_position");
+
+            auto onError = [&e](const std::string &title, const std::string &msg) {
+                e.getMessageController()->reportErrorToClient(title, msg);
+            };
+            zoneGeometry(zn, mergedOpcodes, loadInfo, onError, octaveOffset);
+            zonePlayback(zn, mergedOpcodes);
+            zoneLoop(zn, mergedOpcodes, loadInfo, loop_start, loop_end);
+            zoneEnvelope(zn, mergedOpcodes, 0, "ampeg");
+            zoneEnvelope(zn, mergedOpcodes, 1, "fileg");
+
+            for (auto &[n, m] : mergedOpcodes)
             {
-                for (auto &oc : ls)
-                {
-                    if (oc.name == "pitch_keycenter")
-                    {
-                        zn->mapping.rootKey = parseMidiNote(oc.value, octaveOffset);
-                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
-                    }
-                    else if (oc.name == "lokey")
-                    {
-                        zn->mapping.keyboardRange.keyStart = parseMidiNote(oc.value, octaveOffset);
-                        if (zn->mapping.keyboardRange.keyStart > zn->mapping.keyboardRange.keyEnd)
-                        {
-                            e.getMessageController()->reportErrorToClient(
-                                "SFZ Keyrange Error",
-                                "SFZ Keyrange Autofix for../ : lokey > hikey (" + oc.value + " > " +
-                                    std::to_string(zn->mapping.keyboardRange.keyEnd) + ")");
-                            std::swap(zn->mapping.keyboardRange.keyStart,
-                                      zn->mapping.keyboardRange.keyEnd);
-                        }
-                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
-                    }
-                    else if (oc.name == "hikey")
-                    {
-                        zn->mapping.keyboardRange.keyEnd = parseMidiNote(oc.value, octaveOffset);
-                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
-                        if (zn->mapping.keyboardRange.keyEnd < zn->mapping.keyboardRange.keyStart)
-                        {
-                            e.getMessageController()->reportErrorToClient(
-                                "SFZ Keyrange Error",
-                                "SFZ Keyrange Autofix for : hikey < lokey (" + oc.value + " < " +
-                                    std::to_string(zn->mapping.keyboardRange.keyStart) + ")");
-                            std::swap(zn->mapping.keyboardRange.keyStart,
-                                      zn->mapping.keyboardRange.keyEnd);
-                        }
-                    }
-                    else if (oc.name == "key")
-                    {
-                        auto pmn = parseMidiNote(oc.value, octaveOffset);
-                        zn->mapping.rootKey = pmn;
-                        zn->mapping.keyboardRange.keyStart = pmn;
-                        zn->mapping.keyboardRange.keyEnd = pmn;
-                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
-                    }
-                    else if (oc.name == "lovel")
-                    {
-                        zn->mapping.velocityRange.velStart = std::atol(oc.value.c_str());
-                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
-                        if (zn->mapping.velocityRange.velStart > zn->mapping.velocityRange.velEnd)
-                        {
-                            e.getMessageController()->reportErrorToClient(
-                                "SFZ Velocity Error",
-                                "SFZ Velocity Autifix for : lovel > hivel (" + oc.value + " > " +
-                                    std::to_string(zn->mapping.velocityRange.velEnd) + ")");
-                            std::swap(zn->mapping.velocityRange.velStart,
-                                      zn->mapping.velocityRange.velEnd);
-                        }
-                    }
-                    else if (oc.name == "hivel")
-                    {
-                        zn->mapping.velocityRange.velEnd = std::atol(oc.value.c_str());
-                        loadInfo = loadInfo & ~engine::Zone::MAPPING;
-                        if (zn->mapping.velocityRange.velEnd < zn->mapping.velocityRange.velStart)
-                        {
-                            e.getMessageController()->reportErrorToClient(
-                                "SFZ Velocity Error",
-                                "SFZ Velocity Error AutoFix for : hivel < lovel (" + oc.value +
-                                    " < " + std::to_string(zn->mapping.velocityRange.velStart) +
-                                    ")");
-                            std::swap(zn->mapping.velocityRange.velStart,
-                                      zn->mapping.velocityRange.velEnd);
-                        }
-                    }
-                    else if (oc.name == "loop_start")
-                    {
-                        loop_start = std::atol(oc.value.c_str());
-                        loadInfo = loadInfo & ~engine::Zone::LOOP;
-                    }
-                    else if (oc.name == "loop_end")
-                    {
-                        loop_end = std::atol(oc.value.c_str());
-                        loadInfo = loadInfo & ~engine::Zone::LOOP;
-                    }
-                    else if (oc.name == "sample" || oc.name == "seq_position")
-                    {
-                        // dealt with above
-                    }
-                    else if (oc.name == "ampeg_sustain")
-                    {
-                        zn->egStorage[0].s = std::atof(oc.value.c_str()) * 0.01;
-                    }
-                    else if (oc.name == "volume")
-                    {
-                        zn->mapping.amplitude = std::atof(oc.value.c_str()); // decibels
-                    }
-                    else if (oc.name == "tune")
-                    {
-                        // Tune is supplied in cents. Our pitch offset is in semitones
-                        zn->mapping.pitchOffset = std::atof(oc.value.c_str()) * 0.01;
-                    }
-                    else if (oc.name == "loop_mode")
-                    {
-                        if (oc.value == "loop_continuous")
-                        {
-                            // FIXME: In round robin looping modes this is probably wrong
-                            zn->variantData.variants[0].loopActive = true;
-                            zn->variantData.variants[0].loopMode = engine::Zone::LOOP_DURING_VOICE;
-                        }
-                        else
-                        {
-                            SCLOG_IF(sampleCompoundParsers,
-                                     "SFZ Unsupported loop_mode : " << oc.value);
-                        }
-                    }
-                    else if (oc.name == "transpose")
-                    {
-                        zn->mapping.pitchOffset = std::atoi(oc.value.c_str());
-                    }
-
-#define APPLYEG(v, d, t)                                                                           \
-    else if (oc.name == v)                                                                         \
-    {                                                                                              \
-        zn->egStorage[d].t =                                                                       \
-            scxt::modulation::secondsToNormalizedEnvTime(std::atof(oc.value.c_str()));             \
-    }
-
-                    APPLYEG("ampeg_delay", 0, dly)
-                    APPLYEG("delay", 0, dly)
-                    APPLYEG("ampeg_attack", 0, a)
-                    APPLYEG("ampeg_decay", 0, d)
-                    APPLYEG("ampeg_hold", 0, h)
-                    APPLYEG("ampeg_release", 0, r)
-                    else
-                    {
-                        if (n != "Group")
-                            SCLOG_IF(sampleCompoundParsers,
-                                     "    Skipped " << n << "-originated OpCode for region: "
-                                                    << oc.name << " -> " << oc.value);
-                    }
-                }
+                if (m.second)
+                    continue;
+                unusedZoneOpcodes.insert(n);
             }
             int variantIndex{-1};
             if (roundRobinPosition > 0)
@@ -460,6 +546,17 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         }
         break;
         }
+    }
+    if (!unusedZoneOpcodes.empty())
+    {
+        std::ostringstream oss;
+        std::string pfx = "";
+        for (auto &oc : unusedZoneOpcodes)
+        {
+            oss << pfx << oc;
+            pfx = ", ";
+        }
+        SCLOG_IF(sampleCompoundParsers || scxt::log::debug, "Unused SFZ OpCodes : " << oss.str())
     }
 
     e.getSelectionManager()->applySelectActions(selection::SelectionManager::SelectActionContents(
