@@ -45,8 +45,6 @@
 #include "engine/zone.h"
 #include "theme/Layout.h"
 
-
-
 namespace scxt::ui::app::edit_screen
 {
 
