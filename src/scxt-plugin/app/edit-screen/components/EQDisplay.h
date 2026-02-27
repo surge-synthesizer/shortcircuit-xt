@@ -401,6 +401,26 @@ struct EqNBandDisplay : EqDisplaySupport<Proc, nSub>
             }
         }
     }
+    void mouseMagnify(const juce::MouseEvent &e, float scaleFactor) override
+    {
+        if constexpr (showHotzones)
+        {
+            for (int i = 0; i < nSub; ++i)
+            {
+                if (this->isBandHovered[i])
+                {
+                    if (this->bandSelect && this->bandSelect->getValue() != i)
+                        this->bandSelect->setValueFromGUI(i);
+                    auto &a = this->mProcessorPane.floatAttachments[i * 3 + 2];
+                    auto newVal = a->getValue() * scaleFactor;
+                    if (newVal >= a->getMin() && newVal <= a->getMax())
+                        a->setValueFromGUI(newVal);
+                    this->mProcessorPane.repaint();
+                    break;
+                }
+            }
+        }
+    }
 };
 
 using eq_t = sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>;
