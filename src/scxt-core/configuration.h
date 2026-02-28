@@ -81,8 +81,8 @@ static constexpr uint16_t triggerConditionsPerGroup{4};
 
 static constexpr uint16_t maxGeneratorsPerVoice{64};
 
-static constexpr size_t modMatrixRowsPerZone{12};
-static constexpr size_t modMatrixRowsPerGroup{12};
+static constexpr size_t modMatrixRowsPerZone{18};
+static constexpr size_t modMatrixRowsPerGroup{18};
 
 // For tail detection use a full block below this level as silence
 static constexpr float silenceThresh{1e-10f};
