@@ -771,11 +771,11 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
 }
 
 void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootKey,
-                                                KeyboardRange krange, VelocityRange vrange)
+                                                KeyboardRange krange, VelocityRange vrange,
+                                                bool useSampleRangeInfo)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
-    // TODO: Deal with compound types more comprehensively
     // If you add a type here add it to Browser::isLoadableFile also
     if (extensionMatches(p, ".sf2"))
     {
@@ -842,7 +842,7 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         });
         return;
     }
-    if (extensionMatches(p, ".sf2"))
+    if (extensionMatches(p, ".gig"))
     {
         // TODO ok this refresh and restart is a bit unsatisfactory
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
@@ -880,11 +880,14 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
 
     // 2. Create a zone object on this thread but don't add it
     auto zptr = std::make_unique<Zone>(*sid);
-    // TODO fixme
     zptr->mapping.keyboardRange = krange;
     zptr->mapping.velocityRange = vrange;
     zptr->mapping.rootKey = rootKey;
-    zptr->attachToSample(*sampleManager);
+
+    auto sir = (int)Zone::SampleInformationRead::ALL;
+    if (!useSampleRangeInfo)
+        sir = (int)Zone::SampleInformationRead::LOOP | (int)Zone::SampleInformationRead::ENDPOINTS;
+    zptr->attachToSample(*sampleManager, 0, sir);
 
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);

@@ -147,6 +147,7 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
 
 std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
 {
+    SCLOG_IF(sampleLoadAndPurge, "Loading sample by path '" << p.u8string() << "'");
     assert(threadingChecker.isSerialThread());
 
     for (const auto &[alreadyId, sm] : samples)
@@ -492,8 +493,6 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
 void SampleManager::purgeUnreferencedSamples()
 {
     assert(threadingChecker.isSerialThread());
-    SCLOG_IF(sampleLoadAndPurge,
-             "Attempting to Purge Unreferenced Samples " << std::this_thread::get_id());
     auto lk = acquireMapLock();
     auto preSize{samples.size()};
     auto b = samples.begin();

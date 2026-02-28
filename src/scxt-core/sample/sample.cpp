@@ -52,7 +52,7 @@ bool Sample::load(const fs::path &path)
     resetErrorString();
     if (!fs::exists(path))
     {
-        addError("File " + path.u8string() + " does not exist.");
+        addError("File '" + path.u8string() + "' does not exist.");
         return false;
     }
 

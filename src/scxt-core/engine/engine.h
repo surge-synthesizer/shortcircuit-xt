@@ -568,9 +568,13 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     /*
      * Serialization thread originated mutation apis
      */
-    void loadSampleIntoSelectedPartAndGroup(const fs::path &, int16_t rootKey = 60,
-                                            KeyboardRange krange = {48, 72},
-                                            VelocityRange vrange = {0, 127});
+    void loadSampleIntoSelectedPartAndGroup(const fs::path &, int16_t rootKey, KeyboardRange krange,
+                                            VelocityRange vrange,
+                                            bool sampleRangeInfoOverridesArguments = false);
+    void loadSampleIntoSelectedPartAndGroup(const fs::path &p)
+    {
+        loadSampleIntoSelectedPartAndGroup(p, 60, {48, 72}, {0, 127}, true);
+    }
 
     void loadCompoundElementIntoSelectedPartAndGroup(
         const scxt::sample::compound::CompoundElement &, int16_t rootKey = 60,
