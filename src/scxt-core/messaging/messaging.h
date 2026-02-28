@@ -312,7 +312,8 @@ struct MessageController : MoveableOnly<MessageController>
     /*
      * A convenience function to report an error to the UI
      */
-    void reportErrorToClient(const std::string &title, const std::string &body);
+    void reportErrorToClient(const std::string &title, const std::string &body,
+                             const std::string &source, int line);
 
     /*
      * Some stats on messages back

@@ -277,9 +277,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         "Loading SFZ '" + f.filename().u8string() + "'", *(messageController));
 
     SFZParser parser;
-    parser.onError = [&e](const auto &s) {
-        e.getMessageController()->reportErrorToClient("SFZ Import Error", s);
-    };
+    parser.onError = [&e](const auto &s) { RAISE_ERROR_ENGINE(e, "SFZ Import Error", s); };
 
     auto doc = parser.parse(f);
     auto rootDir = f.parent_path();
@@ -352,10 +350,10 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             if (!scxt::isValidUtf(sampleFileString))
             {
                 SCLOG_IF(warnings, "Original file name is `" << sampleFileString << "`");
-                e.getMessageController()->reportErrorToClient(
-                    "SFZ Import Error", "Sample filename in region " + std::to_string(regionCount) +
-                                            " contains invalid UTF-8 sequence. "
-                                            "Stopping SFZ import");
+                RAISE_ERROR_ENGINE(e, "SFZ Import Error",
+                                   "Sample filename in region " + std::to_string(regionCount) +
+                                       " contains invalid UTF-8 sequence. "
+                                       "Stopping SFZ import");
                 return false;
             }
 
@@ -377,8 +375,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 {
                     SCLOG_IF(sampleCompoundParsers,
                              "Cannot load Sample : " << samplePath.u8string());
-                    e.getMessageController()->reportErrorToClient(
-                        "SFZ Import Error", "Cannot load sample '" + samplePath.u8string() + "'");
+                    RAISE_ERROR_ENGINE(e, "SFZ Import Error",
+                                       "Cannot load sample '" + samplePath.u8string() + "'");
                     break;
                 }
             }
@@ -392,8 +390,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 else
                 {
                     SCLOG_IF(sampleCompoundParsers, "Cannot load Sample : " << sampleFile);
-                    e.getMessageController()->reportErrorToClient(
-                        "SFZ Import Error", "Cannot load sample '" + sampleFile.u8string() + "'");
+                    RAISE_ERROR_ENGINE(e, "SFZ Import Error",
+                                       "Cannot load sample '" + sampleFile.u8string() + "'");
                     return false;
                 }
             }
@@ -402,9 +400,9 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 SCLOG_IF(sampleCompoundParsers, "Unable to load either '"
                                                     << samplePath.u8string() << "' or '"
                                                     << sampleFile.u8string() << "'");
-                e.getMessageController()->reportErrorToClient(
-                    "SFZ Import Error", "Unable to load either '" + samplePath.u8string() +
-                                            "' or '" + sampleFile.u8string() + "'");
+                RAISE_ERROR_ENGINE(e, "SFZ Import Error",
+                                   "Unable to load either '" + samplePath.u8string() + "' or '" +
+                                       sampleFile.u8string() + "'");
                 return false;
             }
 
@@ -444,7 +442,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             consumeOpcode(mergedOpcodes, "seq_position");
 
             auto onError = [&e](const std::string &title, const std::string &msg) {
-                e.getMessageController()->reportErrorToClient(title, msg);
+                RAISE_ERROR_ENGINE(e, title, msg);
             };
             zoneGeometry(zn, mergedOpcodes, loadInfo, onError, octaveOffset);
             zonePlayback(zn, mergedOpcodes);
@@ -478,9 +476,9 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 }
                 if (!attached)
                 {
-                    e.getMessageController()->reportErrorToClient(
-                        "Mis-mapped SFZ Round Robin",
-                        std::string("Unable to locate zone for sample ") + sampleFile.u8string());
+                    RAISE_ERROR_ENGINE(e, "Mis-mapped SFZ Round Robin",
+                                       std::string("Unable to locate zone for sample ") +
+                                           sampleFile.u8string());
                 }
             }
             else

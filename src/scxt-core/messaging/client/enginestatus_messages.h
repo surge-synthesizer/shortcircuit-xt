@@ -65,9 +65,8 @@ inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
             }
             catch (std::exception &err)
             {
-                nonconste.getMessageController()->reportErrorToClient(
-                    "Unstreaming Error",
-                    std::string("Unable to unstream engine state ") + err.what());
+                RAISE_ERROR_ENGINE(nonconste, "Unstreaming Error",
+                                   std::string("Unable to unstream engine state ") + err.what());
             }
         });
     }
@@ -83,8 +82,8 @@ inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
         }
         catch (std::exception &err)
         {
-            engine.getMessageController()->reportErrorToClient(
-                "Unstreaming Error", std::string("Unable to unstream engine state ") + err.what());
+            RAISE_ERROR_ENGINE(engine, "Unstreaming Error",
+                               std::string("Unable to unstream engine state ") + err.what());
         }
     }
 }

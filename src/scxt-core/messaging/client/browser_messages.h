@@ -112,9 +112,9 @@ inline void doPreviewBrowserSample(const previewBrowserSamplePayload_t &p,
         }
         else
         {
-            cont.reportErrorToClient("Unable to launch preview",
-                                     "Sample file preview load failed for " +
-                                         sampleAddress.path.u8string());
+            RAISE_ERROR_CONT(cont, "Unable to launch preview",
+                             "Sample file preview load failed for " +
+                                 sampleAddress.path.u8string());
         }
     }
     else if (action == 0)

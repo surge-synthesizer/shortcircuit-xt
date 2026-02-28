@@ -118,9 +118,8 @@ void resolveMultiFileMissingWorkItem(engine::Engine &e, const MissingResolutionW
     if (!isSF2 && !isMultiSample)
     {
         SCLOG_IF(missingResolution, "Cant deteremine multi style for " << p.u8string());
-        e.getMessageController()->reportErrorToClient(
-            "Unable to resolve missing with multifile",
-            "Can't determine the multifile type for path '" + p.u8string() + "''");
+        RAISE_ERROR_ENGINE(e, "Unable to resolve missing with multifile",
+                           "Can't determine the multifile type for path '" + p.u8string() + "''");
         return;
     }
 

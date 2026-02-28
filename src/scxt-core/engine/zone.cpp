@@ -221,9 +221,9 @@ void Zone::setupOnUnstream(const engine::Engine &e)
 
         if (!attachToSample(*(e.getSampleManager()), i, Zone::NONE))
         {
-            e.getMessageController()->reportErrorToClient(
-                "Sample Unstream Error", std::string() + "Unable to attach zone to sample " +
-                                             oid.to_string() + " at index " + std::to_string(i));
+            RAISE_ERROR_ENGINE(e, "Sample Unstream Error",
+                               std::string() + "Unable to attach zone to sample " +
+                                   oid.to_string() + " at index " + std::to_string(i));
         }
     }
     for (int p = 0; p < processorCount; ++p)

@@ -136,8 +136,8 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
 
                 if (!zn->attachToSample(*(e.getSampleManager())))
                 {
-                    messageController->reportErrorToClient("GIG Load Error",
-                                                           "Zone Unable to Attach to Sample");
+                    RAISE_ERROR_CONT(*messageController, "GIG Load Error",
+                                     "Zone Unable to Attach to Sample");
                     return false;
                 }
 
@@ -157,12 +157,12 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
     }
     catch (RIFF::Exception e)
     {
-        messageController->reportErrorToClient("GIG Load Error", e.Message);
+        RAISE_ERROR_CONT(*messageController, "GIG Load Error", e.Message);
         return false;
     }
     catch (const SCXTError &e)
     {
-        messageController->reportErrorToClient("GIG Load Error", e.what());
+        RAISE_ERROR_CONT(*messageController, "GIG Load Error", e.what());
         return false;
     }
     catch (...)

@@ -62,14 +62,13 @@ inline void doPartSwapFX(const partFxSwap_t &payload, const engine::Engine &engi
     auto [p1, b1, p2, b2, smc] = payload;
     if (p1 != p2)
     {
-        cont.reportErrorToClient("Cross Part Moves not supported yet",
-                                 "Part Swap FX must be within the same part");
+        RAISE_ERROR_CONT(cont, "Cross Part Moves not supported yet",
+                         "Part Swap FX must be within the same part");
         return;
     }
     if (b1 == b2)
     {
-        cont.reportErrorToClient("Cant move part onto itself",
-                                 "Part Swap FX had same bus location");
+        RAISE_ERROR_CONT(cont, "Cant move part onto itself", "Part Swap FX had same bus location");
         return;
     }
 

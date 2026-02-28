@@ -90,7 +90,7 @@ std::vector<std::pair<fs::path, bool>> BrowserDB::getBrowserLocations()
     catch (SQL::Exception &e)
     {
         SCLOG_IF(sqlDb, e.what());
-        mc.reportErrorToClient("Database Error", e.what());
+        RAISE_ERROR_CONT(mc, "Database Error", e.what());
     }
     return res;
 }

@@ -201,7 +201,7 @@ inline void serializationSendToClient(SerializationToClientMessageIds id, const 
     {
         if (id != s2c_report_error)
         {
-            mc.reportErrorToClient("JSON Streaming Error", e.what());
+            RAISE_ERROR_CONT(mc, "JSON Streaming Error", e.what());
         }
     }
 }

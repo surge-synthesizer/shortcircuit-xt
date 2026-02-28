@@ -592,7 +592,6 @@ void SCXTEditor::promptOKCancel(const std::string &title, const std::string &mes
 
 void SCXTEditor::displayError(const std::string &title, const std::string &message)
 {
-    SCLOG_IF(warnings, "Displaying error: [" << title << "] " << message);
     if (auto ao = searchForOverlay<sst::jucegui::screens::AlertOrPrompt>())
     {
         ao->appendTitleAndMessage(title, message);
