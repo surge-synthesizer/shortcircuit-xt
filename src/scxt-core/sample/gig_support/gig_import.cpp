@@ -105,13 +105,6 @@ bool importGIG(const fs::path &p, engine::Engine &e, int preset)
                     SCLOG_IF(sampleCompoundParsers, "Unnamed region");
                 }
                 SCLOG_IF(sampleCompoundParsers, "Dimension Count " << region->Dimensions);
-                if (region->Dimensions != 1)
-                {
-                    messageController->reportErrorToClient(
-                        "GIG Load Error", "Unsupported - Region has more than one dimension. "
-                                          "Please consider sharing this gig file with the team!");
-                    return false;
-                }
 
                 SCLOG_IF(sampleCompoundParsers, region->KeyGroup);
                 SCLOG_IF(sampleCompoundParsers,
