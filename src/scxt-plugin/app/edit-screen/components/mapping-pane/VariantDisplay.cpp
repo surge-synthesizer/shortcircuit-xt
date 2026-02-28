@@ -126,7 +126,8 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
 void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
 {
     selectedVariation = sel;
-    size_t emptySlot = 0;
+    // assume we are full unless otherwise known
+    size_t emptySlot = maxVariantsPerZone;
     for (int i = 0; i < maxVariantsPerZone; ++i)
     {
         if (!variantView.variants[i].active)
