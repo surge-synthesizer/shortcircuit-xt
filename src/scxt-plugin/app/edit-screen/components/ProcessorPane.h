@@ -32,7 +32,6 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/components/VSlider.h"
-#include "sst/jucegui/components/MultiSwitch.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/TextPushButton.h"
@@ -48,6 +47,9 @@
 
 namespace scxt::ui::app::edit_screen
 {
+
+struct EqRenderer3Band;
+
 struct ProcessorPane : sst::jucegui::components::NamedPanel,
                        HasEditor,
                        juce::DragAndDropTarget,
@@ -97,7 +99,6 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
 
     void layoutControls();
     void layoutControlsEBWaveforms();
-    void layoutControlsEQNBandParm();
     void layoutControlsEQMorph();
     void layoutControlsEQGraphic();
 
@@ -248,7 +249,10 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     std::array<jsonIntEditor_t, dsp::processor::maxProcessorIntParams> jsonIntEditors;
     std::array<jsonIntEditor_t, dsp::processor::maxProcessorFloatParams> jsonDeactEditors;
     std::vector<std::unique_ptr<juce::Component>> jsonLabels;
+
+    std::vector<std::unique_ptr<EqRenderer3Band>> eqDisplays;
 };
+
 } // namespace scxt::ui::app::edit_screen
 
 #endif // SHORTCIRCUIT_ADSRPANE_H

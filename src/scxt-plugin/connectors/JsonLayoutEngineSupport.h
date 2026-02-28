@@ -36,6 +36,7 @@
 #include <sst/jucegui/components/Knob.h>
 #include <sst/jucegui/components/HSlider.h>
 #include <sst/jucegui/components/VSlider.h>
+#include <sst/jucegui/components/DraggableTextEditableValue.h>
 #include <sst/jucegui/components/Label.h>
 #include <sst/jucegui/components/ToggleButton.h>
 #include <sst/jucegui/components/MultiSwitch.h>
@@ -171,6 +172,11 @@ createContinuousWidget(const sst::jucegui::layouts::json_document::Control &ctrl
     {
         auto sl = std::make_unique<jcmp::VSlider>();
         res = std::move(sl);
+    }
+    else if (cls.controlType == "value-edit")
+    {
+        auto ve = std::make_unique<jcmp::DraggableTextEditableValue>();
+        res = std::move(ve);
     }
 
     if (res)

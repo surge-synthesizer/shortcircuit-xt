@@ -125,7 +125,7 @@ static constexpr bool plugin{false};
 #if BUILD_IS_DEBUG
 static constexpr bool debug{true};
 #else
-static constexpr bool debug{true};
+static constexpr bool debug{false};
 #endif
 
 static constexpr bool always{true};   // use sparingly

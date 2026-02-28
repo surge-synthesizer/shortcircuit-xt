@@ -25,39 +25,32 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "ProcessorPane.h"
-#include "app/SCXTEditor.h"
-#include "sst/jucegui/components/VSlider.h"
-#include "sst/jucegui/components/JogUpDownButton.h"
-#include "theme/Layout.h"
+#ifndef SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_EQDISPLAY_H
+#define SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_EQDISPLAY_H
 
-// We include the DSP code here so we can do a UI-side render of the EQ cuve
+#include <functional>
+#include <string>
+
+#include "app/SCXTEditor.h"
+
+#include "sst/jucegui/components/MultiSwitch.h"
+
+// We include the DSP code here so we can do a UI-side render of the EQ curve
+
 #include "sst/voice-effects/eq/EqNBandParametric.h"
 #include "sst/voice-effects/eq/MorphEQ.h"
 #include "sst/voice-effects/eq/EqGraphic6Band.h"
 #include "sst/basic-blocks/tables/DbToLinearProvider.h"
 #include "sst/basic-blocks/tables/EqualTuningProvider.h"
 
-#include "sst/jucegui/components/MultiSwitch.h"
-#include "sst/jucegui/components/VSlider.h"
-
-#include "theme/Layout.h"
-
 namespace scxt::ui::app::edit_screen
 {
 
-namespace jcmp = sst::jucegui::components;
-
-namespace lo = theme::layout;
-namespace locon = lo::constants;
-
-// sigh - need this since we are virtual in component land
 struct EqDisplayBase : juce::Component
 {
     virtual void rebuildCurves() = 0;
     int nBands{0};
 
-    // bit of a hack - I hold a multiswitch data source we add to my parent
     struct BandSelect : sst::jucegui::data::Discrete
     {
         int nBands{0}, selBand{0};
@@ -135,11 +128,11 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
 
     std::function<void(Proc &, int)> mPrepareBand{nullptr};
 
-    EqDisplaySupport(ProcessorPane &p) : mProcessorPane(p)
+    explicit EqDisplaySupport(ProcessorPane &p) : mProcessorPane(p)
     {
         this->nBands = nSub;
         mProcessor.setStorage(&p.processorView);
-        rebuildCurves();
+        EqDisplaySupport<Proc, nSub>::rebuildCurves();
     }
 
     struct pt
@@ -151,12 +144,13 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
     std::array<juce::Rectangle<float>, nSub> bandHitRects;
     std::array<bool, nSub> isBandHovered{};
     int draggingBand{-1};
-    static constexpr int hotzoneSize = 4;
+    static constexpr int hotzoneSize = 5;
     bool paintHotzones{true};
     bool curvesBuilt{false};
     void rebuildCurves() override
     {
-        auto np = getWidth();
+        auto width = getWidth();
+        auto height = getHeight();
 
         float d[scxt::blockSize];
         for (int i = 0; i < scxt::blockSize; ++i)
@@ -169,7 +163,6 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         for (auto &c : curves)
             c.clear();
 
-        auto nr = -1000000;
         auto fStart = 3.0;
         auto fRange = 11.5;
         if (std::is_same<Proc, sst::voice_effects::eq::EqGraphic6Band<EqAdapter>>::value)
@@ -181,9 +174,9 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         {
             if (band > 0 && mPrepareBand)
                 mPrepareBand(mProcessor, band - 1);
-            for (int i = 0; i < np; ++i)
+            for (int i = 0; i < width; ++i)
             {
-                float norm = 1.0 * i / (np - 1);
+                float norm = 1.0 * i / (width - 1);
                 auto freq = pow(2.f, fStart + norm * fRange);
                 auto freqarg = freq * EqAdapter::getSampleRateInv(nullptr);
                 auto res = 0.f;
@@ -211,11 +204,11 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
             auto freqParam = mProcessor.mStorage->floatParams[band * 3 + 1];
             auto freqHz = 440.f * std::pow(2.f, freqParam / 12.f);
             auto freqNorm = (std::log2(freqHz) - fStart) / fRange;
-            auto xPos = freqNorm * (np - 1);
+            auto xPos = freqNorm * (width - 1);
 
-            auto freqArg = freqHz * EqAdapter::getSampleRateInv(nullptr);
-            auto response = mProcessor.getBandFrequencyGraph(band, freqArg);
-            auto yPos = getHeight() * centerPoint - std::log2(response) * 9;
+            auto gainParam = mProcessor.mStorage->floatParams[band * 3];
+            auto gainNorm = (gainParam + 24.f) * 0.0208333f; // one 48th
+            auto yPos = -gainNorm * height + height;
 
             bandHitRects[band] = juce::Rectangle<float>(
                 xPos - hotzoneSize / 2.f, yPos - hotzoneSize / 2.f, hotzoneSize, hotzoneSize);
@@ -242,7 +235,6 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         if (anyChanged)
             repaint();
     }
-
     void mouseDown(const juce::MouseEvent &e) override
     {
         draggingBand = -1;
@@ -255,7 +247,6 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
             }
         }
     }
-
     void mouseDrag(const juce::MouseEvent &e) override
     {
         if (draggingBand < 0)
@@ -269,10 +260,12 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
             fRange = 9.3f;
         }
 
-        auto np = getWidth();
-        auto logfreqHz = fStart + (e.position.x / (np - 1)) * fRange;
+        auto width = getWidth();
+        auto logfreqHz = fStart + (e.position.x / (width - 1)) * fRange;
         auto freqParam = 12.f * (logfreqHz - std::log2(440.f));
-        auto gain = -e.position.y / getHeight() * 24;
+
+        auto gainNorm = (-e.position.y + getHeight()) / getHeight();
+        auto gain = gainNorm * 48.f - 24.f;
 
         {
             auto &a = mProcessorPane.floatAttachments[draggingBand * 3 + 1];
@@ -286,7 +279,6 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         }
         repaint();
     }
-
     void paint(juce::Graphics &g) override
     {
         if (!curvesBuilt)
@@ -336,9 +328,12 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         {
             for (int i = 0; i < nSub; ++i)
             {
-                auto col = ed->themeColor(theme::ColorMap::accent_1a).withAlpha(0.7f);
+                auto col = ed->themeColor(theme::ColorMap::accent_1a).withAlpha(1.f);
                 g.setColour(col);
                 g.fillEllipse(bandHitRects[i].expanded(hotzoneSize));
+                g.setColour(ed->themeColor(theme::ColorMap::accent_2b));
+                g.drawText(std::to_string(i + 1), bandHitRects[i].expanded(hotzoneSize),
+                           juce::Justification::centred, false);
                 if (isBandHovered[i])
                 {
                     auto c2 = ed->themeColor(theme::ColorMap::generic_content_high);
@@ -406,186 +401,34 @@ struct EqNBandDisplay : EqDisplaySupport<Proc, nSub>
             }
         }
     }
+    void mouseMagnify(const juce::MouseEvent &e, float scaleFactor) override
+    {
+        if constexpr (showHotzones)
+        {
+            for (int i = 0; i < nSub; ++i)
+            {
+                if (this->isBandHovered[i])
+                {
+                    if (this->bandSelect && this->bandSelect->getValue() != i)
+                        this->bandSelect->setValueFromGUI(i);
+                    auto &a = this->mProcessorPane.floatAttachments[i * 3 + 2];
+                    auto newVal = a->getValue() * scaleFactor;
+                    if (newVal >= a->getMin() && newVal <= a->getMax())
+                        a->setValueFromGUI(newVal);
+                    this->mProcessorPane.repaint();
+                    break;
+                }
+            }
+        }
+    }
 };
 
-void ProcessorPane::layoutControlsEQNBandParm()
+using eq_t = sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>;
+struct EqRenderer3Band : EqNBandDisplay<eq_t, 3>
 {
-    std::unique_ptr<EqDisplayBase> eqdisp;
-
-    eqdisp = std::make_unique<
-        EqNBandDisplay<sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>, 3>>(
-        *this);
-    auto bd = getContentAreaComponent()->getLocalBounds();
-    auto slWidth = 0;
-    auto eq = bd.withTrimmedRight(slWidth);
-    auto mx = bd.withLeft(bd.getWidth() - slWidth);
-
-    eqdisp->setBounds(eq.withTrimmedTop(65));
-    getContentAreaComponent()->addAndMakeVisible(*eqdisp);
-
-    auto cols = lo::columns(eq, 4);
-
-    if (eqdisp->nBands > 1)
-    {
-        auto ms = std::make_unique<jcmp::MultiSwitch>();
-        ms->setSource(eqdisp->bandSelect.get());
-
-        eqdisp->bandSelect->onSelChanged = [nb = eqdisp->nBands,
-                                            w = juce::Component::SafePointer(this)](int b) {
-            if (!w)
-                return;
-            for (int i = 0; i < nb * 3; ++i)
-            {
-                if (w->floatEditors[i])
-                {
-                    w->floatEditors[i]->setVisible(i >= b * 3 && i < b * 3 + 3);
-                }
-            }
-
-            for (int i = 0; i < nb; ++i)
-            {
-                if (w->intEditors[i])
-                    w->intEditors[i]->item->setVisible(i == b);
-            }
-        };
-        getContentAreaComponent()->addAndMakeVisible(*ms);
-        ms->setBounds(cols[0].withHeight(50).withWidth(cols[0].getWidth() / 2));
-        otherEditors.push_back(std::move(ms));
-    }
-    auto lab = std::array{"Gain", "Freq", "BW"};
-    for (int i = 0; i < 3 * eqdisp->nBands; ++i)
-    {
-        floatEditors[i] = createWidgetAttachedTo(
-            floatAttachments[i], std::string(lab[i % 3]) + " " + std::to_string(i / 3 + 1));
-        auto orig = floatAttachments[i]->onGuiValueChanged;
-        floatAttachments[i]->onGuiValueChanged =
-            [orig, w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
-                orig(a);
-                if (w)
-                {
-                    w->rebuildCurves();
-                }
-            };
-        lo::knobCX<locon::mediumKnob>(*floatEditors[i], cols[(i % 3) + 1].getCentreX(), 2);
-        if (i < 3)
-            floatEditors[i]->setVisible(true);
-        else
-            floatEditors[i]->setVisible(false);
-
-        if (i % 3 == 0)
-        {
-            intEditors[i / 3] =
-                createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[i / 3], "");
-            intEditors[i / 3]->label->setVisible(false);
-            if (eqdisp->nBands > 1)
-            {
-                intEditors[i / 3]->item->setBounds(cols[0]
-                                                       .withHeight(50)
-                                                       .withWidth(cols[0].getWidth() / 2)
-                                                       .translated(cols[0].getWidth() / 2, 0));
-            }
-            else
-            {
-                intEditors[i / 3]->item->setBounds(cols[0].withHeight(50).reduced(10, 0));
-            }
-            intEditors[i / 3]->item->setVisible(i == 0);
-
-            auto iorig = intAttachments[i / 3]->onGuiValueChanged;
-            intAttachments[i / 3]->onGuiValueChanged =
-                [iorig, w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
-                    iorig(a);
-                    if (w)
-                    {
-                        w->rebuildCurves();
-                    }
-                };
-        }
-    }
-
-    otherEditors.push_back(std::move(eqdisp));
-}
-
-void ProcessorPane::layoutControlsEQMorph()
-{
-    auto eqdisp = std::make_unique<
-        EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2, false>>(*this);
-    auto eq = getContentAreaComponent()->getLocalBounds();
-
-    eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
-
-    auto presets = eq.withHeight(16);
-
-    auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
-        if (w)
-        {
-            w->rebuildCurves();
-        }
-    };
-
-    intEditors[0] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0], "S0");
-    getContentAreaComponent()->addAndMakeVisible(*intEditors[0]->item);
-    intEditors[0]->item->setBounds(presets.withWidth(presets.getWidth() / 2).reduced(0, 2));
-    intAttachments[0]->andThenOnGui(thenRecalc);
-
-    intEditors[1] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1], "S0");
-    getContentAreaComponent()->addAndMakeVisible(*intEditors[1]->item);
-
-    intEditors[1]->item->setBounds(presets.withWidth(presets.getWidth() / 2)
-                                       .translated(presets.getWidth() / 2, 0)
-                                       .reduced(0, 2));
-    intAttachments[1]->andThenOnGui(thenRecalc);
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
-
-    auto lab = std::array{"Morph", "Freq1", "Freq2", "Gain", "BW"};
-    auto cols = lo::columns(presets.translated(0, 18).withHeight(38), 5);
-
-    static_assert(lab.size() < maxProcessorFloatParams);
-    for (int i = 0; i < lab.size(); ++i)
-    {
-        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i], lab[i]);
-        floatAttachments[i]->andThenOnGui(thenRecalc);
-
-        lo::knobCX<locon::mediumSmallKnob>(*floatEditors[i], cols[i].getCentreX(), cols[i].getY());
-    }
-
-    eqdisp->setBounds(eq.withTrimmedTop(65));
-    getContentAreaComponent()->addAndMakeVisible(*eqdisp);
-
-    otherEditors.push_back(std::move(eqdisp));
-}
-
-void ProcessorPane::layoutControlsEQGraphic()
-{
-    auto eqdisp = std::make_unique<
-        EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
-    auto eq = getContentAreaComponent()->getLocalBounds();
-    auto sliderHeight = 65;
-
-    auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
-        if (w)
-        {
-            w->rebuildCurves();
-        }
-    };
-
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
-
-    auto cols = lo::columns(eq.withHeight(sliderHeight), 6);
-
-    for (int i = 0; i < 6; ++i)
-    {
-        floatEditors[i] = createWidgetAttachedTo<jcmp::VSlider>(floatAttachments[i],
-                                                                floatAttachments[i]->getLabel());
-        floatAttachments[i]->andThenOnGui(thenRecalc);
-
-        floatEditors[i]->item->setBounds(cols[i].reduced(3, 0));
-    }
-
-    eqdisp->setBounds(eq.withTrimmedTop(sliderHeight));
-    getContentAreaComponent()->addAndMakeVisible(*eqdisp);
-
-    otherEditors.push_back(std::move(eqdisp));
-}
+    explicit EqRenderer3Band(ProcessorPane &p) : EqNBandDisplay<eq_t, 3>(p) {}
+};
 
 } // namespace scxt::ui::app::edit_screen
+
+#endif // SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_EQDISPLAY_H
