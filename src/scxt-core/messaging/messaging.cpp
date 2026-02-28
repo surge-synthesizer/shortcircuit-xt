@@ -360,9 +360,10 @@ void MessageController::sendRawFromClient(const clientToSerializationMessage_t &
     clientToSerializationConditionVar.notify_one();
 }
 
-void MessageController::reportErrorToClient(const std::string &title, const std::string &body)
+void MessageController::reportErrorToClient(const std::string &title, const std::string &body,
+                                            const std::string &source, int line)
 {
-    SCLOG_IF(warnings, "Error: [" << title << "]");
+    SCLOG_IF(warnings, "[[" << title << "]] (loc: " << source << ":" << line << ")");
     auto blog = body;
     auto pos{0};
     while ((pos = blog.find("\n", pos)) != std::string::npos)
@@ -370,8 +371,8 @@ void MessageController::reportErrorToClient(const std::string &title, const std:
         blog[pos] = ' ';
     }
     SCLOG_IF(warnings, blog);
-    client::serializationSendToClient(client::s2c_report_error, client::s2cError_t{title, body},
-                                      *(this));
+    client::serializationSendToClient(client::s2c_report_error,
+                                      client::s2cError_t{title, body, source, line}, *(this));
 }
 
 void MessageController::prepareSerializationThreadForAudioQueueDrain()

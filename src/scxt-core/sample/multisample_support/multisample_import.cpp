@@ -75,8 +75,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
     if (fileToIndex.find("multisample.xml") == fileToIndex.end())
     {
         SCLOG_IF(sampleCompoundParsers, "No Multisapmle.xml");
-        engine.getMessageController()->reportErrorToClient("Multisample Error",
-                                                           "Mo XML file in Multisample");
+        RAISE_ERROR_ENGINE(engine, "Multisample Error", "Mo XML file in Multisample");
         return false;
     }
 
@@ -93,8 +92,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         SCLOG_IF(sampleCompoundParsers, "XML Parse Fail");
         mz_zip_reader_end(&zip_archive);
 
-        engine.getMessageController()->reportErrorToClient("Multisample Error",
-                                                           "XML Failed to parse");
+        RAISE_ERROR_ENGINE(engine, "Multisample Error", "XML Failed to parse");
         return false;
     }
 
@@ -108,7 +106,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
     {
         SCLOG_IF(sampleCompoundParsers, "XML is not a multisample document");
         mz_zip_reader_end(&zip_archive);
-        engine.getMessageController()->reportErrorToClient("Multisample Error", "XML invalid");
+        RAISE_ERROR_ENGINE(engine, "Multisample Error", "XML invalid");
         return false;
     }
 
@@ -125,8 +123,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         if (!fc->Attribute("file"))
         {
             SCLOG_IF(sampleCompoundParsers, "Sample is not a file");
-            engine.getMessageController()->reportErrorToClient("Multisample Error",
-                                                               "Sample is not a file");
+            RAISE_ERROR_ENGINE(engine, "Multisample Error", "Sample is not a file");
             return false;
         }
 

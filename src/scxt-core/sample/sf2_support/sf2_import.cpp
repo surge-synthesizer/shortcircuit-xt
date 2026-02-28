@@ -325,12 +325,12 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
     }
     catch (RIFF::Exception e)
     {
-        messageController->reportErrorToClient("SF2 Load Error", e.Message);
+        RAISE_ERROR_CONT(*messageController, "SF2 Load Error", e.Message);
         return false;
     }
     catch (const SCXTError &e)
     {
-        messageController->reportErrorToClient("SF2 Load Error", e.what());
+        RAISE_ERROR_CONT(*messageController, "SF2 Load Error", e.what());
         return false;
     }
     catch (...)

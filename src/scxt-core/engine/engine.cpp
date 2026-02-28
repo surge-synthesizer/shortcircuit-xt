@@ -92,7 +92,7 @@ Engine::Engine()
 
     sampleManager = std::make_unique<sample::SampleManager>(messageController->threadingChecker);
     sampleManager->raiseError = [this](auto a, auto b) {
-        messageController->reportErrorToClient(a, b);
+        RAISE_ERROR_CONT(*messageController, a, b);
     };
     sampleManager->informUI = [this](const auto &a) {
         messageController->updateClientActivityNotification(a);
@@ -111,9 +111,8 @@ Engine::Engine()
     else
     {
         useTDP = fs::temp_directory_path();
-        messageController->reportErrorToClient("Cannot create documents dir",
-                                               "Unable to create documents directory. Using " +
-                                                   useTDP.u8string());
+        RAISE_ERROR_CONT(*messageController, "Cannot create documents dir",
+                         "Unable to create documents directory. Using " + useTDP.u8string());
     }
 
     defaults = std::make_unique<infrastructure::DefaultsProvider>(
@@ -126,7 +125,7 @@ Engine::Engine()
     browserDb = std::make_unique<browser::BrowserDB>(*tdp, *messageController);
     browser = std::make_unique<browser::Browser>(
         *browserDb, *defaults, useTDP,
-        [this](const auto &a, const auto &b) { messageController->reportErrorToClient(a, b); });
+        [this](const auto &a, const auto &b) { RAISE_ERROR_CONT(*messageController, a, b); });
 
     for (auto &v : voices)
         v = nullptr;
@@ -568,14 +567,14 @@ void Engine::loadCompoundElementIntoZone(const sample::compound::CompoundElement
 
     if (!sz.has_value())
     {
-        messageController->reportErrorToClient("Unable to load Sample",
-                                               "There is no currentLeadZone");
+        RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
+                         "There is no currentLeadZone");
         return;
     }
 
     if (p.type == sample::compound::CompoundElement::ERROR_SENTINEL)
     {
-        messageController->reportErrorToClient(p.name, p.emsg);
+        RAISE_ERROR_CONT(*messageController, p.name, p.emsg);
         return;
     }
 
@@ -588,10 +587,9 @@ void Engine::loadCompoundElementIntoZone(const sample::compound::CompoundElement
 
     if (!sid.has_value())
     {
-        messageController->reportErrorToClient(
-            "Unable to load Compoint Sample",
-            "Sample load failed:\n\n" + p.sampleAddress.path.u8string() + "\n\n" +
-                "More information may be available in the log file (menu/log)");
+        RAISE_ERROR_CONT(*messageController, "Unable to load Compoint Sample",
+                         "Sample load failed:\n\n" + p.sampleAddress.path.u8string() + "\n\n" +
+                             "More information may be available in the log file (menu/log)");
         return;
     }
 
@@ -628,8 +626,8 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
 
     if (!sz.has_value())
     {
-        messageController->reportErrorToClient("Unable to load Sample",
-                                               "There is no currentLeadZone");
+        RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
+                         "There is no currentLeadZone");
         return;
     }
 
@@ -643,11 +641,10 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
 
     if (!sid.has_value())
     {
-        messageController->reportErrorToClient(
-            "Unable to load Sample",
-            "Sample load failed:\n\n" + p.u8string() + "\n\n" +
-                "It is either an unsupported format or invalid file. "
-                "More information may be available in the log file (menu/log)");
+        RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
+                         "Sample load failed:\n\n" + p.u8string() + "\n\n" +
+                             "It is either an unsupported format or invalid file. "
+                             "More information may be available in the log file (menu/log)");
         return;
     }
 
@@ -688,8 +685,8 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
             messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
                 auto res = sfz_support::importSFZ(p.sampleAddress.path, *this);
                 if (!res)
-                    messageController->reportErrorToClient("SFZ Import Failed",
-                                                           "Check log for errors");
+                    RAISE_ERROR_CONT(*messageController, "SFZ Import Failed",
+                                     "Check log for errors");
                 messageController->restartAudioThreadFromSerial();
                 serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                           getPartGroupZoneStructure(), *messageController);
@@ -722,7 +719,7 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
 
     if (p.type == sample::compound::CompoundElement::ERROR_SENTINEL)
     {
-        messageController->reportErrorToClient(p.name, p.emsg);
+        RAISE_ERROR_CONT(*messageController, p.name, p.emsg);
         return;
     }
 
@@ -731,10 +728,9 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
 
     if (!sid.has_value())
     {
-        messageController->reportErrorToClient(
-            "Unable to load Compound Sample Element",
-            "Sample load failed:\n\n" + p.sampleAddress.path.u8string() + "\n\n" +
-                "More information may be available in the log file (menu/log)");
+        RAISE_ERROR_CONT(*messageController, "Unable to load Compound Sample Element",
+                         "Sample load failed:\n\n" + p.sampleAddress.path.u8string() + "\n\n" +
+                             "More information may be available in the log file (menu/log)");
         return;
     }
 
@@ -794,8 +790,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = sfz_support::importSFZ(p, *this);
             if (!res)
-                messageController->reportErrorToClient("SFZ Import Failed",
-                                                       "Check log for further errors");
+                RAISE_ERROR_CONT(*messageController, "SFZ Import Failed",
+                                 "Check log for further errors");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
@@ -808,8 +804,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = exs_support::importEXS(p, *this);
             if (!res)
-                messageController->reportErrorToClient("EXS Import Failed",
-                                                       "Check log for subsequent errors");
+                RAISE_ERROR_CONT(*messageController, "EXS Import Failed",
+                                 "Check log for subsequent errors");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
@@ -821,8 +817,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = multisample_support::importMultisample(p, *this);
             if (!res)
-                messageController->reportErrorToClient("Multisample Import Failed",
-                                                       "Check log for subsequent errors");
+                RAISE_ERROR_CONT(*messageController, "Multisample Import Failed",
+                                 "Check log for subsequent errors");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
@@ -834,8 +830,8 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
             auto res = akai_support::importAKP(p, *this);
             if (!res)
-                messageController->reportErrorToClient("AKP Import Failed",
-                                                       "Check log for subsequent errors");
+                RAISE_ERROR_CONT(*messageController, "AKP Import Failed",
+                                 "Check log for subsequent errors");
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
@@ -870,11 +866,10 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
 
     if (!sid.has_value())
     {
-        messageController->reportErrorToClient(
-            "Unable to load Sample",
-            "Sample load failed:\n\n" + p.u8string() + "\n\n" +
-                "It is either an unsupported format or invalid file. "
-                "More information may be available in the log file (menu/log)");
+        RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
+                         "Sample load failed:\n\n" + p.u8string() + "\n\n" +
+                             "It is either an unsupported format or invalid file. "
+                             "More information may be available in the log file (menu/log)");
         return;
     }
 
@@ -1240,8 +1235,8 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
         }
         if (fs::is_directory(portable))
         {
-            messageController->reportErrorToClient(
-                "Creating default portable directory",
+            RAISE_ERROR_CONT(
+                *messageController, "Creating default portable directory",
                 "Unable to find a user dir, short circuit created a portable directory at " +
                     portable.u8string());
             return portable;
@@ -1252,9 +1247,8 @@ std::optional<fs::path> Engine::setupUserStorageDirectory()
     }
 
     SCLOG_IF(warnings, "Unable to determine user directory");
-    messageController->reportErrorToClient(
-        "Unable to make user directory",
-        "Both regular and portable methods failed to make a user dir");
+    RAISE_ERROR_CONT(*messageController, "Unable to make user directory",
+                     "Both regular and portable methods failed to make a user dir");
     return std::nullopt;
 }
 

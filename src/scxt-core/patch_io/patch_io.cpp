@@ -127,8 +127,8 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
     {
         if (!browser::Browser::isLoadableSingleSample(sample->getPath()))
         {
-            e.getMessageController()->reportErrorToClient(
-                "Unable to add multifile to monolith",
+            RAISE_ERROR_ENGINE(
+                e, "Unable to add multifile to monolith",
                 "Monoliths currently only support single file (wav, flac, aiff, etc...)");
             return false;
         }
@@ -458,11 +458,11 @@ std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collec
         if (collectedFilenames.find(c.filename()) != collectedFilenames.end())
         {
             SCLOG_IF(patchIO, "Duplicate Sample Name " << c.filename());
-            e.getMessageController()->reportErrorToClient(
-                "Unable to copy sample", "Your patch has two samples with the same filename ('" +
-                                             c.filename().u8string() + "' with " +
-                                             "different paths. This is currently unsupported for "
-                                             "collect mode and needs fixing soonish!");
+            RAISE_ERROR_ENGINE(e, "Unable to copy sample",
+                               "Your patch has two samples with the same filename ('" +
+                                   c.filename().u8string() + "' with " +
+                                   "different paths. This is currently unsupported for "
+                                   "collect mode and needs fixing soonish!");
             return {};
         }
         collectedFilenames.insert(c.filename());
@@ -476,7 +476,7 @@ std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collec
         catch (fs::filesystem_error &fse)
         {
             SCLOG_IF(patchIO, "Unable to copy " << c.u8string() << " " << fse.what());
-            e.getMessageController()->reportErrorToClient("Unable to copy sample", fse.what());
+            RAISE_ERROR_ENGINE(e, "Unable to copy sample", fse.what());
             return {};
         }
     }
@@ -503,15 +503,13 @@ bool onlyCollect(const fs::path &p, scxt::engine::Engine &e, int part)
     }
     catch (const fs::filesystem_error &fse)
     {
-        e.getMessageController()->reportErrorToClient("Unable to create directory",
-                                                      p.u8string() + "\n" + fse.what());
+        RAISE_ERROR_ENGINE(e, "Unable to create directory", p.u8string() + "\n" + fse.what());
         return false;
     }
     auto collectMap = patch_io::collectSamplesInto(p, e, part);
     if (collectMap.empty())
     {
-        e.getMessageController()->reportErrorToClient("No Samples Collected",
-                                                      "No samples were saved to " + p.u8string());
+        RAISE_ERROR_ENGINE(e, "No Samples Collected", "No samples were saved to " + p.u8string());
         return false;
     }
     return true;
@@ -541,7 +539,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
         }
         else
         {
-            e.getMessageController()->reportErrorToClient("Unable to create collect dir", emsg);
+            RAISE_ERROR_ENGINE(e, "Unable to create collect dir", emsg);
         }
     }
 
@@ -625,7 +623,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
         }
         else
         {
-            e.getMessageController()->reportErrorToClient("Unable to create collect dir", emsg);
+            RAISE_ERROR_ENGINE(e, "Unable to create collect dir", emsg);
         }
     }
 

@@ -45,8 +45,7 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
     }
     catch (const fs::filesystem_error &fse)
     {
-        e.getMessageController()->reportErrorToClient("Unable to create directory",
-                                                      dir.u8string() + "\n" + fse.what());
+        RAISE_ERROR_ENGINE(e, "Unable to create directory", dir.u8string() + "\n" + fse.what());
         return false;
     }
     auto collectMap = patch_io::collectSamplesInto(dir, e, partNumber);
@@ -67,15 +66,13 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
             }
             if (va == 0)
             {
-                e.getMessageController()->reportErrorToClient(
-                    "SFZ Export Error",
-                    "Zones with no samples are not yet supported in SFZ export");
+                RAISE_ERROR_ENGINE(e, "SFZ Export Error",
+                                   "Zones with no samples are not yet supported in SFZ export");
             }
             if (va > 1)
             {
-                e.getMessageController()->reportErrorToClient(
-                    "SFZ Export Error",
-                    "Zones multiple variants are not yet supported in SFZ export");
+                RAISE_ERROR_ENGINE(e, "SFZ Export Error",
+                                   "Zones multiple variants are not yet supported in SFZ export");
             }
             oss << "\n<region>\n";
             oss << "// zone name: " << z->getName() << "\n";
@@ -102,9 +99,9 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
             auto cmf = collectMap.find(z->variantData.variants[0].sampleID);
             if (cmf == collectMap.end())
             {
-                e.getMessageController()->reportErrorToClient(
-                    "SFZ Export Error",
-                    "Can't remap " + z->variantData.variants[0].sampleID.to_string());
+                RAISE_ERROR_ENGINE(e, "SFZ Export Error",
+                                   "Can't remap " +
+                                       z->variantData.variants[0].sampleID.to_string());
             }
             auto pt = cmf->second;
             auto rp = pt.lexically_relative(dir.parent_path());
@@ -132,8 +129,7 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
     auto ofs = std::ofstream(toFile);
     if (!ofs.is_open())
     {
-        e.getMessageController()->reportErrorToClient("Unable to open file for writing",
-                                                      toFile.u8string());
+        RAISE_ERROR_ENGINE(e, "Unable to open file for writing", toFile.u8string());
         return false;
     }
     ofs << oss.str();

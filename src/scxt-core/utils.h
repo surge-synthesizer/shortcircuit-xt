@@ -304,6 +304,11 @@ std::string logTimestamp();
 
 #define SCD(x) #x << "=" << (x) << " "
 
+#define RAISE_ERROR_CONT(C, title, msg) (C).reportErrorToClient((title), (msg), __FILE__, __LINE__)
+
+#define RAISE_ERROR_ENGINE(E, title, msg)                                                          \
+    RAISE_ERROR_CONT(*((E).getMessageController()), title, msg)
+
 struct DebugTimeGuard
 {
     std::string msg, file;

@@ -41,7 +41,7 @@ inline void doSaveMulti(const saveMultiPayload_t &pl, engine::Engine &engine,
     auto style = (patch_io::SaveStyles)styleInt;
     if (style == patch_io::SaveStyles::AS_SFZ)
     {
-        cont.reportErrorToClient("SFZ Export for multi", "Report this software error to devs");
+        RAISE_ERROR_CONT(cont, "SFZ Export for multi", "Report this software error to devs");
         return;
     }
     patch_io::saveMulti(fs::path(fs::u8path(s)), engine, style);

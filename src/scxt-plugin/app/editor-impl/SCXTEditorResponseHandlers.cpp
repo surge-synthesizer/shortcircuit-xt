@@ -261,7 +261,7 @@ void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMapping
 
 void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
 {
-    auto &[title, msg] = e;
+    auto &[title, msg, source, line] = e;
     displayError(title, msg);
 }
 

@@ -124,8 +124,8 @@ inline void doBusSwapFX(const busFxSwap_t &payload, const engine::Engine &engine
     auto [bs1, sl1, bs2, sl2, smc] = payload;
     if (bs1 == bs2 && sl1 == sl2)
     {
-        cont.reportErrorToClient("Cant move fx onto itself",
-                                 "Bus Swap FX had same bus/slot location");
+        RAISE_ERROR_CONT(cont, "Cant move fx onto itself",
+                         "Bus Swap FX had same bus/slot location");
         return;
     }
 
