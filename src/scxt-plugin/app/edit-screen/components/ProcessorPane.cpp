@@ -1010,7 +1010,7 @@ void ProcessorPane::layoutControlsEQMorph()
     namespace locon = lo::constants;
 
     auto eqdisp = std::make_unique<
-        EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::EqAdapter>, 2, false>>(*this);
+        EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::fxAdapter>, 2, false>>(*this);
     auto eq = getContentAreaComponent()->getLocalBounds();
 
     eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
@@ -1062,7 +1062,7 @@ void ProcessorPane::layoutControlsEQGraphic()
     namespace lo = theme::layout;
 
     auto eqdisp = std::make_unique<
-        EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::EqAdapter>, 0>>(*this);
+        EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::fxAdapter>, 0>>(*this);
     auto eq = getContentAreaComponent()->getLocalBounds();
     auto sliderHeight = 65;
 
@@ -1251,6 +1251,23 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
                 editor->hideTooltip();
                 eqDisplays.back()->rebuildCurves();
             });
+        }
+    }
+    else if (cls.controlType == "sine+display")
+    {
+        auto spdisp = std::make_unique<SinePlusRenderer>(*this);
+
+        auto bd = getContentAreaComponent()->getLocalBounds();
+        spdisp->setBounds(bd.withTrimmedTop(72).withTrimmedRight(87));
+        spdisp->rebuildWaveform();
+
+        getContentAreaComponent()->addAndMakeVisible(*spdisp);
+        sineDisplays.push_back(std::move(spdisp));
+
+        for (int i = 1; i < 5; i++)
+        {
+            connectors::addGuiStep(*floatAttachments[i],
+                                   [&](const auto &a) { sineDisplays.back()->rebuildWaveform(); });
         }
     }
     else if (auto nw = connectors::jsonlayout::createAndPositionNonDataWidget(ctrl, cls, onError))
