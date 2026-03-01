@@ -37,6 +37,7 @@
 
 // We include the DSP code here so we can do a UI-side render of the EQ curve
 
+#include "sst/voice-effects/generator/SinePlus.h"
 #include "sst/voice-effects/eq/EqNBandParametric.h"
 #include "sst/voice-effects/eq/MorphEQ.h"
 #include "sst/voice-effects/eq/EqGraphic6Band.h"
@@ -46,7 +47,51 @@
 namespace scxt::ui::app::edit_screen
 {
 
-struct EqDisplayBase : juce::Component
+struct fxAdapter
+{
+    struct BaseClass
+    {
+        BaseClass()
+        {
+            mDbToLinear.init();
+            mEqualTuning.init();
+        }
+        sst::basic_blocks::tables::DbToLinearProvider mDbToLinear;
+        sst::basic_blocks::tables::EqualTuningProvider mEqualTuning;
+
+        dsp::processor::ProcessorStorage *mStorage{nullptr};
+        void setStorage(dsp::processor::ProcessorStorage *p) { mStorage = p; }
+    };
+    static constexpr int blockSize{scxt::blockSize};
+    static void setFloatParam(BaseClass *bc, int idx, float val)
+    {
+        bc->mStorage->floatParams[idx] = val;
+    }
+    static float getFloatParam(const BaseClass *bc, int idx)
+    {
+        return bc->mStorage->floatParams[idx];
+    }
+
+    static void setIntParam(BaseClass *, int, int) {}
+    static int getIntParam(const BaseClass *bc, int idx) { return bc->mStorage->intParams[idx]; }
+
+    static float dbToLinear(const BaseClass *that, float f)
+    {
+        return that->mDbToLinear.dbToLinear(f);
+    }
+    static float equalNoteToPitch(const BaseClass *that, float f)
+    {
+        return that->mEqualTuning.note_to_pitch(f);
+    }
+    static float getSampleRate(const BaseClass *) { return 48000.f; }
+    static float getSampleRateInv(const BaseClass *) { return 1.0 / 48000.f; }
+
+    static void preReservePool(BaseClass *, size_t) {}
+    static uint8_t *checkoutBlock(BaseClass *, size_t) { return nullptr; }
+    static void returnBlock(BaseClass *, uint8_t *, size_t) {}
+};
+
+struct EqDisplayBase : juce::Component, fxAdapter
 {
     virtual void rebuildCurves() = 0;
     int nBands{0};
@@ -75,50 +120,99 @@ struct EqDisplayBase : juce::Component
         std::string getLabel() const override { return "Band"; }
     };
     std::unique_ptr<BandSelect> bandSelect;
+};
 
-    struct EqAdapter
+template <typename Proc> struct SinePlusDisplay : juce::Component, fxAdapter
+{
+    ProcessorPane &mProcessorPane;
+    Proc mProcessor;
+
+    explicit SinePlusDisplay(ProcessorPane &p) : mProcessorPane(p)
     {
-        struct BaseClass
+        mProcessor.setStorage(&p.processorView);
+        mProcessor.enableKeytrack(false);
+        rebuildWaveform();
+    }
+
+    std::vector<float> curve;
+    bool waveformBuilt{false};
+
+    void rebuildWaveform()
+    {
+        curve.clear();
+        mProcessor.resetPhase();
+
+        auto width = getWidth();
+        auto freq = 12 * std::log2(getSampleRate(nullptr) / (440 * width));
+        mProcessor.setFloatParam(0, freq);
+
+        int blocks = std::ceil((float)width / fxAdapter::blockSize);
+        float res alignas(16)[fxAdapter::blockSize];
+        float dummies[fxAdapter::blockSize];
+
+        int count{0};
+        for (int b = 0; b < blocks; ++b)
         {
-            BaseClass()
+            mProcessor.processMonoToMono(dummies, res, 0.0);
+
+            for (int s = 0; s < fxAdapter::blockSize; ++s)
             {
-                mDbToLinear.init();
-                mEqualTuning.init();
+                if (count++ < width)
+                {
+                    curve.push_back(res[s]);
+                }
+                else
+                {
+                    break;
+                }
             }
-            sst::basic_blocks::tables::DbToLinearProvider mDbToLinear;
-            sst::basic_blocks::tables::EqualTuningProvider mEqualTuning;
+        }
 
-            const dsp::processor::ProcessorStorage *mStorage{nullptr};
-            void setStorage(dsp::processor::ProcessorStorage *p) { mStorage = p; }
+        waveformBuilt = true;
+        repaint();
+    }
+
+    void paint(juce::Graphics &g) override
+    {
+        if (!waveformBuilt)
+            rebuildWaveform();
+
+        auto ed = mProcessorPane.editor;
+
+        auto c2p = [this](auto &c) {
+            auto halfHeight = .5f * getHeight();
+            auto p = juce::Path();
+            bool first{true};
+            auto x = 0;
+            for (auto &pt : c)
+            {
+                auto sp = pt * halfHeight * .5f;
+                if (first)
+                {
+                    p.startNewSubPath(0, halfHeight);
+                }
+                else
+                {
+                    p.lineTo(x++, sp + halfHeight);
+                }
+                first = false;
+            }
+            return p;
         };
-        static constexpr int blockSize{scxt::blockSize};
-        static void setFloatParam(BaseClass *, int, float) {}
-        static float getFloatParam(const BaseClass *bc, int idx)
-        {
-            return bc->mStorage->floatParams[idx];
-        }
 
-        static void setIntParam(BaseClass *, int, int) {}
-        static int getIntParam(const BaseClass *bc, int idx)
-        {
-            return bc->mStorage->intParams[idx];
-        }
+        g.setColour(ed->themeColor(theme::ColorMap::bg_1));
+        g.fillRect(getLocalBounds());
 
-        static float dbToLinear(const BaseClass *that, float f)
-        {
-            return that->mDbToLinear.dbToLinear(f);
-        }
-        static float equalNoteToPitch(const BaseClass *that, float f)
-        {
-            return that->mEqualTuning.note_to_pitch(f);
-        }
-        static float getSampleRate(const BaseClass *) { return 48000.f; }
-        static float getSampleRateInv(const BaseClass *) { return 1.0 / 48000.f; }
+        g.setColour(ed->themeColor(theme::ColorMap::panel_outline_2));
+        g.drawRect(getLocalBounds());
 
-        static void preReservePool(BaseClass *, size_t) {}
-        static uint8_t *checkoutBlock(BaseClass *, size_t) { return nullptr; }
-        static void returnBlock(BaseClass *, uint8_t *, size_t) {}
-    };
+        g.setColour(ed->themeColor(theme::ColorMap::accent_2b));
+        g.drawLine(0, getHeight() * .5f, getWidth(), getHeight() * .5f);
+
+        auto p = c2p(curve);
+        g.setColour(ed->themeColor(theme::ColorMap::accent_1a));
+        g.strokePath(p, juce::PathStrokeType(3));
+    }
 };
 
 template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
@@ -140,7 +234,7 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         float freq{0}, x{0}, y{0};
     };
     using ptvec_t = std::vector<pt>;
-    std::array<ptvec_t, nSub + 1> curves; // 0 is total response 1..nis per band
+    std::array<ptvec_t, nSub + 1> curves; // 0 is total response 1..n is per band
     std::array<juce::Rectangle<float>, nSub> bandHitRects;
     std::array<bool, nSub> isBandHovered{};
     int draggingBand{-1};
@@ -152,8 +246,8 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
         auto width = getWidth();
         auto height = getHeight();
 
-        float d[scxt::blockSize];
-        for (int i = 0; i < scxt::blockSize; ++i)
+        float d[fxAdapter::blockSize];
+        for (int i = 0; i < fxAdapter::blockSize; ++i)
             d[i] = 0.f;
 
         mProcessor.calc_coeffs();
@@ -165,7 +259,7 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
 
         auto fStart = 3.0;
         auto fRange = 11.5;
-        if (std::is_same<Proc, sst::voice_effects::eq::EqGraphic6Band<EqAdapter>>::value)
+        if (std::is_same<Proc, sst::voice_effects::eq::EqGraphic6Band<fxAdapter>>::value)
         {
             fStart = 5.0;
             fRange = 9.3;
@@ -178,7 +272,7 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
             {
                 float norm = 1.0 * i / (width - 1);
                 auto freq = pow(2.f, fStart + norm * fRange);
-                auto freqarg = freq * EqAdapter::getSampleRateInv(nullptr);
+                auto freqarg = freq * fxAdapter::getSampleRateInv(nullptr);
                 auto res = 0.f;
 
                 if (band == 0)
@@ -254,7 +348,7 @@ template <typename Proc, int nSub> struct EqDisplaySupport : EqDisplayBase
 
         auto fStart = 3.0f;
         auto fRange = 11.5f;
-        if (std::is_same<Proc, sst::voice_effects::eq::EqGraphic6Band<EqAdapter>>::value)
+        if (std::is_same<Proc, sst::voice_effects::eq::EqGraphic6Band<fxAdapter>>::value)
         {
             fStart = 5.0f;
             fRange = 9.3f;
@@ -423,10 +517,16 @@ struct EqNBandDisplay : EqDisplaySupport<Proc, nSub>
     }
 };
 
-using eq_t = sst::voice_effects::eq::EqNBandParametric<EqDisplayBase::EqAdapter, 3>;
+using eq_t = sst::voice_effects::eq::EqNBandParametric<fxAdapter, 3>;
 struct EqRenderer3Band : EqNBandDisplay<eq_t, 3>
 {
     explicit EqRenderer3Band(ProcessorPane &p) : EqNBandDisplay<eq_t, 3>(p) {}
+};
+
+using sp_t = SinePlusDisplay<sst::voice_effects::generator::SinePlus<fxAdapter, true>>;
+struct SinePlusRenderer : sp_t
+{
+    explicit SinePlusRenderer(ProcessorPane &p) : sp_t(p) {}
 };
 
 } // namespace scxt::ui::app::edit_screen

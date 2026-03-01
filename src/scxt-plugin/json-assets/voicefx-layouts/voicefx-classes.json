@@ -10,6 +10,9 @@
         },
         "eq-display": {
             "control-type": "eq-display"
+        },
+        "sine+display": {
+            "control-type": "sine+display"
         }
     }
 }

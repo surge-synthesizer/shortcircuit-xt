@@ -49,6 +49,7 @@ namespace scxt::ui::app::edit_screen
 {
 
 struct EqRenderer3Band;
+struct SinePlusRenderer;
 
 struct ProcessorPane : sst::jucegui::components::NamedPanel,
                        HasEditor,
@@ -249,8 +250,8 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     std::array<jsonIntEditor_t, dsp::processor::maxProcessorIntParams> jsonIntEditors;
     std::array<jsonIntEditor_t, dsp::processor::maxProcessorFloatParams> jsonDeactEditors;
     std::vector<std::unique_ptr<juce::Component>> jsonLabels;
-
     std::vector<std::unique_ptr<EqRenderer3Band>> eqDisplays;
+    std::vector<std::unique_ptr<SinePlusRenderer>> sineDisplays;
 };
 
 } // namespace scxt::ui::app::edit_screen
