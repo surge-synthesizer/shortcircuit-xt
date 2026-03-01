@@ -3,7 +3,7 @@
   "controls": {
     "rt": {
       "class": "knob40",
-      "label": "Root",
+      "label": "Tune",
       "binding": {
         "type": "float",
         "index": 0
@@ -15,59 +15,57 @@
     },
     "otl": {
       "class": "ruled-label",
-      "label": "Overtone",
+      "label": "Overtones",
       "position": {
-        "x": 114,
-        "y": 49,
+        "x": 138,
+        "y": 54,
         "w": 65
       }
     },
     "oa": {
-      "class": "knob40",
-      "label": "A",
+      "class": "textedit40",
       "binding": {
         "type": "float",
         "index": 1
       },
       "position": {
-        "x": 88,
+        "x": 144,
         "y": 10
       }
     },
     "ob": {
-      "class": "knob40",
-      "label": "B",
+      "class": "textedit40",
       "binding": {
         "type": "float",
         "index": 2
       },
       "position": {
-        "x": 165,
-        "y": 10
+        "x": 144,
+        "y": 32
       }
     },
     "ba1": {
-      "class": "knob40",
-      "label": "Root/OT",
+      "class": "vslider",
       "binding": {
         "type": "float",
         "index": 3
       },
       "position": {
-        "x": 10,
-        "y": 80
+        "x": 72,
+        "y": 8,
+        "h": 60
       }
     },
     "ba2": {
-      "class": "knob40",
-      "label": "A/B",
+      "class": "vslider",
       "binding": {
         "type": "float",
         "index": 4
       },
       "position": {
-        "x": 88,
-        "y": 80
+        "x": 96,
+        "y": 8,
+        "h": 60
       }
     },
     "lev": {
@@ -78,8 +76,8 @@
         "index": 5
       },
       "position": {
-        "x": 165,
-        "y": 80
+        "x": 151,
+        "y": 84
       }
     },
     "qa": {
@@ -89,8 +87,8 @@
         "type": "int"
       },
       "position": {
-        "x": 123,
-        "y": 5
+        "x": 198,
+        "y": 16
       }
     },
     "qb": {
@@ -100,8 +98,17 @@
         "type": "int"
       },
       "position": {
-        "x": 200,
-        "y": 5
+        "x": 198,
+        "y": 34
+      }
+    },
+    "disp": {
+      "class": "sine+display",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "w": 215,
+        "h": 72
       }
     }
   }
