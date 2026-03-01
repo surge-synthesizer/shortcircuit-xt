@@ -48,6 +48,11 @@ engine::Zone::ZoneOutputInfo &RoutingPaneZoneTraits::outputInfo(SCXTEditor *e)
     return e->editorDataCache.zoneOutputInfo;
 }
 
+engine::Group::GroupOutputInfo &RoutingPaneZoneTraits::groupOutputInfo(SCXTEditor *e)
+{
+    return e->editorDataCache.groupOutputInfo;
+}
+
 engine::Group::GroupOutputInfo &RoutingPaneGroupTraits::outputInfo(SCXTEditor *e)
 {
     return e->editorDataCache.groupOutputInfo;
@@ -68,9 +73,12 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
     std::unique_ptr<jcmp::MultiSwitch> multiW;
 
     typedef connectors::PayloadDataAttachment<typename RPTraits::info_t> attachment_t;
+    typedef connectors::PayloadDataAttachment<typename RoutingPaneGroupTraits::info_t>
+        groupFloatAttachment_t;
     typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t> bool_attachment_t;
 
     std::unique_ptr<attachment_t> outputAttachment, panAttachment, velocitySensitivityAttachment;
+    std::unique_ptr<groupFloatAttachment_t> groupVelAttachmentForZone;
     std::unique_ptr<jcmp::MenuButton> outputRouting;
     std::unique_ptr<jcmp::Knob> outputKnob, panKnob;
     std::unique_ptr<jcmp::HSliderFilled> velocitySensitivitySlider;
@@ -82,7 +90,8 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
     };
 
     RoutingPaneContents(SCXTEditor *e, RoutingPane<RPTraits> *pane)
-        : HasEditor(e), outputPane(pane), info(RPTraits::outputInfo(e))
+        : HasEditor(e), outputPane(pane), info(RPTraits::outputInfo(e)),
+          groupInfo(RPTraits::groupOutputInfo(e))
     {
         using fac = connectors::SingleValueFactory<int_attachment_t, typename RPTraits::int16Msg_t>;
         fac::attachAndAdd(info, info.procRouting, this, routingA, multiW);
@@ -117,9 +126,12 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
         addAndMakeVisible(*velocitySensitivityLabel);
         if constexpr (RPTraits::forZone)
         {
-            velocitySensitivitySlider = connectors::makeConnectedToDummy<jcmp::HSliderFilled>(
-                'gvel', "Velocity Sensitivity", 1, false,
-                editor->makeComingSoon("Vel Adjust from zone"));
+            using gofac =
+                connectors::SingleValueFactory<groupFloatAttachment_t,
+                                               typename RoutingPaneGroupTraits::floatMsg_t>;
+
+            gofac::attachAndAdd(groupInfo, groupInfo.velocitySensitivity, this,
+                                groupVelAttachmentForZone, velocitySensitivitySlider);
             addAndMakeVisible(*velocitySensitivitySlider);
         }
         else
@@ -519,11 +531,13 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
     }
 
     typename RPTraits::info_t &info;
+    typename RoutingPaneGroupTraits::info_t &groupInfo;
 };
 
 template <typename RPTraits>
 RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e)
-    : jcmp::NamedPanel("ROUTING"), HasEditor(e), info(RPTraits::outputInfo(e))
+    : jcmp::NamedPanel("ROUTING"), HasEditor(e), info(RPTraits::outputInfo(e)),
+      groupInfo(RPTraits::groupOutputInfo(e))
 {
     hasHamburger = false;
     clearAdditionalHamburgerComponents();
