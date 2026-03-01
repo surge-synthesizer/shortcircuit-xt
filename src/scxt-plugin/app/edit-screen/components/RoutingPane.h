@@ -51,6 +51,7 @@ struct RoutingPaneZoneTraits
     using int16RefreshMsg_t = scxt::messaging::client::UpdateZoneOutputInt16TValueThenRefresh;
 
     static engine::Zone::ZoneOutputInfo &outputInfo(SCXTEditor *e);
+    static engine::Group::GroupOutputInfo &groupOutputInfo(SCXTEditor *e);
 };
 
 struct RoutingPaneGroupTraits
@@ -65,6 +66,7 @@ struct RoutingPaneGroupTraits
     using int16RefreshMsg_t = int16Msg_t; // for now.
 
     static engine::Group::GroupOutputInfo &outputInfo(SCXTEditor *e);
+    static engine::Group::GroupOutputInfo &groupOutputInfo(SCXTEditor *e) { return outputInfo(e); }
 };
 
 template <typename RPTraits> struct RoutingPaneContents;
@@ -99,6 +101,10 @@ template <typename RPTraits> struct RoutingPane : sst::jucegui::components::Name
         procWeakRefs;
 
     typename RPTraits::info_t &info;
+
+    // bit squirrely:
+    // everyone gets a group info since zone can edit group vel
+    engine::Group::GroupOutputInfo &groupInfo;
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
