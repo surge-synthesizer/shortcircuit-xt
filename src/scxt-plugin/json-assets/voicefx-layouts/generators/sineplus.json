@@ -21,59 +21,28 @@
         "y": 10
       }
     },
-    "otl": {
-      "class": "ruled-label",
-      "label": "Overtones",
-      "position": {
-        "x": 138,
-        "y": 54,
-        "w": 65
-      }
-    },
-    "ob": {
-      "class": "textedit40",
-      "binding": {
-        "type": "float",
-        "index": 2
-      },
-      "position": {
-        "x": 144,
-        "y": 10
-      }
-    },
-    "oa": {
-      "class": "textedit40",
-      "binding": {
-        "type": "float",
-        "index": 1
-      },
-      "position": {
-        "x": 144,
-        "y": 32
-      }
-    },
     "ba1": {
-      "class": "vslider",
+      "class": "knob40",
+      "label": "Root<>AB",
       "binding": {
         "type": "float",
         "index": 3
       },
       "position": {
-        "x": 72,
-        "y": 8,
-        "h": 60
+        "x": 60,
+        "y": 10
       }
     },
     "ba2": {
-      "class": "vslider",
+      "class": "knob40",
+      "label": "A<>B",
       "binding": {
         "type": "float",
         "index": 4
       },
       "position": {
-        "x": 96,
-        "y": 8,
-        "h": 60
+        "x": 113,
+        "y": 10
       }
     },
     "lev": {
@@ -84,39 +53,86 @@
         "index": 5
       },
       "position": {
-        "x": 151,
-        "y": 84
+        "x": 165,
+        "y": 10
+      }
+    },
+    "al": {
+      "class": "label",
+      "label": "A",
+      "position": {
+        "x": 10,
+        "y": 83,
+        "w": 15
+      }
+    },
+    "bl": {
+      "class": "label",
+      "label": "B",
+      "position": {
+        "x": 10,
+        "y": 103,
+        "w": 15
+      }
+    },
+    "ob": {
+      "class": "textedit40",
+      "binding": {
+        "type": "float",
+        "index": 1
+      },
+      "position": {
+        "x": 28,
+        "y": 82
+      }
+    },
+    "oa": {
+      "class": "textedit40",
+      "binding": {
+        "type": "float",
+        "index": 2
+      },
+      "position": {
+        "x": 28,
+        "y": 104
       }
     },
     "qb": {
-      "class": "power-switch",
-      "binding": {
-        "index": 1,
-        "type": "int"
-      },
-      "position": {
-        "x": 198,
-        "y": 16
-      }
-    },
-    "qa": {
       "class": "power-switch",
       "binding": {
         "index": 0,
         "type": "int"
       },
       "position": {
-        "x": 198,
-        "y": 34
+        "x": 82,
+        "y": 88
+      }
+    },
+    "qa": {
+      "class": "power-switch",
+      "binding": {
+        "index": 1,
+        "type": "int"
+      },
+      "position": {
+        "x": 82,
+        "y": 106
+      }
+    },
+    "otl": {
+      "class": "label",
+      "label": "Overtones",
+      "position": {
+        "x": 21,
+        "y": 126,
+        "w": 65
       }
     },
     "disp": {
       "class": "sine+display",
       "position": {
         "x": 0,
-        "y": 0,
-        "w": 215,
-        "h": 72
+        "y": 0
       }
     }
   }

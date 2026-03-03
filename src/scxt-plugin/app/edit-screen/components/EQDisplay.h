@@ -134,12 +134,14 @@ template <typename Proc> struct SinePlusDisplay : juce::Component, fxAdapter
         rebuildWaveform();
     }
 
-    std::vector<float> curve;
+    std::vector<float> curveL;
+    std::vector<float> curveR;
     bool waveformBuilt{false};
 
     void rebuildWaveform()
     {
-        curve.clear();
+        curveL.clear();
+        curveR.clear();
         mProcessor.resetPhase();
 
         auto width = getWidth();
@@ -151,24 +153,49 @@ template <typename Proc> struct SinePlusDisplay : juce::Component, fxAdapter
         // how many blocks is that?
         int blocks = std::ceil((float)width / fxAdapter::blockSize);
 
-        float res alignas(16)[fxAdapter::blockSize];
-        float dummies[fxAdapter::blockSize];
-
         int count{0};
-        for (int b = 0; b < blocks; ++b)
+        float dummies[fxAdapter::blockSize];
+        if (mProcessor.getIntParam(2) > 0)
         {
-            mProcessor.processMonoToMono(dummies, res, 0.0);
-
-            for (int s = 0; s < fxAdapter::blockSize; ++s)
+            float resL alignas(16)[fxAdapter::blockSize];
+            float resR alignas(16)[fxAdapter::blockSize];
+            for (int b = 0; b < blocks; ++b)
             {
-                if (count++ < width)
+                mProcessor.processStereo(dummies, dummies, resL, resR, 0.0);
+
+                for (int s = 0; s < fxAdapter::blockSize; ++s)
                 {
-                    // we might not need all of the last block
-                    curve.push_back(res[s]);
+                    if (count++ < width)
+                    {
+                        // offset the stereo drawings slightly
+                        curveL.push_back(resL[s] - .1);
+                        curveR.push_back(resR[s] + .1);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                else
+            }
+        }
+        else
+        {
+            float res alignas(16)[fxAdapter::blockSize];
+            for (int b = 0; b < blocks; ++b)
+            {
+                mProcessor.processMonoToMono(dummies, res, 0.0);
+
+                for (int s = 0; s < fxAdapter::blockSize; ++s)
                 {
-                    break;
+                    if (count++ < width)
+                    {
+                        // we might not need all of the last block
+                        curveL.push_back(res[s]);
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -190,21 +217,16 @@ template <typename Proc> struct SinePlusDisplay : juce::Component, fxAdapter
         auto c2p = [this](auto &c) {
             auto halfHeight = .5f * getHeight();
             auto p = juce::Path();
-            bool first{true};
             auto x = 0;
+            p.startNewSubPath(0, halfHeight);
             for (auto &pt : c)
             {
-                auto sp = pt * halfHeight * .5f;
-                if (first)
-                {
-                    p.startNewSubPath(0, halfHeight);
-                }
-                else
-                {
-                    p.lineTo(x++, sp + halfHeight);
-                }
-                first = false;
+                // scale to slightly less than half because
+                // some settings overshoot +/-1 a little
+                auto sp = pt * halfHeight * .45f + halfHeight;
+                p.lineTo(x++, sp);
             }
+            p.lineTo(x + 1, halfHeight);
             return p;
         };
 
@@ -217,9 +239,22 @@ template <typename Proc> struct SinePlusDisplay : juce::Component, fxAdapter
         g.setColour(ed->themeColor(theme::ColorMap::accent_2b));
         g.drawLine(0, getHeight() * .5f, getWidth(), getHeight() * .5f);
 
-        auto p = c2p(curve);
-        g.setColour(ed->themeColor(theme::ColorMap::accent_1a));
-        g.strokePath(p, juce::PathStrokeType(3));
+        if (mProcessor.getIntParam(2) > 0)
+        {
+            auto pL = c2p(curveL);
+            g.setColour(ed->themeColor(theme::ColorMap::accent_1a));
+            g.strokePath(pL, juce::PathStrokeType(2, juce::PathStrokeType::JointStyle::curved));
+
+            auto pR = c2p(curveR);
+            g.setColour(ed->themeColor(theme::ColorMap::accent_2b));
+            g.strokePath(pR, juce::PathStrokeType(2, juce::PathStrokeType::JointStyle::curved));
+        }
+        else
+        {
+            auto p = c2p(curveL);
+            g.setColour(ed->themeColor(theme::ColorMap::accent_1a));
+            g.strokePath(p, juce::PathStrokeType(2, juce::PathStrokeType::JointStyle::curved));
+        }
     }
 };
 

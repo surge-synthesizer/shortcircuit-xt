@@ -1258,7 +1258,7 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         auto spdisp = std::make_unique<SinePlusRenderer>(*this);
 
         auto bd = getContentAreaComponent()->getLocalBounds();
-        spdisp->setBounds(bd.withTrimmedTop(72).withTrimmedRight(87));
+        spdisp->setBounds(bd.withTrimmedTop(72).withTrimmedLeft(107));
         spdisp->rebuildWaveform();
 
         getContentAreaComponent()->addAndMakeVisible(*spdisp);
