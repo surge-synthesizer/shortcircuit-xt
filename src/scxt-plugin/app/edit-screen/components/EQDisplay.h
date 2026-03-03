@@ -143,10 +143,14 @@ template <typename Proc> struct SinePlusDisplay : juce::Component, fxAdapter
         mProcessor.resetPhase();
 
         auto width = getWidth();
+        auto freqSetting = mProcessor.getFloatParam(0);
+        // save the actual freq the dial is at
+        // then set us so one cycle has as many samples as we have pixels to draw into
         auto freq = 12 * std::log2(getSampleRate(nullptr) / (440 * width));
         mProcessor.setFloatParam(0, freq);
-
+        // how many blocks is that?
         int blocks = std::ceil((float)width / fxAdapter::blockSize);
+
         float res alignas(16)[fxAdapter::blockSize];
         float dummies[fxAdapter::blockSize];
 
@@ -159,6 +163,7 @@ template <typename Proc> struct SinePlusDisplay : juce::Component, fxAdapter
             {
                 if (count++ < width)
                 {
+                    // we might not need all of the last block
                     curve.push_back(res[s]);
                 }
                 else
@@ -167,6 +172,9 @@ template <typename Proc> struct SinePlusDisplay : juce::Component, fxAdapter
                 }
             }
         }
+
+        // set it back where it should be
+        mProcessor.setFloatParam(0, freqSetting);
 
         waveformBuilt = true;
         repaint();

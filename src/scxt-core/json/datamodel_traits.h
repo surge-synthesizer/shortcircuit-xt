@@ -58,6 +58,8 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                       {"ssc", t.supportsStringConversion},
                       {"dsc", (int)t.displayScale},
                       {"unit", t.unit},
+                      {"usep", t.unitSeparator},
+                      {"onum", t.ordinalNumbering},
                       {"qt", (int)t.quantization},
                       {"qtp", t.quantizationParam},
                       {"cval", t.customValueLabelsWithAccuracy},
@@ -93,6 +95,8 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                  findEnumIf(v, "qt", to.quantization);
                  findIf(v, "qtp", to.quantizationParam);
                  findIf(v, "unit", to.unit);
+                 findIf(v, "usep", to.unitSeparator);
+                 findIf(v, "onum", to.ordinalNumbering);
                  findIf(v, "cval", to.customValueLabelsWithAccuracy);
 
                  std::vector<std::pair<int, std::string>> dvStream;
