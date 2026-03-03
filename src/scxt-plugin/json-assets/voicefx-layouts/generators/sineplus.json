@@ -30,22 +30,22 @@
         "w": 65
       }
     },
-    "oa": {
+    "ob": {
       "class": "textedit40",
       "binding": {
         "type": "float",
-        "index": 1
+        "index": 2
       },
       "position": {
         "x": 144,
         "y": 10
       }
     },
-    "ob": {
+    "oa": {
       "class": "textedit40",
       "binding": {
         "type": "float",
-        "index": 2
+        "index": 1
       },
       "position": {
         "x": 144,
@@ -88,10 +88,10 @@
         "y": 84
       }
     },
-    "qa": {
+    "qb": {
       "class": "power-switch",
       "binding": {
-        "index": 0,
+        "index": 1,
         "type": "int"
       },
       "position": {
@@ -99,10 +99,10 @@
         "y": 16
       }
     },
-    "qb": {
+    "qa": {
       "class": "power-switch",
       "binding": {
-        "index": 1,
+        "index": 0,
         "type": "int"
       },
       "position": {
