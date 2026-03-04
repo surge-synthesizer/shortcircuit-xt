@@ -172,7 +172,7 @@ jobs:
                 "win64": "${{ github.server_url }}/surge-synthesizer/shortcircuit-xt/releases/download/Nightly/ShortcircuitXT-${{ steps.scxt_version.outputs.scxt_date }}-${{ steps.scxt_version.outputs.version_chunk }}-Windows-64bit.exe",
                 "win64zip": "${{ github.server_url }}/surge-synthesizer/shortcircuit-xt/releases/download/Nightly/ShortcircuitXT-${{ steps.scxt_version.outputs.scxt_date }}-${{ steps.scxt_version.outputs.version_chunk }}-Windows-64bit.zip",
                 "linux64": "${{ github.server_url }}/surge-synthesizer/shortcircuit-xt/releases/download/Nightly/ShortcircuitXT-${{ steps.scxt_version.outputs.scxt_date }}-${{ steps.scxt_version.outputs.version_chunk }}-Linux.zip",
-                "other": "${{ github.server_url }}/shortcircuit-xt/releases-xt/releases/tag/Nightly"
+                "other": "${{ github.server_url }}/surge-synthesizer/shortcircuit-xt/releases/tag/Nightly"
             }
 
   publish-scxt-release:
