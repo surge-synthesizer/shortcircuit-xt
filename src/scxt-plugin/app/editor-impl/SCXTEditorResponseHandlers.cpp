@@ -147,7 +147,7 @@ void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(
         editScreen->getGroupElements()->processors[which]->setEnabled(enabled);
         editScreen->getGroupElements()->processors[which]->setProcessorControlDescriptionAndStorage(
             control, storage);
-        editScreen->getZoneElements()->routingPane->updateFromProcessorPanes();
+        editScreen->getGroupElements()->routingPane->updateFromProcessorPanes();
     }
 }
 

@@ -28,6 +28,8 @@
 #ifndef SCXT_SRC_SCXT_CORE_JSON_ENGINE_TRAITS_H
 #define SCXT_SRC_SCXT_CORE_JSON_ENGINE_TRAITS_H
 
+#include <tuple>
+
 #include <tao/json/to_string.hpp>
 #include <tao/json/from_string.hpp>
 #include <tao/json/contrib/traits.hpp>
@@ -368,42 +370,66 @@ inline uint32_t groupInfoPlayModeFrom(const std::string &s)
         return (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
     return (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES;
 }
-
-// this is kinda gross, but its nov 6 2024 and i just want something we can make stable
-#define PMTS(pm, s)                                                                                \
-    if (x & (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::pm)                    \
-        oss << "|" << s "|";
-inline std::string groupInfoPlayModeFeatureTo(uint64_t x)
+// So does Mono behavior
+inline std::string groupInfoMonoModeTo(uint32_t p)
 {
-    std::ostringstream oss;
-    PMTS(MONO_RETRIGGER, "mr");
-    PMTS(MONO_LEGATO, "ml");
-    PMTS(ON_RELEASE_TO_LATEST, "rl");
-    PMTS(ON_RELEASE_TO_HIGHEST, "rh");
-    PMTS(ON_RELEASE_TO_LOWEST, "rh");
-    return oss.str();
+    if (p == (uint32_t)engine::Engine::voiceManager_t::MonoBehavior::MONO_LEGATO)
+        return "ml";
+    return "mr";
 }
-#undef PMTS
-#define PMTS(pm, s)                                                                                \
-    {                                                                                              \
-        std::string q = std::string("|") + s + "|";                                                \
-        if (x.find(q) != std::string::npos)                                                        \
-        {                                                                                          \
-            res |= (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::pm;             \
-        }                                                                                          \
+inline uint32_t groupInfoMonoModeFrom(const std::string &s)
+{
+    if (s == "ml")
+        return (uint32_t)engine::Engine::voiceManager_t::MonoBehavior::MONO_LEGATO;
+    return (uint32_t)engine::Engine::voiceManager_t::MonoBehavior::MONO_RETRIGGER;
+}
+// And releaseTo / "priority"
+inline std::string groupInfoPriorityTo(uint32_t p)
+{
+    if (p == (uint32_t)engine::Engine::voiceManager_t::OnReleaseTo::LOWEST)
+        return "rlo";
+    if (p == (uint32_t)engine::Engine::voiceManager_t::OnReleaseTo::HIGHEST)
+        return "rhi";
+    return "rla";
+}
+inline uint32_t groupInfoPriorityFrom(const std::string &s)
+{
+    if (s == "rlo")
+        return (uint32_t)engine::Engine::voiceManager_t::OnReleaseTo::LOWEST;
+    if (s == "rhi")
+        return (uint32_t)engine::Engine::voiceManager_t::OnReleaseTo::HIGHEST;
+    return (uint32_t)engine::Engine::voiceManager_t::OnReleaseTo::LATEST;
+}
+
+// Mono vs Legato and low/high/last were bundled into one uint64, but we split them up.
+inline std::pair<uint32_t, uint32_t> groupInfoLegacyPlayModeFeatureFrom(const std::string &x)
+{
+    uint32_t mono{0}, prio{0};
+
+    if (x.find(std::string("|ml|")) != std::string::npos)
+    {
+        mono = (uint32_t)engine::Engine::voiceManager_t::MonoBehavior::MONO_LEGATO;
+    }
+    if (x.find(std::string("|mr|")) != std::string::npos)
+    {
+        mono = (uint32_t)engine::Engine::voiceManager_t::MonoBehavior::MONO_RETRIGGER;
     }
 
-inline uint64_t groupInfoPlayModeFeatureFrom(const std::string &x)
-{
-    uint64_t res{0};
-    PMTS(MONO_RETRIGGER, "mr");
-    PMTS(MONO_LEGATO, "ml");
-    PMTS(ON_RELEASE_TO_LATEST, "rl");
-    PMTS(ON_RELEASE_TO_HIGHEST, "rh");
-    PMTS(ON_RELEASE_TO_LOWEST, "rh");
-    return res;
+    if (x.find(std::string("|rl|")) != std::string::npos)
+    {
+        prio = (uint32_t)engine::Engine::voiceManager_t::OnReleaseTo::LATEST;
+    }
+    if (x.find(std::string("|rh|")) != std::string::npos)
+    {
+        prio = (uint32_t)engine::Engine::voiceManager_t::OnReleaseTo::HIGHEST;
+    }
+    if (x.find(std::string("|rh|")) != std::string::npos)
+    {
+        prio = (uint32_t)engine::Engine::voiceManager_t::OnReleaseTo::LOWEST;
+    }
+
+    return std::make_pair(mono, prio);
 }
-#undef PMTS
 
 STREAM_ENUM(engine::Group::GlideRateMode, engine::Group::toStringGlideRateMode,
             engine::Group::fromStringGlideRateMode);
@@ -426,7 +452,8 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"pbu", t.pbUp},
                       {"pbd", t.pbDown},
                       {"vpm", groupInfoPlayModeTo(t.vmPlayModeInt)},
-                      {"vpf", groupInfoPlayModeFeatureTo(t.vmPlayModeFeaturesInt)},
+                      {"vmb", groupInfoMonoModeTo(t.vmMonoBehaviorInt)},
+                      {"vpr", groupInfoPriorityTo(t.vmPriorityModeInt)},
                       {"glt", t.glideTime},
                       {"grm", t.glideRateMode}};
              }),
@@ -453,8 +480,20 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  std::string tmp;
                  findIf(v, "vpm", tmp);
                  result.vmPlayModeInt = groupInfoPlayModeFrom(tmp);
-                 findIf(v, "vpf", tmp);
-                 result.vmPlayModeFeaturesInt = groupInfoPlayModeFeatureFrom(tmp);
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'03'06))
+                 {
+                     findIf(v, "vpf", tmp);
+                     auto pmf = groupInfoLegacyPlayModeFeatureFrom(tmp);
+                     result.vmMonoBehaviorInt = pmf.first;
+                     result.vmPriorityModeInt = pmf.second;
+                 }
+                 else
+                 {
+                     findIf(v, "vmb", tmp);
+                     result.vmMonoBehaviorInt = groupInfoMonoModeFrom(tmp);
+                     findIf(v, "vpr", tmp);
+                     result.vmPriorityModeInt = groupInfoPriorityFrom(tmp);
+                 }
                  findOrSet(v, "glt", 0.f, result.glideTime);
                  findIf(v, "grm", result.glideRateMode);
              }));

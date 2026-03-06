@@ -101,7 +101,8 @@ struct Group : MoveableOnly<Group>,
         // but this includes before engine and template blah
         // makes it not quite worth it
         uint32_t vmPlayModeInt{0};
-        uint64_t vmPlayModeFeaturesInt{0};
+        uint32_t vmMonoBehaviorInt{0};
+        uint32_t vmPriorityModeInt{0};
 
         int16_t pbUp{2}, pbDown{2};
 
@@ -321,9 +322,9 @@ struct Group : MoveableOnly<Group>,
     struct LowHighLast
     {
         float low{0.f}, high{0.f}, last{0.f};
+        float lowForProcs{0.f}, highForProcs{0.f}, lastForProcs{0.f};
         void clear()
         {
-            low = high = last = 0.f;
             txnId = 0;
             first = true;
         }
@@ -331,6 +332,9 @@ struct Group : MoveableOnly<Group>,
         {
             if (!first)
             {
+                lowForProcs = low - 69;
+                highForProcs = high - 69;
+                lastForProcs = last - 69;
                 low = (low - 60) / 12.f;
                 high = (high - 60) / 12.f;
                 last = (last - 60) / 12.f;
