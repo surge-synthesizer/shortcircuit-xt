@@ -212,7 +212,7 @@ void GroupSettingsCard::rebuildFromInfo()
     else
     {
         polyMenu->setEnabled(true);
-        // prioMenu->setEnabled(true);
+        prioMenu->setEnabled(true);
 
         polyModeMenu->setLabel("POLY");
 

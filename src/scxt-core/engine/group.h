@@ -318,11 +318,6 @@ struct Group : MoveableOnly<Group>,
 
     float fGatedCount{0}, fVoiceCount{0}, fAnyGated{0}, fAnySounding{0};
 
-    // EGs can make group-level processors outlive any voices in the group,
-    // for which scenario we need a persistent pitch to give them,
-    // lest they drop to 0 when the last voice is gone.
-    // This is easiest to achieve by
-
     // Group-level voice tracking: last/high/low for pitch, key, and MIDI key
     struct LowHighLast
     {
