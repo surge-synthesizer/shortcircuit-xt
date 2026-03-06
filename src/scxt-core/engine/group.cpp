@@ -165,10 +165,19 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     fAnyGated = (fGatedCount > 0) * 1.f;
     fAnySounding = (fVoiceCount > 0) * 1.f;
 
-    // Compute group-level voice tracking: last/high/low for pitch, key, midiKey
-    if (matrixContainsKeyAndPitchSources)
+    auto procsWantPitch{false};
+    for (const auto &p : processors)
     {
-        uint64_t newestCreationId = 0;
+        if (p)
+        {
+            procsWantPitch = procsWantPitch || p->isKeytracked();
+        }
+    }
+
+    float fpitch{0.f};
+    // Compute group-level voice tracking: last/high/low for pitch and key
+    if (matrixContainsKeyAndPitchSources || procsWantPitch)
+    {
         pitchTrack.clear();
         keyTrack.clear();
         float vc = 0.f;
@@ -187,9 +196,21 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
                 vc += 1.f;
             }
         }
+
         pitchTrack.normalize();
         keyTrack.normalize();
         voiceCount = vc;
+
+        switch ((Engine::voiceManager_t::OnReleaseTo)this->outputInfo.vmPriorityModeInt)
+        {
+        default:
+        case Engine::voiceManager_t::OnReleaseTo::LATEST:
+            fpitch = pitchTrack.lastForProcs;
+        case Engine::voiceManager_t::OnReleaseTo::LOWEST:
+            fpitch = pitchTrack.lowForProcs;
+        case Engine::voiceManager_t::OnReleaseTo::HIGHEST:
+            fpitch = pitchTrack.highForProcs;
+        }
     }
 
     for (auto i = 0; i < engine::lfosPerGroup; ++i)
@@ -291,7 +312,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
         /*
          * This is just an optimization to not accumulate. The zone will
-         * have already routed to the approprite other bus and output will
+         * have already routed to the appropriate other bus and output will
          * be empty.
          */
         if (z->outputInfo.routeTo == DEFAULT_BUS)
@@ -314,8 +335,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         postZoneTraversalRemoveHandler();
     }
 
-    // Groups are always unpitched and stereo
-    auto fpitch = 0;
+    // Groups are always stereo
     bool processorConsumesMono[4]{false, false, false, false};
     bool chainIsMono{false};
 
@@ -328,6 +348,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
                 memcpy(&processorIntParams[i][0], processorStorage[i].intParams.data(),
                        sizeof(processorIntParams[i]));
                 processors[i]->bypassAnyway = !processorStorage[i].isActive;
+                processors[i]->setKeytrack(processorStorage[i].isKeytracked);
             }
         }
 
@@ -626,6 +647,7 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
 
             processors[w]->init();
             processors[w]->init_pitch(0);
+            processors[w]->setKeytrack(processorStorage[w].isKeytracked);
         }
     }
     else
@@ -691,7 +713,7 @@ void Group::attack()
             }
         }
 
-        // I *thin* we need to do this
+        // I *think* we need to do this
         rePrepareAndBindGroupMatrix();
         return;
     }
@@ -791,24 +813,23 @@ void Group::resetPolyAndPlaymode(engine::Engine &e)
 {
     if (outputInfo.vmPlayModeInt == (uint32_t)Engine::voiceManager_t::PlayMode::MONO_NOTES)
     {
-        if (outputInfo.vmPlayModeFeaturesInt == 0)
-        {
-            outputInfo.vmPlayModeFeaturesInt =
-                (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_MONO;
-        }
         auto pgrp = (uint64_t)this;
         SCLOG_IF(voiceResponder, "Setting up mono group " << pgrp);
         e.voiceManager.guaranteeGroup(pgrp);
-        e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::MONO_NOTES,
-                                   outputInfo.vmPlayModeFeaturesInt);
+        e.voiceManager.setPlaymode(
+            pgrp, Engine::voiceManager_t::PlayMode::MONO_NOTES,
+            (Engine::voiceManager_t::MonoBehavior)outputInfo.vmMonoBehaviorInt,
+            (Engine::voiceManager_t::OnReleaseTo)outputInfo.vmPriorityModeInt);
     }
     else
     {
         auto pgrp = (uint64_t)this;
         SCLOG_IF(voiceResponder, "Setting up poly group " << pgrp);
 
-        e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::POLY_VOICES,
-                                   outputInfo.vmPlayModeFeaturesInt);
+        e.voiceManager.setPlaymode(
+            pgrp, Engine::voiceManager_t::PlayMode::POLY_VOICES,
+            (Engine::voiceManager_t::MonoBehavior)outputInfo.vmMonoBehaviorInt,
+            (Engine::voiceManager_t::OnReleaseTo)outputInfo.vmPriorityModeInt);
         assert(outputInfo.vmPlayModeInt == (uint32_t)Engine::voiceManager_t::PlayMode::POLY_VOICES);
         if (!outputInfo.hasIndependentPolyLimit)
         {

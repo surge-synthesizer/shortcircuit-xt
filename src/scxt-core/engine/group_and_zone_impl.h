@@ -110,11 +110,6 @@ void HasGroupZoneProcessors<T>::setupProcessorControlDescriptions(
 
     processorDescription[whichProcessor] = tmpProcessor->getControlDescription();
 
-    if (forGroup)
-    {
-        processorDescription[whichProcessor].supportsKeytrack = false;
-    }
-
     if (reClampFloatValues)
     {
         // Clamp floats to min/max here. This matters when, say, you toggle
