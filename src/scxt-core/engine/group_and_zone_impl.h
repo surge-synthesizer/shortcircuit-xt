@@ -180,7 +180,7 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
 }
 
 template <typename T>
-bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
+bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor, bool notifySerial)
 {
     auto &pd = asT()->processorDescription[whichProcessor];
 
@@ -206,13 +206,10 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
             memcpy(ps.intParams.data(), ifp, sizeof(ps.intParams));
         }
 
-        // TODO: This could be more parsimonious
-        messaging::audio::AudioToSerialization updateProc;
-        updateProc.id = messaging::audio::a2s_processor_refresh;
-        updateProc.payloadType = messaging::audio::AudioToSerialization::INT;
-        updateProc.payload.i[0] = forZone;
-        updateProc.payload.i[1] = whichProcessor;
-        asT()->getEngine()->getMessageController()->sendAudioToSerialization(updateProc);
+        if (notifySerial)
+        {
+            notifySerialOfProcessorRefresh(*(asT()->getEngine()), whichProcessor);
+        }
 
         dsp::processor::unspawnProcessor(tmpProcessor);
 
@@ -223,7 +220,7 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor)
 }
 
 template <typename T>
-bool HasGroupZoneProcessors<T>::checkOrAdjustBoolConsistency(int whichProcessor)
+bool HasGroupZoneProcessors<T>::checkOrAdjustBoolConsistency(int whichProcessor, bool notifySerial)
 {
     auto &pd = asT()->processorDescription[whichProcessor];
 
@@ -235,17 +232,27 @@ bool HasGroupZoneProcessors<T>::checkOrAdjustBoolConsistency(int whichProcessor)
             ps.previousIsKeytracked = ps.isKeytracked ? 1 : 0;
             asT()->setupProcessorControlDescriptions(whichProcessor, ps.type, nullptr, true);
 
-            messaging::audio::AudioToSerialization updateProc;
-            updateProc.id = messaging::audio::a2s_processor_refresh;
-            updateProc.payloadType = messaging::audio::AudioToSerialization::INT;
-            updateProc.payload.i[0] = forZone;
-            updateProc.payload.i[1] = whichProcessor;
-            asT()->getEngine()->getMessageController()->sendAudioToSerialization(updateProc);
+            if (notifySerial)
+            {
+                notifySerialOfProcessorRefresh(*(asT()->getEngine()), whichProcessor);
+            }
             return true;
         }
     }
 
     return false;
+}
+
+template <typename T>
+void HasGroupZoneProcessors<T>::notifySerialOfProcessorRefresh(const engine::Engine &e,
+                                                               int whichProcessor)
+{
+    messaging::audio::AudioToSerialization updateProc;
+    updateProc.id = messaging::audio::a2s_processor_refresh;
+    updateProc.payloadType = messaging::audio::AudioToSerialization::INT;
+    updateProc.payload.i[0] = forZone;
+    updateProc.payload.i[1] = whichProcessor;
+    e.getMessageController()->sendAudioToSerialization(updateProc);
 }
 
 template <typename T>
