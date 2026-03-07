@@ -222,7 +222,8 @@ bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
          * non-activatable both in clap and vst3. Other DAWW ignore this.
          * So let them know but for now...
          */
-        info->flags = CLAP_AUDIO_PORT_IS_MAIN;
+        // info->flags = CLAP_AUDIO_PORT_IS_MAIN;
+        info->flags = 0; // S1 will fix this for CLAP; clap-wrapper fixes it for vst3
         info->channel_count = 2;
         info->port_type = CLAP_PORT_STEREO;
     }
