@@ -146,8 +146,9 @@ inline void setFullProcessorStorage(sendFullProcessorStorage_t payload, engine::
                         if (g->processorStorage[which].type != st.type)
                             g->setProcessorType(which, st.type);
                         g->processorStorage[which] = st;
-                        g->checkOrAdjustIntConsistency(which);
+                        g->checkOrAdjustIntConsistency(which, false);
                     }
+                    engine::Group::notifySerialOfProcessorRefresh(e, which);
                 },
                 [a = *lg, which = w](const auto &engine) {
                     const auto &g = engine.getPatch()->getPart(a.part)->getGroup(a.group);
@@ -182,8 +183,10 @@ inline void setFullProcessorStorage(sendFullProcessorStorage_t payload, engine::
                         if (z->processorStorage[which].type != st.type)
                             z->setProcessorType(which, st.type);
                         z->processorStorage[which] = st;
-                        z->checkOrAdjustIntConsistency(which);
+                        z->checkOrAdjustIntConsistency(which, false);
                     }
+
+                    engine::Zone::notifySerialOfProcessorRefresh(e, which);
                 },
                 [a = *lz, which = w](const auto &engine) {
                     const auto &z =
@@ -233,16 +236,19 @@ CLIENT_TO_SERIAL_CONSTRAINED(
             for (const auto &a : sz)
             {
                 const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                z->checkOrAdjustIntConsistency(wp);
+                z->checkOrAdjustIntConsistency(wp, false);
             }
+
+            engine::Zone::notifySerialOfProcessorRefresh(e, wp);
         },
         [payload](auto &e, auto &sg) {
             auto wp = std::get<1>(payload);
             for (const auto &a : sg)
             {
                 const auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
-                g->checkOrAdjustIntConsistency(wp);
+                g->checkOrAdjustIntConsistency(wp, false);
             }
+            engine::Group::notifySerialOfProcessorRefresh(e, wp);
         }));
 
 CLIENT_TO_SERIAL_CONSTRAINED(
@@ -256,16 +262,18 @@ CLIENT_TO_SERIAL_CONSTRAINED(
             for (const auto &a : sz)
             {
                 const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                z->checkOrAdjustBoolConsistency(wp);
+                z->checkOrAdjustBoolConsistency(wp, false);
             }
+            engine::Zone::notifySerialOfProcessorRefresh(e, wp);
         },
         [payload](auto &e, auto &sg) {
             auto wp = std::get<1>(payload);
             for (const auto &a : sg)
             {
                 const auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
-                g->checkOrAdjustBoolConsistency(wp);
+                g->checkOrAdjustBoolConsistency(wp, false);
             }
+            engine::Group::notifySerialOfProcessorRefresh(e, wp);
         }));
 
 // C2S set processor type (sends back data and metadata)
@@ -296,11 +304,13 @@ inline void swapZoneProcessors(const processorPair_t &whichToType, const engine:
 
                     z->updateRoutingTableAfterProcessorSwap(f, t);
 
-                    z->checkOrAdjustBoolConsistency(f);
-                    z->checkOrAdjustIntConsistency(f);
-                    z->checkOrAdjustBoolConsistency(t);
-                    z->checkOrAdjustIntConsistency(t);
+                    z->checkOrAdjustBoolConsistency(f, false);
+                    z->checkOrAdjustIntConsistency(f, false);
+                    z->checkOrAdjustBoolConsistency(t, false);
+                    z->checkOrAdjustIntConsistency(t, false);
                 }
+                engine::Zone::notifySerialOfProcessorRefresh(engine, f);
+                engine::Zone::notifySerialOfProcessorRefresh(engine, t);
             },
             [a = *lz](const auto &engine) {
                 engine.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(a.part, a.group,
@@ -341,13 +351,15 @@ inline void swapGroupProcessors(const processorPair_t &whichToType, const engine
 
                     g->updateRoutingTableAfterProcessorSwap(f, t);
 
-                    g->checkOrAdjustBoolConsistency(f);
-                    g->checkOrAdjustIntConsistency(f);
-                    g->checkOrAdjustBoolConsistency(t);
-                    g->checkOrAdjustIntConsistency(t);
+                    g->checkOrAdjustBoolConsistency(f, false);
+                    g->checkOrAdjustIntConsistency(f, false);
+                    g->checkOrAdjustBoolConsistency(t, false);
+                    g->checkOrAdjustIntConsistency(t, false);
 
                     g->rePrepareAndBindGroupMatrix();
                 }
+                engine::Group::notifySerialOfProcessorRefresh(engine, f);
+                engine::Group::notifySerialOfProcessorRefresh(engine, t);
             },
             [a = *lg](const auto &engine) {
                 engine.getSelectionManager()->sendDisplayDataForGroupsBasedOnLead(a.part, a.group);

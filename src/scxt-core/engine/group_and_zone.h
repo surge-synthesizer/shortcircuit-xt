@@ -81,9 +81,10 @@ template <typename T> struct HasGroupZoneProcessors
                                                   float *pfp, int *ifp, bool initFromDefaults);
 
     // Returns true if I changed anything
-    bool checkOrAdjustIntConsistency(int whichProcessor);
-    bool checkOrAdjustBoolConsistency(int whichProcessor);
+    bool checkOrAdjustIntConsistency(int whichProcessor, bool notifySerial);
+    bool checkOrAdjustBoolConsistency(int whichProcessor, bool notifySerial);
     void updateRoutingTableAfterProcessorSwap(size_t f, size_t t);
+    static void notifySerialOfProcessorRefresh(const engine::Engine &, int whichProcessor);
 
     std::array<dsp::processor::ProcessorStorage, processorCount> processorStorage;
     std::array<dsp::processor::ProcessorControlDescription, processorCount> processorDescription;
