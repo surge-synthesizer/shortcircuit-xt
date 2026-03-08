@@ -166,7 +166,16 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     fAnySounding = (fVoiceCount > 0) * 1.f;
 
     // Compute group-level voice tracking: last/high/low for pitch, key, midiKey
-    if (matrixContainsKeyAndPitchSources)
+    bool anyPitchModeIsNonConstant = false;
+    for (int i = 0; i < processorsPerZoneAndGroup; ++i)
+    {
+        if (processorStorage[i].pitchControl != dsp::processor::ProcessorStorage::GP_CONSTANT)
+        {
+            anyPitchModeIsNonConstant = true;
+            break;
+        }
+    }
+    if (matrixContainsKeyAndPitchSources || anyPitchModeIsNonConstant)
     {
         uint64_t newestCreationId = 0;
         pitchTrack.clear();
@@ -315,7 +324,42 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
 
     // Groups are always unpitched and stereo
-    auto fpitch = 0;
+    float fpitch[processorsPerZoneAndGroup]{0, 0, 0, 0};
+    for (int i = 0; i < processorsPerZoneAndGroup; ++i)
+    {
+        switch (processorStorage[i].pitchControl)
+        {
+        case dsp::processor::ProcessorStorage::GP_CONSTANT:
+            fpitch[i] = 0;
+            break;
+        case dsp::processor::ProcessorStorage::GP_NOTE_PRIO:
+        {
+            switch (outputInfo.notePriority)
+            {
+            case NotePriority::LATEST:
+                fpitch[i] = pitchTrack.last * 12.f - 9.0;
+                break;
+            case NotePriority::HIGHEST:
+                fpitch[i] = pitchTrack.high * 12.f - 9.0;
+                break;
+            case NotePriority::LOWEST:
+                fpitch[i] = pitchTrack.low * 12.f - 9.0;
+                break;
+            }
+        }
+        break;
+        case dsp::processor::ProcessorStorage::GP_LATEST:
+            fpitch[i] = pitchTrack.last * 12.f - 9.0;
+            break;
+        case dsp::processor::ProcessorStorage::GP_HIGHEST:
+            fpitch[i] = pitchTrack.high * 12.f - 9.0;
+            break;
+        case dsp::processor::ProcessorStorage::GP_LOWEST:
+            fpitch[i] = pitchTrack.low * 12.f - 9.0;
+            break;
+        }
+    }
+
     bool processorConsumesMono[4]{false, false, false, false};
     bool chainIsMono{false};
 

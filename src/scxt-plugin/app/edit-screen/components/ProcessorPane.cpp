@@ -136,6 +136,7 @@ void ProcessorPane::showPresetsMenu()
         return;
 
     juce::PopupMenu p;
+
     p.addSectionHeader("Edit");
     p.addItem("Copy", [w = juce::Component::SafePointer(this)]() {
         if (!w)
@@ -148,6 +149,68 @@ void ProcessorPane::showPresetsMenu()
                       return;
                   w->pasteFromEditorClipboard();
               });
+    if (!forZone)
+    {
+        juce::PopupMenu pm;
+        pm.addItem("Constant", true,
+                   processorView.pitchControl == dsp::processor::ProcessorStorage::GP_CONSTANT,
+                   [w = juce::Component::SafePointer(this)]() {
+                       if (w)
+                       {
+                           w->processorView.pitchControl =
+                               dsp::processor::ProcessorStorage::GP_CONSTANT;
+                           w->sendToSerialization(cmsg::SendFullProcessorStorage(
+                               {w->forZone, w->index, w->processorView}));
+                       }
+                   });
+        pm.addItem("Note Priority", true,
+                   processorView.pitchControl == dsp::processor::ProcessorStorage::GP_NOTE_PRIO,
+                   [w = juce::Component::SafePointer(this)]() {
+                       if (w)
+                       {
+                           w->processorView.pitchControl =
+                               dsp::processor::ProcessorStorage::GP_NOTE_PRIO;
+                           w->sendToSerialization(cmsg::SendFullProcessorStorage(
+                               {w->forZone, w->index, w->processorView}));
+                       }
+                   });
+        pm.addItem("Latest Note", true,
+                   processorView.pitchControl == dsp::processor::ProcessorStorage::GP_LATEST,
+                   [w = juce::Component::SafePointer(this)]() {
+                       if (w)
+                       {
+                           w->processorView.pitchControl =
+                               dsp::processor::ProcessorStorage::GP_LATEST;
+                           w->sendToSerialization(cmsg::SendFullProcessorStorage(
+                               {w->forZone, w->index, w->processorView}));
+                       }
+                   });
+        pm.addItem("Highest Note", true,
+                   processorView.pitchControl == dsp::processor::ProcessorStorage::GP_HIGHEST,
+                   [w = juce::Component::SafePointer(this)]() {
+                       if (w)
+                       {
+                           w->processorView.pitchControl =
+                               dsp::processor::ProcessorStorage::GP_HIGHEST;
+                           w->sendToSerialization(cmsg::SendFullProcessorStorage(
+                               {w->forZone, w->index, w->processorView}));
+                       }
+                   });
+        pm.addItem("Lowest Note", true,
+                   processorView.pitchControl == dsp::processor::ProcessorStorage::GP_LOWEST,
+                   [w = juce::Component::SafePointer(this)]() {
+                       if (w)
+                       {
+                           w->processorView.pitchControl =
+                               dsp::processor::ProcessorStorage::GP_LOWEST;
+                           w->sendToSerialization(cmsg::SendFullProcessorStorage(
+                               {w->forZone, w->index, w->processorView}));
+                       }
+                   });
+        p.addSubMenu("Pitch Mode", pm);
+        p.addSeparator();
+    }
+
     p.addSeparator();
     p.addSectionHeader("Presets");
 

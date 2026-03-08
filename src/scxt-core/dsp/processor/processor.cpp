@@ -396,6 +396,41 @@ void unspawnProcessor(Processor *f)
     f->~Processor();
 }
 
+std::string ProcessorStorage::toStringGroupProcessorPitch(const GroupProcessorPitch &m)
+{
+    switch (m)
+    {
+    case GP_CONSTANT:
+        return "const";
+    case GP_NOTE_PRIO:
+        return "prio";
+    case GP_LATEST:
+        return "lat";
+    case GP_HIGHEST:
+        return "hi";
+    case GP_LOWEST:
+        return "lo";
+    }
+    return "prio";
+}
+
+ProcessorStorage::GroupProcessorPitch
+ProcessorStorage::fromStringGroupProcessorPitch(const std::string &s)
+{
+    static const std::unordered_map<std::string, ProcessorStorage::GroupProcessorPitch> inverse = {
+        {"const", ProcessorStorage::GP_CONSTANT},
+        {"prio", ProcessorStorage::GP_NOTE_PRIO},
+        {"lat", ProcessorStorage::GP_LATEST},
+        {"hi", ProcessorStorage::GP_HIGHEST},
+        {"lo", ProcessorStorage::GP_LOWEST}};
+
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return ProcessorStorage::GP_NOTE_PRIO;
+    else
+        return p->second;
+}
+
 ProcessorControlDescription Processor::getControlDescription() const
 {
     ProcessorControlDescription res;

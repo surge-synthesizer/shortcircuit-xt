@@ -65,6 +65,7 @@ SC_STREAMDEF(
                  {"floatParams", t.floatParams},
                  {"intParams", t.intParams},
                  {"deactivated", t.deactivated},
+                 {"pitchControl", t.pitchControl},
                  {"isActive", t.isActive},
                  {"procTypeConsistent", t.procTypeConsistent},
                  {"streamingVersion", t.streamingVersion}};
@@ -99,6 +100,10 @@ SC_STREAMDEF(
             fromArrayWithSizeDifference(v.at("floatParams"), result.floatParams);
             fromArrayWithSizeDifference(v.at("intParams"), result.intParams);
             findIf(v, "deactivated", result.deactivated);
+            // This defaults tp GP_CONSTANT which was the value before we could stream it,
+            // even though new sessions will use GP_NOTEPRIO as default
+            findOrSet(v, "pitchControl", scxt::dsp::processor::ProcessorStorage::GP_CONSTANT,
+                      result.pitchControl);
             findOrSet(v, "isActive", false, result.isActive);
             findOrSet(v, "isKeytracked", false, result.isKeytracked);
             findOrSet(v, "isTemposynced", false, result.isTemposynced);
