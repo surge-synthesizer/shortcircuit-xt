@@ -789,36 +789,55 @@ void Group::onRoutingChanged() { rePrepareAndBindGroupMatrix(); }
 
 void Group::resetPolyAndPlaymode(engine::Engine &e)
 {
-    if (outputInfo.vmPlayModeInt == (uint32_t)Engine::voiceManager_t::PlayMode::MONO_NOTES)
+    auto pgrp = (uint64_t)this;
+    e.voiceManager.guaranteeGroup(pgrp);
+
+    if (outputInfo.playMode == Group::PlayMode::POLY)
     {
-        if (outputInfo.vmPlayModeFeaturesInt == 0)
-        {
-            outputInfo.vmPlayModeFeaturesInt =
-                (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::NATURAL_MONO;
-        }
-        auto pgrp = (uint64_t)this;
-        SCLOG_IF(voiceResponder, "Setting up mono group " << pgrp);
-        e.voiceManager.guaranteeGroup(pgrp);
-        e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::MONO_NOTES,
-                                   outputInfo.vmPlayModeFeaturesInt);
-    }
-    else
-    {
-        auto pgrp = (uint64_t)this;
         SCLOG_IF(voiceResponder, "Setting up poly group " << pgrp);
 
-        e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::POLY_VOICES,
-                                   outputInfo.vmPlayModeFeaturesInt);
-        assert(outputInfo.vmPlayModeInt == (uint32_t)Engine::voiceManager_t::PlayMode::POLY_VOICES);
+        e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::POLY_VOICES);
+
         if (!outputInfo.hasIndependentPolyLimit)
         {
-            // TODO we really want a 'clear'
-            e.voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)this, maxVoices);
+            e.voiceManager.setPolyphonyGroupVoiceLimit(pgrp, maxVoices);
         }
         else
         {
-            e.voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)this, outputInfo.polyLimit);
+            e.voiceManager.setPolyphonyGroupVoiceLimit(pgrp, outputInfo.polyLimit);
         }
+    }
+    else
+    {
+        SCLOG_IF(voiceResponder, "Setting up mono/legato group " << pgrp);
+
+        uint64_t features = 0;
+        if (outputInfo.playMode == Group::PlayMode::MONO)
+        {
+            features |= (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::MONO_RETRIGGER;
+        }
+        else
+        {
+            features |= (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::MONO_LEGATO;
+        }
+
+        switch (outputInfo.notePriority)
+        {
+        case Group::NotePriority::LATEST:
+            features |=
+                (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LATEST;
+            break;
+        case Group::NotePriority::HIGHEST:
+            features |=
+                (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_HIGHEST;
+            break;
+        case Group::NotePriority::LOWEST:
+            features |=
+                (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST;
+            break;
+        }
+
+        e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::MONO_NOTES, features);
     }
 }
 
@@ -841,6 +860,54 @@ Group::GlideRateMode Group::fromStringGlideRateMode(const std::string &s)
     auto p = inverse.find(s);
     if (p == inverse.end())
         return CONSTANT_TIME;
+    return p->second;
+}
+
+std::string Group::toStringPlayMode(const PlayMode &m)
+{
+    switch (m)
+    {
+    case POLY:
+        return "p";
+    case MONO:
+        return "m";
+    case LEGATO:
+        return "l";
+    }
+    return "p";
+}
+
+Group::PlayMode Group::fromStringPlayMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Group::PlayMode, Group::toStringPlayMode>(
+        Group::PlayMode::POLY, Group::PlayMode::LEGATO);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return POLY;
+    return p->second;
+}
+
+std::string Group::toStringNotePriority(const NotePriority &m)
+{
+    switch (m)
+    {
+    case LATEST:
+        return "lat";
+    case HIGHEST:
+        return "hi";
+    case LOWEST:
+        return "lo";
+    }
+    return "lat";
+}
+
+Group::NotePriority Group::fromStringNotePriority(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Group::NotePriority, Group::toStringNotePriority>(
+        Group::NotePriority::LATEST, Group::NotePriority::LOWEST);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return LATEST;
     return p->second;
 }
 

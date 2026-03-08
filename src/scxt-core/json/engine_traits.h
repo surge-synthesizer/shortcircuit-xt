@@ -351,62 +351,12 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  findIf(v, "conj", to.conjunctions);
              }));
 
-/*
- * PlayMode uses engine vm typedefs so is a bit of a special case
- */
-inline std::string groupInfoPlayModeTo(uint32_t p)
-{
-    if (p == (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES)
-        return "p";
-    if (p == (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES)
-        return "m";
-    return "p";
-}
-inline uint32_t groupInfoPlayModeFrom(const std::string &s)
-{
-    if (s == "m")
-        return (uint32_t)engine::Engine::voiceManager_t::PlayMode::MONO_NOTES;
-    return (uint32_t)engine::Engine::voiceManager_t::PlayMode::POLY_VOICES;
-}
-
-// this is kinda gross, but its nov 6 2024 and i just want something we can make stable
-#define PMTS(pm, s)                                                                                \
-    if (x & (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::pm)                    \
-        oss << "|" << s "|";
-inline std::string groupInfoPlayModeFeatureTo(uint64_t x)
-{
-    std::ostringstream oss;
-    PMTS(MONO_RETRIGGER, "mr");
-    PMTS(MONO_LEGATO, "ml");
-    PMTS(ON_RELEASE_TO_LATEST, "rl");
-    PMTS(ON_RELEASE_TO_HIGHEST, "rh");
-    PMTS(ON_RELEASE_TO_LOWEST, "rh");
-    return oss.str();
-}
-#undef PMTS
-#define PMTS(pm, s)                                                                                \
-    {                                                                                              \
-        std::string q = std::string("|") + s + "|";                                                \
-        if (x.find(q) != std::string::npos)                                                        \
-        {                                                                                          \
-            res |= (uint64_t)engine::Engine::voiceManager_t::MonoPlayModeFeatures::pm;             \
-        }                                                                                          \
-    }
-
-inline uint64_t groupInfoPlayModeFeatureFrom(const std::string &x)
-{
-    uint64_t res{0};
-    PMTS(MONO_RETRIGGER, "mr");
-    PMTS(MONO_LEGATO, "ml");
-    PMTS(ON_RELEASE_TO_LATEST, "rl");
-    PMTS(ON_RELEASE_TO_HIGHEST, "rh");
-    PMTS(ON_RELEASE_TO_LOWEST, "rh");
-    return res;
-}
-#undef PMTS
-
 STREAM_ENUM(engine::Group::GlideRateMode, engine::Group::toStringGlideRateMode,
             engine::Group::fromStringGlideRateMode);
+STREAM_ENUM(engine::Group::PlayMode, engine::Group::toStringPlayMode,
+            engine::Group::fromStringPlayMode);
+STREAM_ENUM(engine::Group::NotePriority, engine::Group::toStringNotePriority,
+            engine::Group::fromStringNotePriority);
 
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},
@@ -425,10 +375,10 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"mc", t.midiChannel},
                       {"pbu", t.pbUp},
                       {"pbd", t.pbDown},
-                      {"vpm", groupInfoPlayModeTo(t.vmPlayModeInt)},
-                      {"vpf", groupInfoPlayModeFeatureTo(t.vmPlayModeFeaturesInt)},
                       {"glt", t.glideTime},
-                      {"grm", t.glideRateMode}};
+                      {"grm", t.glideRateMode},
+                      {"pm", t.playMode},
+                      {"np", t.notePriority}};
              }),
              SC_TO({
                  findIf(v, "amplitude", result.amplitude);
@@ -450,13 +400,42 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findOrSet(v, "pbd", 2, result.pbDown);
                  result.routeTo = (engine::BusAddress)(rt);
 
-                 std::string tmp;
-                 findIf(v, "vpm", tmp);
-                 result.vmPlayModeInt = groupInfoPlayModeFrom(tmp);
-                 findIf(v, "vpf", tmp);
-                 result.vmPlayModeFeaturesInt = groupInfoPlayModeFeatureFrom(tmp);
                  findOrSet(v, "glt", 0.f, result.glideTime);
                  findIf(v, "grm", result.glideRateMode);
+                 findOrSet(v, "pm", engine::Group::PlayMode::POLY, result.playMode);
+                 findOrSet(v, "np", engine::Group::NotePriority::LATEST, result.notePriority);
+
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'03'08))
+                 {
+                     std::string vpm, vpf;
+                     findIf(v, "vpm", vpm);
+                     findIf(v, "vpf", vpf);
+                     result.notePriority = engine::Group::NotePriority::LATEST;
+                     if (vpm == "m")
+                     {
+                         if (vpf.find("|ml|") != std::string::npos)
+                         {
+                             result.playMode = engine::Group::PlayMode::LEGATO;
+                         }
+                         else
+                         {
+                             result.playMode = engine::Group::PlayMode::MONO;
+                         }
+
+                         if (vpf.find("|rh|") != std::string::npos)
+                         {
+                             result.notePriority = engine::Group::NotePriority::HIGHEST;
+                         }
+                         else if (vpf.find("|rl|") != std::string::npos)
+                         {
+                             result.notePriority = engine::Group::NotePriority::LOWEST;
+                         }
+                     }
+                     else
+                     {
+                         result.playMode = engine::Group::PlayMode::POLY;
+                     }
+                 }
              }));
 
 SC_STREAMDEF(scxt::engine::Group, SC_FROM({
