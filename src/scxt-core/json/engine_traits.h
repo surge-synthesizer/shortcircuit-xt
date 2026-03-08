@@ -357,6 +357,9 @@ STREAM_ENUM(engine::Group::PlayMode, engine::Group::toStringPlayMode,
             engine::Group::fromStringPlayMode);
 STREAM_ENUM(engine::Group::NotePriority, engine::Group::toStringNotePriority,
             engine::Group::fromStringNotePriority);
+STREAM_ENUM(scxt::dsp::processor::ProcessorStorage::GroupProcessorPitch,
+            scxt::dsp::processor::ProcessorStorage::toStringGroupProcessorPitch,
+            scxt::dsp::processor::ProcessorStorage::fromStringGroupProcessorPitch);
 
 SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},

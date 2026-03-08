@@ -52,6 +52,7 @@ struct Engine;
 
 namespace scxt::dsp::processor
 {
+struct ProcessorStorage;
 
 static constexpr size_t maxProcessorFloatParams{scxt::maxProcessorFloatParams};
 static constexpr size_t maxProcessorIntParams{scxt::maxProcessorIntParams};
@@ -164,6 +165,21 @@ struct ProcessorStorage
         std::fill(intParams.begin(), intParams.end(), 0);
     }
 
+    enum GroupProcessorPitch : int32_t
+    {
+        GP_CONSTANT = 0,
+        GP_NOTE_PRIO,
+        GP_LATEST,
+        GP_HIGHEST,
+        GP_LOWEST
+    };
+    static std::string toStringGroupProcessorPitch(const GroupProcessorPitch &m);
+    static GroupProcessorPitch fromStringGroupProcessorPitch(const std::string &s);
+
+    /**
+     * Note that the pitchControl field is unused in zone mode
+     */
+    GroupProcessorPitch pitchControl{GP_NOTE_PRIO};
     ProcessorType type{proct_none};
     static constexpr float maxOutputDB{18.f};
     static constexpr float maxOutputAmp{7.943282347242815}; //  std::pow(10.f, maxOutputDB / 20.0);
@@ -182,8 +198,9 @@ struct ProcessorStorage
 
     bool operator==(const ProcessorStorage &other) const
     {
-        return (type == other.type && mix == other.mix && floatParams == other.floatParams &&
-                intParams == other.intParams && isActive == other.isActive);
+        return (type == other.type && pitchControl == other.pitchControl && mix == other.mix &&
+                floatParams == other.floatParams && intParams == other.intParams &&
+                isActive == other.isActive);
     }
     bool operator!=(const ProcessorStorage &other) const { return !(*this == other); }
 };
