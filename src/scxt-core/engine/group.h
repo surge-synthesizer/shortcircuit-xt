@@ -82,6 +82,22 @@ struct Group : MoveableOnly<Group>,
     };
     DECLARE_ENUM_STRING(GlideRateMode);
 
+    enum PlayMode : int32_t
+    {
+        POLY = 0,
+        MONO,
+        LEGATO
+    };
+    DECLARE_ENUM_STRING(PlayMode);
+
+    enum NotePriority : int32_t
+    {
+        LATEST = 0,
+        HIGHEST,
+        LOWEST
+    };
+    DECLARE_ENUM_STRING(NotePriority);
+
     struct GroupOutputInfo
     {
         float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f}, tuning{0.f};
@@ -97,18 +113,15 @@ struct Group : MoveableOnly<Group>,
         bool hasIndependentPolyLimit{false};
         int32_t polyLimit{0};
 
-        // I wish I could define these as the enum
-        // but this includes before engine and template blah
-        // makes it not quite worth it
-        uint32_t vmPlayModeInt{0};
-        uint64_t vmPlayModeFeaturesInt{0};
-
         int16_t pbUp{2}, pbDown{2};
 
         int16_t midiChannel{-1}; // -1 means "Follow Part"
 
         float glideTime{0.f}; // portamento glide time as 0..1 param for 25-second exp scale
         GlideRateMode glideRateMode{CONSTANT_TIME};
+
+        PlayMode playMode{POLY};
+        NotePriority notePriority{LATEST};
     } outputInfo;
 
     GroupTriggerConditions triggerConditions;

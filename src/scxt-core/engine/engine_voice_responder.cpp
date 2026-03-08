@@ -50,8 +50,7 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
 
         voiceCreationWorkingBuffer[voicesCreated] = {path, -1};
         if (z->parentGroup->outputInfo.hasIndependentPolyLimit ||
-            z->parentGroup->outputInfo.vmPlayModeInt !=
-                (uint32_t)Engine::voiceManager_t::PlayMode::POLY_VOICES)
+            z->parentGroup->outputInfo.playMode != Group::PlayMode::POLY)
         {
             SCLOG_IF(voiceResponder,
                      "-- Setting polyphony group to group basd " << (uint64_t)z->parentGroup);
