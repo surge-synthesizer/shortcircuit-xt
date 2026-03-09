@@ -171,7 +171,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     {
         if (processors[i])
         {
-            processors[i]->setKeytrack(processorStorage[i].isKeytracked);
+            if (processors[i]->isKeytracked() != processorStorage[i].isKeytracked)
+                processors[i]->setKeytrack(processorStorage[i].isKeytracked);
 
             if (!anyPitchModeIsNonConstant &&
                 processorStorage[i].pitchControl != dsp::processor::ProcessorStorage::GP_CONSTANT)
