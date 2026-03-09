@@ -330,13 +330,15 @@ struct Group : MoveableOnly<Group>,
 
     float fGatedCount{0}, fVoiceCount{0}, fAnyGated{0}, fAnySounding{0};
 
+    void setupGroupPitch();
+    float groupProcPitches[processorsPerZoneAndGroup]{0, 0, 0, 0};
+
     // Group-level voice tracking: last/high/low for pitch, key, and MIDI key
     struct LowHighLast
     {
         float low{0.f}, high{0.f}, last{0.f};
         void clear()
         {
-            low = high = last = 0.f;
             txnId = 0;
             first = true;
         }

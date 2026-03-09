@@ -169,36 +169,20 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     bool anyPitchModeIsNonConstant = false;
     for (int i = 0; i < processorsPerZoneAndGroup; ++i)
     {
-        if (processorStorage[i].pitchControl != dsp::processor::ProcessorStorage::GP_CONSTANT)
+        if (processors[i])
         {
-            anyPitchModeIsNonConstant = true;
-            break;
+            processors[i]->setKeytrack(processorStorage[i].isKeytracked);
+
+            if (!anyPitchModeIsNonConstant &&
+                processorStorage[i].pitchControl != dsp::processor::ProcessorStorage::GP_CONSTANT)
+            {
+                anyPitchModeIsNonConstant = true;
+            }
         }
     }
     if (matrixContainsKeyAndPitchSources || anyPitchModeIsNonConstant)
     {
-        uint64_t newestCreationId = 0;
-        pitchTrack.clear();
-        keyTrack.clear();
-        float vc = 0.f;
-
-        for (const auto &z : zones)
-        {
-            if (z->activeVoices == 0)
-                continue;
-            for (int i = 0; i < z->activeVoices; ++i)
-            {
-                auto v = z->voiceWeakPointers[i];
-                if (!v)
-                    continue;
-                pitchTrack.push(v->pitchFloat, v->voiceCreationId);
-                keyTrack.push(v->keyFloat, v->voiceCreationId);
-                vc += 1.f;
-            }
-        }
-        pitchTrack.normalize();
-        keyTrack.normalize();
-        voiceCount = vc;
+        setupGroupPitch();
     }
 
     for (auto i = 0; i < engine::lfosPerGroup; ++i)
@@ -323,43 +307,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         postZoneTraversalRemoveHandler();
     }
 
-    // Groups are always unpitched and stereo
-    float fpitch[processorsPerZoneAndGroup]{0, 0, 0, 0};
-    for (int i = 0; i < processorsPerZoneAndGroup; ++i)
-    {
-        switch (processorStorage[i].pitchControl)
-        {
-        case dsp::processor::ProcessorStorage::GP_CONSTANT:
-            fpitch[i] = 0;
-            break;
-        case dsp::processor::ProcessorStorage::GP_NOTE_PRIO:
-        {
-            switch (outputInfo.notePriority)
-            {
-            case NotePriority::LATEST:
-                fpitch[i] = pitchTrack.last * 12.f - 9.0;
-                break;
-            case NotePriority::HIGHEST:
-                fpitch[i] = pitchTrack.high * 12.f - 9.0;
-                break;
-            case NotePriority::LOWEST:
-                fpitch[i] = pitchTrack.low * 12.f - 9.0;
-                break;
-            }
-        }
-        break;
-        case dsp::processor::ProcessorStorage::GP_LATEST:
-            fpitch[i] = pitchTrack.last * 12.f - 9.0;
-            break;
-        case dsp::processor::ProcessorStorage::GP_HIGHEST:
-            fpitch[i] = pitchTrack.high * 12.f - 9.0;
-            break;
-        case dsp::processor::ProcessorStorage::GP_LOWEST:
-            fpitch[i] = pitchTrack.low * 12.f - 9.0;
-            break;
-        }
-    }
-
+    // Groups are always stereo
     bool processorConsumesMono[4]{false, false, false, false};
     bool chainIsMono{false};
 
@@ -378,15 +326,15 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 #define CALL_ROUTE(FNN)                                                                            \
     if constexpr (OS)                                                                              \
     {                                                                                              \
-        scxt::dsp::processor::FNN<OS, true>(fpitch, processors.data(), processorConsumesMono,      \
-                                            processorMixOS, processorLevelOS, &endpoints,          \
-                                            chainIsMono, output);                                  \
+        scxt::dsp::processor::FNN<OS, true>(groupProcPitches, processors.data(),                   \
+                                            processorConsumesMono, processorMixOS,                 \
+                                            processorLevelOS, &endpoints, chainIsMono, output);    \
     }                                                                                              \
     else                                                                                           \
     {                                                                                              \
-        scxt::dsp::processor::FNN<OS, true>(fpitch, processors.data(), processorConsumesMono,      \
-                                            processorMix, processorLevel, &endpoints, chainIsMono, \
-                                            output);                                               \
+        scxt::dsp::processor::FNN<OS, true>(groupProcPitches, processors.data(),                   \
+                                            processorConsumesMono, processorMix, processorLevel,   \
+                                            &endpoints, chainIsMono, output);                      \
     }
 
         switch (outputInfo.procRouting)
@@ -669,7 +617,8 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
             endpoints.processorTarget[w].snapValues();
 
             processors[w]->init();
-            processors[w]->init_pitch(0);
+            processors[w]->setKeytrack(processorStorage[w].isKeytracked);
+            processors[w]->init_pitch(groupProcPitches[w]);
         }
     }
     else
@@ -768,6 +717,9 @@ void Group::attack()
     {
         eg[i].attackFromWithDelay(0.f, *(endpoints.egTarget[i].dlyP), *(endpoints.egTarget[i].aP));
     }
+
+    setupGroupPitch();
+
     for (int i = 0; i < processorsPerZoneAndGroup; ++i)
     {
         auto *p = processors[i];
@@ -776,6 +728,67 @@ void Group::attack()
             endpoints.processorTarget[i].snapValues();
 
             p->init();
+            p->init_pitch(groupProcPitches[i]);
+        }
+    }
+}
+
+void Group::setupGroupPitch()
+{
+    pitchTrack.clear();
+    keyTrack.clear();
+    float vc = 0.f;
+
+    for (const auto &z : zones)
+    {
+        if (z->activeVoices == 0)
+            continue;
+        for (int i = 0; i < z->activeVoices; ++i)
+        {
+            auto v = z->voiceWeakPointers[i];
+            if (!v)
+                continue;
+            pitchTrack.push(v->pitchFloat, v->voiceCreationId);
+            keyTrack.push(v->keyFloat, v->voiceCreationId);
+            vc += 1.f;
+        }
+    }
+    pitchTrack.normalize();
+    keyTrack.normalize();
+    voiceCount = vc;
+
+    for (int i = 0; i < processorsPerZoneAndGroup; ++i)
+    {
+        switch (processorStorage[i].pitchControl)
+        {
+        case dsp::processor::ProcessorStorage::GP_CONSTANT:
+            groupProcPitches[i] = 0;
+            break;
+        case dsp::processor::ProcessorStorage::GP_NOTE_PRIO:
+        {
+            switch (outputInfo.notePriority)
+            {
+            case NotePriority::LATEST:
+                groupProcPitches[i] = pitchTrack.last * 12.f - 9.0;
+                break;
+            case NotePriority::HIGHEST:
+                groupProcPitches[i] = pitchTrack.high * 12.f - 9.0;
+                break;
+            case NotePriority::LOWEST:
+                groupProcPitches[i] = pitchTrack.low * 12.f - 9.0;
+                break;
+            }
+        }
+        break;
+        case dsp::processor::ProcessorStorage::GP_LATEST:
+            groupProcPitches[i] = pitchTrack.last * 12.f - 9.0;
+            break;
+        case dsp::processor::ProcessorStorage::GP_HIGHEST:
+            groupProcPitches[i] = pitchTrack.high * 12.f - 9.0;
+            break;
+        case dsp::processor::ProcessorStorage::GP_LOWEST:
+            groupProcPitches[i] = pitchTrack.low * 12.f - 9.0;
+            break;
         }
     }
 }
