@@ -337,7 +337,7 @@ struct Group : MoveableOnly<Group>,
     struct LowHighLast
     {
         float low{0.f}, high{0.f}, last{0.f};
-        void clear()
+        void prepare()
         {
             txnId = 0;
             first = true;

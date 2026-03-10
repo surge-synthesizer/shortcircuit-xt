@@ -736,8 +736,8 @@ void Group::attack()
 
 void Group::setupGroupPitch()
 {
-    pitchTrack.clear();
-    keyTrack.clear();
+    pitchTrack.prepare();
+    keyTrack.prepare();
     float vc = 0.f;
 
     for (const auto &z : zones)
