@@ -107,6 +107,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 
         char name[maxName]{0};
         int mpePitchBendRange{24};
+        int mpePitchSmoothingTime{0}; // in ms: 0 = off, or 25/50/100
         int mpeGlobalChannel{0};
 
         bool active{false};

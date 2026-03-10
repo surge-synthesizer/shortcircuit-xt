@@ -64,6 +64,7 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     void setAllToOmniFlavor(engine::Engine::OmniFlavor of);
     void updateMidiMenuLabel();
     void setMpeBendRange(int r);
+    void setMpePitchSmoothingTime(int t);
 
     void showHamburgerMenu();
 

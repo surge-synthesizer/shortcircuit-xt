@@ -1037,6 +1037,15 @@ float Voice::calculateVoicePitch()
      */
     auto pitchTuned{0.f}, pitchUntuned{0.f};
 
+    auto smoothingTime = zone->parentGroup->parentPart->configuration.mpePitchSmoothingTime;
+    float smoothedMpePitchBend{mpePitchBend};
+    if (smoothingTime > 0)
+    {
+        mpePitchBendSmoother.setTarget(mpePitchBend);
+        mpePitchBendSmoother.process();
+        smoothedMpePitchBend = mpePitchBendSmoother.getValue();
+    }
+
     auto pitchWheel = zone->parentGroup->parentPart->pitchBendValue;
     auto pu = zone->mapping.pbUp;
     auto pd = zone->mapping.pbDown;
@@ -1057,12 +1066,12 @@ float Voice::calculateVoicePitch()
         if (zone->parentGroup->getEngine()->runtimeConfig.tuningAwareMPEGlides)
         {
             pitchTuned += noteExpressions[(int)ExpressionIDs::TUNING];
-            pitchTuned += mpePitchBend;
+            pitchTuned += smoothedMpePitchBend;
         }
         else
         {
             pitchUntuned += noteExpressions[(int)ExpressionIDs::TUNING];
-            pitchUntuned += mpePitchBend;
+            pitchUntuned += smoothedMpePitchBend;
         }
 
         if (zone->parentGroup->getEngine()->runtimeConfig.tuningAwarePitchBends)
@@ -1084,7 +1093,7 @@ float Voice::calculateVoicePitch()
     else
     {
         pitchUntuned += noteExpressions[(int)ExpressionIDs::TUNING];
-        pitchUntuned += mpePitchBend;
+        pitchUntuned += smoothedMpePitchBend;
         pitchUntuned += pitchWheel;
 
         pitchTuned = retuningForKeyAtAttack;

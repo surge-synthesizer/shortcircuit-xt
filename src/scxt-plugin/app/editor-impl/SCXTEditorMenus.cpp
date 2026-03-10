@@ -356,6 +356,24 @@ void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
                     });
     }
     msm.addSeparator();
+    msm.addSectionHeader("MPE Pitch Smoothing");
+    msm.addItem("Off", true, this->partConfigurations[0].mpePitchSmoothingTime == 0,
+                [w = juce::Component::SafePointer(this)] {
+                    if (!w)
+                        return;
+                    w->editScreen->partSidebar->setMpePitchSmoothingTime(0);
+                });
+    for (auto d : {10, 25, 50, 100})
+    {
+        msm.addItem(std::to_string(d) + "ms", true,
+                    d == this->partConfigurations[0].mpePitchSmoothingTime,
+                    [d, w = juce::Component::SafePointer(this)] {
+                        if (!w)
+                            return;
+                        w->editScreen->partSidebar->setMpePitchSmoothingTime(d);
+                    });
+    }
+    msm.addSeparator();
     msm.addItem("Tuning-Aware MPE glides",
                 editScreen->editor->tuningStatus.first == engine::Engine::TuningMode::MTS_CONTINOUS,
                 tuningAwareMPE, [w = juce::Component::SafePointer(this)]() {
