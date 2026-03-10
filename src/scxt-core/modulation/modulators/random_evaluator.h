@@ -60,6 +60,15 @@ struct RandomEvaluator
             case modulation::modulators::RandomStorage::HALF_NORMAL:
                 outputs[i] = rng.half01();
                 break;
+            case modulation::modulators::RandomStorage::BOOL_POS:
+                outputs[i] = 1.f * rng.boolean();
+                break;
+            case modulation::modulators::RandomStorage::BOOL_NEG:
+                outputs[i] = -1.f * rng.boolean();
+                break;
+            case modulation::modulators::RandomStorage::TERNARY:
+                outputs[i] = (float)rng.ternary();
+                break;
             }
         }
     }

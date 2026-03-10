@@ -132,12 +132,18 @@ std::string RandomStorage::toStringStyle(const Style &s)
     {
     case RandomStorage::Style::UNIFORM_01:
         return "u01";
-    case RandomStorage::Style::HALF_NORMAL:
-        return "hfn";
-    case RandomStorage::Style::NORMAL:
-        return "nm";
     case RandomStorage::Style::UNIFORM_BIPOLAR:
         return "ubp";
+    case RandomStorage::Style::NORMAL:
+        return "nm";
+    case RandomStorage::Style::HALF_NORMAL:
+        return "hfn";
+    case RandomStorage::Style::BOOL_POS:
+        return "bop";
+    case RandomStorage::Style::BOOL_NEG:
+        return "bon";
+    case RandomStorage::Style::TERNARY:
+        return "ter";
     }
     return "ERR";
 }
@@ -145,7 +151,7 @@ std::string RandomStorage::toStringStyle(const Style &s)
 RandomStorage::Style RandomStorage::fromStringStyle(const std::string &s)
 {
     static auto inverse = makeEnumInverse<RandomStorage::Style, RandomStorage::toStringStyle>(
-        RandomStorage::Style::UNIFORM_01, RandomStorage::Style::HALF_NORMAL);
+        RandomStorage::Style::UNIFORM_01, RandomStorage::Style::TERNARY);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return RandomStorage::Style::UNIFORM_01;

@@ -128,7 +128,10 @@ struct RandomStorage
         UNIFORM_01,
         UNIFORM_BIPOLAR,
         NORMAL,
-        HALF_NORMAL
+        HALF_NORMAL,
+        BOOL_POS,
+        BOOL_NEG,
+        TERNARY
     } style{UNIFORM_01};
     DECLARE_ENUM_STRING(Style);
 };
@@ -202,6 +205,12 @@ struct MiscSourceStorage
             return "Normal";
         case modulators::RandomStorage::HALF_NORMAL:
             return "Half-Normal";
+        case modulators::RandomStorage::BOOL_POS:
+            return "Boolean+";
+        case modulators::RandomStorage::BOOL_NEG:
+            return "Boolean-";
+        case modulators::RandomStorage::TERNARY:
+            return "Ternary";
         default:
             return "Unknown";
         }
