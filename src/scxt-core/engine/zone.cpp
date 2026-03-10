@@ -478,7 +478,8 @@ void Zone::onRoutingChanged()
 
     if (pglfo != glfosActive)
     {
-        parentGroup->rePrepareAndBindGroupMatrix();
+        if (parentGroup)
+            parentGroup->rePrepareAndBindGroupMatrix();
     }
 }
 
