@@ -100,12 +100,12 @@ endif ()
 string(TIMESTAMP SCXT_DATE "%Y-%m-%d")
 if (WIN32)
     if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
-        set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}-${CMAKE_GENERATOR_PLATFORM}.zip)
+        set(SCXT_ZIP shortcircuit-xt-win${BITS}-${CMAKE_GENERATOR_PLATFORM}-${SCXT_DATE}-${VERSION_CHUNK}.zip)
     else()
-        set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}-${BITS}bit.zip)
+        set(SCXT_ZIP shortcircuit-xt-win${BITS}-${SCXT_DATE}-${VERSION_CHUNK}.zip)
     endif()
 else ()
-    set(SCXT_ZIP ShortcircuitXT-${SCXT_DATE}-${VERSION_CHUNK}-${CMAKE_SYSTEM_NAME}${SCXT_EXTRA_INSTALLER_NAME}.zip)
+    set(SCXT_ZIP shortcircuit-xt-linux${SCXT_EXTRA_INSTALLER_NAME}-${SCXT_DATE}-${VERSION_CHUNK}.zip)
 endif ()
 message(STATUS "Installer ZIP is ${SCXT_ZIP}")
 
@@ -139,7 +139,7 @@ elseif (WIN32)
                 COMMAND ${CMAKE_COMMAND} -E make_directory installer
                 COMMAND innosetup::compiler
                 /O"${CMAKE_BINARY_DIR}/installer" /F"${SCXT_INSTALLER}"
-                /DName="Shortcircuit XT" /DNameCondensed="ShortcircuitXT" /DVersion="${SCXT_DATE}-${VERSION_CHUNK}"
+                /DName="Shortcircuit XT" /DNameCondensed="Shortcircuit XT" /DVersion="${SCXT_DATE}-${VERSION_CHUNK}"
                 /DID="8BDBC849-F102-44A0-9BFA-B28556BDE40B"
                 /DCLAP /DVST3 /DSA
                 /DIcon="${CMAKE_SOURCE_DIR}/resources/images/scxt.ico"
