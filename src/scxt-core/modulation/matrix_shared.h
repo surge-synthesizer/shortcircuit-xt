@@ -397,7 +397,7 @@ template <typename SR, uint32_t gid> struct RNGSourceBase
 {
     RNGSourceBase(scxt::engine::Engine *e)
     {
-        for (uint32_t i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
+        for (uint32_t i = 0; i < scxt::randomsPerGroupOrZone; ++i)
         {
             randoms[i] = SR{gid, 'rnds', i};
         }

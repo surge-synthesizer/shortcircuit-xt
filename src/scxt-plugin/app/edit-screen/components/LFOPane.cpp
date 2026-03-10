@@ -1385,6 +1385,9 @@ struct MiscPanel : juce::Component, HasEditor
         gen(modulation::modulators::RandomStorage::Style::UNIFORM_BIPOLAR, "Uniform Bipolar");
         gen(modulation::modulators::RandomStorage::Style::NORMAL, "Normal");
         gen(modulation::modulators::RandomStorage::Style::HALF_NORMAL, "Half Normal");
+        gen(modulation::modulators::RandomStorage::Style::BOOL_POS, "Boolean+");
+        gen(modulation::modulators::RandomStorage::Style::BOOL_NEG, "Boolean-");
+        gen(modulation::modulators::RandomStorage::Style::TERNARY, "Ternary");
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
@@ -1461,6 +1464,15 @@ struct MiscPanel : juce::Component, HasEditor
             case modulation::modulators::RandomStorage::HALF_NORMAL:
                 // randomModeButtons[i]->setLabel(std::string() + u8"\U000000BD" + " NORMAL");
                 randomModeButtons[i]->setLabel("HALF NORMAL");
+                break;
+            case modulation::modulators::RandomStorage::BOOL_POS:
+                randomModeButtons[i]->setLabel("BOOLEAN+");
+                break;
+            case modulation::modulators::RandomStorage::BOOL_NEG:
+                randomModeButtons[i]->setLabel("BOOLEAN-");
+                break;
+            case modulation::modulators::RandomStorage::TERNARY:
+                randomModeButtons[i]->setLabel("TERNARY");
                 break;
             }
         }
