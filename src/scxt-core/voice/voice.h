@@ -42,6 +42,7 @@
 #include "sst/filters/HalfRateFilter.h"
 #include "sst/basic-blocks/dsp/BlockInterpolators.h"
 #include "sst/basic-blocks/dsp/LagCollection.h"
+#include "sst/basic-blocks/dsp/Lag.h"
 
 namespace scxt::voice
 {
@@ -95,8 +96,9 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
 
     float polyAT{0.f};
     float mpePitchBend{0.f}; // in semis
-    float mpeTimbre{0.f};    // 0..1 normalized
-    float mpePressure{0.f};  // 0..1 normalized
+    sst::basic_blocks::dsp::LinearLag<float, true> mpePitchBendSmoother;
+    float mpeTimbre{0.f};   // 0..1 normalized
+    float mpePressure{0.f}; // 0..1 normalized
 
     float keyChangedInLegatoModeTrigger{0.f};
 
@@ -305,6 +307,13 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         isVoiceAssigned = true;
 
         releaseVelocity = 0.f;
+
+        auto smoothingTime = zone->parentGroup->parentPart->configuration.mpePitchSmoothingTime;
+        if (smoothingTime > 0)
+        {
+            mpePitchBendSmoother.setRateInMilliseconds(smoothingTime, sampleRate, 1.0 / blockSize);
+        }
+        mpePitchBendSmoother.snapTo(mpePitchBend);
 
         voiceStarted();
         firstSamplePlayback = true;

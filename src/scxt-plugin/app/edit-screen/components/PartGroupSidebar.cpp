@@ -599,6 +599,15 @@ void PartGroupSidebar::setMpeBendRange(int r)
     }
 }
 
+void PartGroupSidebar::setMpePitchSmoothingTime(int t)
+{
+    for (int i = 0; i < scxt::numParts; ++i)
+    {
+        editor->partConfigurations[i].mpePitchSmoothingTime = t;
+        sendToSerialization(cmsg::UpdatePartFullConfig({i, editor->partConfigurations[i]}));
+    }
+}
+
 void PartGroupSidebar::showHamburgerMenu()
 {
     if (selectedTab == 0)
