@@ -331,6 +331,21 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
         return islz || ing;
     }
 
+    /*
+     * Tooltip position enum. Values are powers of 2 so valid combinations can be formed
+     * (e.g. ABOVE | LEFT) while invalid ones (e.g. ABOVE | BELOW) are detectable.
+     */
+    enum TooltipPosition
+    {
+        ABOVE = 1 << 0,
+        BELOW = 1 << 1,
+        LEFT = 1 << 2,
+        RIGHT = 1 << 3,
+        VCENTER = 1 << 4,
+        HCENTER = 1 << 5
+    };
+    void setTooltipPosition(juce::Component &, int tooltipPosition);
+
     void showTooltip(const juce::Component &relativeTo);
     void showTooltip(const juce::Component &relativeTo, const juce::Point<int> &internalPosition);
     void repositionTooltip(const juce::Component &relativeTo,
@@ -440,8 +455,8 @@ template <typename W, typename A>
 inline void HasEditor::setupWidgetForValueTooltip(W *w, const A &a)
 {
     w->onBeginEdit = [this, &slRef = *w, &atRef = *a]() {
-        editor->showTooltip(slRef);
         updateValueTooltip(atRef);
+        editor->showTooltip(slRef);
         editor->beginEditNotifyEngine(atRef);
     };
     w->onEndEdit = [this, &atRef = *a]() {
@@ -449,8 +464,8 @@ inline void HasEditor::setupWidgetForValueTooltip(W *w, const A &a)
         editor->endEditNotifyEngine(atRef);
     };
     w->onIdleHover = [this, &slRef = *w, &atRef = *a]() {
-        editor->showTooltip(slRef);
         updateValueTooltip(atRef);
+        editor->showTooltip(slRef);
     };
     w->onIdleHoverEnd = [this]() { editor->hideTooltip(); };
     w->onWheelEditOccurred = [this, &slRef = *w] { slRef.immediatelyInitiateIdleAction(1000); };

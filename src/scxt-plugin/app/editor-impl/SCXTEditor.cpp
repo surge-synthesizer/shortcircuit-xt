@@ -364,14 +364,63 @@ void SCXTEditor::doSelectionAction(
     repaint();
 }
 
+inline constexpr const char *tooltipPositionPropertyName{"scxt-tooltip-position"};
+
+void SCXTEditor::setTooltipPosition(juce::Component &comp, int tooltipPosition)
+{
+    comp.getProperties().set(tooltipPositionPropertyName, tooltipPosition);
+}
+
+static juce::Rectangle<int> applyTooltipPosition(const juce::Component &relativeTo,
+                                                 const juce::Rectangle<int> &fb,
+                                                 const juce::Rectangle<int> &ttBounds)
+{
+    auto posVar = relativeTo.getProperties()[tooltipPositionPropertyName];
+    if (posVar.isVoid())
+        return ttBounds.withPosition(fb.getWidth() + fb.getX(), fb.getY());
+
+    int pos = static_cast<int>(posVar);
+    int tx = fb.getX();
+    int ty = fb.getY();
+
+    bool isAbove = (pos & SCXTEditor::ABOVE) != 0;
+    bool isBelow = (pos & SCXTEditor::BELOW) != 0;
+    bool isLeft = (pos & SCXTEditor::LEFT) != 0;
+    bool isRight = (pos & SCXTEditor::RIGHT) != 0;
+    bool isVCenter = (pos & SCXTEditor::VCENTER) != 0;
+    bool isHCenter = (pos & SCXTEditor::HCENTER) != 0;
+
+    if (isAbove)
+        ty = fb.getY() - ttBounds.getHeight();
+    else if (isBelow)
+        ty = fb.getBottom();
+    else if (isVCenter)
+        ty = fb.getCentreY() - ttBounds.getHeight() / 2;
+    else
+        ty = fb.getY();
+
+    if (isLeft)
+        tx = fb.getX() - ttBounds.getWidth();
+    else if (isRight)
+        tx = fb.getRight();
+    else if (isHCenter)
+        tx = fb.getCentreX() - ttBounds.getWidth() / 2;
+    else
+        tx = fb.getRight();
+
+    return ttBounds.withPosition(tx, ty);
+}
+
 void SCXTEditor::showTooltip(const juce::Component &relativeTo)
 {
     auto fb = getLocalArea(&relativeTo, relativeTo.getLocalBounds());
     toolTip->resetSizeFromData();
     toolTip->setVisible(true);
     toolTip->toFront(false);
-    toolTip->setBounds(fb.getWidth() + fb.getX(), fb.getY(), toolTip->getWidth(),
-                       toolTip->getHeight());
+    auto nb = applyTooltipPosition(relativeTo, fb,
+                                   toolTip->getBounds().withPosition(0, 0).withSize(
+                                       toolTip->getWidth(), toolTip->getHeight()));
+    toolTip->setBounds(nb);
 }
 
 void SCXTEditor::showTooltip(const juce::Component &relativeTo, const juce::Point<int> &p)
@@ -380,16 +429,38 @@ void SCXTEditor::showTooltip(const juce::Component &relativeTo, const juce::Poin
     toolTip->resetSizeFromData();
     toolTip->setVisible(true);
     toolTip->toFront(false);
-    toolTip->setBounds(fb.getX() + p.getX(), fb.getY() + p.getY(), toolTip->getWidth(),
-                       toolTip->getHeight());
+    auto posVar = relativeTo.getProperties()[tooltipPositionPropertyName];
+    if (!posVar.isVoid())
+    {
+        auto nb = applyTooltipPosition(relativeTo, fb,
+                                       toolTip->getBounds().withPosition(0, 0).withSize(
+                                           toolTip->getWidth(), toolTip->getHeight()));
+        toolTip->setBounds(nb);
+    }
+    else
+    {
+        toolTip->setBounds(fb.getX() + p.getX(), fb.getY() + p.getY(), toolTip->getWidth(),
+                           toolTip->getHeight());
+    }
 }
 
 void SCXTEditor::repositionTooltip(const juce::Component &relativeTo, const juce::Point<int> &p)
 {
     auto fb = getLocalArea(&relativeTo, relativeTo.getLocalBounds());
     toolTip->resetSizeFromData();
-    toolTip->setBounds(fb.getX() + p.getX(), fb.getY() + p.getY(), toolTip->getWidth(),
-                       toolTip->getHeight());
+    auto posVar = relativeTo.getProperties()[tooltipPositionPropertyName];
+    if (!posVar.isVoid())
+    {
+        auto nb = applyTooltipPosition(relativeTo, fb,
+                                       toolTip->getBounds().withPosition(0, 0).withSize(
+                                           toolTip->getWidth(), toolTip->getHeight()));
+        toolTip->setBounds(nb);
+    }
+    else
+    {
+        toolTip->setBounds(fb.getX() + p.getX(), fb.getY() + p.getY(), toolTip->getWidth(),
+                           toolTip->getHeight());
+    }
 }
 
 void SCXTEditor::hideTooltip() { toolTip->setVisible(false); }
