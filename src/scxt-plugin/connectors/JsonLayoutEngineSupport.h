@@ -325,6 +325,48 @@ createAndPositionNonDataWidget(const sst::jucegui::layouts::json_document::Contr
     return nullptr;
 }
 
+/*
+ * Parse a tooltip-position string like "above", "below", "left", "right",
+ * "above-left", "above-right", "below-left", "below-right" and set the
+ * scxt-tooltip-position property on the component. The integer values match
+ * SCXTEditor::TooltipPosition bit flags (ABOVE=1, BELOW=2, LEFT=4, RIGHT=8).
+ * Control-level extraKVs take precedence over class-level extraKVs.
+ */
+inline void applyTooltipPositionFromExtra(juce::Component &comp,
+                                          const sst::jucegui::layouts::json_document::Control &ctrl,
+                                          const sst::jucegui::layouts::json_document::Class &cls)
+{
+    std::string val;
+    auto ctrlIt = ctrl.extraKVs.find("tooltip-position");
+    if (ctrlIt != ctrl.extraKVs.end())
+        val = ctrlIt->second;
+    else
+    {
+        auto clsIt = cls.extraKVs.find("tooltip-position");
+        if (clsIt != cls.extraKVs.end())
+            val = clsIt->second;
+        else
+            return;
+    }
+
+    int pos = 0;
+    if (val.find("above") != std::string::npos)
+        pos |= 1; /* ABOVE   */
+    if (val.find("below") != std::string::npos)
+        pos |= 2; /* BELOW   */
+    if (val.find("left") != std::string::npos)
+        pos |= 4; /* LEFT    */
+    if (val.find("right") != std::string::npos)
+        pos |= 8; /* RIGHT   */
+    if (val.find("vcenter") != std::string::npos)
+        pos |= 16; /* VCENTER */
+    if (val.find("hcenter") != std::string::npos)
+        pos |= 32; /* HCENTER */
+
+    if (pos != 0)
+        comp.getProperties().set("scxt-tooltip-position", pos);
+}
+
 template <typename P, typename W, typename A>
 void attachAndPosition(P *parent, const std::unique_ptr<W> &ed, const std::unique_ptr<A> &att,
                        const sst::jucegui::layouts::json_document::Control &ctrl,
@@ -337,6 +379,7 @@ void attachAndPosition(P *parent, const std::unique_ptr<W> &ed, const std::uniqu
     {
         parent->setupWidgetForValueTooltip(ed.get(), att);
     }
+    applyTooltipPositionFromExtra(*ed, ctrl, cls);
     ed->setSource(att.get());
     ed->setBounds(ctrl.position.x + zeroPoint.x, ctrl.position.y + zeroPoint.y, ctrl.position.w,
                   ctrl.position.h);

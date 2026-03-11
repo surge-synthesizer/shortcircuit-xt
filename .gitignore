@@ -20,3 +20,5 @@ minst.sh
 .cache/
 
 doxy-out/
+
+.junie/
