@@ -193,6 +193,31 @@ SC_STREAMDEF(modulation::MiscSourceStorage,
                  findIfArray(v, "ps", to.phasors);
              }));
 
+STREAM_ENUM(modulation::modulators::EnvFollowerStorage::Source,
+            modulation::modulators::EnvFollowerStorage::toStringSource,
+            modulation::modulators::EnvFollowerStorage::fromStringSource);
+
+SC_STREAMDEF(modulation::modulators::EnvFollowerStorage, SC_FROM({
+                 v = tao::json::empty_object;
+                 using es = modulation::modulators::EnvFollowerStorage;
+                 addUnlessDefault<val_t>(v, "pp", es::Source::PRE_PROC, from.followSource);
+                 addUnlessDefault<val_t>(v, "sl", false, from.stereoLink);
+                 addUnlessDefault<val_t>(v, "a", 0.01f, from.attack);
+                 addUnlessDefault<val_t>(v, "r", 0.2f, from.release);
+                 addUnlessDefault<val_t>(v, "g", 0.f, from.gain);
+             }),
+             SC_TO({
+                 using es = modulation::modulators::EnvFollowerStorage;
+                 findOrSet(v, "pp", es::Source::PRE_PROC, to.followSource);
+                 findOrSet(v, "sl", false, to.stereoLink);
+                 findOrSet(v, "a", 0.01f, to.attack);
+                 findOrSet(v, "r", .2f, to.release);
+                 findOrSet(v, "g", 0.f, to.gain);
+             }));
+
+SC_STREAMDEF(modulation::AudioSourceStorage, SC_FROM({ v = {"fs", t.followers}; }),
+             SC_TO({ findIfArray(v, "fs", to.followers); }));
+
 STREAM_ENUM(modulation::ModulatorStorage::ModulatorShape,
             modulation::ModulatorStorage::toStringModulatorShape,
             modulation::ModulatorStorage::fromStringModulatorShape);

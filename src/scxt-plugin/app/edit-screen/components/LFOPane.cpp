@@ -1480,6 +1480,159 @@ struct MiscPanel : juce::Component, HasEditor
     }
 };
 
+struct AudioPane : juce::Component, HasEditor
+{
+    LfoPane *parent{nullptr};
+    bool forZone{true};
+
+    auto &efs = parent->envFollowerStorageData;
+
+    AudioPane(
+        LfoPane *p, modulation::AudioSourceStorage &es)
+        : HasEditor(p->editor), parent(p), forZone(p->forZone), efs(es)
+    {
+        assert(parent);
+
+        using fAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage>;
+        using iAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage, int16_t>;
+        using bAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage, bool>;
+
+        using fac =
+            connectors::SingleValueFactory<fAtt_t,
+                                           cmsg::UpdateAudiomodStorageForSelectedGroupOrZone>;
+
+        auto makeLabel = [this](auto &lb, const std::string &l) {
+            lb = std::make_unique<jcmp::Label>();
+            lb->setText(l);
+            addAndMakeVisible(*lb);
+        };
+        auto aux = [&, this](auto &mem, auto &A, auto &S, auto &L, std::string lab = "") {
+            fac::attachAndAdd(efs, mem, this, A, S, parent->forZone, parent->selectedTab);
+            makeLabel(L, lab);
+        };
+
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            aux(efs.followers[i].attack, aAtts[i], aKnobs[i], aLabs[i], "Attack");
+            aux(efs.followers[i].release, rAtts[i], rKnobs[i], rLabs[i], "Release");
+            aux(efs.followers[i].gain, gAtts[i], gKnobs[i], gLabs[i], "Gain");
+        }
+    }
+
+    void repushData()
+    {
+        sendToSerialization(cmsg::UpdateAudiomodStorageForSelectedGroupOrZone({forZone, efs}));
+    }
+
+    void showSourceMenu(int i)
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Audio Source");
+        p.addSeparator();
+
+        auto gen = [&p, i, this](auto v, auto l) {
+            auto that = this; // grrrr msvc
+            p.addItem(l, true, v == efs[i].followSource,
+                      [i, w = juce::Component::SafePointer(that), v] {
+                          if (!w)
+                              return;
+                          w->efs[i].followSource = v;
+                          w->repushData();
+                          w->updateFromValues();
+                      });
+        };
+        auto genB = [&p, i, this](bool v, auto l) {
+            auto that = this; // grrrr msvc
+            p.addItem(l, true, v == efs[i].followSource,
+                      [i, w = juce::Component::SafePointer(that), v] {
+                          if (!w)
+                              return;
+                          w->efs[i].stereoLink = v;
+                          w->repushData();
+                          w->updateFromValues();
+                      });
+        };
+
+        gen(modulation::modulators::EnvFollowerStorage::Source::PRE_PROC, "Pre-Processors");
+        gen(modulation::modulators::EnvFollowerStorage::Source::POST_PROC, "Post-Processors");
+        p.addSeparator();
+        p.addSectionHeader("Stereo Processing");
+        gen(true, "Linked");
+        gen(false, "Unlinked");
+    }
+
+    void updateFromValues()
+    {
+        namespace mmod = modulation::modulators;
+        for (int i = 0; i < scxt::envFollowersPerGroupOrZone; ++i)
+        {
+            sLabs[i]->setText(
+                modulation::AudioSourceStorage::sourceDisplayName(efs.followers[i].followSource));
+        }
+    }
+
+    // source/stereo menus, attack/release/gain knobs
+    std::array<std::unique_ptr<jcmp::MenuButton>, envFollowersPerGroupOrZone> sMenus;
+    std::array<std::unique_ptr<jcmp::Label>, envFollowersPerGroupOrZone> sLabs;
+
+    std::array<std::unique_ptr<LfoPane::attachment_t>, envFollowersPerGroupOrZone> aAtts;
+    std::array<std::unique_ptr<jcmp::Knob>, envFollowersPerGroupOrZone> aKnobs;
+    std::array<std::unique_ptr<jcmp::Label>, envFollowersPerGroupOrZone> aLabs;
+
+    std::array<std::unique_ptr<LfoPane::attachment_t>, envFollowersPerGroupOrZone> rAtts;
+    std::array<std::unique_ptr<jcmp::Knob>, envFollowersPerGroupOrZone> rKnobs;
+    std::array<std::unique_ptr<jcmp::Label>, envFollowersPerGroupOrZone> rLabs;
+
+    std::array<std::unique_ptr<LfoPane::attachment_t>, envFollowersPerGroupOrZone> gAtts;
+    std::array<std::unique_ptr<jcmp::Knob>, envFollowersPerGroupOrZone> gKnobs;
+    std::array<std::unique_ptr<jcmp::Label>, envFollowersPerGroupOrZone> gLabs;
+
+    void resized() override
+    {
+        auto lbHt = 15;
+        auto b = getLocalBounds();
+
+        // Knobs
+        auto nKnobs = 4;
+        auto allKnobsStartX = b.getWidth() / 4 + MG * 2;
+        auto allKnobsStartY = 0;
+        auto allKnobsWidth = b.getWidth() - allKnobsStartX - 40;
+        auto allKnobsHeight = b.getHeight() / 2 - MG;
+
+        auto knobMg = 15;
+        auto knobWidth = (allKnobsWidth - knobMg * (nKnobs - 1)) / nKnobs;
+        auto knobHeight = allKnobsHeight;
+
+        auto knobBounds = b.withWidth(knobWidth)
+                              .withHeight(knobHeight)
+                              .withX(allKnobsStartX)
+                              .withY(allKnobsStartY);
+        auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth,
+                                 int knobHeight, int knobMg) {
+            knob->setBounds(
+                knobBounds.withTrimmedBottom(23 - MG)); // remove modulator_storage label
+            label->setBounds(knobBounds.withTrimmedTop(knobHeight - lbHt));
+            knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
+        };
+
+        auto yo = b.getHeight() / 2 + MG;
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            // sMenus[i]->setBounds(5, 5, 40, 18);
+            // sLabs[i]->setBounds(5, 25, 40, 20);
+
+            makeKnobBounds(aKnobs[i], aLabs[i], knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+            makeKnobBounds(rKnobs[i], rLabs[i], knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+            makeKnobBounds(gKnobs[i], gLabs[i], knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+
+            knobBounds = b.withWidth(knobWidth)
+                             .withHeight(knobHeight)
+                             .withX(allKnobsStartX)
+                             .withY(b.getHeight() / 2 + MG);
+        }
+    }
+};
+
 struct ConsistencyLFOPane : juce::Component
 {
     LfoPane *parent{nullptr};
@@ -1526,7 +1679,7 @@ LfoPane::LfoPane(SCXTEditor *e, bool fz)
     setContentAreaComponent(std::make_unique<juce::Component>());
     // setCustomClass(connectors::SCXTStyleSheetCreator::ModulationTabs);
     isTabbed = true;
-    tabNames = {"LFO 1", "LFO 2", "LFO 3", "LFO 4", "MISC"};
+    tabNames = {"LFO 1", "LFO 2", "LFO 3", "LFO 4", "MISC", "AUDIO"};
 
     resetTabState();
 
@@ -1541,7 +1694,7 @@ LfoPane::~LfoPane() { getContentAreaComponent()->removeAllChildren(); }
 
 void LfoPane::setTabsForGLFO()
 {
-    tabNames = {"GLFO 1", "GLFO 2", "GLFO 3", "GLFO 4", "MISC"};
+    tabNames = {"GLFO 1", "GLFO 2", "GLFO 3", "GLFO 4", "MISC", "AUDIO"};
     resetTabState();
 }
 
@@ -1598,6 +1751,21 @@ void LfoPane::setMiscModStorage(const modulation::MiscSourceStorage &mod)
     }
 }
 
+void LfoPane::setAudioModStorage(const modulation::AudioSourceStorage &ass)
+{
+    envFollowerStorageData = ass;
+
+    if (selectedTab != 5)
+        return;
+
+    getContentAreaComponent()->removeAllChildren();
+
+    if (isEnabled())
+    {
+        rebuildPanelComponents();
+    }
+}
+
 void LfoPane::rebuildPanelComponents()
 {
     if (!isEnabled())
@@ -1609,6 +1777,24 @@ void LfoPane::rebuildPanelComponents()
 
         miscPanel = std::make_unique<MiscPanel>(forZone, this, miscStorageData);
         getContentAreaComponent()->addAndMakeVisible(*miscPanel);
+        resized();
+
+        if (forZone)
+        {
+            editor->themeApplier.applyZoneMultiScreenModulationTheme(this);
+        }
+        else
+        {
+            editor->themeApplier.applyGroupMultiScreenModulationTheme(this);
+        }
+        return;
+    }
+    if (selectedTab == 5)
+    {
+        clearAdditionalHamburgerComponents();
+
+        audioPane = std::make_unique<AudioPane>(this, envFollowerStorageData);
+        getContentAreaComponent()->addAndMakeVisible(*audioPane);
         resized();
 
         if (forZone)
@@ -1660,8 +1846,6 @@ void LfoPane::rebuildPanelComponents()
         w->showModulatorShapeMenu();
     });
     getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
-
-    // getContentAreaComponent()->addAndMakeVisible(*modulatorShape);
 
     repositionContentAreaComponents();
     setSubPaneVisibility();
