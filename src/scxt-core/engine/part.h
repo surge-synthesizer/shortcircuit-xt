@@ -183,6 +183,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     }
 
     size_t addGroup();
+    size_t addGroup(std::unique_ptr<Group> &g);
     uint32_t activeGroups{0};
     bool isActive();
     void addActiveGroup() { activeGroups++; }

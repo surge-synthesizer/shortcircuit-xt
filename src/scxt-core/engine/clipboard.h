@@ -45,7 +45,8 @@ struct Clipboard
     enum ContentType
     {
         NONE,
-        ZONE // add after this and remember to extend inverse below
+        ZONE,
+        GROUP // add after this and remember to extend inverse below
     };
 
     template <typename T> [[nodiscard]] ContentType streamToClipboard(ContentType c, const T &t);
@@ -63,13 +64,15 @@ struct Clipboard
             return "n";
         case ZONE:
             return "z";
+        case GROUP:
+            return "g";
         }
         return "";
     }
     static ContentType fromStringContentType(const std::string &s)
     {
-        static auto inverse =
-            makeEnumInverse<ContentType, toStringContentType>(ContentType::NONE, ContentType::ZONE);
+        static auto inverse = makeEnumInverse<ContentType, toStringContentType>(ContentType::NONE,
+                                                                                ContentType::GROUP);
         auto p = inverse.find(s);
         if (p == inverse.end())
             return NONE;
@@ -77,7 +80,7 @@ struct Clipboard
     }
 
   protected:
-    ContentType type;
+    ContentType type{NONE};
     std::string contents;
 };
 } // namespace scxt::engine

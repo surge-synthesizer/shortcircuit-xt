@@ -253,6 +253,14 @@ size_t Part::addGroup()
     return groups.size();
 }
 
+size_t Part::addGroup(std::unique_ptr<Group> &g)
+{
+    g->parentPart = this;
+    g->setSampleRate(getSampleRate());
+    groups.push_back(std::move(g));
+    return groups.size();
+}
+
 void Part::moveGroupToAfter(size_t whichGroup, size_t toAfter)
 {
     if (whichGroup < 0 || whichGroup >= groups.size() || toAfter < 0 || toAfter >= groups.size() ||

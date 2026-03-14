@@ -596,6 +596,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void copyZone(const selection::SelectionManager::ZoneAddress &);
     void pasteZone(const selection::SelectionManager::ZoneAddress &);
 
+    void duplicateGroup(const selection::SelectionManager::ZoneAddress &);
+    void copyGroup(const selection::SelectionManager::ZoneAddress &);
+    void pasteGroup(const selection::SelectionManager::ZoneAddress &);
+
     Clipboard clipboard;
 
     /*
