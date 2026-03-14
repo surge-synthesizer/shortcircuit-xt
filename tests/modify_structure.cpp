@@ -80,16 +80,14 @@ TEST_CASE("Copy and Paste Group")
     std::string originalName = part->getGroup(0)->name;
 
     // Clipboard should be empty initially
-    REQUIRE(th.engine->clipboard.getClipboardType() ==
-            scxt::engine::Clipboard::ContentType::NONE);
+    REQUIRE(th.engine->clipboard.getClipboardType() == scxt::engine::Clipboard::ContentType::NONE);
 
     // Copy the group
     th.sendToSerialization(cmsg::CopyGroup(ZoneAddress{0, 0, -1}));
     th.stepUI();
 
     // Clipboard should now hold a group
-    REQUIRE(th.engine->clipboard.getClipboardType() ==
-            scxt::engine::Clipboard::ContentType::GROUP);
+    REQUIRE(th.engine->clipboard.getClipboardType() == scxt::engine::Clipboard::ContentType::GROUP);
 
     // Paste into part 0 (group address is where it will be added after)
     th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
@@ -128,8 +126,7 @@ TEST_CASE("Paste Group Does Nothing When Clipboard Holds Zone")
     th.sendToSerialization(cmsg::CopyZone(ZoneAddress{0, 0, 0}));
     th.stepUI();
 
-    REQUIRE(th.engine->clipboard.getClipboardType() ==
-            scxt::engine::Clipboard::ContentType::ZONE);
+    REQUIRE(th.engine->clipboard.getClipboardType() == scxt::engine::Clipboard::ContentType::ZONE);
 
     // PasteGroup should be a no-op since clipboard holds a zone
     th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
