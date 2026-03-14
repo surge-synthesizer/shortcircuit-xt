@@ -80,7 +80,7 @@ struct Clipboard
     }
 
   protected:
-    ContentType type;
+    ContentType type{NONE};
     std::string contents;
 };
 } // namespace scxt::engine
