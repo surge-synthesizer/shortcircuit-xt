@@ -369,6 +369,26 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                             return;
                         w->doGroupRename();
                     });
+                    p.addItem("Copy", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::CopyGroup(za));
+                    });
+                    p.addItem("Paste",
+                              gsb->editor->clipboardType == engine::Clipboard::ContentType::GROUP,
+                              false, [w = juce::Component::SafePointer(this)]() {
+                                  if (!w)
+                                      return;
+                                  auto za = w->getZoneAddress();
+                                  w->gsb->sendToSerialization(cmsg::PasteGroup(za));
+                              });
+                    p.addItem("Duplicate", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::DuplicateGroup(za));
+                    });
                     p.addItem("Paste Zone",
                               gsb->editor->clipboardType == engine::Clipboard::ContentType::ZONE,
                               false, [w = juce::Component::SafePointer(this)]() {

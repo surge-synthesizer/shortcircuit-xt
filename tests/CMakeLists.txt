@@ -10,6 +10,7 @@ add_executable(scxt-test
 		ui_basics.cpp
 
 		selection_tests.cpp
+		modify_structure.cpp
 )
 
 target_link_libraries(scxt-test

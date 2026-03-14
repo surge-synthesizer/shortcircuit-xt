@@ -205,6 +205,13 @@ CLIENT_TO_SERIAL(CopyZone, c2s_copy_zone, selection::SelectionManager::ZoneAddre
 CLIENT_TO_SERIAL(PasteZone, c2s_paste_zone, selection::SelectionManager::ZoneAddress,
                  engine.pasteZone(payload));
 
+CLIENT_TO_SERIAL(DuplicateGroup, c2s_duplicate_group, selection::SelectionManager::ZoneAddress,
+                 engine.duplicateGroup(payload));
+CLIENT_TO_SERIAL(CopyGroup, c2s_copy_group, selection::SelectionManager::ZoneAddress,
+                 engine.copyGroup(payload));
+CLIENT_TO_SERIAL(PasteGroup, c2s_paste_group, selection::SelectionManager::ZoneAddress,
+                 engine.pasteGroup(payload));
+
 SERIAL_TO_CLIENT(SendClipboardType, s2c_send_clipboard_type, engine::Clipboard::ContentType,
                  onClipboardType);
 

@@ -1080,6 +1080,100 @@ void Engine::duplicateZone(const selection::SelectionManager::ZoneAddress &s)
         });
 }
 
+void Engine::copyGroup(const selection::SelectionManager::ZoneAddress &s)
+{
+    auto &groupO = getPatch()->getPart(s.part)->getGroup(s.group);
+
+    messaging::client::serializationSendToClient(
+        messaging::client::s2c_send_clipboard_type,
+        clipboard.streamToClipboard(Clipboard::ContentType::GROUP, *groupO), *messageController);
+}
+
+void Engine::pasteGroup(const selection::SelectionManager::ZoneAddress &a)
+{
+    if (clipboard.getClipboardType() != Clipboard::ContentType::GROUP)
+    {
+        return;
+    }
+
+    auto gptr = std::make_unique<Group>(rng);
+    gptr->parentPart = getPatch()->getPart(a.part).get();
+    gptr->setSampleRate(getPatch()->getPart(a.part)->getSampleRate());
+
+    if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::GROUP, *gptr))
+    {
+        return;
+    }
+
+    // Give the new group the lowest available new group name for the part
+    std::set<std::string> groupNames;
+    auto &part = getPatch()->getPart(a.part);
+    for (auto &g : *part)
+        groupNames.insert(g->name);
+
+    int count{0};
+    bool found{false};
+    while (!found)
+    {
+        std::string lname = gptr->name;
+        if (count == 1)
+            lname += " (Copy)";
+        else if (count > 1)
+            lname += " (Copy " + std::to_string(count) + ")";
+        if (groupNames.find(lname) == groupNames.end())
+        {
+            gptr->name = lname;
+            found = true;
+        }
+        count++;
+    }
+
+    auto sp = a.part;
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp = sp, group = gptr.release()](auto &e) {
+            std::unique_ptr<Group> gptr;
+            gptr.reset(group);
+            e.getPatch()->getPart(sp)->addGroup(gptr);
+
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp](auto &e) {
+            int32_t gi = e.getPatch()->getPart(sp)->getGroups().size() - 1;
+            e.getSelectionManager()->applySelectActions({sp, gi, -1, true, true, true});
+        });
+}
+
+void Engine::duplicateGroup(const selection::SelectionManager::ZoneAddress &s)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+
+    auto &groupO = getPatch()->getPart(s.part)->getGroup(s.group);
+    auto v = json::scxt_value(*groupO);
+
+    auto gptr = std::make_unique<Group>(rng);
+    gptr->parentPart = getPatch()->getPart(s.part).get();
+    gptr->setSampleRate(getPatch()->getPart(s.part)->getSampleRate());
+    v.to(*gptr);
+
+    gptr->name = groupO->name + " (copy)";
+
+    auto sp = s.part;
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp = sp, group = gptr.release()](auto &e) {
+            std::unique_ptr<Group> gptr;
+            gptr.reset(group);
+            e.getPatch()->getPart(sp)->addGroup(gptr);
+
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp](auto &e) {
+            int32_t gi = e.getPatch()->getPart(sp)->getGroups().size() - 1;
+            e.getSelectionManager()->applySelectActions({sp, gi, -1, true, true, true});
+        });
+}
+
 void Engine::sendMetadataToClient() const
 {
     // On register send metadata
