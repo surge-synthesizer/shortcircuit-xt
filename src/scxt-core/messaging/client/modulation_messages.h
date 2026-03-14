@@ -220,7 +220,6 @@ typedef std::tuple<bool, modulation::AudioSourceStorage> gzAudioModStorageUpdate
 SERIAL_TO_CLIENT(UpdateAudioModStorage, s2c_update_group_or_zone_audiomod_storage,
                  gzAudioModStorageUpdate_t, onGroupOrZoneAudioModStorageUpdated);
 
-
 inline void doAudioModUpdate(const gzAudioModStorageUpdate_t &payload, const engine::Engine &e,
                             messaging::MessageController &cont)
 {
@@ -257,9 +256,9 @@ inline void doAudioModUpdate(const gzAudioModStorageUpdate_t &payload, const eng
         }
     }
 }
+
 CLIENT_TO_SERIAL(UpdateAudiomodStorageForSelectedGroupOrZone,
                  c2s_update_audiomod_storage_for_groups_or_zones, gzAudioModStorageUpdate_t,
                  doAudioModUpdate(payload, engine, cont));
-
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_MODULATION_MESSAGES_H

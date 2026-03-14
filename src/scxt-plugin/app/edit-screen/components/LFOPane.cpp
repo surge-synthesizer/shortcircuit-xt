@@ -1483,45 +1483,44 @@ struct MiscPanel : juce::Component, HasEditor
 struct AudioPane : juce::Component, HasEditor
 {
     LfoPane *parent{nullptr};
-    bool forZone{true};
 
-    auto &efs = parent->envFollowerStorageData;
+    using fAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage>;
 
-    AudioPane(
-        LfoPane *p, modulation::AudioSourceStorage &es)
-        : HasEditor(p->editor), parent(p), forZone(p->forZone), efs(es)
+    AudioPane(LfoPane *p) : HasEditor(p->editor), parent(p)
     {
         assert(parent);
 
-        using fAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage>;
-        using iAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage, int16_t>;
-        using bAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage, bool>;
+        // using iAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage,
+        // int16_t>; using bAtt_t =
+        // connectors::PayloadDataAttachment<modulation::AudioSourceStorage, bool>;
 
         using fac =
             connectors::SingleValueFactory<fAtt_t,
                                            cmsg::UpdateAudiomodStorageForSelectedGroupOrZone>;
+
+        auto &efs = parent->envFollowerStorageData;
 
         auto makeLabel = [this](auto &lb, const std::string &l) {
             lb = std::make_unique<jcmp::Label>();
             lb->setText(l);
             addAndMakeVisible(*lb);
         };
-        auto aux = [&, this](auto &mem, auto &A, auto &S, auto &L, std::string lab = "") {
-            fac::attachAndAdd(efs, mem, this, A, S, parent->forZone, parent->selectedTab);
+        auto aux = [&, this](auto &val, auto &A, auto &S, auto &L, std::string lab = "") {
+            fac::attachAndAdd(efs, val, this, A, S, parent->forZone);
             makeLabel(L, lab);
         };
 
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
         {
-            aux(efs.followers[i].attack, aAtts[i], aKnobs[i], aLabs[i], "Attack");
-            aux(efs.followers[i].release, rAtts[i], rKnobs[i], rLabs[i], "Release");
-            aux(efs.followers[i].gain, gAtts[i], gKnobs[i], gLabs[i], "Gain");
+            // aux(efs.followers[i].attack, aAtts[i], aKnobs[i], aLabs[i], "Attack");
+            // aux(efs.followers[i].release, rAtts[i], rKnobs[i], rLabs[i], "Release");
+            // aux(efs.followers[i].gain, gAtts[i], gKnobs[i], gLabs[i], "Gain");
         }
     }
 
     void repushData()
     {
-        sendToSerialization(cmsg::UpdateAudiomodStorageForSelectedGroupOrZone({forZone, efs}));
+        sendToSerialization(cmsg::UpdateAudiomodStorageForSelectedGroupOrZone({parent->forZone, parent->envFollowerStorageData}));
     }
 
     void showSourceMenu(int i)
@@ -1532,22 +1531,22 @@ struct AudioPane : juce::Component, HasEditor
 
         auto gen = [&p, i, this](auto v, auto l) {
             auto that = this; // grrrr msvc
-            p.addItem(l, true, v == efs[i].followSource,
+            p.addItem(l, true, v == parent->envFollowerStorageData.followers[i].followSource,
                       [i, w = juce::Component::SafePointer(that), v] {
                           if (!w)
                               return;
-                          w->efs[i].followSource = v;
+                          w->parent->envFollowerStorageData.followers[i].followSource = v;
                           w->repushData();
                           w->updateFromValues();
                       });
         };
         auto genB = [&p, i, this](bool v, auto l) {
             auto that = this; // grrrr msvc
-            p.addItem(l, true, v == efs[i].followSource,
+            p.addItem(l, true, v == parent->envFollowerStorageData.followers[i].stereoLink,
                       [i, w = juce::Component::SafePointer(that), v] {
                           if (!w)
                               return;
-                          w->efs[i].stereoLink = v;
+                          w->parent->envFollowerStorageData.followers[i].stereoLink = v;
                           w->repushData();
                           w->updateFromValues();
                       });
@@ -1557,8 +1556,8 @@ struct AudioPane : juce::Component, HasEditor
         gen(modulation::modulators::EnvFollowerStorage::Source::POST_PROC, "Post-Processors");
         p.addSeparator();
         p.addSectionHeader("Stereo Processing");
-        gen(true, "Linked");
-        gen(false, "Unlinked");
+        genB(true, "Linked");
+        genB(false, "Unlinked");
     }
 
     void updateFromValues()
@@ -1566,8 +1565,7 @@ struct AudioPane : juce::Component, HasEditor
         namespace mmod = modulation::modulators;
         for (int i = 0; i < scxt::envFollowersPerGroupOrZone; ++i)
         {
-            sLabs[i]->setText(
-                modulation::AudioSourceStorage::sourceDisplayName(efs.followers[i].followSource));
+            sLabs[i]->setText(parent->envFollowerStorageData.sourceDisplayName(i));
         }
     }
 
@@ -1575,15 +1573,15 @@ struct AudioPane : juce::Component, HasEditor
     std::array<std::unique_ptr<jcmp::MenuButton>, envFollowersPerGroupOrZone> sMenus;
     std::array<std::unique_ptr<jcmp::Label>, envFollowersPerGroupOrZone> sLabs;
 
-    std::array<std::unique_ptr<LfoPane::attachment_t>, envFollowersPerGroupOrZone> aAtts;
+    std::array<std::unique_ptr<fAtt_t>, envFollowersPerGroupOrZone> aAtts;
     std::array<std::unique_ptr<jcmp::Knob>, envFollowersPerGroupOrZone> aKnobs;
     std::array<std::unique_ptr<jcmp::Label>, envFollowersPerGroupOrZone> aLabs;
 
-    std::array<std::unique_ptr<LfoPane::attachment_t>, envFollowersPerGroupOrZone> rAtts;
+    std::array<std::unique_ptr<fAtt_t>, envFollowersPerGroupOrZone> rAtts;
     std::array<std::unique_ptr<jcmp::Knob>, envFollowersPerGroupOrZone> rKnobs;
     std::array<std::unique_ptr<jcmp::Label>, envFollowersPerGroupOrZone> rLabs;
 
-    std::array<std::unique_ptr<LfoPane::attachment_t>, envFollowersPerGroupOrZone> gAtts;
+    std::array<std::unique_ptr<fAtt_t>, envFollowersPerGroupOrZone> gAtts;
     std::array<std::unique_ptr<jcmp::Knob>, envFollowersPerGroupOrZone> gKnobs;
     std::array<std::unique_ptr<jcmp::Label>, envFollowersPerGroupOrZone> gLabs;
 
@@ -1793,7 +1791,7 @@ void LfoPane::rebuildPanelComponents()
     {
         clearAdditionalHamburgerComponents();
 
-        audioPane = std::make_unique<AudioPane>(this, envFollowerStorageData);
+        audioPane = std::make_unique<AudioPane>(this);
         getContentAreaComponent()->addAndMakeVisible(*audioPane);
         resized();
 

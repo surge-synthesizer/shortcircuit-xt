@@ -215,8 +215,8 @@ SC_STREAMDEF(modulation::modulators::EnvFollowerStorage, SC_FROM({
                  findOrSet(v, "g", 0.f, to.gain);
              }));
 
-SC_STREAMDEF(modulation::AudioSourceStorage, SC_FROM({ v = {"fs", t.followers}; }),
-             SC_TO({ findIfArray(v, "fs", to.followers); }));
+SC_STREAMDEF(modulation::AudioSourceStorage, SC_FROM({ v = {{"ffs", t.followers}}; }),
+             SC_TO({ findIfArray(v, "ffs", to.followers); }));
 
 STREAM_ENUM(modulation::ModulatorStorage::ModulatorShape,
             modulation::ModulatorStorage::toStringModulatorShape,

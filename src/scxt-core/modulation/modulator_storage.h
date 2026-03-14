@@ -410,7 +410,7 @@ SC_DESCRIBE(scxt::modulation::modulators::EnvFollowerStorage,
                                   .withLinearScaleFormatting("ms", 1000.f)
                                   .withName("Release"));
             SC_FIELD(gain, pmd().asFloat().asDecibelWithRange(-36.f, 36.f).withName("Gain"));
-            SC_FIELD(stereoLink, pmd().asBool().withDefault(true).withName("Stereo Link"));
+            SC_FIELD(stereoLink, pmd().asBool().withDefault(false).withName("Stereo Link"));
             SC_FIELD(followSource,
                      pmd()
                          .asInt()
