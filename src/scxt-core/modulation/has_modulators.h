@@ -128,10 +128,10 @@ template <typename T, size_t egsPerObject> struct HasModulators
         }
     }
 
-    bool getEnvSpecificGate(bool keyGate, const modulation::modulators::AdsrStorage &adsr,
-                            ahdsrenv_t::Stage stage)
+    static bool evaluateGate(bool keyGate, modulation::modulators::AdsrStorage::GateMode mode,
+                             ahdsrenv_t::Stage stage, bool samplePlaying = false)
     {
-        switch (adsr.gateMode)
+        switch (mode)
         {
         case modulation::modulators::AdsrStorage::GateMode::GATED:
             return keyGate;
@@ -139,8 +139,16 @@ template <typename T, size_t egsPerObject> struct HasModulators
             return keyGate && stage < ahdsrenv_t::s_sustain;
         case modulation::modulators::AdsrStorage::GateMode::ONESHOT:
             return stage < ahdsrenv_t::s_sustain;
+        case modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED:
+            return samplePlaying;
         }
         return keyGate;
+    }
+
+    bool getEnvSpecificGate(bool keyGate, const modulation::modulators::AdsrStorage &adsr,
+                            ahdsrenv_t::Stage stage, bool samplePlaying = false)
+    {
+        return evaluateGate(keyGate, adsr.gateMode, stage, samplePlaying);
     }
 };
 } // namespace scxt::modulation::shared
