@@ -89,6 +89,7 @@ enum ClientToSerializationMessagesIds
     c2s_update_full_modstorage_for_groups_or_zones,
     c2s_update_miscmod_storage_for_groups_or_zones,
     c2s_update_audiomod_storage_for_groups_or_zones,
+    c2s_update_audiomod_storage_element_for_groups_or_zones,
 
     c2s_update_lead_zone_mapping,
     c2s_update_zone_mapping_float,

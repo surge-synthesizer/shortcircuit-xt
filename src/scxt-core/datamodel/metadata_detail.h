@@ -79,4 +79,22 @@ template <typename P> sst::basic_blocks::params::ParamMetaData descFor(const P &
         __VA_ARGS__;                                                                               \
     }
 
+// Describe x[i] as elements for i 0...N
+#define SC_FIELD_ARRAY(x, N, ...)                                                                  \
+    {                                                                                              \
+        for (size_t fai = 0; fai < N; fai++)                                                       \
+            if (pd == offsetof(data, x[fai]))                                                      \
+            {                                                                                      \
+                return __VA_ARGS__;                                                                \
+            }                                                                                      \
+    }
+// Describe x[i].y as elements for i 0...N
+#define SC_FIELD_ARRAY_MEMBER(x, y, N, ...)                                                        \
+    {                                                                                              \
+        for (size_t fai = 0; fai < N; fai++)                                                       \
+            if (pd == offsetof(data, x[fai].y))                                                    \
+            {                                                                                      \
+                return __VA_ARGS__;                                                                \
+            }                                                                                      \
+    }
 #endif // SHORTCIRCUITXT_METADATA_DETAIL_H

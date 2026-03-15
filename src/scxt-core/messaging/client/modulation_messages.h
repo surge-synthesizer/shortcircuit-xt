@@ -260,5 +260,12 @@ inline void doAudioModUpdate(const gzAudioModStorageUpdate_t &payload, const eng
 CLIENT_TO_SERIAL(UpdateAudiomodStorageForSelectedGroupOrZone,
                  c2s_update_audiomod_storage_for_groups_or_zones, gzAudioModStorageUpdate_t,
                  doAudioModUpdate(payload, engine, cont));
+
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateAudiomodStorageElement, c2s_update_audiomod_storage_element_for_groups_or_zones,
+    detail::zoneOrGroupDiffMsg_t<float>, modulation::AudioSourceStorage,
+    detail::updateZoneOrGroupMemberValue(&engine::Zone::audioSourceStorage,
+                                                &engine::Group::audioSourceStorage, payload, engine,
+                                                cont));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_MODULATION_MESSAGES_H

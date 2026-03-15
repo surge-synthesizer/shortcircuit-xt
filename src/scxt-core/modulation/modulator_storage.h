@@ -396,29 +396,33 @@ SC_DESCRIBE(scxt::modulation::modulators::PhasorStorage,
                                       .withName("Denominator")
                                       .withRange(1, 64));)
 
-SC_DESCRIBE(scxt::modulation::modulators::EnvFollowerStorage,
-            SC_FIELD(attack, pmd()
-                                 .asFloat()
-                                 .withRange(0.000001f, .1f)
-                                 .withDefault(0.01f)
-                                 .withLinearScaleFormatting("ms", 1000.f)
-                                 .withName("Attack"));
-            SC_FIELD(release, pmd()
-                                  .asFloat()
-                                  .withRange(.01f, .5f)
-                                  .withDefault(0.2f)
-                                  .withLinearScaleFormatting("ms", 1000.f)
-                                  .withName("Release"));
-            SC_FIELD(gain, pmd().asFloat().asDecibelWithRange(-36.f, 36.f).withName("Gain"));
-            SC_FIELD(stereoLink, pmd().asBool().withDefault(false).withName("Stereo Link"));
-            SC_FIELD(followSource,
-                     pmd()
-                         .asInt()
-                         .withUnorderedMapFormatting(
-                             {{modulation::modulators::EnvFollowerStorage::PRE_PROC, "Pre-procs"},
-                              {modulation::modulators::EnvFollowerStorage::POST_PROC,
-                               "Post-procs"}})
-                         .withDefault(modulation::modulators::EnvFollowerStorage::PRE_PROC)
-                         .withName("Source");));
+SC_DESCRIBE(scxt::modulation::AudioSourceStorage,
+            SC_FIELD_ARRAY_MEMBER(followers, attack, envFollowersPerGroupOrZone,
+                                  pmd()
+                                      .asFloat()
+                                      .withRange(0.000001f, .1f)
+                                      .withDefault(0.01f)
+                                      .withLinearScaleFormatting("ms", 1000.f)
+                                      .withName("Attack"));
+            SC_FIELD_ARRAY_MEMBER(followers, release, envFollowersPerGroupOrZone,
+                                  pmd()
+                                      .asFloat()
+                                      .withRange(.01f, .5f)
+                                      .withDefault(0.2f)
+                                      .withLinearScaleFormatting("ms", 1000.f)
+                                      .withName("Release"));
+            SC_FIELD_ARRAY_MEMBER(followers, gain, envFollowersPerGroupOrZone,
+                                  pmd().asFloat().asDecibelWithRange(-36.f, 36.f).withName("Gain"));
+            SC_FIELD_ARRAY_MEMBER(followers, stereoLink, envFollowersPerGroupOrZone,
+                                  pmd().asBool().withDefault(false).withName("Stereo Link"));
+            SC_FIELD_ARRAY_MEMBER(
+                followers, followSource, envFollowersPerGroupOrZone,
+                pmd()
+                    .asInt()
+                    .withUnorderedMapFormatting(
+                        {{modulation::modulators::EnvFollowerStorage::PRE_PROC, "Pre-procs"},
+                         {modulation::modulators::EnvFollowerStorage::POST_PROC, "Post-procs"}})
+                    .withDefault(modulation::modulators::EnvFollowerStorage::PRE_PROC)
+                    .withName("Source");));
 
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H

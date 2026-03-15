@@ -1490,13 +1490,7 @@ struct AudioPane : juce::Component, HasEditor
     {
         assert(parent);
 
-        // using iAtt_t = connectors::PayloadDataAttachment<modulation::AudioSourceStorage,
-        // int16_t>; using bAtt_t =
-        // connectors::PayloadDataAttachment<modulation::AudioSourceStorage, bool>;
-
-        using fac =
-            connectors::SingleValueFactory<fAtt_t,
-                                           cmsg::UpdateAudiomodStorageForSelectedGroupOrZone>;
+        using fac = connectors::SingleValueFactory<fAtt_t, cmsg::UpdateAudiomodStorageElement>;
 
         auto &efs = parent->envFollowerStorageData;
 
@@ -1505,22 +1499,35 @@ struct AudioPane : juce::Component, HasEditor
             lb->setText(l);
             addAndMakeVisible(*lb);
         };
-        auto aux = [&, this](auto &val, auto &A, auto &S, auto &L, std::string lab = "") {
+        auto difaux = [&, this](auto &val, auto &A, auto &S, auto &L, std::string lab = "") {
             fac::attachAndAdd(efs, val, this, A, S, parent->forZone);
-            makeLabel(L, lab);
+            // makeLabel(L, lab);
         };
 
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
         {
-            // aux(efs.followers[i].attack, aAtts[i], aKnobs[i], aLabs[i], "Attack");
-            // aux(efs.followers[i].release, rAtts[i], rKnobs[i], rLabs[i], "Release");
-            // aux(efs.followers[i].gain, gAtts[i], gKnobs[i], gLabs[i], "Gain");
+            sLabs[i] = std::make_unique<jcmp::Label>();
+            sLabs[i]->setText("Source");
+            addAndMakeVisible(*sLabs[i]);
+
+            sMenus[i] = std::make_unique<jcmp::MenuButton>();
+            sMenus[i]->setLabel(parent->envFollowerStorageData.sourceDisplayName(i));
+            sMenus[i]->setOnCallback([i, w = juce::Component::SafePointer(this)]() {
+                if (w)
+                    w->showSourceMenu(i);
+            });
+            addAndMakeVisible(*sMenus[i]);
+
+            difaux(efs.followers[i].attack, aAtts[i], aKnobs[i], aLabs[i], "Attack");
+            difaux(efs.followers[i].release, rAtts[i], rKnobs[i], rLabs[i], "Release");
+            difaux(efs.followers[i].gain, gAtts[i], gKnobs[i], gLabs[i], "Gain");
         }
     }
 
     void repushData()
     {
-        sendToSerialization(cmsg::UpdateAudiomodStorageForSelectedGroupOrZone({parent->forZone, parent->envFollowerStorageData}));
+        sendToSerialization(cmsg::UpdateAudiomodStorageForSelectedGroupOrZone(
+            {parent->forZone, parent->envFollowerStorageData}));
     }
 
     void showSourceMenu(int i)
@@ -1565,7 +1572,7 @@ struct AudioPane : juce::Component, HasEditor
         namespace mmod = modulation::modulators;
         for (int i = 0; i < scxt::envFollowersPerGroupOrZone; ++i)
         {
-            sLabs[i]->setText(parent->envFollowerStorageData.sourceDisplayName(i));
+            sMenus[i]->setLabel(parent->envFollowerStorageData.sourceDisplayName(i));
         }
     }
 
@@ -1601,14 +1608,14 @@ struct AudioPane : juce::Component, HasEditor
         auto knobWidth = (allKnobsWidth - knobMg * (nKnobs - 1)) / nKnobs;
         auto knobHeight = allKnobsHeight;
 
-        auto knobBounds = b.withWidth(knobWidth)
+        auto knobBounds = b.withWidth(knobHeight)
                               .withHeight(knobHeight)
                               .withX(allKnobsStartX)
                               .withY(allKnobsStartY);
         auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth,
                                  int knobHeight, int knobMg) {
             knob->setBounds(
-                knobBounds.withTrimmedBottom(23 - MG)); // remove modulator_storage label
+                knobBounds.withTrimmedBottom(MG));
             label->setBounds(knobBounds.withTrimmedTop(knobHeight - lbHt));
             knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
         };
@@ -1616,8 +1623,7 @@ struct AudioPane : juce::Component, HasEditor
         auto yo = b.getHeight() / 2 + MG;
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
         {
-            // sMenus[i]->setBounds(5, 5, 40, 18);
-            // sLabs[i]->setBounds(5, 25, 40, 20);
+            sMenus[i]->setBounds(5, 5 + i * (b.getHeight() / 2 + MG), 80, 30);
 
             makeKnobBounds(aKnobs[i], aLabs[i], knobBounds, lbHt, knobWidth, knobHeight, knobMg);
             makeKnobBounds(rKnobs[i], rLabs[i], knobBounds, lbHt, knobWidth, knobHeight, knobMg);
@@ -1874,6 +1880,11 @@ void LfoPane::repositionContentAreaComponents()
     if (miscPanel && selectedTab == 4)
     {
         miscPanel->setBounds(0, 0, getContentArea().getWidth(), getContentArea().getHeight());
+        return;
+    }
+    if (audioPane && selectedTab == 5)
+    {
+        audioPane->setBounds(0, 0, getContentArea().getWidth(), getContentArea().getHeight());
         return;
     }
     if (!modulatorShape) // these are all created at once so single check is fine

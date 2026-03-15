@@ -153,6 +153,31 @@ inline void updateGroupMemberValue(M m, const diffMsg_t<VT> &payload, const engi
     }
 }
 
+
+template <typename VT> using zoneOrGroupDiffMsg_t = std::tuple<bool, ptrdiff_t, VT>;
+
+template <typename VT, typename MZ, typename MG>
+inline void updateZoneOrGroupMemberValue(
+    MZ mz, MG mg, const zoneOrGroupDiffMsg_t<VT> &payload, const engine::Engine &engine,
+    MessageController &cont, std::function<void(const engine::Engine &)> responseCB = nullptr,
+    std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
+        onZoneEngineExtra = nullptr,
+    std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
+        onGroupEngineExtra = nullptr)
+{
+    auto isZone = std::get<0>(payload);
+    auto underT =
+        diffMsg_t<VT>{std::get<1>(payload), std::get<2>(payload)};
+    if (isZone)
+    {
+        updateZoneMemberValue(mz, underT, engine, cont, responseCB);
+    }
+    else
+    {
+        updateGroupMemberValue(mg, underT, engine, cont, responseCB);
+    }
+}
+
 template <typename VT> using indexedDiffMsg_t = std::tuple<size_t, ptrdiff_t, VT>;
 
 template <typename VT, typename M>
