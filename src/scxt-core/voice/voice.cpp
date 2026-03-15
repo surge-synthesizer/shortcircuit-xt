@@ -316,14 +316,16 @@ template <bool OS> bool Voice::processWithOS()
     auto &aegp = endpoints->egTarget[0];
     auto rtaeg = doEGRetrigger[0];
     doEGRetrigger[0] = false;
-    auto aegGate = getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage);
+    auto aegGate =
+        getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage, isAnyGeneratorRunning);
     if constexpr (OS)
     {
         if (rtaeg)
         {
             aegOS.attackFromWithDelay(aegOS.outBlock0, *aegp.dlyP, *aegp.aP);
-            aegGate = getEnvSpecificGate(envGate, zone->egStorage[0],
-                                         (ahdsrenv_t::Stage)((int)aegOS.stage));
+            aegGate =
+                getEnvSpecificGate(envGate, zone->egStorage[0],
+                                   (ahdsrenv_t::Stage)((int)aegOS.stage), isAnyGeneratorRunning);
         }
         // we need the aegOS for the curve in oversample space
         aegOS.processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP,
@@ -334,7 +336,7 @@ template <bool OS> bool Voice::processWithOS()
     if (rtaeg)
     {
         aeg.attackFromWithDelay(aeg.outBlock0, *aegp.dlyP, *aegp.aP);
-        aegGate = getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage);
+        aegGate = getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage, isAnyGeneratorRunning);
     }
     aeg.processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP,
                               *aegp.asP, *aegp.dsP, *aegp.rsP, aegGate, true);
@@ -347,13 +349,15 @@ template <bool OS> bool Voice::processWithOS()
         {
             auto &eg2p = endpoints->egTarget[i];
 
-            auto egiGate = getEnvSpecificGate(envGate, zone->egStorage[i], eg[i].stage);
+            auto egiGate =
+                getEnvSpecificGate(envGate, zone->egStorage[i], eg[i].stage, isAnyGeneratorRunning);
 
             if (doEGRetrigger[i])
             {
                 doEGRetrigger[i] = false;
                 eg[i].attackFromWithDelay(eg[i].outBlock0, *eg2p.dlyP, *eg2p.aP);
-                egiGate = getEnvSpecificGate(envGate, zone->egStorage[0], eg[i].stage);
+                egiGate = getEnvSpecificGate(envGate, zone->egStorage[0], eg[i].stage,
+                                             isAnyGeneratorRunning);
             }
 
             eg[i].processBlockWithDelay(*eg2p.dlyP, *eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP,

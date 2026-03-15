@@ -60,9 +60,10 @@ struct AdsrStorage
      */
     enum struct GateMode
     {
-        GATED,      // DAHDR, ungate to release
-        SEMI_GATED, // DAHDR, ungate or end of decay jumps to release (no sustain)
-        ONESHOT,    // DAHDR, gate ignored, full cycle always
+        GATED,        // DAHDSR, gated by keyboard / midi
+        SEMI_GATED,   // DAHDbR, gated until key release in DAHD, or end of decay
+        ONESHOT,      // DAHDbR, gate ignored, full cycle always
+        SAMPLE_GATED, // DAHDSR, gated by sample playback (zone/voice only)
     } gateMode{GateMode::GATED};
     DECLARE_ENUM_STRING(GateMode);
 

@@ -42,6 +42,8 @@ std::string AdsrStorage::toStringGateMode(const GateMode &s)
         return "s";
     case GateMode::ONESHOT:
         return "o";
+    case GateMode::SAMPLE_GATED:
+        return "q";
     }
     return "g";
 }
@@ -49,7 +51,7 @@ std::string AdsrStorage::toStringGateMode(const GateMode &s)
 AdsrStorage::GateMode AdsrStorage::fromStringGateMode(const std::string &s)
 {
     static auto inverse = makeEnumInverse<AdsrStorage::GateMode, AdsrStorage::toStringGateMode>(
-        AdsrStorage::GateMode::GATED, AdsrStorage::GateMode::ONESHOT);
+        AdsrStorage::GateMode::GATED, AdsrStorage::GateMode::SAMPLE_GATED);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return GateMode::GATED;

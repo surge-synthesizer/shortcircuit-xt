@@ -312,6 +312,22 @@ void AdsrPane::showHamburgerMenu()
                       cmsg::UpdateFullAdsrStorageForGroupsOrZones({w->forZone, aidx, w->adsrView}));
               });
 
+    if (forZone)
+    {
+        p.addItem("Sample Gated", true,
+                  adsrView.gateMode == modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED,
+                  [aidx, w = juce::Component::SafePointer(this)]() {
+                      if (!w)
+                          return;
+                      w->adsrView.gateMode =
+                          modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
+                      w->updateSustainBreakpoint();
+                      w->repaint();
+                      w->sendToSerialization(cmsg::UpdateFullAdsrStorageForGroupsOrZones(
+                          {w->forZone, aidx, w->adsrView}));
+                  });
+    }
+
     if (!forZone)
     {
         p.addSeparator();

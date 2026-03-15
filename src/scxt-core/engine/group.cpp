@@ -254,7 +254,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         if (gegStorage[i].gateGroupEGOnAnyPlaying)
             envGate = (fVoiceCount > 0);
 
-        auto egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage);
+        auto egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage, false);
 
         if (egsActive[i])
         {
@@ -263,7 +263,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
             {
                 doEGRetrigger[i] = false;
                 eg[i].attackFromWithDelay(eg[i].outBlock0, *aegp.dlyP, *aegp.aP);
-                egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage);
+                egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage, false);
             }
             eg[i].processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP,
                                         *aegp.rP, *aegp.asP, *aegp.dsP, *aegp.rsP, egiGate, false);
