@@ -60,6 +60,9 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
     currentLoopPercentageF = 0.f;
     currentSamplePercentageF = 0.f;
 
+    envelopeFollowers[0].assign(&zone->audioSourceStorage.followers[0]);
+    envelopeFollowers[1].assign(&zone->audioSourceStorage.followers[1]);
+
     memset(output, 0, 2 * blockSize * sizeof(float));
     memset(processorIntParams, 0, sizeof(processorIntParams));
 }
@@ -167,7 +170,7 @@ void Voice::voiceStarted()
 
     for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
     {
-        envelopeFollowers[i].assign(&zone->audioSourceStorage.followers[i]);
+        envelopeFollowers[i].ballistics.setSampleRate(sampleRate * (forceOversample ? 2 : 1));
     }
 
     auto &aegp = endpoints->egTarget[0];

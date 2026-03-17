@@ -171,6 +171,12 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     {
         m.bindSourceValue(macroSources.macros[i], part->macros[i].value);
     }
+
+    for (int i = 0; i < scxt::envFollowersPerGroupOrZone; ++i)
+    {
+        m.bindSourceValue(envFollowerSources.envFollowersL[i], v.envelopeFollowers[i].outputs[0]);
+        m.bindSourceValue(envFollowerSources.envFollowersR[i], v.envelopeFollowers[i].outputs[1]);
+    }
 }
 
 void MatrixEndpoints::registerVoiceModTarget(
