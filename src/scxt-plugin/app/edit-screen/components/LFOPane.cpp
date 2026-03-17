@@ -1501,7 +1501,7 @@ struct AudioPane : juce::Component, HasEditor
         };
         auto difaux = [&, this](auto &val, auto &A, auto &S, auto &L, std::string lab = "") {
             fac::attachAndAdd(efs, val, this, A, S, parent->forZone);
-            // makeLabel(L, lab);
+            makeLabel(L, lab);
         };
 
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
@@ -1565,6 +1565,8 @@ struct AudioPane : juce::Component, HasEditor
         p.addSectionHeader("Stereo Processing");
         genB(true, "Linked");
         genB(false, "Unlinked");
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 
     void updateFromValues()
@@ -1594,45 +1596,29 @@ struct AudioPane : juce::Component, HasEditor
 
     void resized() override
     {
-        auto lbHt = 15;
         auto b = getLocalBounds();
 
-        // Knobs
-        auto nKnobs = 4;
-        auto allKnobsStartX = b.getWidth() / 4 + MG * 2;
-        auto allKnobsStartY = 0;
-        auto allKnobsWidth = b.getWidth() - allKnobsStartX - 40;
-        auto allKnobsHeight = b.getHeight() / 2 - MG;
-
-        auto knobMg = 15;
-        auto knobWidth = (allKnobsWidth - knobMg * (nKnobs - 1)) / nKnobs;
-        auto knobHeight = allKnobsHeight;
-
-        auto knobBounds = b.withWidth(knobHeight)
-                              .withHeight(knobHeight)
-                              .withX(allKnobsStartX)
-                              .withY(allKnobsStartY);
-        auto makeKnobBounds = [](auto &knob, auto &label, auto &knobBounds, int lbHt, int knobWidth,
-                                 int knobHeight, int knobMg) {
-            knob->setBounds(
-                knobBounds.withTrimmedBottom(MG));
-            label->setBounds(knobBounds.withTrimmedTop(knobHeight - lbHt));
-            knobBounds = knobBounds.translated(knobWidth + knobMg, 0);
-        };
-
         auto yo = b.getHeight() / 2 + MG;
+
+        auto knobSize = 41;
+        auto spacing = MG * 3;
+        auto labWidth = 86;
+        auto menuHeight = 18;
+        auto labelHeight = 15;
+
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
         {
-            sMenus[i]->setBounds(5, 5 + i * (b.getHeight() / 2 + MG), 80, 30);
+            sMenus[i]->setBounds(MG, i * yo, labWidth, menuHeight);
+            sLabs[i]->setBounds(MG, i * yo + 30, labWidth, labelHeight);
 
-            makeKnobBounds(aKnobs[i], aLabs[i], knobBounds, lbHt, knobWidth, knobHeight, knobMg);
-            makeKnobBounds(rKnobs[i], rLabs[i], knobBounds, lbHt, knobWidth, knobHeight, knobMg);
-            makeKnobBounds(gKnobs[i], gLabs[i], knobBounds, lbHt, knobWidth, knobHeight, knobMg);
+            aKnobs[i]->setBounds(labWidth + spacing, i * yo, knobSize, knobSize);
+            aLabs[i]->setBounds(labWidth + spacing, i * yo + knobSize, knobSize, labelHeight);
 
-            knobBounds = b.withWidth(knobWidth)
-                             .withHeight(knobHeight)
-                             .withX(allKnobsStartX)
-                             .withY(b.getHeight() / 2 + MG);
+            rKnobs[i]->setBounds(labWidth + knobSize + spacing * 2, i * yo, knobSize, knobSize);
+            rLabs[i]->setBounds(labWidth + knobSize + spacing * 2, i * yo + knobSize, knobSize, labelHeight);
+
+            gKnobs[i]->setBounds(labWidth + knobSize + knobSize + spacing * 3, i * yo, knobSize, knobSize);
+            gLabs[i]->setBounds(labWidth + knobSize + knobSize + spacing * 3, i * yo + knobSize, knobSize, labelHeight);
         }
     }
 };

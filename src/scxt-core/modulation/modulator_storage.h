@@ -138,7 +138,7 @@ struct RandomStorage
 struct EnvFollowerStorage
 {
     float attack{0.f}, release{.2f}, gain{0.f};
-    bool stereoLink;
+    bool stereoLink{false};
 
     enum Source : int16_t
     {

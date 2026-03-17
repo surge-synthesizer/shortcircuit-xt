@@ -31,6 +31,7 @@
 #include "modulation/modulator_storage.h"
 #include "sst/basic-blocks/dsp/Ballistics.h"
 #include "sst/basic-blocks/mechanics/block-ops.h"
+#include "dsp/data_tables.h"
 
 #include <array>
 
@@ -46,15 +47,16 @@ struct EnvFollower
         namespace mech = sst::basic_blocks::mechanics;
 
         set_coeffs();
+        auto gain = dsp::dbTable.dbToLinear(settings->gain);
 
         if constexpr (OS)
         {
-            if (settings->stereoLink)
+            if (settings->stereoLink > 0)
             {
                 float res alignas(16)[blockSize << 1];
                 for (int s = 0; s < blockSize << 1; ++s)
                 {
-                    ballistics.process_sample(M_SQRT1_2 * std::fabs(inputL[s] + inputR[s]), res[s]);
+                    ballistics.process_sample(gain * M_SQRT1_2 * std::fabs(inputL[s] + inputR[s]), res[s]);
                 }
                 outputs[0] = mech::blockMax<blockSize << 1>(res);
             }
@@ -64,7 +66,7 @@ struct EnvFollower
                 float resR alignas(16)[blockSize << 1];
                 for (int s = 0; s < blockSize << 1; ++s)
                 {
-                    ballistics.process_sample(std::fabs(inputL[s]), std::fabs(inputR[s]), resL[s], resR[s]);
+                    ballistics.process_sample(gain * std::fabs(inputL[s]), gain * std::fabs(inputR[s]), resL[s], resR[s]);
                 }
                 outputs[0] = mech::blockMax<blockSize << 1>(resL);
                 outputs[1] = mech::blockMax<blockSize << 1>(resR);
@@ -72,12 +74,12 @@ struct EnvFollower
         }
         else
         {
-            if (settings->stereoLink)
+            if (settings->stereoLink > 0)
             {
                 float res alignas(16)[blockSize];
                 for (int s = 0; s < blockSize; ++s)
                 {
-                    ballistics.process_sample(M_SQRT1_2 * std::fabs(inputL[s] + inputR[s]), res[s]);
+                    ballistics.process_sample(gain * M_SQRT1_2 * std::fabs(inputL[s] + inputR[s]), res[s]);
                 }
                 outputs[0] = mech::blockMax<blockSize>(res);
             }
@@ -87,14 +89,12 @@ struct EnvFollower
                 float resR alignas(16)[blockSize];
                 for (int s = 0; s < blockSize; ++s)
                 {
-                    ballistics.process_sample(std::fabs(inputL[s]), std::fabs(inputR[s]), resL[s], resR[s]);
+                    ballistics.process_sample(gain * std::fabs(inputL[s]), gain * std::fabs(inputR[s]), resL[s], resR[s]);
                 }
                 outputs[0] = mech::blockMax<blockSize>(resL);
                 outputs[1] = mech::blockMax<blockSize>(resR);
             }
         }
-
-
     }
 
     template <bool OS> void process_block(const float *const inputL)
@@ -102,13 +102,14 @@ struct EnvFollower
         namespace mech = sst::basic_blocks::mechanics;
 
         set_coeffs();
+        auto gain = dsp::dbTable.dbToLinear(settings->gain);
 
         if constexpr (OS)
         {
             float res alignas(16)[blockSize << 1];
             for (int s = 0; s < blockSize << 1; ++s)
             {
-                ballistics.process_sample(std::fabs(inputL[s]), res[s]);
+                ballistics.process_sample(gain * std::fabs(inputL[s]), res[s]);
             }
             outputs[0] = mech::blockMax<blockSize << 1>(res);
             outputs[1] = 0.f;
@@ -118,7 +119,7 @@ struct EnvFollower
             float res alignas(16)[blockSize];
             for (int s = 0; s < blockSize; ++s)
             {
-                ballistics.process_sample(std::fabs(inputL[s]), res[s]);
+                ballistics.process_sample(gain * std::fabs(inputL[s]), res[s]);
             }
             outputs[0] = mech::blockMax<blockSize>(res);
             outputs[1] = 0.f;
@@ -141,8 +142,8 @@ struct EnvFollower
         }
         if (settings->release != release_prior)
         {
-            ballistics.set_attack(settings->attack);
-            attack_prior = settings->release;
+            ballistics.set_release(settings->release);
+            release_prior = settings->release;
         }
     }
 };
