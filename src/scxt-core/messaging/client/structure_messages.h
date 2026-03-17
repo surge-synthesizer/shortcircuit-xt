@@ -178,12 +178,8 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
             auto z = e.getPatch()->getPart(s.part)->getGroup(s.group)->removeZone(zid);
             auto zoneToFree = z.release();
 
-            messaging::audio::AudioToSerialization a2s;
-            a2s.id = audio::a2s_delete_this_pointer;
-            a2s.payloadType = audio::AudioToSerialization::TO_BE_DELETED;
-            a2s.payload.delThis.ptr = zoneToFree;
-            a2s.payload.delThis.type = audio::AudioToSerialization::ToBeDeleted::engine_Zone;
-            e.getMessageController()->sendAudioToSerialization(a2s);
+            e.getMessageController()->sendItemForDeletion(
+                zoneToFree, audio::AudioToSerialization::ToBeDeleted::engine_Zone);
         },
         [t = a](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
@@ -242,12 +238,8 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
                 auto z = e.getPatch()->getPart(p)->getGroup(g)->removeZone(zid);
                 auto zoneToFree = z.release();
 
-                messaging::audio::AudioToSerialization a2s;
-                a2s.id = audio::a2s_delete_this_pointer;
-                a2s.payloadType = audio::AudioToSerialization::TO_BE_DELETED;
-                a2s.payload.delThis.ptr = zoneToFree;
-                a2s.payload.delThis.type = audio::AudioToSerialization::ToBeDeleted::engine_Zone;
-                e.getMessageController()->sendAudioToSerialization(a2s);
+                e.getMessageController()->sendItemForDeletion(
+                    zoneToFree, audio::AudioToSerialization::ToBeDeleted::engine_Zone);
             }
         },
         [t = part](auto &engine) {
@@ -265,26 +257,36 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
 CLIENT_TO_SERIAL(DeleteAllSelectedZones, c2s_delete_selected_zones, bool,
                  removeSelectedZones(payload, engine, cont));
 
-inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
-                        MessageController &cont)
+inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a,
+                               bool deleteAllEmpty, engine::Engine &engine, MessageController &cont)
 {
     cont.scheduleAudioThreadCallbackUnderStructureLock(
-        [s = a](auto &e) {
-            if (e.getPatch()->getPart(s.part)->getGroups().size() < s.group)
-                return;
+        [s = a, all = deleteAllEmpty](auto &e) {
+            auto deleteOneGroup = [&e, s](int groupIdx) {
+                auto &part = e.getPatch()->getPart(s.part);
+                auto &groupO = part->getGroup(groupIdx);
+                e.terminateVoicesForGroup(*groupO);
+                auto gid = groupO->id;
+                auto groupToFree = part->removeGroup(gid).release();
+                e.getMessageController()->sendItemForDeletion(
+                    groupToFree, audio::AudioToSerialization::ToBeDeleted::engine_Group);
+            };
 
-            auto &groupO = e.getPatch()->getPart(s.part)->getGroup(s.group);
-            e.terminateVoicesForGroup(*groupO);
-
-            auto gid = e.getPatch()->getPart(s.part)->getGroup(s.group)->id;
-            auto groupToFree = e.getPatch()->getPart(s.part)->removeGroup(gid).release();
-
-            messaging::audio::AudioToSerialization a2s;
-            a2s.id = audio::a2s_delete_this_pointer;
-            a2s.payloadType = audio::AudioToSerialization::TO_BE_DELETED;
-            a2s.payload.delThis.ptr = groupToFree;
-            a2s.payload.delThis.type = audio::AudioToSerialization::ToBeDeleted::engine_Group;
-            e.getMessageController()->sendAudioToSerialization(a2s);
+            if (all)
+            {
+                auto &part = e.getPatch()->getPart(s.part);
+                for (int g = (int)part->getGroups().size() - 1; g >= 0; --g)
+                {
+                    if (part->getGroup(g)->getZones().empty())
+                        deleteOneGroup(g);
+                }
+            }
+            else
+            {
+                if (e.getPatch()->getPart(s.part)->getGroups().size() < s.group)
+                    return;
+                deleteOneGroup(s.group);
+            }
         },
         [t = a](auto &engine) {
             engine.getSampleManager()->purgeUnreferencedSamples();
@@ -298,7 +300,9 @@ inline void removeGroup(const selection::SelectionManager::ZoneAddress &a, engin
         });
 }
 CLIENT_TO_SERIAL(DeleteGroup, c2s_delete_group, selection::SelectionManager::ZoneAddress,
-                 removeGroup(payload, engine, cont));
+                 deleteGroupHandler(payload, false, engine, cont));
+CLIENT_TO_SERIAL(DeleteEmptyGroups, c2s_delete_empty_groups, int32_t,
+                 deleteGroupHandler({payload, -1, -1}, true, engine, cont));
 
 inline void clearPart(const int p, engine::Engine &engine, MessageController &cont)
 {
@@ -314,12 +318,8 @@ inline void clearPart(const int p, engine::Engine &engine, MessageController &co
 
                 auto groupToFree = g.release();
 
-                messaging::audio::AudioToSerialization a2s;
-                a2s.id = audio::a2s_delete_this_pointer;
-                a2s.payloadType = audio::AudioToSerialization::TO_BE_DELETED;
-                a2s.payload.delThis.ptr = groupToFree;
-                a2s.payload.delThis.type = audio::AudioToSerialization::ToBeDeleted::engine_Group;
-                e.getMessageController()->sendAudioToSerialization(a2s);
+                e.getMessageController()->sendItemForDeletion(
+                    groupToFree, audio::AudioToSerialization::ToBeDeleted::engine_Group);
             }
         },
         [pt = p](auto &engine) {

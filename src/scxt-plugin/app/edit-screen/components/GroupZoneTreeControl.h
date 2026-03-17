@@ -403,6 +403,12 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                         auto za = w->getZoneAddress();
                         w->gsb->sendToSerialization(cmsg::DeleteGroup(za));
                     });
+                    p.addItem("Delete Empty Groups", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::DeleteEmptyGroups(za.part));
+                    });
 
                     auto za = getZoneAddress();
 
