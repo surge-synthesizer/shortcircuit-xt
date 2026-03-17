@@ -136,6 +136,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         {
             onProcessorTypeChanged(i, processorStorage[i].type);
         }
+        envelopeFollowers[0].ballistics.setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
+        envelopeFollowers[1].ballistics.setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
     }
 
     namespace blk = sst::basic_blocks::mechanics;
@@ -285,7 +287,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
         /*
          * This is just an optimization to not accumulate. The zone will
-         * have already routed to the approprite other bus and output will
+         * have already routed to the appropriate other bus and output will
          * be empty.
          */
         if (z->outputInfo.routeTo == DEFAULT_BUS)
@@ -306,6 +308,14 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     if (rescanWeakRefs)
     {
         postZoneTraversalRemoveHandler();
+    }
+
+    for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+    {
+        if (this->audioSourceStorage.followers[i].followSource == scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
+        {
+            envelopeFollowers[i].process_block<OS>(output[0], output[1]);
+        }
     }
 
     // Groups are always stereo
@@ -372,6 +382,14 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         break;
         case engine::HasGroupZoneProcessors<engine::Group>::procRoute_bypass:
             break;
+        }
+    }
+
+    for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+    {
+        if (this->audioSourceStorage.followers[i].followSource == scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
+        {
+            envelopeFollowers[i].process_block<OS>(output[0], output[1]);
         }
     }
 
@@ -557,6 +575,12 @@ void Group::setupOnUnstream(engine::Engine &e)
         curveLfos[i].assign(&modulatorStorage[i], &(getEngine()->transport));
     }
 
+    for (int i = 0U; i < envFollowersPerGroupOrZone; ++i)
+    {
+        envelopeFollowers[i].assign(&audioSourceStorage.followers[i]);
+        envelopeFollowers[i].ballistics.setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
+    }
+
     for (int p = 0; p < processorCount; ++p)
     {
         if (processors[p])
@@ -658,7 +682,7 @@ void Group::attack()
          * Active groups have a re-attack behavior which is explicit
          */
 
-        // Forst envelopes re-attack without delay phase
+        // First envelopes re-attack without delay phase
         for (int i = 0; i < egsPerGroup; ++i)
         {
             eg[i].attackFromWithDelay(eg[i].outBlock0, *(endpoints.egTarget[i].dlyP),
@@ -684,8 +708,7 @@ void Group::attack()
                 }
             }
         }
-
-        // I *thin* we need to do this
+        // I *think* we need to do this
         rePrepareAndBindGroupMatrix();
         return;
     }

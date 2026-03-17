@@ -369,6 +369,7 @@ struct MatrixEndpoints
         scxt::modulation::shared::TransportSourceBase<SR, 'ztsp', registerVoiceModSource>
             transportSources;
         scxt::modulation::shared::RNGSourceBase<SR, 'zrng'> rngSources;
+        scxt::modulation::shared::EnvFollowerSourceBase<SR, 'zef', registerVoiceModSource> envFollowerSources;
 
         struct MacroSources
         {

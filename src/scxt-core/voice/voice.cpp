@@ -165,6 +165,11 @@ void Voice::voiceStarted()
     randomEvaluator.evaluate(zone->miscSourceStorage);
     phasorEvaluator.attack(engine->transport, zone->miscSourceStorage, engine->rng);
 
+    for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+    {
+        envelopeFollowers[i].assign(&zone->audioSourceStorage.followers[i]);
+    }
+
     auto &aegp = endpoints->egTarget[0];
     if (*aegp.dlyP < 1e-5)
     {
@@ -652,6 +657,29 @@ template <bool OS> bool Voice::processWithOS()
         }
     }
 
+    if (chainIsMono)
+    {
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (zone->audioSourceStorage.followers[i].followSource ==
+                scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
+            {
+                envelopeFollowers[i].process_block<OS>(output[0]);
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (zone->audioSourceStorage.followers[i].followSource ==
+                scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
+            {
+                envelopeFollowers[i].process_block<OS>(output[0], output[1]);
+            }
+        }
+    }
+
 #define CALL_ROUTE(FNN)                                                                            \
     if (chainIsMono)                                                                               \
     {                                                                                              \
@@ -767,6 +795,30 @@ template <bool OS> bool Voice::processWithOS()
             break;
         }
     }
+
+    if (chainIsMono)
+    {
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (zone->audioSourceStorage.followers[i].followSource ==
+                scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
+            {
+                envelopeFollowers[i].process_block<OS>(output[0]);
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (zone->audioSourceStorage.followers[i].followSource ==
+                scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
+            {
+                envelopeFollowers[i].process_block<OS>(output[0], output[1]);
+            }
+        }
+    }
+
     /*
      * Implement output pan
      */

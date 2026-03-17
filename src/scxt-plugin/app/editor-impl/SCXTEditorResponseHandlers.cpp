@@ -221,6 +221,20 @@ void SCXTEditor::onGroupOrZoneMiscModStorageUpdated(
     }
 }
 
+void SCXTEditor::onGroupOrZoneAudioModStorageUpdated(
+    const scxt::messaging::client::gzAudioModStorageUpdate_t &payload)
+{
+    const auto &[forZone, es] = payload;
+    if (forZone)
+    {
+        editScreen->getZoneElements()->lfo->setAudioModStorage(es);
+    }
+    else
+    {
+        editScreen->getGroupElements()->lfo->setAudioModStorage(es);
+    }
+}
+
 void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;

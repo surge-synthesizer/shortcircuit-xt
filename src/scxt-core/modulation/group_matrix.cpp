@@ -206,7 +206,8 @@ void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, 
 GroupMatrixEndpoints::Sources::Sources(engine::Engine *e)
     : lfoSources(e, "GLFO", "GLFO"), midiCCSources(e),
       egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e), rngSources(e),
-      macroSources(e), subordinateVoiceSources(e), midiSources(e), keyAndPitchSources(e)
+      envFollowerSources(e), macroSources(e), subordinateVoiceSources(e), midiSources(e),
+      keyAndPitchSources(e)
 {
     registerGroupModSource(e, egSource[0], "EG", "EG1");
     registerGroupModSource(e, egSource[1], "EG", "EG2");
@@ -244,6 +245,12 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
     for (int i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
     {
         m.bindSourceValue(transportSources.phasors[i], g.phasorEvaluator.outputs[i]);
+    }
+
+    for (int i = 0; i < scxt::envFollowersPerGroupOrZone; ++i)
+    {
+        m.bindSourceValue(envFollowerSources.envFollowersL[i], g.envelopeFollowers[i].outputs[0]);
+        m.bindSourceValue(envFollowerSources.envFollowersR[i], g.envelopeFollowers[i].outputs[1]);
     }
 
     m.bindSourceValue(midiSources.modWheelSource, g.parentPart->midiCCValues[1]);

@@ -79,4 +79,30 @@ template <typename P> sst::basic_blocks::params::ParamMetaData descFor(const P &
         __VA_ARGS__;                                                                               \
     }
 
+// Describe x[i] as elements for i 0...N
+#define SC_FIELD_ARRAY(x, N, ...)                                                                  \
+    {                                                                                              \
+        auto bsOff = offsetof(data, x);                                                            \
+        auto szof = sizeof(decltype(data::x)::value_type);                                         \
+        for (size_t fai = 0; fai < N; fai++)                                                       \
+            if (pd == bsOff + fai * szof)                                                          \
+            {                                                                                      \
+                return __VA_ARGS__;                                                                \
+            }                                                                                      \
+    }
+
+// Describe x[i].y as elements for i 0...N
+#define SC_FIELD_ARRAY_MEMBER(x, y, N, ...)                                                        \
+    {                                                                                              \
+        auto bsOff = offsetof(data, x);                                                            \
+        auto memOff = offsetof(decltype(data::x)::value_type, y);                                  \
+        auto szof = sizeof(decltype(data::x)::value_type);                                         \
+        for (size_t fai = 0; fai < N; fai++)                                                       \
+        {                                                                                          \
+            if (pd == bsOff + fai * szof + memOff)                                                 \
+            {                                                                                      \
+                return __VA_ARGS__;                                                                \
+            }                                                                                      \
+        }                                                                                          \
+    }
 #endif // SHORTCIRCUITXT_METADATA_DETAIL_H

@@ -88,6 +88,8 @@ enum ClientToSerializationMessagesIds
     c2s_update_full_adsrstorage_for_groups_or_zones,
     c2s_update_full_modstorage_for_groups_or_zones,
     c2s_update_miscmod_storage_for_groups_or_zones,
+    c2s_update_audiomod_storage_for_groups_or_zones,
+    c2s_update_audiomod_storage_element_for_groups_or_zones,
 
     c2s_update_lead_zone_mapping,
     c2s_update_zone_mapping_float,
@@ -231,6 +233,7 @@ enum SerializationToClientMessageIds
     s2c_update_group_matrix,
     s2c_update_group_or_zone_individual_modulator_storage,
     s2c_update_group_or_zone_miscmod_storage,
+    s2c_update_group_or_zone_audiomod_storage,
     s2c_update_zone_output_info,
     s2c_update_group_output_info,
 
