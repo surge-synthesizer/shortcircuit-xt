@@ -36,6 +36,7 @@
 #include "modulation/modulators/envlfo.h"
 #include "modulation/modulators/random_evaluator.h"
 #include "modulation/modulators/phasor_evaluator.h"
+#include "modulators/env_follower.h"
 #include "sst/cpputils/constructors.h"
 
 namespace scxt::modulation::shared
@@ -59,6 +60,7 @@ template <typename T, size_t egsPerObject> struct HasModulators
     } doubleRate;
 
     using cLFO_t = scxt::modulation::modulators::CurveLFO;
+    using envF_t = scxt::modulation::modulators::EnvFollower;
     HasModulators(T *that, sst::basic_blocks::dsp::RNG &extrng)
         : eg{sst::cpputils::make_array<ahdsrenv_t, egsPerObject>(that)}, doubleRate{that},
           egOS{sst::cpputils::make_array<ahdsrenvOS_t, egsPerObject>(&doubleRate)},
@@ -82,6 +84,8 @@ template <typename T, size_t egsPerObject> struct HasModulators
     std::array<scxt::modulation::modulators::EnvLFO, lfosPerObject> envLfos{};
     scxt::modulation::modulators::RandomEvaluator randomEvaluator;
     scxt::modulation::modulators::PhasorEvaluator phasorEvaluator{};
+    std::array<scxt::modulation::modulators::EnvFollower, envFollowersPerGroupOrZone>
+        envelopeFollowers{};
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
         T, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>

@@ -451,6 +451,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                       {"gegStorage", t.gegStorage},
                       {"modulatorStorage", t.modulatorStorage},
                       {"miscSourceStorage", t.miscSourceStorage},
+                      {"audioSourceStorage", t.audioSourceStorage},
                       {"processorStorage", t.processorStorage},
                       {"triggerConditions", t.triggerConditions}};
              }),
@@ -464,6 +465,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                  findIf(v, "triggerConditions", group.triggerConditions);
                  findIfArray(v, "modulatorStorage", group.modulatorStorage);
                  findIf(v, "miscSourceStorage", group.miscSourceStorage);
+                 findIf(v, "audioSourceStorage", group.audioSourceStorage);
                  group.clearZones();
 
                  auto vzones = v.at("zones").get_array();
@@ -684,6 +686,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                       {"routingTable", t.routingTable},
                       {"modulatorStorage", t.modulatorStorage},
                       {"miscSourceStorage", t.miscSourceStorage},
+                      {"audioSourceStorage", t.audioSourceStorage},
                       {"egs", t.egStorage},
                       {"givenName", useGivenName}};
              }),
@@ -698,6 +701,7 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  findIf(v, "routingTable", zone.routingTable);
                  findIfArray(v, "modulatorStorage", zone.modulatorStorage);
                  findIf(v, "miscSourceStorage", zone.miscSourceStorage);
+                 findIf(v, "audioSourceStorage", zone.audioSourceStorage);
                  if (v.find("aegStorage"))
                  {
                      findOrDefault(v, "aegStorage", zone.egStorage[0]);

@@ -255,6 +255,7 @@ struct Group : MoveableOnly<Group>,
 
     std::array<modulation::ModulatorStorage, lfosPerGroup> modulatorStorage;
     modulation::MiscSourceStorage miscSourceStorage;
+    modulation::AudioSourceStorage audioSourceStorage;
     bool initializedLFOs{false};
 
     modulation::GroupMatrix modMatrix;

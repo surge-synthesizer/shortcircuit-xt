@@ -60,6 +60,9 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
     currentLoopPercentageF = 0.f;
     currentSamplePercentageF = 0.f;
 
+    envelopeFollowers[0].assign(&zone->audioSourceStorage.followers[0]);
+    envelopeFollowers[1].assign(&zone->audioSourceStorage.followers[1]);
+
     memset(output, 0, 2 * blockSize * sizeof(float));
     memset(processorIntParams, 0, sizeof(processorIntParams));
 }
@@ -164,6 +167,11 @@ void Voice::voiceStarted()
 
     randomEvaluator.evaluate(zone->miscSourceStorage);
     phasorEvaluator.attack(engine->transport, zone->miscSourceStorage, engine->rng);
+
+    for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+    {
+        envelopeFollowers[i].ballistics.setSampleRate(sampleRate * (forceOversample ? 2 : 1));
+    }
 
     auto &aegp = endpoints->egTarget[0];
     if (*aegp.dlyP < 1e-5)
@@ -652,6 +660,29 @@ template <bool OS> bool Voice::processWithOS()
         }
     }
 
+    if (chainIsMono)
+    {
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (zone->audioSourceStorage.followers[i].followSource ==
+                scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
+            {
+                envelopeFollowers[i].process_block<OS>(output[0]);
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (zone->audioSourceStorage.followers[i].followSource ==
+                scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
+            {
+                envelopeFollowers[i].process_block<OS>(output[0], output[1]);
+            }
+        }
+    }
+
 #define CALL_ROUTE(FNN)                                                                            \
     if (chainIsMono)                                                                               \
     {                                                                                              \
@@ -767,6 +798,30 @@ template <bool OS> bool Voice::processWithOS()
             break;
         }
     }
+
+    if (chainIsMono)
+    {
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (zone->audioSourceStorage.followers[i].followSource ==
+                scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
+            {
+                envelopeFollowers[i].process_block<OS>(output[0]);
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (zone->audioSourceStorage.followers[i].followSource ==
+                scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
+            {
+                envelopeFollowers[i].process_block<OS>(output[0], output[1]);
+            }
+        }
+    }
+
     /*
      * Implement output pan
      */

@@ -214,5 +214,55 @@ CLIENT_TO_SERIAL(UpdateMiscmodStorageForSelectedGroupOrZone,
                  c2s_update_miscmod_storage_for_groups_or_zones, gzMiscStorageUpdate_t,
                  doMiscmodUpdate(payload, engine, cont));
 
+// forzone, data
+typedef std::tuple<bool, modulation::AudioSourceStorage> gzAudioModStorageUpdate_t;
+SERIAL_TO_CLIENT(UpdateAudioModStorage, s2c_update_group_or_zone_audiomod_storage,
+                 gzAudioModStorageUpdate_t, onGroupOrZoneAudioModStorageUpdated);
+
+inline void doAudioModUpdate(const gzAudioModStorageUpdate_t &payload, const engine::Engine &e,
+                             messaging::MessageController &cont)
+{
+    auto [forzone, storage] = payload;
+    if (forzone)
+    {
+        auto sz = e.getSelectionManager()->currentlySelectedZones();
+        if (!sz.empty())
+        {
+            cont.scheduleAudioThreadCallback([storage = storage, zs = sz](auto &eng) {
+                for (const auto &z : zs)
+                {
+                    auto &zone =
+                        eng.getPatch()->getPart(z.part)->getGroup(z.group)->getZone(z.zone);
+                    zone->audioSourceStorage = storage;
+                }
+            });
+        }
+    }
+    else
+    {
+        auto sg = e.getSelectionManager()->currentlySelectedGroups();
+        if (!sg.empty())
+        {
+            cont.scheduleAudioThreadCallback([storage = storage, gs = sg](auto &eng) {
+                for (const auto &z : gs)
+                {
+                    auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
+                    grp->audioSourceStorage = storage;
+                }
+            });
+        }
+    }
+}
+
+CLIENT_TO_SERIAL(UpdateAudiomodStorageForSelectedGroupOrZone,
+                 c2s_update_audiomod_storage_for_groups_or_zones, gzAudioModStorageUpdate_t,
+                 doAudioModUpdate(payload, engine, cont));
+
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateAudiomodStorageElement, c2s_update_audiomod_storage_element_for_groups_or_zones,
+    detail::zoneOrGroupDiffMsg_t<float>, modulation::AudioSourceStorage,
+    detail::updateZoneOrGroupMemberValue(&engine::Zone::audioSourceStorage,
+                                         &engine::Group::audioSourceStorage, payload, engine,
+                                         cont));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_MODULATION_MESSAGES_H
