@@ -110,6 +110,55 @@ TEST_CASE("Copy and Paste Group")
     REQUIRE(part->getGroup(2)->name == originalName + " (Copy 2)");
 }
 
+TEST_CASE("Delete Group")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    // Add a zone to the initial group and create a second group
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI();
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(part->getGroups().size() == 2);
+
+    // Delete group 0
+    th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, 0, -1}));
+    th.stepUI();
+
+    REQUIRE(part->getGroups().size() == 1);
+}
+
+TEST_CASE("Delete Empty Groups")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    // Add a zone to the initial group so it is non-empty
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    // Create two additional empty groups
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI();
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(part->getGroups().size() == 3);
+    REQUIRE(part->getGroup(0)->getZones().size() == 1);
+    REQUIRE(part->getGroup(1)->getZones().empty());
+    REQUIRE(part->getGroup(2)->getZones().empty());
+
+    // Delete all empty groups for part 0
+    th.sendToSerialization(cmsg::DeleteEmptyGroups(0));
+    th.stepUI();
+
+    // Only the non-empty group should remain
+    REQUIRE(part->getGroups().size() == 1);
+    REQUIRE(part->getGroup(0)->getZones().size() == 1);
+}
+
 TEST_CASE("Paste Group Does Nothing When Clipboard Holds Zone")
 {
     scxt::clients::console_ui::ConsoleHarness th;

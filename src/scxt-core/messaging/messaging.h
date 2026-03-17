@@ -241,6 +241,21 @@ struct MessageController : MoveableOnly<MessageController>
     }
 
     /**
+     * Helper to schedule deletion of an engine object from the audio thread.
+     * Call from within an audio thread callback.
+     */
+    void sendItemForDeletion(void *ptr,
+                             decltype(audio::AudioToSerialization::ToBeDeleted::type) delType)
+    {
+        audio::AudioToSerialization a2s;
+        a2s.id = audio::a2s_delete_this_pointer;
+        a2s.payloadType = audio::AudioToSerialization::TO_BE_DELETED;
+        a2s.payload.delThis.ptr = ptr;
+        a2s.payload.delThis.type = delType;
+        sendAudioToSerialization(a2s);
+    }
+
+    /**
      * Send a message from the serialization thread to the audio thread.
      * Called from the serialization queue.
      *
