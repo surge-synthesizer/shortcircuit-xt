@@ -153,7 +153,6 @@ inline void updateGroupMemberValue(M m, const diffMsg_t<VT> &payload, const engi
     }
 }
 
-
 template <typename VT> using zoneOrGroupDiffMsg_t = std::tuple<bool, ptrdiff_t, VT>;
 
 template <typename VT, typename MZ, typename MG>
@@ -166,8 +165,7 @@ inline void updateZoneOrGroupMemberValue(
         onGroupEngineExtra = nullptr)
 {
     auto isZone = std::get<0>(payload);
-    auto underT =
-        diffMsg_t<VT>{std::get<1>(payload), std::get<2>(payload)};
+    auto underT = diffMsg_t<VT>{std::get<1>(payload), std::get<2>(payload)};
     if (isZone)
     {
         updateZoneMemberValue(mz, underT, engine, cont, responseCB);

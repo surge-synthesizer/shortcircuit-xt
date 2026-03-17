@@ -312,7 +312,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
     {
-        if (this->audioSourceStorage.followers[i].followSource == scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
+        if (this->audioSourceStorage.followers[i].followSource ==
+            scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
         {
             envelopeFollowers[i].process_block<OS>(output[0], output[1]);
         }
@@ -387,7 +388,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
     {
-        if (this->audioSourceStorage.followers[i].followSource == scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
+        if (this->audioSourceStorage.followers[i].followSource ==
+            scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
         {
             envelopeFollowers[i].process_block<OS>(output[0], output[1]);
         }

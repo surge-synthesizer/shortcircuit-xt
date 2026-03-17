@@ -298,7 +298,8 @@ struct GroupMatrixEndpoints
         scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', registerGroupModSource>
             transportSources;
         scxt::modulation::shared::RNGSourceBase<SR, 'grng'> rngSources;
-        scxt::modulation::shared::EnvFollowerSourceBase<SR, 'gef', registerGroupModSource> envFollowerSources;
+        scxt::modulation::shared::EnvFollowerSourceBase<SR, 'gef', registerGroupModSource>
+            envFollowerSources;
 
         struct MacroSources
         {

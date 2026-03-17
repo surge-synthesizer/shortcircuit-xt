@@ -56,7 +56,8 @@ struct EnvFollower
                 float res alignas(16)[blockSize << 1];
                 for (int s = 0; s < blockSize << 1; ++s)
                 {
-                    ballistics.process_sample(gain * M_SQRT1_2 * std::fabs(inputL[s] + inputR[s]), res[s]);
+                    ballistics.process_sample(gain * M_SQRT1_2 * std::fabs(inputL[s] + inputR[s]),
+                                              res[s]);
                 }
                 outputs[0] = mech::blockMax<blockSize << 1>(res);
             }
@@ -66,7 +67,8 @@ struct EnvFollower
                 float resR alignas(16)[blockSize << 1];
                 for (int s = 0; s < blockSize << 1; ++s)
                 {
-                    ballistics.process_sample(gain * std::fabs(inputL[s]), gain * std::fabs(inputR[s]), resL[s], resR[s]);
+                    ballistics.process_sample(gain * std::fabs(inputL[s]),
+                                              gain * std::fabs(inputR[s]), resL[s], resR[s]);
                 }
                 outputs[0] = mech::blockMax<blockSize << 1>(resL);
                 outputs[1] = mech::blockMax<blockSize << 1>(resR);
@@ -79,7 +81,8 @@ struct EnvFollower
                 float res alignas(16)[blockSize];
                 for (int s = 0; s < blockSize; ++s)
                 {
-                    ballistics.process_sample(gain * M_SQRT1_2 * std::fabs(inputL[s] + inputR[s]), res[s]);
+                    ballistics.process_sample(gain * M_SQRT1_2 * std::fabs(inputL[s] + inputR[s]),
+                                              res[s]);
                 }
                 outputs[0] = mech::blockMax<blockSize>(res);
             }
@@ -89,7 +92,8 @@ struct EnvFollower
                 float resR alignas(16)[blockSize];
                 for (int s = 0; s < blockSize; ++s)
                 {
-                    ballistics.process_sample(gain * std::fabs(inputL[s]), gain * std::fabs(inputR[s]), resL[s], resR[s]);
+                    ballistics.process_sample(gain * std::fabs(inputL[s]),
+                                              gain * std::fabs(inputR[s]), resL[s], resR[s]);
                 }
                 outputs[0] = mech::blockMax<blockSize>(resL);
                 outputs[1] = mech::blockMax<blockSize>(resR);

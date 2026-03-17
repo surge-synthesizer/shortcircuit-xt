@@ -1615,10 +1615,13 @@ struct AudioPane : juce::Component, HasEditor
             aLabs[i]->setBounds(labWidth + spacing, i * yo + knobSize, knobSize, labelHeight);
 
             rKnobs[i]->setBounds(labWidth + knobSize + spacing * 2, i * yo, knobSize, knobSize);
-            rLabs[i]->setBounds(labWidth + knobSize + spacing * 2, i * yo + knobSize, knobSize, labelHeight);
+            rLabs[i]->setBounds(labWidth + knobSize + spacing * 2, i * yo + knobSize, knobSize,
+                                labelHeight);
 
-            gKnobs[i]->setBounds(labWidth + knobSize + knobSize + spacing * 3, i * yo, knobSize, knobSize);
-            gLabs[i]->setBounds(labWidth + knobSize + knobSize + spacing * 3, i * yo + knobSize, knobSize, labelHeight);
+            gKnobs[i]->setBounds(labWidth + knobSize + knobSize + spacing * 3, i * yo, knobSize,
+                                 knobSize);
+            gLabs[i]->setBounds(labWidth + knobSize + knobSize + spacing * 3, i * yo + knobSize,
+                                knobSize, labelHeight);
         }
     }
 };
