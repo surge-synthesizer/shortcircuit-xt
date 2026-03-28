@@ -160,30 +160,6 @@ RandomStorage::Style RandomStorage::fromStringStyle(const std::string &s)
     return p->second;
 }
 
-std::string EnvFollowerStorage::toStringSource(const Source &s)
-{
-    switch (s)
-    {
-    case PRE_PROC:
-        return "prep";
-    case POST_PROC:
-        return "pop";
-    }
-    return "ERR";
-}
-
-EnvFollowerStorage::Source EnvFollowerStorage::fromStringSource(const std::string &s)
-{
-    static auto inverse = makeEnumInverse<Source, EnvFollowerStorage::toStringSource>(
-        EnvFollowerStorage::Source::PRE_PROC, EnvFollowerStorage::Source::POST_PROC);
-    auto p = inverse.find(s);
-    if (p == inverse.end())
-    {
-        return EnvFollowerStorage::Source::PRE_PROC;
-    }
-    return p->second;
-}
-
 } // namespace modulators
 
 std::string ModulatorStorage::toStringModulatorShape(
@@ -254,4 +230,5 @@ ModulatorStorage::TriggerMode ModulatorStorage::fromStringTriggerMode(const std:
         return KEYTRIGGER;
     return p->second;
 }
+
 } // namespace scxt::modulation

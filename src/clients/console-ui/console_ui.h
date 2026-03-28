@@ -87,8 +87,6 @@ struct ConsoleUI
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &) ON_STUB;
     void onGroupOrZoneMiscModStorageUpdated(
         const scxt::messaging::client::gzMiscStorageUpdate_t &) ON_STUB;
-    void onGroupOrZoneAudioModStorageUpdated(
-        const scxt::messaging::client::gzAudioModStorageUpdate_t &) ON_STUB;
     void onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p) ON_STUB;
     void
     onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p) ON_STUB;

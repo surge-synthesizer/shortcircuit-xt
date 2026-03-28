@@ -136,18 +136,6 @@ struct RandomStorage
     } style{UNIFORM_01};
     DECLARE_ENUM_STRING(Style);
 };
-struct EnvFollowerStorage
-{
-    float attack{0.f}, release{.2f}, gain{0.f};
-    bool stereoLink{false};
-
-    enum Source : int16_t
-    {
-        PRE_PROC,
-        POST_PROC
-    } followSource{Source::PRE_PROC};
-    DECLARE_ENUM_STRING(Source);
-};
 } // namespace modulators
 
 struct ModulatorStorage
@@ -170,7 +158,6 @@ struct ModulatorStorage
     DECLARE_ENUM_STRING(ModulatorShape);
 
     // These enum values are streamed. Do not change them.
-    // ...but they don't work yet anyway so maybe do? :)
     enum TriggerMode : int16_t
     {
         KEYTRIGGER,
@@ -227,23 +214,6 @@ struct MiscSourceStorage
             return "Ternary";
         default:
             return "Unknown";
-        }
-    }
-};
-
-struct AudioSourceStorage
-{
-    std::array<modulators::EnvFollowerStorage, envFollowersPerGroupOrZone> followers;
-    std::string sourceDisplayName(int i) const
-    {
-        switch (followers[i].followSource)
-        {
-        case modulation::modulators::EnvFollowerStorage::Source::PRE_PROC:
-            return "Pre-Proc";
-        case modulation::modulators::EnvFollowerStorage::Source::POST_PROC:
-            return "Post-Proc";
-        default:
-            return "?";
         }
     }
 };
@@ -396,34 +366,5 @@ SC_DESCRIBE(scxt::modulation::modulators::PhasorStorage,
                                       .withDefault(4)
                                       .withName("Denominator")
                                       .withRange(1, 64));)
-
-SC_DESCRIBE(scxt::modulation::AudioSourceStorage,
-            SC_FIELD_ARRAY_MEMBER(followers, attack, envFollowersPerGroupOrZone,
-                                  pmd()
-                                      .asFloat()
-                                      .withRange(0.000001f, .1f)
-                                      .withDefault(0.01f)
-                                      .withLinearScaleFormatting("ms", 1000.f)
-                                      .withName("Attack"));
-            SC_FIELD_ARRAY_MEMBER(followers, release, envFollowersPerGroupOrZone,
-                                  pmd()
-                                      .asFloat()
-                                      .withRange(.01f, .5f)
-                                      .withDefault(0.2f)
-                                      .withLinearScaleFormatting("ms", 1000.f)
-                                      .withName("Release"));
-            SC_FIELD_ARRAY_MEMBER(followers, gain, envFollowersPerGroupOrZone,
-                                  pmd().asFloat().asDecibelWithRange(-36.f, 36.f).withName("Gain"));
-            SC_FIELD_ARRAY_MEMBER(followers, stereoLink, envFollowersPerGroupOrZone,
-                                  pmd().asBool().withDefault(false).withName("Stereo Link"));
-            SC_FIELD_ARRAY_MEMBER(
-                followers, followSource, envFollowersPerGroupOrZone,
-                pmd()
-                    .asInt()
-                    .withUnorderedMapFormatting(
-                        {{modulation::modulators::EnvFollowerStorage::PRE_PROC, "Pre-procs"},
-                         {modulation::modulators::EnvFollowerStorage::POST_PROC, "Post-procs"}})
-                    .withDefault(modulation::modulators::EnvFollowerStorage::PRE_PROC)
-                    .withName("Source");));
 
 #endif // SHORTCIRCUITXT_MODULATOR_STORAGE_H

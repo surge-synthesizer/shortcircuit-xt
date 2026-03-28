@@ -33,7 +33,7 @@
 
 namespace scxt
 {
-static constexpr uint64_t currentStreamingVersion{0x2025'11'12};
+static constexpr uint64_t currentStreamingVersion{0x2026'03'08};
 
 static constexpr uint16_t blockSize{16};
 static constexpr uint16_t blockSizeQuad{16 >> 2};
@@ -76,7 +76,6 @@ static constexpr uint16_t processorsPerZoneAndGroup{4};
 
 static constexpr uint16_t phasorsPerGroupOrZone{4};
 static constexpr uint16_t randomsPerGroupOrZone{4};
-static constexpr uint16_t envFollowersPerGroupOrZone{2};
 
 static constexpr uint16_t triggerConditionsPerGroup{4};
 

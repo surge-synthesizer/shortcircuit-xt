@@ -55,7 +55,6 @@ struct ENVLFOPane;
 struct MSEGLFOPane;
 struct ConsistencyLFOPane;
 struct MiscPanel;
-struct AudioPane;
 
 struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
 {
@@ -83,7 +82,6 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
     std::unique_ptr<MSEGLFOPane> msegLfoPane;
     std::unique_ptr<ConsistencyLFOPane> consistencyLfoPane;
     std::unique_ptr<MiscPanel> miscPanel;
-    std::unique_ptr<AudioPane> audioPane;
 
     bool forZone{true};
 
@@ -100,7 +98,6 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
     void setActive(int index, bool active);
     void setModulatorStorage(int index, const modulation::ModulatorStorage &mod);
     void setMiscModStorage(const modulation::MiscSourceStorage &mm);
-    void setAudioModStorage(const modulation::AudioSourceStorage &);
 
     void repositionContentAreaComponents();
 
@@ -124,7 +121,6 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
 
     std::array<modulation::ModulatorStorage, engine::lfosPerZone> modulatorStorageData;
     modulation::MiscSourceStorage miscStorageData;
-    modulation::AudioSourceStorage envFollowerStorageData;
     std::unique_ptr<juce::FileChooser> fileChooser;
 };
 } // namespace scxt::ui::app::edit_screen

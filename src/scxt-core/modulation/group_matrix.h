@@ -148,7 +148,7 @@ struct GroupMatrixEndpoints
 
     struct ProcessorTarget : scxt::modulation::shared::ProcessorTargetEndpointData<TG, 'gprc'>
     {
-        // This is out of line since it creates a calculation using zone
+        // This is out of line since it creates a caluclation using zone
         // innards and we can't have an include cycle
         ProcessorTarget(engine::Engine *e, uint32_t p);
 
@@ -298,8 +298,6 @@ struct GroupMatrixEndpoints
         scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', registerGroupModSource>
             transportSources;
         scxt::modulation::shared::RNGSourceBase<SR, 'grng'> rngSources;
-        scxt::modulation::shared::EnvFollowerSourceBase<SR, 'gef', registerGroupModSource>
-            envFollowerSources;
 
         struct MacroSources
         {

@@ -406,27 +406,6 @@ template <typename SR, uint32_t gid> struct RNGSourceBase
     std::array<SR, scxt::randomsPerGroupOrZone> randoms;
 };
 
-template <typename SR, uint32_t gid,
-          void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
-                                 const std::string &)>
-struct EnvFollowerSourceBase
-{
-    EnvFollowerSourceBase(scxt::engine::Engine *e)
-    {
-        for (uint32_t i = 0; i < scxt::envFollowersPerGroupOrZone; ++i)
-        {
-            envFollowersL[i] = SR{gid, 'efsL', i};
-            envFollowersR[i] = SR{gid, 'efsR', i};
-            std::string lab = "A";
-            lab[0] += i;
-            registerSource(e, envFollowersL[i], "Audio", "Envelope Follower " + lab + " Left");
-            registerSource(e, envFollowersR[i], "Audio", "Envelope Follower " + lab + " Right");
-        }
-    }
-    std::array<SR, scxt::envFollowersPerGroupOrZone> envFollowersL;
-    std::array<SR, scxt::envFollowersPerGroupOrZone> envFollowersR;
-};
-
 template <typename SR, uint32_t gid, size_t numLfo,
           void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
                                  const std::string &)>

@@ -112,6 +112,32 @@ void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, 
     }
 }
 
+float randomRoll(bool bipolar, int distribution)
+{
+    if (bipolar)
+    {
+        if (distribution == 0)
+        {
+            return rng.unifPM1();
+        }
+        else
+        {
+            return rng.normPM1();
+        }
+    }
+    else
+    {
+        if (distribution == 0)
+        {
+            return rng.unif01();
+        }
+        else
+        {
+            return rng.half01();
+        }
+    }
+}
+
 void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z,
                                     voice::Voice &v)
 {
@@ -170,12 +196,6 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     for (int i = 0; i < macrosPerPart; ++i)
     {
         m.bindSourceValue(macroSources.macros[i], part->macros[i].value);
-    }
-
-    for (int i = 0; i < scxt::envFollowersPerGroupOrZone; ++i)
-    {
-        m.bindSourceValue(envFollowerSources.envFollowersL[i], v.envelopeFollowers[i].outputs[0]);
-        m.bindSourceValue(envFollowerSources.envFollowersR[i], v.envelopeFollowers[i].outputs[1]);
     }
 }
 
@@ -407,8 +427,8 @@ MatrixEndpoints::Sources::Sources(engine::Engine *e)
                                      {'zneg', 'eg3 ', 0},
                                      {'zneg', 'eg4 ', 0},
                                      {'zneg', 'eg5 ', 0}}},
-      transportSources(e), rngSources(e), envFollowerSources(e), macroSources(e), mpeSources(e),
-      voiceSources(e), keyAndPitchSources(e)
+      transportSources(e), rngSources(e), macroSources(e), mpeSources(e), voiceSources(e),
+      keyAndPitchSources(e)
 {
     registerVoiceModSource(e, egSources[0], "EG", "AEG");
     for (int i = 1; i < egsPerZone; ++i)
