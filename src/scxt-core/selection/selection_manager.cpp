@@ -586,6 +586,9 @@ void SelectionManager::sendDisplayDataForZonesBasedOnLead(int p, int g, int z)
     serializationSendToClient(cms::s2c_update_group_or_zone_miscmod_storage,
                               cms::gzMiscStorageUpdate_t{true, zp->miscSourceStorage},
                               *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_group_or_zone_audiomod_storage,
+                              cms::gzAudioModStorageUpdate_t{true, zp->audioSourceStorage},
+                              *(engine.getMessageController()));
 
     /*
      * Processors, Output and ModMatrix have multi-select merge rules which are different
@@ -674,6 +677,9 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
     }
     serializationSendToClient(cms::s2c_update_group_or_zone_miscmod_storage,
                               cms::gzMiscStorageUpdate_t{false, g->miscSourceStorage},
+                              *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_group_or_zone_audiomod_storage,
+                              cms::gzAudioModStorageUpdate_t{false, g->audioSourceStorage},
                               *(engine.getMessageController()));
 
     for (int i = 0; i < engine::processorCount; ++i)
