@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_MODULATION_MESSAGES_H
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_MODULATION_MESSAGES_H
 
+#include <algorithm>
 #include "messaging/client/detail/client_json_details.h"
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
@@ -264,5 +265,100 @@ CLIENT_TO_SERIAL_CONSTRAINED(
     detail::updateZoneOrGroupMemberValue(&engine::Zone::audioSourceStorage,
                                          &engine::Group::audioSourceStorage, payload, engine,
                                          cont));
+
+// forZone, fromRow, toRow, isMove
+// isMove=false: swap rows fromRow and toRow
+// isMove=true:  move row fromRow to position toRow, shifting others via std::rotate
+typedef std::tuple<bool, int, int, bool> modRowReorderPayload_t;
+
+inline void doReorderModRow(const modRowReorderPayload_t &payload, engine::Engine &engine,
+                            MessageController &cont)
+{
+    const auto &[forZone, fromRow, toRow, isMove] = payload;
+
+    if (forZone)
+    {
+        auto sz = engine.getSelectionManager()->currentlySelectedZones();
+        if (sz.empty())
+            return;
+
+        auto undoItem = std::make_unique<undo::ZoneModTableSnapshotItem>();
+        undoItem->store(engine, {sz.begin(), sz.end()});
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+
+        cont.scheduleAudioThreadCallback(
+            [from = fromRow, to = toRow, move = isMove, zs = sz](auto &eng) {
+                for (const auto &z : zs)
+                {
+                    auto &zone =
+                        eng.getPatch()->getPart(z.part)->getGroup(z.group)->getZone(z.zone);
+                    auto &routes = zone->routingTable.routes;
+                    if (move)
+                    {
+                        if (from < to)
+                            std::rotate(routes.begin() + from, routes.begin() + from + 1,
+                                        routes.begin() + to + 1);
+                        else if (from > to)
+                            std::rotate(routes.begin() + to, routes.begin() + from,
+                                        routes.begin() + from + 1);
+                    }
+                    else
+                    {
+                        std::swap(routes[from], routes[to]);
+                    }
+                    zone->onRoutingChanged();
+                }
+            },
+            [](auto &eng) {
+                auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+                if (lz.has_value())
+                    eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(
+                        lz->part, lz->group, lz->zone);
+            });
+    }
+    else
+    {
+        auto sg = engine.getSelectionManager()->currentlySelectedGroups();
+        if (sg.empty())
+            return;
+
+        auto undoItem = std::make_unique<undo::GroupModTableSnapshotItem>();
+        undoItem->store(engine, {sg.begin(), sg.end()});
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+
+        cont.scheduleAudioThreadCallback(
+            [from = fromRow, to = toRow, move = isMove, gs = sg](auto &eng) {
+                for (const auto &z : gs)
+                {
+                    auto &grp = eng.getPatch()->getPart(z.part)->getGroup(z.group);
+                    auto &routes = grp->routingTable.routes;
+                    if (move)
+                    {
+                        if (from < to)
+                            std::rotate(routes.begin() + from, routes.begin() + from + 1,
+                                        routes.begin() + to + 1);
+                        else if (from > to)
+                            std::rotate(routes.begin() + to, routes.begin() + from,
+                                        routes.begin() + from + 1);
+                    }
+                    else
+                    {
+                        std::swap(routes[from], routes[to]);
+                    }
+                    grp->onRoutingChanged();
+                    grp->rePrepareAndBindGroupMatrix();
+                }
+            },
+            [](auto &eng) {
+                auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
+                if (lg.has_value())
+                    eng.getSelectionManager()->sendDisplayDataForGroupsBasedOnLead(lg->part,
+                                                                                   lg->group);
+            });
+    }
+}
+CLIENT_TO_SERIAL(ReorderModRow, c2s_reorder_mod_row, modRowReorderPayload_t,
+                 doReorderModRow(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_MODULATION_MESSAGES_H

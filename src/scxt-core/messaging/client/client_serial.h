@@ -109,6 +109,7 @@ enum ClientToSerializationMessagesIds
     c2s_update_zone_output_int16_t_value_then_refresh,
 
     c2s_update_zone_routing_row,
+    c2s_reorder_mod_row,
 
     c2s_update_group_routing_row,
     c2s_update_group_output_float_value,

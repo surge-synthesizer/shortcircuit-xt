@@ -29,6 +29,7 @@
 #define SCXT_SRC_SCXT_CORE_UNDO_MANAGER_MODULATION_UNDOABLE_ITEMS_H
 
 #include "undoable_items.h"
+#include "configuration.h"
 #include "modulation/voice_matrix.h"
 #include "modulation/group_matrix.h"
 
@@ -53,6 +54,35 @@ struct GroupModRowChangeItem : public MultiSelectUndoBaseItem
     std::vector<modulation::GroupMatrix::RoutingTable::Routing> cachedRows;
 
     void store(engine::Engine &e, int index,
+               const std::vector<selection::SelectionManager::ZoneAddress> &groups);
+    void restore(engine::Engine &e) override;
+    std::unique_ptr<UndoableItem> makeRedo(engine::Engine &e) override;
+    std::string describe() const override;
+};
+
+// Stores entire routing table for all selected zones — used for multi-row operations (swap, move)
+struct ZoneModTableSnapshotItem : public MultiSelectUndoBaseItem
+{
+    static constexpr size_t tableSize = scxt::modMatrixRowsPerZone;
+    std::vector<
+        std::array<voice::modulation::Matrix::RoutingTable::Routing, scxt::modMatrixRowsPerZone>>
+        cachedTables;
+
+    void store(engine::Engine &e,
+               const std::vector<selection::SelectionManager::ZoneAddress> &zones);
+    void restore(engine::Engine &e) override;
+    std::unique_ptr<UndoableItem> makeRedo(engine::Engine &e) override;
+    std::string describe() const override;
+};
+
+struct GroupModTableSnapshotItem : public MultiSelectUndoBaseItem
+{
+    static constexpr size_t tableSize = scxt::modMatrixRowsPerGroup;
+    std::vector<
+        std::array<modulation::GroupMatrix::RoutingTable::Routing, scxt::modMatrixRowsPerGroup>>
+        cachedTables;
+
+    void store(engine::Engine &e,
                const std::vector<selection::SelectionManager::ZoneAddress> &groups);
     void restore(engine::Engine &e) override;
     std::unique_ptr<UndoableItem> makeRedo(engine::Engine &e) override;

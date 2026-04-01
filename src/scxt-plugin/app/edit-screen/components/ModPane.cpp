@@ -45,10 +45,11 @@ namespace cmsg = scxt::messaging::client;
 namespace jcmp = sst::jucegui::components;
 namespace jcad = sst::jucegui::component_adapters;
 
-template <typename GZTrait> struct ModRow : juce::Component, HasEditor
+template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::DragAndDropTarget
 {
     int index{0};
     ModPane<GZTrait> *parent{nullptr};
+    bool isCurrentlyOver{false};
     std::unique_ptr<connectors::BooleanPayloadDataAttachment<typename GZTrait::routing::Routing>>
         powerAttachment;
     using attachment_t = connectors::PayloadDataAttachment<typename GZTrait::routing::Routing>;
@@ -93,6 +94,11 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         power = std::make_unique<jcmp::ToggleButton>();
         power->setLabel(std::to_string(index + 1));
         power->setSource(powerAttachment.get());
+        power->usesPopupMenu = true;
+        power->onPopupMenu = [w = juce::Component::SafePointer(this)](auto &) {
+            if (w)
+                w->showRowContextMenu();
+        };
         addAndMakeVisible(*power);
 
         source = std::make_unique<jcmp::MenuButton>();
@@ -178,6 +184,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         x2 = mg(jcmp::GlyphPainter::CLOSE);
         a1 = mg(jcmp::GlyphPainter::ARROW_L_TO_R);
         plusMulMod = mg(jcmp::GlyphPainter::MODULATION_ADDITIVE);
+        x1->setInterceptsMouseClicks(false, false);
+        x2->setInterceptsMouseClicks(false, false);
+        a1->setInterceptsMouseClicks(false, false);
+        plusMulMod->setInterceptsMouseClicks(false, false);
         modStyleButton = std::make_unique<jcmp::GlyphButton>(
             sst::jucegui::components::GlyphPainter::MODULATION_MULTIPLICATIVE);
         modStyleButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
@@ -201,7 +211,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
 
     ~ModRow() {}
 
-    void resized()
+    void resized() override
     {
         auto b = getLocalBounds().reduced(1, 1);
 
@@ -891,6 +901,162 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor
         }
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    void showRowContextMenu()
+    {
+        constexpr int numRows = GZTrait::rowCount;
+
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Row " + std::to_string(index + 1));
+        p.addSeparator();
+
+        // Copy
+        p.addItem("Copy", [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->parent->clipboard = w->parent->routingTable.routes[w->index];
+        });
+
+        // Paste (only enabled if clipboard has something)
+        bool hasClipboard = parent->clipboard.has_value();
+        p.addItem("Paste", hasClipboard, false, [w = juce::Component::SafePointer(this)]() {
+            if (!w || !w->parent->clipboard.has_value())
+                return;
+            if constexpr (GZTrait::forZone)
+                w->sendToSerialization(
+                    cmsg::UpdateZoneRoutingRow({w->index, *w->parent->clipboard, true}));
+            else
+                w->sendToSerialization(
+                    cmsg::UpdateGroupRoutingRow({w->index, *w->parent->clipboard, true}));
+        });
+
+        p.addSeparator();
+
+        // Duplicate to → submenu
+        {
+            auto sub = juce::PopupMenu();
+            for (int i = 0; i < numRows; ++i)
+            {
+                if (i == index)
+                    continue;
+                sub.addItem("Row " + std::to_string(i + 1),
+                            [w = juce::Component::SafePointer(this), i]() {
+                                if (!w)
+                                    return;
+                                if constexpr (GZTrait::forZone)
+                                    w->sendToSerialization(cmsg::UpdateZoneRoutingRow(
+                                        {i, w->parent->routingTable.routes[w->index], true}));
+                                else
+                                    w->sendToSerialization(cmsg::UpdateGroupRoutingRow(
+                                        {i, w->parent->routingTable.routes[w->index], true}));
+                            });
+            }
+            p.addSubMenu("Duplicate to", sub);
+        }
+
+        p.addSeparator();
+
+        // Swap with → submenu
+        {
+            auto sub = juce::PopupMenu();
+            for (int i = 0; i < numRows; ++i)
+            {
+                if (i == index)
+                    continue;
+                sub.addItem("Row " + std::to_string(i + 1),
+                            [w = juce::Component::SafePointer(this), i]() {
+                                if (!w)
+                                    return;
+                                w->sendToSerialization(
+                                    cmsg::ReorderModRow({GZTrait::forZone, w->index, i, false}));
+                            });
+            }
+            p.addSubMenu("Swap with", sub);
+        }
+
+        // Move to → submenu
+        {
+            auto sub = juce::PopupMenu();
+            for (int i = 0; i < numRows; ++i)
+            {
+                if (i == index)
+                    continue;
+                sub.addItem("Row " + std::to_string(i + 1),
+                            [w = juce::Component::SafePointer(this), i]() {
+                                if (!w)
+                                    return;
+                                w->sendToSerialization(
+                                    cmsg::ReorderModRow({GZTrait::forZone, w->index, i, true}));
+                            });
+            }
+            p.addSubMenu("Move to", sub);
+        }
+
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    void paint(juce::Graphics &g) override
+    {
+        if (isCurrentlyOver)
+        {
+            g.setColour(juce::Colours::white.withAlpha(0.15f));
+            g.fillAll();
+        }
+    }
+
+    void mouseDown(const juce::MouseEvent &e) override
+    {
+        if (e.mods.isPopupMenu())
+            showRowContextMenu();
+    }
+
+    void mouseDrag(const juce::MouseEvent &e) override
+    {
+        if (e.mouseWasDraggedSinceMouseDown())
+        {
+            auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this);
+            if (container && !container->isDragAndDropActive())
+            {
+                auto scaleFactor = (float)getTopLevelComponent()->getDesktopScaleFactor();
+                auto img = createComponentSnapshot(getLocalBounds(), true, scaleFactor);
+                img.multiplyAllAlphas(0.7f);
+                container->startDragging("modrow:" + juce::String(index), this,
+                                         juce::ScaledImage(img, scaleFactor), true);
+            }
+        }
+    }
+
+    bool isInterestedInDragSource(const SourceDetails &details) override
+    {
+        auto desc = details.description.toString();
+        if (!desc.startsWith("modrow:"))
+            return false;
+        auto *sourceRow = dynamic_cast<ModRow<GZTrait> *>(details.sourceComponent.get());
+        return sourceRow && sourceRow->parent == parent && sourceRow != this;
+    }
+
+    void itemDragEnter(const SourceDetails &) override
+    {
+        isCurrentlyOver = true;
+        repaint();
+    }
+
+    void itemDragExit(const SourceDetails &) override
+    {
+        isCurrentlyOver = false;
+        repaint();
+    }
+
+    void itemDragMove(const SourceDetails &) override {}
+
+    void itemDropped(const SourceDetails &details) override
+    {
+        isCurrentlyOver = false;
+        auto desc = details.description.toString();
+        auto sourceIdx = desc.fromFirstOccurrenceOf(":", false, false).getIntValue();
+        sendToSerialization(cmsg::ReorderModRow({GZTrait::forZone, sourceIdx, index, false}));
+        repaint();
     }
 };
 
