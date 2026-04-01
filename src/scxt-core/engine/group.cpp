@@ -895,6 +895,7 @@ void Group::resetPolyAndPlaymode(engine::Engine &e)
         SCLOG_IF(voiceResponder, "Setting up mono/legato group " << pgrp);
 
         uint64_t features = 0;
+        Engine::voiceManager_t::MonoPriorityMode mpm{LATEST};
         if (outputInfo.playMode == Group::PlayMode::MONO)
         {
             features |= (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::MONO_RETRIGGER;
@@ -907,20 +908,24 @@ void Group::resetPolyAndPlaymode(engine::Engine &e)
         switch (outputInfo.notePriority)
         {
         case Group::NotePriority::LATEST:
+            mpm = Engine::voiceManager_t::MonoPriorityMode::LATEST;
             features |=
                 (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LATEST;
             break;
         case Group::NotePriority::HIGHEST:
+            mpm = Engine::voiceManager_t::MonoPriorityMode::HIGHEST;
             features |=
                 (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_HIGHEST;
             break;
         case Group::NotePriority::LOWEST:
+            mpm = Engine::voiceManager_t::MonoPriorityMode::LOWEST;
             features |=
                 (uint64_t)Engine::voiceManager_t::MonoPlayModeFeatures::ON_RELEASE_TO_LOWEST;
             break;
         }
 
         e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::MONO_NOTES, features);
+        e.voiceManager.setMonoPriorityMode(pgrp, mpm);
     }
 }
 
