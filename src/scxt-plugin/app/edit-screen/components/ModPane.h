@@ -89,6 +89,8 @@ template <typename GZTrait> struct ModPane : sst::jucegui::components::NamedPane
 
     std::unique_ptr<juce::Viewport> viewPort;
     std::unique_ptr<juce::Component> viewPortComponents;
+
+    std::optional<typename GZTrait::routing::Routing> clipboard;
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // SHORTCIRCUIT_MAPPINGPANE_H
