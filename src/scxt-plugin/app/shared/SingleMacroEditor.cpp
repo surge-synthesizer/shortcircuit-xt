@@ -185,10 +185,12 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
 
 SingleMacroEditor::~SingleMacroEditor() {}
 
-void SingleMacroEditor::changePart(int p)
+void SingleMacroEditor::changePart(int p, int i)
 {
     valueAttachment->part = p;
     part = p;
+    sst::jucegui::component_adapters::setClapParamId(knob.get(),
+                                                     engine::Macro::partIndexToMacroID(p, i));
     repaint();
 }
 

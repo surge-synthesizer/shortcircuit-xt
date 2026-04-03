@@ -60,9 +60,10 @@ void MacroDisplay::resized()
 
 void MacroDisplay::selectedPartChanged()
 {
+    int i{0};
     for (auto &m : macros)
     {
-        m->changePart(editor->selectedPart);
+        m->changePart(editor->selectedPart, i++);
     }
     repaint();
 }

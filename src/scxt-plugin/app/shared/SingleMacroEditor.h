@@ -55,7 +55,7 @@ struct SingleMacroEditor : HasEditor,
     void paint(juce::Graphics &g) override;
     void showMenu();
     void updateFromEditorData();
-    void changePart(int p);
+    void changePart(int p, int i);
 
     void textEditorReturnKeyPressed(juce::TextEditor &editor) override;
     void textEditorEscapeKeyPressed(juce::TextEditor &editor) override;
