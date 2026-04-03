@@ -677,7 +677,8 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                             {*(d.expandableAddress), 60, 48, 72, 0, 127}),
                         browserPane->editor->msgCont);
                 }
-                else if (browser::Browser::isExpandableInBrowser(entry.dirent.path()))
+                else if (browser::Browser::isExpandableInBrowser(entry.dirent.path()) &&
+                         event.position.x < glyphSize + 2)
                 {
                     if (entry.isExpanded)
                     {
@@ -831,7 +832,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 {
                     jcmp::GlyphPainter::paintGlyph(g, r,
                                                    entry.isExpanded ? jcmp::GlyphPainter::JOG_DOWN
-                                                                    : jcmp::GlyphPainter::PLUS,
+                                                                    : jcmp::GlyphPainter::JOG_RIGHT,
                                                    textColor.withAlpha(isSelected ? 1.f : 0.5f));
                 }
                 else
