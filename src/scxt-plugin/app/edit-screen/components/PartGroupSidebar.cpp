@@ -41,13 +41,17 @@
 #include "GroupSettingsCard.h"
 #include "GroupTriggersCard.h"
 #include "app/shared/PartSidebarCard.h"
+#include "app/shared/SampleDropHandler.h"
 
 namespace scxt::ui::app::edit_screen
 {
 namespace jcmp = sst::jucegui::components;
 namespace cmsg = scxt::messaging::client;
 
-struct PartSidebar : juce::Component, HasEditor
+struct PartSidebar : juce::Component,
+                     HasEditor,
+                     juce::FileDragAndDropTarget,
+                     juce::DragAndDropTarget
 {
     PartGroupSidebar *partGroupSidebar{nullptr};
     std::unique_ptr<jcmp::Viewport> viewport;
@@ -151,10 +155,312 @@ struct PartSidebar : juce::Component, HasEditor
         addPartButton->setVisible(nDispParts < scxt::numParts);
         resized();
     }
+
+    // Drag state — kept during a drag for visual updates.
+    // All drop execution is recomputed from scratch at drop time to avoid the macOS
+    // fileDragExit-before-filesDropped ordering issue.
+    bool scmDragActive{false};
+    juce::String scmDragFileName;
+    bool sampleWarnActive{false}; // true when drag is plain audio — redirect to group/zone view
+
+    bool isInterestedInFileDrag(const juce::StringArray &files) override
+    {
+        if (files.isEmpty())
+            return false;
+        // Accept any recognizable audio or instrument file — WAVs show a redirect warning;
+        // instruments/SCPs/SCMs get the card overlay and actually load.
+        for (const auto &f : files)
+        {
+            if (f.endsWithIgnoreCase(".scp") || f.endsWithIgnoreCase(".scm"))
+                return true;
+            try
+            {
+                auto pt = fs::path{(const char *)(f.toUTF8())};
+                if (browser::Browser::isLoadableMultiSample(pt) ||
+                    browser::Browser::isLoadableSingleSample(pt))
+                    return true;
+            }
+            catch (fs::filesystem_error &)
+            {
+            }
+        }
+        return false;
+    }
+
+    // Returns the part index whose card is under (x, y) in PartSidebar local coordinates.
+    // Returns -1 if none.
+    int partAtPosition(int x, int y) const
+    {
+        // Convert to viewport-content coordinates
+        auto vpBounds = viewport->getBounds();
+        if (!vpBounds.contains(x, y))
+            return -1;
+        auto contentY = (y - vpBounds.getY()) + viewport->getViewPositionY();
+        for (int i = 0; i < scxt::numParts; ++i)
+        {
+            if (!parts[i]->isVisible())
+                continue;
+            auto b = parts[i]->getBounds();
+            if (b.getY() <= contentY && contentY < b.getBottom())
+                return i;
+        }
+        return -1;
+    }
+
+    // Show the "drop into group/zone view" redirect warning (plain audio files on part sidebar).
+    void showSampleWarn()
+    {
+        sampleWarnActive = true;
+        scmDragActive = false;
+        for (int i = 0; i < scxt::numParts; ++i)
+            parts[i]->clearDragOverlay();
+        repaint();
+    }
+
+    // Common drag-visual update used by both file-drag and browser-drag paths.
+    void updateDragFromSource(const shared::SampleDropSource &src, int x, int y)
+    {
+        // Plain audio sample — redirect to group/zone view instead of card overlay
+        if (src.isSingleSample())
+        {
+            showSampleWarn();
+            return;
+        }
+
+        if (src.showsFullSidebarHighlight())
+        {
+            sampleWarnActive = false;
+            scmDragActive = true;
+            scmDragFileName = src.displayName;
+            for (int i = 0; i < scxt::numParts; ++i)
+                parts[i]->clearDragOverlay();
+            repaint();
+            return;
+        }
+
+        sampleWarnActive = false;
+        scmDragActive = false;
+        int targetPart = partAtPosition(x, y);
+
+        bool isReplace = false;
+        if (targetPart >= 0 && src.showsReplaceSplit())
+        {
+            auto vpBounds = viewport->getBounds();
+            auto contentY = (y - vpBounds.getY()) + viewport->getViewPositionY();
+            auto cardBounds = parts[targetPart]->getBounds();
+            isReplace = contentY < (cardBounds.getY() + cardBounds.getHeight() / 2);
+        }
+
+        for (int i = 0; i < scxt::numParts; ++i)
+        {
+            if (!parts[i]->isVisible())
+                continue;
+            if (i == targetPart && !src.isNone())
+            {
+                using CDT = shared::PartSidebarCard::CardDragType;
+                auto cdt = src.isPartFile() ? CDT::SCP : CDT::Multi;
+                parts[i]->setDragOverlay(cdt, src.displayName, isReplace);
+            }
+            else
+            {
+                parts[i]->clearDragOverlay();
+            }
+        }
+        repaint();
+    }
+
+    void clearAllDragState()
+    {
+        scmDragActive = false;
+        sampleWarnActive = false;
+        for (int i = 0; i < scxt::numParts; ++i)
+            parts[i]->clearDragOverlay();
+        repaint();
+    }
+
+    void fileDragEnter(const juce::StringArray &files, int x, int y) override
+    {
+        if (files.size() == 1)
+        {
+            try
+            {
+                updateDragFromSource(
+                    shared::SampleDropSource::fromPath(fs::path{(const char *)files[0].toUTF8()}),
+                    x, y);
+            }
+            catch (fs::filesystem_error &)
+            {
+            }
+        }
+        else if (files.size() > 1)
+        {
+            showSampleWarn();
+        }
+    }
+
+    void fileDragMove(const juce::StringArray &files, int x, int y) override
+    {
+        if (files.size() == 1)
+        {
+            try
+            {
+                updateDragFromSource(
+                    shared::SampleDropSource::fromPath(fs::path{(const char *)files[0].toUTF8()}),
+                    x, y);
+            }
+            catch (fs::filesystem_error &)
+            {
+            }
+        }
+        else if (files.size() > 1)
+        {
+            showSampleWarn();
+        }
+    }
+
+    void fileDragExit(const juce::StringArray &) override { clearAllDragState(); }
+
+    void filesDropped(const juce::StringArray &files, int x, int y) override
+    {
+        // Clear visual state immediately. Do NOT use saved drag state — on macOS JUCE may call
+        // fileDragExit before filesDropped. Recompute everything from files/position instead.
+        clearAllDragState();
+
+        if (files.size() != 1)
+            return;
+
+        shared::SampleDropSource src;
+        try
+        {
+            src = shared::SampleDropSource::fromPath(fs::path{(const char *)files[0].toUTF8()});
+        }
+        catch (fs::filesystem_error &)
+        {
+            return;
+        }
+
+        if (src.isNone() || src.isSingleSample())
+            return; // plain audio: warn only, no action on part sidebar
+
+        if (src.isMultiFile())
+        {
+            src.dropOnPart(0, false, this);
+            return;
+        }
+
+        int dropTarget = partAtPosition(x, y);
+        if (dropTarget < 0)
+            return;
+
+        bool isReplace = false;
+        if (src.showsReplaceSplit())
+        {
+            auto vpBounds = viewport->getBounds();
+            auto contentY = (y - vpBounds.getY()) + viewport->getViewPositionY();
+            auto cardBounds = parts[dropTarget]->getBounds();
+            isReplace = contentY < (cardBounds.getY() + cardBounds.getHeight() / 2);
+        }
+
+        src.dropOnPart(dropTarget, isReplace, this);
+    }
+
+    // Internal (browser) drag-and-drop
+    bool isInterestedInDragSource(const SourceDetails &sd) override
+    {
+        return browser_ui::hasSampleInfo(sd.sourceComponent);
+    }
+
+    void itemDragEnter(const SourceDetails &sd) override
+    {
+        auto wsi = browser_ui::asSampleInfo(sd.sourceComponent);
+        if (!wsi)
+            return;
+        if (wsi->encompassesMultipleSampleInfos())
+            showSampleWarn(); // batch of audio files → redirect to group/zone view
+        else
+            updateDragFromSource(shared::SampleDropSource::fromBrowserItem(wsi), sd.localPosition.x,
+                                 sd.localPosition.y);
+    }
+
+    void itemDragMove(const SourceDetails &sd) override
+    {
+        auto wsi = browser_ui::asSampleInfo(sd.sourceComponent);
+        if (!wsi)
+            return;
+        if (wsi->encompassesMultipleSampleInfos())
+            showSampleWarn();
+        else
+            updateDragFromSource(shared::SampleDropSource::fromBrowserItem(wsi), sd.localPosition.x,
+                                 sd.localPosition.y);
+    }
+
+    void itemDragExit(const SourceDetails &) override { clearAllDragState(); }
+
+    void itemDropped(const SourceDetails &sd) override
+    {
+        clearAllDragState();
+
+        auto wsi = browser_ui::asSampleInfo(sd.sourceComponent);
+        if (!wsi)
+            return;
+
+        // Batch drops and plain audio files: redirect warning only, no action on part sidebar
+        if (wsi->encompassesMultipleSampleInfos())
+            return;
+
+        auto src = shared::SampleDropSource::fromBrowserItem(wsi);
+        if (src.isNone() || src.isSingleSample())
+            return;
+
+        // MultiFile (SCM) loads all parts — no specific card target required
+        if (src.isMultiFile())
+        {
+            src.dropOnPart(0, false, this);
+            return;
+        }
+
+        int dropTarget = partAtPosition(sd.localPosition.x, sd.localPosition.y);
+        if (dropTarget < 0)
+            return;
+
+        bool isReplace = false;
+        if (src.showsReplaceSplit())
+        {
+            auto vpBounds = viewport->getBounds();
+            auto contentY = (sd.localPosition.y - vpBounds.getY()) + viewport->getViewPositionY();
+            auto cardBounds = parts[dropTarget]->getBounds();
+            isReplace = contentY < (cardBounds.getY() + cardBounds.getHeight() / 2);
+        }
+
+        src.dropOnPart(dropTarget, isReplace, this);
+    }
+
+    void paintOverChildren(juce::Graphics &g) override
+    {
+        auto lb = viewport->getBounds().toFloat();
+
+        if (sampleWarnActive)
+        {
+            editor->occludeRegionWithText(g, lb, theme::ColorMap::warning_1b, theme::ColorMap::bg_1,
+                                          theme::ColorMap::generic_content_high,
+                                          {"Drop samples into the", "Group / Zone view"});
+            return;
+        }
+
+        if (!scmDragActive)
+            return;
+
+        editor->occludeRegionWithText(g, lb, theme::ColorMap::accent_1b, theme::ColorMap::bg_1,
+                                      theme::ColorMap::generic_content_high,
+                                      {"Replace all parts with", scmDragFileName.toStdString()});
+    }
 };
 
 template <typename T, bool forZone>
-struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropContainer
+struct GroupZoneSidebarBase : juce::Component,
+                              HasEditor,
+                              juce::DragAndDropContainer,
+                              juce::FileDragAndDropTarget
 {
     PartGroupSidebar *partGroupSidebar{nullptr};
     std::unique_ptr<GroupZoneSidebarWidget<T, forZone>> gzTreeControl;
@@ -164,6 +470,64 @@ struct GroupZoneSidebarBase : juce::Component, HasEditor, juce::DragAndDropConta
 
     GroupZoneSidebarBase(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor) {}
     ~GroupZoneSidebarBase() {}
+
+    // FileDragAndDropTarget — accept single audio files from the OS; add as zones in current group
+    bool isInterestedInFileDrag(const juce::StringArray &files) override
+    {
+        if (files.isEmpty())
+            return false;
+        try
+        {
+            for (const auto &f : files)
+            {
+                auto p = fs::path{(const char *)(f.toUTF8())};
+                if (browser::Browser::isLoadableSingleSample(p))
+                    return true;
+            }
+        }
+        catch (fs::filesystem_error &)
+        {
+        }
+        return false;
+    }
+
+    void fileDragEnter(const juce::StringArray &, int, int) override {}
+    void fileDragMove(const juce::StringArray &, int, int) override {}
+    void fileDragExit(const juce::StringArray &) override {}
+
+    void filesDropped(const juce::StringArray &files, int x, int y) override
+    {
+        if (files.isEmpty())
+            return;
+
+        // Determine target group from drop position
+        std::optional<selection::SelectionManager::ZoneAddress> groupAddr;
+        if (gzTreeControl)
+        {
+            auto treePos = gzTreeControl->getBounds().getPosition();
+            groupAddr = gzTreeControl->groupAddressForDropPosition(x - treePos.x, y - treePos.y);
+        }
+
+        for (const auto &f : files)
+        {
+            shared::SampleDropSource src;
+            try
+            {
+                src = shared::SampleDropSource::fromPath(fs::path{(const char *)(f.toUTF8())});
+            }
+            catch (fs::filesystem_error &)
+            {
+                continue;
+            }
+            if (!src.isSingleSample())
+                continue;
+
+            if (groupAddr.has_value())
+                src.dropAsZoneInGroup(groupAddr->part, groupAddr->group, this);
+            else
+                src.dropAsZoneInCurrentGroup(this);
+        }
+    }
 
     void postInit()
     {
@@ -412,6 +776,138 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
         lastZoneClicked = rowZone;
     }
 };
+
+// PartGroupSidebar FileDragAndDropTarget / DragAndDropTarget forwarding.
+//
+// JUCE's target-finding walk cannot cross Viewport content holders, so events that land on
+// PartGroupSidebar (the outermost named panel) need to be forwarded with coordinate translation
+// to whichever child sidebar tab is currently visible.
+
+static juce::DragAndDropTarget::SourceDetails
+adjustedDragDetails(const juce::DragAndDropTarget::SourceDetails &sd, juce::Component *target)
+{
+    auto d = sd;
+    d.localPosition -= target->getBounds().getPosition();
+    return d;
+}
+
+// Returns the translate offset for the currently visible sidebar child.
+template <typename Sidebar> static std::pair<int, int> offsetFor(const Sidebar *s, int x, int y)
+{
+    auto pos = s->getBounds().getPosition();
+    return {x - pos.x, y - pos.y};
+}
+
+bool PartGroupSidebar::isInterestedInFileDrag(const juce::StringArray &files)
+{
+    if (partSidebar && partSidebar->isVisible())
+        return partSidebar->isInterestedInFileDrag(files);
+    if (groupSidebar && groupSidebar->isVisible())
+        return groupSidebar->isInterestedInFileDrag(files);
+    if (zoneSidebar && zoneSidebar->isVisible())
+        return zoneSidebar->isInterestedInFileDrag(files);
+    return false;
+}
+
+void PartGroupSidebar::fileDragEnter(const juce::StringArray &files, int x, int y)
+{
+    if (partSidebar && partSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(partSidebar.get(), x, y);
+        partSidebar->fileDragEnter(files, tx, ty);
+    }
+    else if (groupSidebar && groupSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(groupSidebar.get(), x, y);
+        groupSidebar->fileDragEnter(files, tx, ty);
+    }
+    else if (zoneSidebar && zoneSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(zoneSidebar.get(), x, y);
+        zoneSidebar->fileDragEnter(files, tx, ty);
+    }
+}
+
+void PartGroupSidebar::fileDragMove(const juce::StringArray &files, int x, int y)
+{
+    if (partSidebar && partSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(partSidebar.get(), x, y);
+        partSidebar->fileDragMove(files, tx, ty);
+    }
+    else if (groupSidebar && groupSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(groupSidebar.get(), x, y);
+        groupSidebar->fileDragMove(files, tx, ty);
+    }
+    else if (zoneSidebar && zoneSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(zoneSidebar.get(), x, y);
+        zoneSidebar->fileDragMove(files, tx, ty);
+    }
+}
+
+void PartGroupSidebar::fileDragExit(const juce::StringArray &files)
+{
+    if (partSidebar)
+        partSidebar->fileDragExit(files);
+    if (groupSidebar)
+        groupSidebar->fileDragExit(files);
+    if (zoneSidebar)
+        zoneSidebar->fileDragExit(files);
+}
+
+void PartGroupSidebar::filesDropped(const juce::StringArray &files, int x, int y)
+{
+    if (partSidebar && partSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(partSidebar.get(), x, y);
+        partSidebar->filesDropped(files, tx, ty);
+    }
+    else if (groupSidebar && groupSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(groupSidebar.get(), x, y);
+        groupSidebar->filesDropped(files, tx, ty);
+    }
+    else if (zoneSidebar && zoneSidebar->isVisible())
+    {
+        auto [tx, ty] = offsetFor(zoneSidebar.get(), x, y);
+        zoneSidebar->filesDropped(files, tx, ty);
+    }
+}
+
+bool PartGroupSidebar::isInterestedInDragSource(const SourceDetails &sd)
+{
+    if (partSidebar && partSidebar->isVisible())
+        return partSidebar->isInterestedInDragSource(sd);
+    // Group/zone sidebars do not handle internal DnD at the container level;
+    // JUCE routes browser drags directly to rowComponent inside the tree.
+    return false;
+}
+
+void PartGroupSidebar::itemDragEnter(const SourceDetails &sd)
+{
+    if (partSidebar && partSidebar->isVisible())
+        partSidebar->itemDragEnter(adjustedDragDetails(sd, partSidebar.get()));
+}
+
+void PartGroupSidebar::itemDragMove(const SourceDetails &sd)
+{
+    if (partSidebar && partSidebar->isVisible())
+        partSidebar->itemDragMove(adjustedDragDetails(sd, partSidebar.get()));
+}
+
+void PartGroupSidebar::itemDragExit(const SourceDetails &sd)
+{
+    if (partSidebar)
+        partSidebar->itemDragExit(sd);
+}
+
+void PartGroupSidebar::itemDropped(const SourceDetails &sd)
+{
+    if (partSidebar && partSidebar->isVisible())
+        partSidebar->itemDropped(adjustedDragDetails(sd, partSidebar.get()));
+}
 
 PartGroupSidebar::PartGroupSidebar(SCXTEditor *e)
     : HasEditor(e), sst::jucegui::components::NamedPanel("Parts n Groups")

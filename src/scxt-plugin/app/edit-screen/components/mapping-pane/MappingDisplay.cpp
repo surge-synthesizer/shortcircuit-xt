@@ -32,6 +32,7 @@
 #include "ZoneLayoutDisplay.h"
 #include "ZoneLayoutKeyboard.h"
 #include "engine/zone.h"
+#include "app/shared/MultiInstrumentPrompt.h"
 
 #include <app/edit-screen/EditScreen.h>
 
@@ -443,10 +444,15 @@ bool MappingDisplay::isInterestedInDragSource(
 }
 void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
+    isUndertakingDrop = false;
+    currentDragSource = {};
+    // Recompute replace vs add from drop position — do not rely on saved drag state
+    bool savedReplace = dragSourceDetails.localPosition.x <
+                        (zoneLayoutViewport->getX() + zoneLayoutViewport->getWidth() / 2);
+
     auto wsi = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
     if (wsi)
     {
-        namespace cmsg = scxt::messaging::client;
         auto r = mappingZones->rootAndRangeForPosition(dragSourceDetails.localPosition,
                                                        dropElementCount, false);
         assert(r.size() > 0);
@@ -466,10 +472,7 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                     sendToSerialization(cmsg::AddCompoundElementWithRange(
                         {*e->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
                 }
-                else if (
-                    e->getDirEnt()
-                        .has_value()) //  &&
-                                      //  !browser::Browser::isLoadableSingleSample(wsi->getDirEnt()->path()))
+                else if (e->getDirEnt().has_value())
                 {
                     sendToSerialization(
                         cmsg::AddSampleWithRange({e->getDirEnt()->path().u8string(), loc.root,
@@ -481,6 +484,9 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
         {
             auto loc = r[0];
             assert(r.size() == 1);
+            auto src = shared::SampleDropSource::fromBrowserItem(wsi);
+            if (src.isInstrumentWhichCanReplace() && savedReplace)
+                sendToSerialization(cmsg::ClearPart(editor->selectedPart));
             sendToSerialization(cmsg::AddCompoundElementWithRange(
                 {*wsi->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
         }
@@ -488,14 +494,32 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
         {
             auto loc = r[0];
             assert(r.size() == 1);
-            auto inst = browser::Browser::getMultiInstrumentElements(wsi->getDirEnt()->path());
-            if (inst.empty())
-                sendToSerialization(
-                    cmsg::AddSampleWithRange({wsi->getDirEnt()->path().u8string(), loc.root, loc.lo,
-                                              loc.hi, loc.vlo, loc.vhi}));
-            else
+            auto src = shared::SampleDropSource::fromBrowserItem(wsi);
+
+            if (src.isPartFile())
             {
-                promptForMultiInstrument(inst);
+                sendToSerialization(
+                    cmsg::LoadPartInto({src.pathStr, (int16_t)editor->selectedPart}));
+            }
+            else if (src.isMultiFile())
+            {
+                // SCM onto the mapping pane is not allowed
+            }
+            else if (src.isInstrumentWhichCanReplace())
+            {
+                if (savedReplace)
+                    sendToSerialization(cmsg::ClearPart(editor->selectedPart));
+                auto inst = browser::Browser::getMultiInstrumentElements(wsi->getDirEnt()->path());
+                if (inst.empty())
+                    sendToSerialization(cmsg::AddSampleWithRange(
+                        {src.pathStr, loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                else
+                    promptForMultiInstrument(inst);
+            }
+            else if (src.isSingleSample())
+            {
+                sendToSerialization(cmsg::AddSampleWithRange(
+                    {src.pathStr, loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
             }
         }
     }
@@ -503,31 +527,58 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
     {
         editor->editScreen->partSidebar->setSelectedTab(2);
     }
-    isUndertakingDrop = false;
     repaint();
 }
 void MappingDisplay::itemDragEnter(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
-    // TODO Compound types are special here
     isUndertakingDrop = true;
     currentDragPoint = dragSourceDetails.localPosition;
+    currentDragSource = {};
+
+    auto wsi = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
+    if (wsi && !wsi->encompassesMultipleSampleInfos())
+    {
+        currentDragSource = shared::SampleDropSource::fromBrowserItem(wsi);
+        if (currentDragSource.isInstrumentWhichCanReplace())
+        {
+            dragIsOnReplaceSide = dragSourceDetails.localPosition.x <
+                                  (zoneLayoutViewport->getX() + zoneLayoutViewport->getWidth() / 2);
+        }
+    }
     repaint();
 }
 
 void MappingDisplay::itemDragExit(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
     isUndertakingDrop = false;
+    currentDragSource = {};
     repaint();
 }
 
 void MappingDisplay::itemDragMove(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
     currentDragPoint = dragSourceDetails.localPosition;
+    if (currentDragSource.isInstrumentWhichCanReplace())
+    {
+        dragIsOnReplaceSide = dragSourceDetails.localPosition.x <
+                              (zoneLayoutViewport->getX() + zoneLayoutViewport->getWidth() / 2);
+    }
     repaint();
 }
 
 bool MappingDisplay::isInterestedInFileDrag(const juce::StringArray &files)
 {
+    // SCP: replace this part. SCM: show "can't drop" warning (accepted for visual, rejected on
+    // drop).
+    if (files.size() == 1)
+    {
+        if (files[0].endsWithIgnoreCase(".scp") || files[0].endsWithIgnoreCase(".scm"))
+        {
+            dropElementCount = 1;
+            return true;
+        }
+    }
+
     auto allLoadable = std::all_of(files.begin(), files.end(), [this](const auto &f) {
         try
         {
@@ -549,22 +600,100 @@ void MappingDisplay::fileDragEnter(const juce::StringArray &files, int x, int y)
 {
     isUndertakingDrop = true;
     currentDragPoint = {x, y};
+    currentDragSource = {};
+
+    if (files.size() == 1)
+    {
+        try
+        {
+            currentDragSource =
+                shared::SampleDropSource::fromPath(fs::path{(const char *)files[0].toUTF8()});
+            if (currentDragSource.isInstrumentWhichCanReplace())
+                dragIsOnReplaceSide =
+                    x < (zoneLayoutViewport->getX() + zoneLayoutViewport->getWidth() / 2);
+        }
+        catch (fs::filesystem_error &)
+        {
+        }
+    }
     repaint();
 }
+
 void MappingDisplay::fileDragMove(const juce::StringArray &files, int x, int y)
 {
     isUndertakingDrop = true;
     currentDragPoint = {x, y};
+    if (currentDragSource.isInstrumentWhichCanReplace())
+        dragIsOnReplaceSide = x < (zoneLayoutViewport->getX() + zoneLayoutViewport->getWidth() / 2);
     repaint();
 }
-void MappingDisplay::fileDragExit(const juce::StringArray &files)
+
+void MappingDisplay::fileDragExit(const juce::StringArray &)
 {
     isUndertakingDrop = false;
+    currentDragSource = {};
     repaint();
 }
+
 void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
 {
-    namespace cmsg = scxt::messaging::client;
+    // Do NOT rely on saved drag state — on macOS JUCE may call fileDragExit before filesDropped.
+    // Recompute everything from files and drop position.
+    isUndertakingDrop = false;
+    currentDragSource = {};
+
+    if (files.size() == 1)
+    {
+        shared::SampleDropSource src;
+        try
+        {
+            src = shared::SampleDropSource::fromPath(fs::path{(const char *)files[0].toUTF8()});
+        }
+        catch (fs::filesystem_error &)
+        {
+            repaint();
+            return;
+        }
+
+        if (src.isPartFile())
+        {
+            sendToSerialization(cmsg::LoadPartInto({src.pathStr, (int16_t)editor->selectedPart}));
+            repaint();
+            return;
+        }
+        if (src.isMultiFile())
+        {
+            // SCM onto the mapping pane is not allowed
+            repaint();
+            return;
+        }
+    }
+
+    // Recompute replace vs add from drop position (left half = replace, right half = add)
+    bool isReplace = x < (zoneLayoutViewport->getX() + zoneLayoutViewport->getWidth() / 2);
+
+    // Clear part first if all dropped files are instrument containers and we're replacing
+    bool allInstrument = !files.isEmpty();
+    for (auto &f : files)
+    {
+        try
+        {
+            if (!shared::SampleDropSource::fromPath(fs::path{(const char *)f.toUTF8()})
+                     .isInstrumentWhichCanReplace())
+            {
+                allInstrument = false;
+                break;
+            }
+        }
+        catch (fs::filesystem_error &)
+        {
+            allInstrument = false;
+            break;
+        }
+    }
+    if (allInstrument && isReplace)
+        sendToSerialization(cmsg::ClearPart(editor->selectedPart));
+
     auto regions = mappingZones->rootAndRangeForPosition({x, y}, files.size(), false);
     int lidx{0};
     for (auto f : files)
@@ -583,113 +712,68 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
         }
     }
     if (editor->editScreen->partSidebar)
-    {
         editor->editScreen->partSidebar->setSelectedTab(2);
-    }
-    isUndertakingDrop = false;
     repaint();
 }
-
-struct InstrumentPrompt : sst::jucegui::screens::ModalBase
-{
-    MappingDisplay *display{nullptr};
-    std::vector<sample::compound::CompoundElement> instruments;
-    std::unique_ptr<jcmp::TextPushButton> ok, cancel;
-    std::unique_ptr<jcmp::MenuButton> multiInst;
-    int selInstrument{0};
-    InstrumentPrompt(MappingDisplay *d, const std::vector<sample::compound::CompoundElement> &i)
-        : instruments(i), display(d)
-    {
-        ok = std::make_unique<jcmp::TextPushButton>();
-        ok->setLabel("OK");
-        ok->setOnCallback([this]() {
-            sendSelection();
-            setVisible(false);
-        });
-        cancel = std::make_unique<jcmp::TextPushButton>();
-        cancel->setLabel("Cancel");
-        cancel->setOnCallback([this]() { setVisible(false); });
-
-        selInstrument = 0;
-        multiInst = std::make_unique<jcmp::MenuButton>();
-        multiInst->setLabel(instruments[0].name);
-        multiInst->setOnCallback([this]() { showMenu(); });
-        addAndMakeVisible(*ok);
-        addAndMakeVisible(*cancel);
-        addAndMakeVisible(*multiInst);
-    }
-
-    void sendSelection()
-    {
-        display->sendToSerialization(
-            cmsg::AddCompoundElementWithRange({instruments[selInstrument], 60, 0, 127, 0, 127}));
-    }
-
-    void showMenu()
-    {
-        auto p = juce::PopupMenu();
-        p.addSectionHeader("Select Instrument");
-        p.addSeparator();
-        int idx{0};
-        for (auto &i : instruments)
-        {
-            p.addItem(instruments[idx].name, [this, ci = idx]() {
-                selInstrument = ci;
-                multiInst->setLabel(instruments[ci].name);
-            });
-            idx++;
-        }
-        p.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(multiInst.get()));
-    }
-
-    static constexpr int titleSize{18}, margin{4}, buttonWidth{80};
-
-    void paintContents(juce::Graphics &g) override
-    {
-        auto p = getContentArea().reduced(4);
-
-        g.setColour(getColour(Styles::brightoutline));
-        g.drawHorizontalLine(p.getY() + titleSize + margin, p.getX(), p.getRight());
-        g.setFont(
-            style()->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont));
-        g.setColour(
-            style()->getColour(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelcolor));
-        g.drawText("Select Instrument", p.withHeight(titleSize), juce::Justification::centredLeft);
-    }
-    juce::Point<int> innerContentSize() override { return {300, 150}; }
-
-    void resized() override
-    {
-        ModalBase::resized();
-        auto p = getContentArea().reduced(4);
-
-        auto buttonBox = p.withTrimmedTop(p.getHeight() - titleSize)
-                             .withWidth(buttonWidth)
-                             .translated(p.getWidth() - buttonWidth, 0);
-
-        multiInst->setBounds(
-            p.withHeight(titleSize + margin).translated(0, titleSize * 2).reduced(10, 0));
-        if (cancel)
-        {
-            cancel->setBounds(buttonBox);
-            buttonBox = buttonBox.translated(-buttonWidth - margin, 0);
-        }
-        if (ok)
-        {
-            ok->setBounds(buttonBox);
-        }
-    }
-};
 
 void MappingDisplay::promptForMultiInstrument(
     const std::vector<sample::compound::CompoundElement> &inst)
 {
-    if (inst.size() == 1 && inst[0].type == sample::compound::CompoundElement::ERROR_SENTINEL)
-    {
-        editor->displayError(inst[0].name, inst[0].emsg);
+    shared::promptForMultiInstrument(editor, inst, [this](const auto &elem) {
+        sendToSerialization(cmsg::AddCompoundElementWithRange({elem, 60, 0, 127, 0, 127}));
+    });
+}
+
+void MappingDisplay::paintOverChildren(juce::Graphics &g)
+{
+    if (!isUndertakingDrop || currentDragSource.isNone())
         return;
+
+    auto lb = zoneLayoutViewport->getBounds().toFloat();
+
+    if (currentDragSource.isPartFile())
+    {
+        editor->occludeRegionWithText(
+            g, lb, theme::ColorMap::accent_1b, theme::ColorMap::bg_1,
+            theme::ColorMap::generic_content_high,
+            {"Replace this part with", currentDragSource.displayName.toStdString()});
     }
-    editor->displayModalOverlay(std::make_unique<InstrumentPrompt>(this, inst));
+    else if (currentDragSource.isMultiFile())
+    {
+        editor->occludeRegionWithText(g, lb, theme::ColorMap::warning_1a, theme::ColorMap::bg_1,
+                                      theme::ColorMap::generic_content_high,
+                                      {"Cannot drop multi onto mapping.", "Use the load function"});
+    }
+    else if (currentDragSource.isInstrumentWhichCanReplace())
+    {
+        auto halfX = lb.getX() + lb.getWidth() * 0.5f;
+        auto replaceHalf = lb.withRight(halfX);
+        auto addHalf = lb.withLeft(halfX);
+
+        // Shared bg_1 base
+        g.setColour(editor->themeColor(theme::ColorMap::bg_1));
+        g.fillRect(lb);
+
+        // Active half: frontColor@0.35; inactive half: frontColor@0.15
+        auto frontCol = editor->themeColor(theme::ColorMap::accent_1b);
+        g.setColour(frontCol.withAlpha(dragIsOnReplaceSide ? 0.35f : 0.15f));
+        g.fillRect(replaceHalf);
+        g.setColour(frontCol.withAlpha(dragIsOnReplaceSide ? 0.15f : 0.35f));
+        g.fillRect(addHalf);
+
+        // Text
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
+        g.setFont(editor->themeApplier.interMediumFor(13));
+        g.drawText("Drop here to replace part", replaceHalf.toNearestInt(),
+                   juce::Justification::centred);
+        g.drawText("Drop here to add to part", addHalf.toNearestInt(),
+                   juce::Justification::centred);
+
+        // Outer 2px border + divider
+        g.setColour(frontCol);
+        g.drawRect(lb, 2.f);
+        g.drawVerticalLine((int)halfX, lb.getY(), lb.getBottom());
+    }
 }
 
 void MappingDisplay::doZoneRename(const selection::SelectionManager::ZoneAddress &z)

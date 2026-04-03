@@ -90,6 +90,18 @@ inline void addSampleWithRange(const addSampleWithRange_t &payload, engine::Engi
 CLIENT_TO_SERIAL(AddSampleWithRange, c2s_add_sample_with_range, addSampleWithRange_t,
                  addSampleWithRange(payload, engine, cont);)
 
+// path, part, group — drops the sample into an explicit group bypassing selection
+using addSampleToGroupPayload_t = std::tuple<std::string, int, int>;
+inline void addSampleToGroupFn(const addSampleToGroupPayload_t &payload, engine::Engine &engine,
+                               MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    auto p = fs::path(fs::u8path(std::get<0>(payload)));
+    engine.loadSampleIntoGroup(p, std::get<1>(payload), std::get<2>(payload));
+}
+CLIENT_TO_SERIAL(AddSampleToGroup, c2s_add_sample_to_group, addSampleToGroupPayload_t,
+                 addSampleToGroupFn(payload, engine, cont);)
+
 using addCompoundElementWithRange_t =
     std::tuple<sample::compound::CompoundElement, int, int, int, int, int>;
 inline void addCompoundElementWithRange(const addCompoundElementWithRange_t &payload,

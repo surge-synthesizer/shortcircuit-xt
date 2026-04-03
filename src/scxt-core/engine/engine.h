@@ -575,6 +575,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         loadSampleIntoSelectedPartAndGroup(p, 60, {48, 72}, {0, 127}, true);
     }
+    // Drop a single audio file into an explicit group, bypassing selection
+    void loadSampleIntoGroup(const fs::path &p, int part, int group);
 
     void loadCompoundElementIntoSelectedPartAndGroup(
         const scxt::sample::compound::CompoundElement &, int16_t rootKey = 60,

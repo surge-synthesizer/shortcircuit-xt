@@ -578,6 +578,37 @@ juce::Colour SCXTEditor::themeColor(scxt::ui::theme::ColorMap::Colors c, float a
     return themeApplier.colors->get(c, alpha);
 }
 
+void SCXTEditor::occludeRegionWithText(juce::Graphics &g, juce::Rectangle<float> rect,
+                                       theme::ColorMap::Colors frontColor,
+                                       theme::ColorMap::Colors bgColor,
+                                       theme::ColorMap::Colors textColor,
+                                       const std::vector<std::string> &textLines) const
+{
+    g.setColour(themeColor(bgColor));
+    g.fillRect(rect);
+    g.setColour(themeColor(frontColor, 0.35f));
+    g.fillRect(rect);
+    g.setColour(themeColor(frontColor));
+    g.drawRect(rect, 2.f);
+
+    int n = (int)textLines.size();
+    if (n > 0)
+    {
+        g.setColour(themeColor(textColor));
+        g.setFont(themeApplier.interMediumFor(13));
+        float lineH = g.getCurrentFont().getHeight() + 4.f;
+        float totalH = n * lineH;
+        float startY = rect.getY() + (rect.getHeight() - totalH) * 0.5f;
+        for (int i = 0; i < n; ++i)
+        {
+            auto lineRect =
+                juce::Rectangle<float>(rect.getX(), startY + i * lineH, rect.getWidth(), lineH);
+            g.drawFittedText(juce::String::fromUTF8(textLines[i].c_str()), lineRect.toNearestInt(),
+                             juce::Justification::centred, 1, 1.f);
+        }
+    }
+}
+
 void SCXTEditor::resetColorsFromUserPreferences()
 {
     auto cmid = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::colormapId,

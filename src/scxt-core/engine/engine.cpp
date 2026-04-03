@@ -912,6 +912,49 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         });
 }
 
+void Engine::loadSampleIntoGroup(const fs::path &p, int part, int group)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+
+    auto sid = sampleManager->loadSampleByPath(p);
+    if (!sid.has_value())
+    {
+        RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
+                         "Sample load failed:\n\n" + p.u8string() + "\n\n" +
+                             "It is either an unsupported format or invalid file. "
+                             "More information may be available in the log file (menu/log)");
+        return;
+    }
+
+    auto zptr = std::make_unique<Zone>(*sid);
+    zptr->mapping.keyboardRange = {0, 127};
+    zptr->mapping.velocityRange = {0, 127};
+    zptr->mapping.rootKey = 60;
+    zptr->attachToSample(*sampleManager, 0, (int)Zone::SampleInformationRead::ALL);
+
+    auto sp = part, sg = group;
+
+    {
+        auto undoItem = std::make_unique<undo::GroupChangeItem>();
+        undoItem->store(*this, sp, sg);
+        undoManager.storeUndoStep(std::move(undoItem));
+    }
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+            std::unique_ptr<Zone> zptr;
+            zptr.reset(zone);
+            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp, sg = sg](auto &e) {
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            int32_t zi = g->getZones().size() - 1;
+            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
+        });
+}
+
 void Engine::createEmptyZone(int partN, int groupN, scxt::engine::KeyboardRange krange,
                              scxt::engine::VelocityRange vrange)
 {

@@ -39,7 +39,10 @@ struct GroupSidebar;
 struct PartSidebar;
 struct ZoneSidebar;
 
-struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
+struct PartGroupSidebar : sst::jucegui::components::NamedPanel,
+                          HasEditor,
+                          juce::FileDragAndDropTarget,
+                          juce::DragAndDropTarget
 {
     PartGroupSidebar(SCXTEditor *);
     ~PartGroupSidebar();
@@ -69,6 +72,20 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel, HasEditor
     void showHamburgerMenu();
 
     void resized() override;
+
+    // FileDragAndDropTarget — forwards to partSidebar when the parts tab is visible
+    bool isInterestedInFileDrag(const juce::StringArray &files) override;
+    void fileDragEnter(const juce::StringArray &files, int x, int y) override;
+    void fileDragMove(const juce::StringArray &files, int x, int y) override;
+    void fileDragExit(const juce::StringArray &files) override;
+    void filesDropped(const juce::StringArray &files, int x, int y) override;
+
+    // DragAndDropTarget — forwards to partSidebar when the parts tab is visible
+    bool isInterestedInDragSource(const SourceDetails &sd) override;
+    void itemDragEnter(const SourceDetails &sd) override;
+    void itemDragMove(const SourceDetails &sd) override;
+    void itemDragExit(const SourceDetails &sd) override;
+    void itemDropped(const SourceDetails &sd) override;
 };
 } // namespace scxt::ui::app::edit_screen
 
