@@ -118,7 +118,7 @@ PlayScreen::PlayScreen(SCXTEditor *e) : HasEditor(e)
         for (auto &sed : ped)
         {
             sed = std::make_unique<shared::SingleMacroEditor>(editor, pt, id, true);
-            sed->changePart(pt);
+            sed->changePart(pt, id);
             id++;
             viewportContents->addChildComponent(*sed);
         }
