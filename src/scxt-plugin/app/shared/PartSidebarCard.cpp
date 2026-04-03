@@ -515,29 +515,61 @@ void PartSidebarCard::showPartBlurbTooltip()
 
 void PartSidebarCard::hidePartBlurbTooltip() { editor->hideTooltip(); }
 
-bool PartSidebarCard::isInterestedInFileDrag(const juce::StringArray &files)
+void PartSidebarCard::setDragOverlay(CardDragType type, const juce::String &filename,
+                                     bool isReplace)
 {
-    return files.size() == 1 && files[0].endsWithIgnoreCase(".scp");
+    cardDragType = type;
+    cardDragFileName = filename;
+    cardDragIsOnReplaceSide = isReplace;
+    repaint();
 }
 
-void PartSidebarCard::filesDropped(const juce::StringArray &files, int x, int y)
+void PartSidebarCard::clearDragOverlay()
 {
-    if (files.size() == 1)
-    {
-        auto f = files[0];
-        if (f.endsWithIgnoreCase(".scp"))
-        {
-            editor->promptOKCancel(
-                "Load into Part " + std::to_string(part + 1),
-                "By loading the file you will clear the part and replace it with the contents of "
-                "the file. Continue?",
-                [w = juce::Component::SafePointer(this), f]() {
-                    if (!w)
-                        return;
+    cardDragType = CardDragType::None;
+    repaint();
+}
 
-                    w->sendToSerialization(cmsg::LoadPartInto({std::string(f.toUTF8()), w->part}));
-                });
-        }
+void PartSidebarCard::paintOverChildren(juce::Graphics &g)
+{
+    if (cardDragType == CardDragType::None)
+        return;
+
+    auto lb = getLocalBounds().toFloat();
+
+    if (cardDragType == CardDragType::SCP)
+    {
+        editor->occludeRegionWithText(g, lb, theme::ColorMap::accent_1b, theme::ColorMap::bg_1,
+                                      theme::ColorMap::generic_content_high,
+                                      {"Replace with", cardDragFileName.toStdString()});
+    }
+    else if (cardDragType == CardDragType::Multi)
+    {
+        auto halfY = lb.getY() + lb.getHeight() * 0.5f;
+        auto replaceHalf = lb.withBottom(halfY);
+        auto addHalf = lb.withTop(halfY);
+
+        // Shared bg_1 base for the whole card
+        g.setColour(editor->themeColor(theme::ColorMap::bg_1));
+        g.fillRect(lb);
+
+        // Active half: frontColor@0.35; inactive half: frontColor@0.15
+        auto frontCol = editor->themeColor(theme::ColorMap::accent_1b);
+        g.setColour(frontCol.withAlpha(cardDragIsOnReplaceSide ? 0.35f : 0.15f));
+        g.fillRect(replaceHalf);
+        g.setColour(frontCol.withAlpha(cardDragIsOnReplaceSide ? 0.15f : 0.35f));
+        g.fillRect(addHalf);
+
+        // Text
+        g.setColour(editor->themeColor(theme::ColorMap::generic_content_high));
+        g.setFont(editor->themeApplier.interMediumFor(11));
+        g.drawText("Replace part", replaceHalf.toNearestInt(), juce::Justification::centred);
+        g.drawText("Add to part", addHalf.toNearestInt(), juce::Justification::centred);
+
+        // Outer 2px border + divider line
+        g.setColour(frontCol);
+        g.drawRect(lb, 2.f);
+        g.drawHorizontalLine((int)halfY, lb.getX(), lb.getRight());
     }
 }
 } // namespace scxt::ui::app::shared

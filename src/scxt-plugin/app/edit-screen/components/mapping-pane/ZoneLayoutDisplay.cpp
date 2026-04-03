@@ -900,9 +900,10 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
         }
     }
 
-    if (display->isUndertakingDrop)
+    if (display->isUndertakingDrop && display->currentDragSource.isNone())
     {
-        // this can be expanded some....
+        // Zone-placement preview: only shown for regular single-sample drops.
+        // SCP/SCM/Multi overlays are painted by MappingDisplay::paintOverChildren instead.
         auto ranges =
             rootAndRangeForPosition(display->currentDragPoint, display->dropElementCount, false);
         auto mul = ranges.size() > 1;

@@ -39,6 +39,8 @@
 #include "engine/feature_enums.h"
 
 #include "app/shared/ZoneRightMouseMenu.h"
+#include "app/browser-ui/BrowserPaneInterfaces.h"
+#include "app/shared/SampleDropHandler.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -107,10 +109,34 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
     selection::SelectionManager::ZoneAddress getZoneAddress(int rowNumber)
     {
         auto &tgl = gzData;
-        if (rowNumber < 0 || rowNumber >= tgl.size())
+        if (rowNumber < 0 || rowNumber >= (int)tgl.size())
             return {};
         auto &sad = tgl[rowNumber].address;
         return sad;
+    }
+
+    // Returns the group ZoneAddress (zone==-1) for the row at position (x,y) in this widget's
+    // local coordinate space, accounting for scrolling. If the position falls on a zone row the
+    // parent group address is returned. Returns an empty optional if out of bounds.
+    std::optional<selection::SelectionManager::ZoneAddress> groupAddressForDropPosition(int x,
+                                                                                        int y)
+    {
+        if (!viewPort || !getRowHeight)
+            return std::nullopt;
+        int rh = (int)getRowHeight();
+        if (rh <= 0)
+            return std::nullopt;
+        int contentY = y - viewPort->getY() + viewPort->getViewPositionY();
+        if (contentY < 0)
+            return std::nullopt;
+        int rowIdx = contentY / rh;
+        if (rowIdx < 0 || rowIdx >= (int)gzData.size())
+            return std::nullopt;
+        auto addr = gzData[rowIdx].address;
+        // If this is a zone row, return the parent group address
+        if (addr.zone >= 0)
+            addr.zone = -1;
+        return addr;
     }
 
     struct rowComponent : juce::Component, juce::DragAndDropTarget, juce::TextEditor::Listener
@@ -472,7 +498,20 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
         bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
         {
-            return true; // !isZone();
+            // Always accept drags from other tree rows (zone/group reordering)
+            if (dynamic_cast<rowComponent *>(dragSourceDetails.sourceComponent.get()) != nullptr)
+                return true;
+            // Also accept browser sample drops (single or batch) onto group or zone rows
+            {
+                auto wsi = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
+                if (wsi)
+                {
+                    if (wsi->encompassesMultipleSampleInfos())
+                        return !isZone(); // batch only onto group rows
+                    return shared::SampleDropSource::fromBrowserItem(wsi).isSingleSample();
+                }
+            }
+            return false;
         }
 
         void itemDragEnter(const SourceDetails &dragSourceDetails) override
@@ -494,6 +533,33 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             auto sc = dragSourceDetails.sourceComponent;
             if (!sc) // weak component
                 return;
+
+            // Handle browser sample drop onto a group or zone row
+            {
+                auto wsi = browser_ui::asSampleInfo(dragSourceDetails.sourceComponent);
+                if (wsi)
+                {
+                    auto za = getZoneAddress();
+                    // For zone rows, resolve to the parent group
+                    int targetGroup = za.group;
+                    int targetPart = za.part;
+                    if (isZone())
+                    {
+                        // already have the right part/group — zone index doesn't matter
+                    }
+                    if (!isZone() && wsi->encompassesMultipleSampleInfos())
+                    {
+                        shared::executeBatchDropOnGroup(wsi, targetPart, targetGroup, gsb);
+                        return;
+                    }
+                    auto src = shared::SampleDropSource::fromBrowserItem(wsi);
+                    if (src.isSingleSample())
+                    {
+                        src.dropAsZoneInGroup(targetPart, targetGroup, gsb);
+                        return;
+                    }
+                }
+            }
 
             auto rd = dynamic_cast<rowComponent *>(sc.get());
             if (rd && rd->isZone())
@@ -614,7 +680,10 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
         bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
         {
-            return fz; // !irsZone();
+            if (!fz)
+                return false;
+            // Only accept drags from other tree rows (zone reordering), not browser drops
+            return dynamic_cast<rowComponent *>(dragSourceDetails.sourceComponent.get()) != nullptr;
         }
 
         void itemDragEnter(const SourceDetails &dragSourceDetails) override
@@ -647,13 +716,23 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
                     if (rd->isDragMulti)
                     {
-                        gsb->sendToSerialization(cmsg::MoveZonesFromTo({lbm->selectedZones, tgt}));
+                        auto sz = lbm->selectedZones;
+                        // Filter out any selected zones with zone == -1
+                        std::erase_if(sz, [](const auto &za) { return za.zone == -1; });
+                        // if theres still zones available (so !sz.empty) go for it
+                        if (!sz.empty())
+                        {
+                            gsb->sendToSerialization(
+                                cmsg::MoveZonesFromTo({lbm->selectedZones, tgt}));
+                        }
                     }
                     else
                     {
                         auto src = rd->getZoneAddress();
-
-                        gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
+                        if (src.zone > 0)
+                        {
+                            gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
+                        }
                     }
                 }
                 else

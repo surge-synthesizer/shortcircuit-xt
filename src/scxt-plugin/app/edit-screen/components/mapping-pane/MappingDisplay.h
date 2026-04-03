@@ -43,6 +43,7 @@
 #include "connectors/PayloadDataAttachment.h"
 #include "app/HasEditor.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
+#include "app/shared/SampleDropHandler.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -188,6 +189,11 @@ struct MappingDisplay : juce::Component,
     void fileDragExit(const juce::StringArray &files) override;
     void filesDropped(const juce::StringArray &files, int x, int y) override;
 
+    // Drag overlay state — used by ZoneLayoutDisplay paint and MappingDisplay::paintOverChildren
+    shared::SampleDropSource currentDragSource;
+    bool dragIsOnReplaceSide{false}; // true = left (replace) half, for Instrument kind
+
+    void paintOverChildren(juce::Graphics &g) override;
     void promptForMultiInstrument(const std::vector<sample::compound::CompoundElement> &);
 
     void doZoneRename(const selection::SelectionManager::ZoneAddress &z);

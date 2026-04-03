@@ -134,6 +134,14 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
      */
     theme::ThemeApplier themeApplier;
     juce::Colour themeColor(scxt::ui::theme::ColorMap::Colors, float alpha = 1.f) const;
+
+    // Paint a soft occluding overlay: opaque bgColor base, frontColor@0.35 tint, 2px border,
+    // then textLines centered vertically split across the rectangle.
+    void occludeRegionWithText(juce::Graphics &g, juce::Rectangle<float> rect,
+                               theme::ColorMap::Colors frontColor, theme::ColorMap::Colors bgColor,
+                               theme::ColorMap::Colors textColor,
+                               const std::vector<std::string> &textLines) const;
+
     void resetColorsFromUserPreferences();
 
     /*
