@@ -123,7 +123,7 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     ifac::attachAndAdd(info, info.pbUp, this, pbUpA, pbUpVal);
     pbLabel = std::make_unique<jcmp::Label>();
     pbLabel->setText("PB");
-    pbLabel->setJustification(juce::Justification::centredRight);
+    pbLabel->setJustification(juce::Justification::centredLeft);
     addAndMakeVisible(*pbLabel);
 
     exclusiveGroupMenu = std::make_unique<jcmp::TextPushButton>();
@@ -202,7 +202,7 @@ void GroupSettingsCard::resized()
     // Centre — exclusive group button + XOR glyph (between rows 0 and 1)
     exclusiveGroupMenu->setBounds(b(85, 33, 24, 16));
     exclusiveGroupGlyph->setBounds(b(89, 48, 16, 16));
-    exclusiveGroupNotesGlyph->setBounds(b(116, 33, 16, 16));
+    exclusiveGroupNotesGlyph->setBounds(b(118, 35, 12, 12));
 
     // PB row (y=93) — label | dn value | rule | up value
     pbLabel->setBounds(b(0, 93, 20, 16));
