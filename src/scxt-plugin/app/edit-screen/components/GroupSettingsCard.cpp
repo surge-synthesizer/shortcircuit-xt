@@ -142,28 +142,28 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     srcMenu->setOnCallback(editor->makeComingSoon("Group Settings Pane SRC Quality"));
     addAndMakeVisible(*srcMenu);
 
-    cornerRule = std::make_unique<jcmp::RuleLabel>();
-    cornerRule->setDirection(jcmp::RuleLabel::CORNER_TL);
+    cornerRule = std::make_unique<jcmp::TickSeparatorLabel>();
+    cornerRule->setDirection(jcmp::TickSeparatorLabel::CORNER_TL);
     addAndMakeVisible(*cornerRule);
 
-    pbRuleH = std::make_unique<jcmp::RuleLabel>();
-    pbRuleH->setDirection(jcmp::RuleLabel::HORIZONTAL);
+    pbRuleH = std::make_unique<jcmp::TickSeparatorLabel>();
+    pbRuleH->setDirection(jcmp::TickSeparatorLabel::HORIZONTAL);
     addAndMakeVisible(*pbRuleH);
 
-    auto mkVRule = [this]() -> std::unique_ptr<jcmp::RuleLabel> {
-        auto r = std::make_unique<jcmp::RuleLabel>();
-        r->setDirection(jcmp::RuleLabel::VERTICAL);
+    auto mkVRule = [this]() -> std::unique_ptr<jcmp::TickSeparatorLabel> {
+        auto r = std::make_unique<jcmp::TickSeparatorLabel>();
+        r->setDirection(jcmp::TickSeparatorLabel::VERTICAL);
         addAndMakeVisible(*r);
         return r;
     };
     rightVRule01 = mkVRule();
     rightVRule12 = mkVRule();
-    glideRuleH = std::make_unique<jcmp::RuleLabel>();
-    glideRuleH->setDirection(jcmp::RuleLabel::HORIZONTAL);
+    glideRuleH = std::make_unique<jcmp::TickSeparatorLabel>();
+    glideRuleH->setDirection(jcmp::TickSeparatorLabel::HORIZONTAL);
     addAndMakeVisible(*glideRuleH);
 
-    cornerRuleBottom = std::make_unique<jcmp::RuleLabel>();
-    cornerRuleBottom->setDirection(jcmp::RuleLabel::CORNER_BL);
+    cornerRuleBottom = std::make_unique<jcmp::TickSeparatorLabel>();
+    cornerRuleBottom->setDirection(jcmp::TickSeparatorLabel::CORNER_BL);
     addAndMakeVisible(*cornerRuleBottom);
 
     editor->editorDataCache.addNotificationCallback(&info,
@@ -207,13 +207,13 @@ void GroupSettingsCard::resized()
     // PB row (y=93) — label | dn value | rule | up value
     pbLabel->setBounds(b(0, 93, 20, 16));
     pbDnVal->setBounds(b(22, 93, 32, 16));
-    pbRuleH->setBounds(b(54, 93, 8, 16));
+    pbRuleH->setBounds(b(55, 93, 6, 16));
     pbUpVal->setBounds(b(62, 93, 32, 16));
 
     // Glide row (y=117) — glyph | mode button | rule | drag value
     glideGlpyh->setBounds(b(0, 117, 20, 16));
     glideMenu->setBounds(b(22, 117, 32, 16));
-    glideRuleH->setBounds(b(54, 117, 8, 16));
+    glideRuleH->setBounds(b(55, 117, 6, 16));
     glideDrag->setBounds(b(62, 117, 32, 16));
 
     // Right column — poly mode / poly count / note priority / SRC / output
