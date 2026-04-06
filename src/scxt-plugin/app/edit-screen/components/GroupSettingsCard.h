@@ -35,7 +35,7 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
-#include "sst/jucegui/components/RuleLabel.h"
+#include "sst/jucegui/components/TickSeparatorLabel.h"
 
 #include "messaging/messaging.h"
 #include "connectors/PayloadDataAttachment.h"
@@ -59,9 +59,10 @@ struct GroupSettingsCard : juce::Component, HasEditor
     std::unique_ptr<sst::jucegui::components::TextPushButton> midiMenu, outputMenu, prioMenu,
         glideMenu, srcMenu;
     std::unique_ptr<sst::jucegui::components::TextPushButton> exclusiveGroupMenu;
-    std::unique_ptr<sst::jucegui::components::RuleLabel> cornerRule, cornerRuleBottom;
-    std::unique_ptr<sst::jucegui::components::RuleLabel> pbRuleH;
-    std::unique_ptr<sst::jucegui::components::RuleLabel> rightVRule01, rightVRule12, glideRuleH;
+    std::unique_ptr<sst::jucegui::components::TickSeparatorLabel> cornerRule, cornerRuleBottom;
+    std::unique_ptr<sst::jucegui::components::TickSeparatorLabel> pbRuleH;
+    std::unique_ptr<sst::jucegui::components::TickSeparatorLabel> rightVRule01, rightVRule12,
+        glideRuleH;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> pbDnVal, pbUpVal,
         glideDrag, volDrag, panDrag, tuneDrag;
 

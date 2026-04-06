@@ -36,6 +36,7 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/TickSeparatorLabel.h"
 #include "sst/jucegui/components/ZoomContainer.h"
 #include "engine/part.h"
 #include "engine/engine.h"
@@ -155,6 +156,19 @@ struct MappingDisplay : juce::Component,
     MapEls<std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>> textEds;
     MapEls<std::unique_ptr<sst::jucegui::components::Label>> labels;
     MapEls<std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphs;
+
+    enum RuleIdx
+    {
+        KeyHSep,
+        VelHSep,
+        PBHSep,
+        KeyVSepLo,
+        KeyVSepHi,
+        VelVSepLo,
+        VelVSepHi,
+        NumRules
+    };
+    std::array<std::unique_ptr<sst::jucegui::components::TickSeparatorLabel>, NumRules> rules;
 
     MappingDisplay(MacroMappingVariantPane *p);
     ~MappingDisplay();

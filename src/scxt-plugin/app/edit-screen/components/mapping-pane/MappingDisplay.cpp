@@ -63,6 +63,7 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     auto makeLabel = [this](auto &l, const std::string &t) {
         l = std::make_unique<sst::jucegui::components::Label>();
         l->setText(t);
+        l->setJustification(juce::Justification::centredRight);
         addAndMakeVisible(*l);
     };
 
@@ -195,7 +196,7 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
 
     iAdd(mappingView.keyboardRange.fadeEnd, intAttachments.FadeEnd, textEds.FadeEnd);
     addDeltas(intAttachments.FadeEnd, textEds.FadeEnd, engine::Zone::ChangeDimension::KEY_FADE_END);
-    makeLabel(labels.FadeStart, "Crossfade");
+    makeLabel(labels.FadeStart, "Key XFade");
 
     iAddConstrained(mappingView.velocityRange.velStart, intAttachments.VelStart, textEds.VelStart,
                     [w = juce::Component::SafePointer(this)](auto v) {
@@ -222,7 +223,7 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     addDeltas(intAttachments.VelFadeEnd, textEds.VelFadeEnd,
               engine::Zone::ChangeDimension::VEL_FADE_END);
 
-    makeLabel(labels.VelFadeStart, "CrossFade");
+    makeLabel(labels.VelFadeStart, "Vel XFade");
 
     iAdd(mappingView.pbDown, intAttachments.PBDown, textEds.PBDown);
     iAdd(mappingView.pbUp, intAttachments.PBUp, textEds.PBUp);
@@ -239,8 +240,21 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     makeGlyph(glyphs.Pitch, sst::jucegui::components::GlyphPainter::TUNING);
 
     fAdd(mappingView.tracking, floatAttachments.Tracking, textEds.Tracking);
-    makeLabel(labels.Tracking, "KT");
+    makeLabel(labels.Tracking, "Keytrack");
     labels.Tracking->setJustification(juce::Justification::centredLeft);
+
+    auto makeRule = [this](RuleIdx i, jcmp::TickSeparatorLabel::Direction d) {
+        rules[i] = std::make_unique<jcmp::TickSeparatorLabel>();
+        rules[i]->setDirection(d);
+        addAndMakeVisible(*rules[i]);
+    };
+    makeRule(KeyHSep, jcmp::TickSeparatorLabel::HORIZONTAL);
+    makeRule(VelHSep, jcmp::TickSeparatorLabel::HORIZONTAL);
+    makeRule(PBHSep, jcmp::TickSeparatorLabel::HORIZONTAL);
+    makeRule(KeyVSepLo, jcmp::TickSeparatorLabel::VERTICAL);
+    makeRule(KeyVSepHi, jcmp::TickSeparatorLabel::VERTICAL);
+    makeRule(VelVSepLo, jcmp::TickSeparatorLabel::VERTICAL);
+    makeRule(VelVSepHi, jcmp::TickSeparatorLabel::VERTICAL);
 
     setAccessible(true);
     setTitle("Mapping");
@@ -284,7 +298,7 @@ void MappingDisplay::LayoutAndKeyboard::resized()
 void MappingDisplay::resized()
 
 {
-    static constexpr int controlSize{140};
+    static constexpr int controlSize{201};
     static constexpr int headerSize{20};
 
     // Header
@@ -304,78 +318,61 @@ void MappingDisplay::resized()
     keyboardViewPort->setBounds({0, kbdY, kbdW, ZoneLayoutKeyboard::keyboardHeight});
 */
 
-    // Side Pane
-    static constexpr int rowHeight{16}, rowMargin{4};
-    static constexpr int typeinWidth{32};
-    static constexpr int typeinPad{4}, typeinMargin{2};
-    auto r = z.withLeft(getWidth() - controlSize);
-    auto cr = r.withHeight(rowHeight);
-
-    auto co2 = [=](auto &c) {
-        return c.withWidth(c.getWidth() - typeinPad - 2 * typeinWidth - 2 * typeinMargin);
+    // Side Pane — hardcoded from SVG export (201×214)
+    auto rx = getWidth() - controlSize;
+    auto hs = headerSize;
+    auto sp = [rx, hs](int x, int y, int w, int h) -> juce::Rectangle<int> {
+        return {rx + x, hs + y + 3, w, h};
     };
-    auto c2 = [=](auto &c) {
-        return c.withLeft(c.getRight() - typeinPad - typeinMargin - 2 * typeinWidth)
-            .withWidth(typeinWidth);
+    auto spl = [sp](int x, int y, int w, int h) -> juce::Rectangle<int> {
+        return sp(x - 4, y, w, h);
     };
-    auto co3 = [=](auto &c) {
-        return c.withWidth(c.getWidth() - typeinPad - typeinWidth - typeinMargin);
-    };
-    auto c3 = [=](auto &c) {
-        return c.withLeft(c.getRight() - typeinPad - typeinWidth).withWidth(typeinWidth);
+    auto spr = [sp](int x, int y, int w, int h) -> juce::Rectangle<int> {
+        return sp(x, y, w, h).reduced(2);
     };
 
-    labels.RootKey->setBounds(co3(cr));
-    textEds.RootKey->setBounds(c3(cr));
+    labels.RootKey->setBounds(spl(0, 0, 169, 16));
+    textEds.RootKey->setBounds(sp(169, 0, 32, 16));
 
-    cr = cr.translated(0, rowHeight + rowMargin);
-    textEds.KeyStart->setBounds(c2(cr));
-    textEds.KeyEnd->setBounds(c3(cr));
-    labels.KeyStart->setBounds(co2(cr));
+    labels.KeyStart->setBounds(spl(0, 24, 129, 16));
+    textEds.KeyStart->setBounds(sp(129, 24, 32, 16));
+    rules[KeyHSep]->setBounds(spr(161, 24, 8, 16));
+    textEds.KeyEnd->setBounds(sp(169, 24, 32, 16));
 
-    cr = cr.translated(0, rowHeight + rowMargin);
-    textEds.FadeStart->setBounds(c2(cr));
-    textEds.FadeEnd->setBounds(c3(cr));
-    labels.FadeStart->setBounds(co2(cr));
+    labels.FadeStart->setBounds(spl(0, 48, 129, 16));
+    textEds.FadeStart->setBounds(sp(129, 48, 32, 16));
+    textEds.FadeEnd->setBounds(sp(169, 48, 32, 16));
 
-    cr = cr.translated(0, rowHeight + rowMargin);
-    textEds.VelStart->setBounds(c2(cr));
-    textEds.VelEnd->setBounds(c3(cr));
-    labels.VelStart->setBounds(co2(cr));
+    rules[KeyVSepLo]->setBounds(spr(141, 40, 8, 8));
+    rules[KeyVSepHi]->setBounds(spr(181, 40, 8, 8));
 
-    cr = cr.translated(0, rowHeight + rowMargin);
-    textEds.VelFadeStart->setBounds(c2(cr));
-    textEds.VelFadeEnd->setBounds(c3(cr));
-    labels.VelFadeStart->setBounds(co2(cr));
+    labels.VelStart->setBounds(spl(0, 72, 129, 16));
+    textEds.VelStart->setBounds(sp(129, 72, 32, 16));
+    rules[VelHSep]->setBounds(spr(161, 72, 8, 16));
+    textEds.VelEnd->setBounds(sp(169, 72, 32, 16));
 
-    cr = cr.translated(0, rowHeight + rowMargin);
-    textEds.PBDown->setBounds(c2(cr));
-    textEds.PBUp->setBounds(c3(cr));
-    labels.PBDown->setBounds(co2(cr));
+    labels.VelFadeStart->setBounds(spl(0, 96, 129, 16));
+    textEds.VelFadeStart->setBounds(sp(129, 96, 32, 16));
+    textEds.VelFadeEnd->setBounds(sp(169, 96, 32, 16));
 
-    auto cQ = [&](int i) {
-        auto w = cr.getWidth() / 4.0;
-        return cr.withTrimmedLeft(w * i).withWidth(w).reduced(1);
-    };
-    cr = cr.translated(0, rowHeight + rowMargin);
-    //  (volume)
+    rules[VelVSepLo]->setBounds(spr(141, 88, 8, 8));
+    rules[VelVSepHi]->setBounds(spr(181, 88, 8, 8));
 
-    cr = cr.translated(0, rowHeight + rowMargin);
-    glyphs.Level->setBounds(cQ(2));
-    textEds.Level->setBounds(cQ(3));
+    labels.PBDown->setBounds(spl(0, 120, 129, 16));
+    textEds.PBDown->setBounds(sp(129, 120, 32, 16));
+    rules[PBHSep]->setBounds(spr(161, 120, 8, 16));
+    textEds.PBUp->setBounds(sp(169, 120, 32, 16));
 
-    cr = cr.translated(0, rowHeight + rowMargin);
-    glyphs.Pan->setBounds(cQ(2));
-    textEds.Pan->setBounds(cQ(3));
+    glyphs.Pitch->setBounds(sp(135, 146, 16, 16));
+    textEds.Pitch->setBounds(sp(153, 146, 48, 16));
 
-    cr = cr.translated(0, rowHeight + rowMargin);
-    glyphs.Pitch->setBounds(cQ(2));
-    textEds.Pitch->setBounds(cQ(3));
+    glyphs.Level->setBounds(sp(135, 170, 16, 16));
+    textEds.Level->setBounds(sp(153, 170, 48, 16));
 
-    // FIXME - make this match wireframe better
-    cr = cr.translated(0, rowHeight + rowMargin);
-    labels.Tracking->setBounds(cQ(2));
-    textEds.Tracking->setBounds(cQ(3));
+    labels.Tracking->setBounds(sp(30, 194, 83, 16));
+    textEds.Tracking->setBounds(sp(83, 194, 40, 16));
+    glyphs.Pan->setBounds(sp(135, 194, 16, 16));
+    textEds.Pan->setBounds(sp(153, 194, 48, 16));
 }
 
 void MappingDisplay::mappingChangedFromGUI()
