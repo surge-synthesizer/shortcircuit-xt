@@ -69,6 +69,8 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
         });
         addAndMakeVisible(*midiMenu);
     }
+    exclusiveGroupGlyph = mkg(jcmp::GlyphPainter::GlyphType::EXCLUSIVE_GROUP);
+    exclusiveGroupNotesGlyph = mkg(jcmp::GlyphPainter::GlyphType::POLYPHONY);
 
     outputGlyph = mkg(jcmp::GlyphPainter::GlyphType::SPEAKER);
     outputMenu = mkm("PART", "Output");
@@ -124,6 +126,46 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     pbLabel->setJustification(juce::Justification::centredRight);
     addAndMakeVisible(*pbLabel);
 
+    exclusiveGroupMenu = std::make_unique<jcmp::TextPushButton>();
+    exclusiveGroupMenu->setLabel("OFF");
+    exclusiveGroupMenu->setOnCallback(
+        editor->makeComingSoon("Group Settings Pane Exclusive Group"));
+    addAndMakeVisible(*exclusiveGroupMenu);
+
+    SRCLabel = std::make_unique<jcmp::Label>();
+    SRCLabel->setText("SRC");
+    SRCLabel->setJustification(juce::Justification::centredRight);
+    addAndMakeVisible(*SRCLabel);
+
+    srcMenu = std::make_unique<jcmp::TextPushButton>();
+    srcMenu->setLabel("CUBIC");
+    srcMenu->setOnCallback(editor->makeComingSoon("Group Settings Pane SRC Quality"));
+    addAndMakeVisible(*srcMenu);
+
+    cornerRule = std::make_unique<jcmp::RuleLabel>();
+    cornerRule->setDirection(jcmp::RuleLabel::CORNER_TL);
+    addAndMakeVisible(*cornerRule);
+
+    pbRuleH = std::make_unique<jcmp::RuleLabel>();
+    pbRuleH->setDirection(jcmp::RuleLabel::HORIZONTAL);
+    addAndMakeVisible(*pbRuleH);
+
+    auto mkVRule = [this]() -> std::unique_ptr<jcmp::RuleLabel> {
+        auto r = std::make_unique<jcmp::RuleLabel>();
+        r->setDirection(jcmp::RuleLabel::VERTICAL);
+        addAndMakeVisible(*r);
+        return r;
+    };
+    rightVRule01 = mkVRule();
+    rightVRule12 = mkVRule();
+    glideRuleH = std::make_unique<jcmp::RuleLabel>();
+    glideRuleH->setDirection(jcmp::RuleLabel::HORIZONTAL);
+    addAndMakeVisible(*glideRuleH);
+
+    cornerRuleBottom = std::make_unique<jcmp::RuleLabel>();
+    cornerRuleBottom->setDirection(jcmp::RuleLabel::CORNER_BL);
+    addAndMakeVisible(*cornerRuleBottom);
+
     editor->editorDataCache.addNotificationCallback(&info,
                                                     [w = juce::Component::SafePointer(this)]() {
                                                         if (w)
@@ -138,58 +180,66 @@ void GroupSettingsCard::paint(juce::Graphics &g)
     g.setFont(ft);
     g.setColour(co);
     g.drawText("GROUP SETTINGS", getLocalBounds(), juce::Justification::topLeft);
+    // Small horizontal connector between the exclusive-group area and the bracket (SVG y=41)
+    g.drawHorizontalLine(41, 113.f, 117.f);
 }
 
 void GroupSettingsCard::resized()
 {
-    int rowHeight = 24;
-    int componentHeight = 16;
-    auto b = getLocalBounds().withTrimmedTop(rowHeight - 4);
+    // All positions pixel-exact from Figma SVG export (182×146 reference).
+    // Right column width adapts to component width; all other coords are fixed.
+    const int rbtnW = getWidth() - 134;
+    auto b = [](int x, int y, int w, int h) -> juce::Rectangle<int> { return {x, y, w, h}; };
 
-    auto lsw = 51;
-    auto r = b.withHeight(componentHeight).withWidth(lsw);
-    auto osr = b.withHeight(componentHeight).withTrimmedLeft(b.getWidth() - lsw);
+    // Left column — vol / pan / tune (rows y=21 / 45 / 69)
+    volGlyph->setBounds(b(0, 21, 20, 16));
+    volDrag->setBounds(b(22, 21, 48, 16));
+    panGlyph->setBounds(b(0, 45, 20, 16));
+    panDrag->setBounds(b(22, 45, 48, 16));
+    tuneGlyph->setBounds(b(0, 69, 20, 16));
+    tuneDrag->setBounds(b(22, 69, 48, 16));
 
-    auto spair = [&r, componentHeight](auto &g, auto &m) {
-        g->setBounds(r.withWidth(componentHeight));
-        m->setBounds(r.withTrimmedLeft(componentHeight + 2));
-    };
-    if (hasFeature::hasGroupMIDIChannel)
+    // Centre — exclusive group button + XOR glyph (between rows 0 and 1)
+    exclusiveGroupMenu->setBounds(b(85, 33, 24, 16));
+    exclusiveGroupGlyph->setBounds(b(89, 48, 16, 16));
+    exclusiveGroupNotesGlyph->setBounds(b(116, 33, 16, 16));
+
+    // PB row (y=93) — label | dn value | rule | up value
+    pbLabel->setBounds(b(0, 93, 20, 16));
+    pbDnVal->setBounds(b(22, 93, 32, 16));
+    pbRuleH->setBounds(b(54, 93, 8, 16));
+    pbUpVal->setBounds(b(62, 93, 32, 16));
+
+    // Glide row (y=117) — glyph | mode button | rule | drag value
+    glideGlpyh->setBounds(b(0, 117, 20, 16));
+    glideMenu->setBounds(b(22, 117, 32, 16));
+    glideRuleH->setBounds(b(54, 117, 8, 16));
+    glideDrag->setBounds(b(62, 117, 32, 16));
+
+    // Right column — poly mode / poly count / note priority / SRC / output
+    polyModeMenu->setBounds(b(134, 21, rbtnW, 16));
+    polyMenu->setBounds(b(134, 45, rbtnW, 16));
+    prioGlyph->setBounds(b(116, 69, 16, 16));
+    prioMenu->setBounds(b(134, 69, rbtnW, 16));
+    SRCLabel->setBounds(b(96, 93, 36, 16));
+    srcMenu->setBounds(b(134, 93, rbtnW, 16));
+    outputGlyph->setBounds(b(116, 117, 16, 16));
+    outputMenu->setBounds(b(134, 117, rbtnW, 16));
+
+    // Bracket corners grouping poly mode + poly count (┌ top, └ bottom)
+    cornerRule->setBounds(b(125, 28, 7, 5));
+    cornerRuleBottom->setBounds(b(125, 49, 7, 5));
+
+    // Vertical separators in right column between rows 0-1 and 1-2
+    rightVRule01->setBounds(b(155, 39, 4, 4));
+    rightVRule12->setBounds(b(155, 63, 4, 4));
+
+    polyGlygh->setBounds({});
+    if (midiGlyph)
     {
-        spair(midiGlyph, midiMenu);
-        r = r.translated(0, rowHeight);
+        midiGlyph->setBounds({});
+        midiMenu->setBounds({});
     }
-
-    auto q = b.withHeight(componentHeight).withTrimmedLeft(r.getWidth() + 10);
-    q = q.withWidth(r.getWidth() - componentHeight - 2);
-    q = q.translated(getWidth() - q.getX() - q.getWidth(), 0); // (getWidth()-q.getX()-q.getWidth()
-
-    pbUpVal->setBounds(q);
-    q = q.translated(-(q.getWidth() + 2), 0);
-    pbDnVal->setBounds(q);
-    q = q.translated(-(q.getWidth() + 2), 0);
-    pbLabel->setBounds(q);
-
-    spair(outputGlyph, outputMenu);
-    r = r.translated(0, rowHeight);
-    spair(polyGlygh, polyMenu);
-    polyModeMenu->setBounds(polyMenu->getBounds().translated(polyMenu->getWidth() + 2, 0));
-    r = r.translated(0, rowHeight);
-    spair(prioGlyph, prioMenu);
-    r = r.translated(0, rowHeight);
-    spair(glideGlpyh, glideMenu);
-    glideDrag->setBounds(r.translated(r.getWidth() + 2, 0));
-
-    auto ospair = [&osr, componentHeight](auto &g, auto &m) {
-        g->setBounds(osr.withWidth(componentHeight));
-        m->setBounds(osr.withTrimmedLeft(componentHeight + 2));
-    };
-    osr = osr.translated(0, rowHeight);
-    ospair(volGlyph, volDrag);
-    osr = osr.translated(0, rowHeight);
-    ospair(panGlyph, panDrag);
-    osr = osr.translated(0, rowHeight);
-    ospair(tuneGlyph, tuneDrag);
 }
 
 void GroupSettingsCard::rebuildFromInfo()
