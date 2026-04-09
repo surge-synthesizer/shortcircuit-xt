@@ -218,6 +218,77 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
         }
     }
+    // Exclusive group choke — overlap-aware rules:
+    //
+    //   Pre-existing voices: only choked when their group has NO new voice in this
+    //   transaction. If a group is also being triggered by the incoming note (it has
+    //   a zone covering that key), its pre-existing voices are left alone so the
+    //   player retains that group.
+    //
+    //   Same-transaction voices: when two or more groups fire simultaneously for the
+    //   same note (overlapping key ranges), the highest-indexed group (last in
+    //   creation order) wins and chokes the earlier-created voices.
+
+    // Helper: returns true if any new voice in this transaction belongs to group g.
+    auto isGroupTriggeredThisNote = [&](const Group *g) {
+        for (int k = 0; k < outIdx; ++k)
+        {
+            const auto *nv = voiceInitWorkingBuffer[k].voice;
+            if (nv && nv->zone->parentGroup == g)
+                return true;
+        }
+        return false;
+    };
+
+    for (int i = 0; i < outIdx; ++i)
+    {
+        auto *v = voiceInitWorkingBuffer[i].voice;
+        if (!v)
+            continue;
+        auto excGroup = v->zone->parentGroup->outputInfo.exclusiveGroup;
+        if (excGroup == 0)
+            continue;
+        for (auto *ov : engine.voices)
+        {
+            if (!ov || ov == v || !ov->isVoicePlaying)
+                continue;
+            if (ov->zone->parentGroup == v->zone->parentGroup)
+                continue;
+            if (ov->zone->parentGroup->outputInfo.exclusiveGroup != excGroup)
+                continue;
+
+            // Determine whether ov is a same-transaction voice and, if so, its index.
+            int ovTxIdx = -1;
+            for (int j = 0; j < outIdx; ++j)
+            {
+                if (voiceInitWorkingBuffer[j].voice == ov)
+                {
+                    ovTxIdx = j;
+                    break;
+                }
+            }
+
+            if (ovTxIdx >= 0)
+            {
+                // Same-transaction conflict: later group (higher index) wins.
+                // Only choke voices that were created before this one.
+                if (ovTxIdx >= i)
+                    continue;
+            }
+            else
+            {
+                // Pre-existing voice: preserve it when its group is also triggered
+                // by this note (that group has a new voice in this transaction).
+                if (isGroupTriggeredThisNote(ov->zone->parentGroup))
+                    continue;
+            }
+
+            if (ov->isGated)
+                ov->release();
+            ov->beginTerminationSequence();
+        }
+    }
+
     engine.midiNoteStateCounter++;
     SCLOG_IF(voiceResponder, "Completed voice initiation " << actualCreated << " of " << nts);
     return actualCreated;

@@ -128,8 +128,10 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
 
     exclusiveGroupMenu = std::make_unique<jcmp::TextPushButton>();
     exclusiveGroupMenu->setLabel("OFF");
-    exclusiveGroupMenu->setOnCallback(
-        editor->makeComingSoon("Group Settings Pane Exclusive Group"));
+    exclusiveGroupMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showExclusiveGroupMenu();
+    });
     addAndMakeVisible(*exclusiveGroupMenu);
 
     SRCLabel = std::make_unique<jcmp::Label>();
@@ -286,6 +288,11 @@ void GroupSettingsCard::rebuildFromInfo()
             midiMenu->setLabel(std::to_string(info.midiChannel + 1));
         }
     }
+
+    if (info.exclusiveGroup == 0)
+        exclusiveGroupMenu->setLabel("OFF");
+    else
+        exclusiveGroupMenu->setLabel(std::to_string(info.exclusiveGroup));
 
     bool isMono = (info.playMode != engine::Group::PlayMode::POLY);
     glideDrag->setEnabled(isMono);
@@ -454,6 +461,58 @@ void GroupSettingsCard::showGlideRateModeMenu()
                   w->sendToSerialization(
                       messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
               });
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void GroupSettingsCard::showExclusiveGroupMenu()
+{
+    auto partIdx = editor->currentLeadGroupSelection
+                       ? (int16_t)editor->currentLeadGroupSelection->part
+                       : (int16_t)0;
+    auto numExcGroups = editor->partConfigurations[partIdx].numExclusiveGroups;
+
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Exclusive Group");
+    p.addSeparator();
+
+    p.addItem("OFF", true, info.exclusiveGroup == 0, [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->info.exclusiveGroup = 0;
+        w->rebuildFromInfo();
+        w->sendToSerialization(messaging::client::UpdateGroupOutputInfoExclusiveGroup{w->info});
+    });
+
+    if (numExcGroups > 0)
+    {
+        p.addSeparator();
+        for (int32_t id = 1; id <= numExcGroups; ++id)
+        {
+            p.addItem(std::to_string(id), true, info.exclusiveGroup == id,
+                      [id, w = juce::Component::SafePointer(this)]() {
+                          if (!w)
+                              return;
+                          w->info.exclusiveGroup = id;
+                          w->rebuildFromInfo();
+                          w->sendToSerialization(
+                              messaging::client::UpdateGroupOutputInfoExclusiveGroup{w->info});
+                      });
+        }
+    }
+
+    p.addSeparator();
+    p.addItem("New Group", true, false, [partIdx, w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        auto &partCfg = w->editor->partConfigurations[partIdx];
+        partCfg.numExclusiveGroups++;
+        auto newId = partCfg.numExclusiveGroups;
+        w->sendToSerialization(messaging::client::UpdatePartFullConfig({partIdx, partCfg}));
+        w->info.exclusiveGroup = newId;
+        w->rebuildFromInfo();
+        w->sendToSerialization(messaging::client::UpdateGroupOutputInfoExclusiveGroup{w->info});
+    });
+
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 

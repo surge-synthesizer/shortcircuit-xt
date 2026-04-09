@@ -117,6 +117,7 @@ enum ClientToSerializationMessagesIds
     c2s_update_group_output_bool_value,
     c2s_update_group_output_info_polyphony,
     c2s_update_group_output_info_midichannel,
+    c2s_update_group_output_info_exclusive_group,
 
     c2s_update_group_trigger_conditions,
 

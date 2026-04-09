@@ -201,6 +201,8 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"xps", from.transpose},
                           {"rt", (int)from.routeTo},
 
+                          {"nexg", from.numExclusiveGroups},
+
                           {"nm", std::string(from.name)},
                           {"bl", std::string(from.blurb)}};),
              SC_TO({
@@ -218,6 +220,7 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "m", false, to.mute);
                  findOrSet(v, "s", false, to.solo);
                  findOrSet(v, "pv", 0, to.polyLimitVoices);
+                 findOrSet(v, "nexg", 0, to.numExclusiveGroups);
                  findOrSet(v, "mbr", 24, to.mpePitchBendRange);
                  findOrSet(v, "mps", 0, to.mpePitchSmoothingTime);
                  int rtv;
@@ -383,7 +386,8 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"glt", t.glideTime},
                       {"grm", t.glideRateMode},
                       {"pm", t.playMode},
-                      {"np", t.notePriority}};
+                      {"np", t.notePriority},
+                      {"excg", t.exclusiveGroup}};
              }),
              SC_TO({
                  findIf(v, "amplitude", result.amplitude);
@@ -409,6 +413,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "grm", result.glideRateMode);
                  findOrSet(v, "pm", engine::Group::PlayMode::POLY, result.playMode);
                  findOrSet(v, "np", engine::Group::NotePriority::LATEST, result.notePriority);
+                 findOrSet(v, "excg", 0, result.exclusiveGroup);
 
                  if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'03'08))
                  {
@@ -534,7 +539,6 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
                       {"pbDown", t.pbDown},
                       {"pbUp", t.pbUp},
 
-                      {"exclusiveGroup", t.exclusiveGroup},
                       {"velocitySens", t.velocitySens},
                       {"amplitude", t.amplitude},
                       {"pan", t.pan},
@@ -562,7 +566,6 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
                  findIf(v, "pitchOffset", zmd.pitchOffset);
                  findIf(v, "tracking", zmd.tracking);
                  findOrSet(v, "velocitySens", 1.0, zmd.velocitySens);
-                 findOrSet(v, "exclusiveGroup", 0, zmd.exclusiveGroup);
              }));
 
 STREAM_ENUM(engine::Zone::PlayMode, engine::Zone::toStringPlayMode,
