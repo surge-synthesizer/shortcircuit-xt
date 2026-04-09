@@ -900,10 +900,12 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
         }
     }
 
-    if (display->isUndertakingDrop && display->currentDragSource.isNone())
+    if (display->isUndertakingDrop &&
+        (display->currentDragSource.isNone() || display->currentDragSource.isSingleSample()))
     {
-        // Zone-placement preview: only shown for regular single-sample drops.
-        // SCP/SCM/Multi overlays are painted by MappingDisplay::paintOverChildren instead.
+        // Zone-placement preview: shown for regular single-sample drops (Kind::Sample) and
+        // unclassified sources (Kind::None, e.g. external file before classification).
+        // SCP/SCM/Instrument overlays are painted by MappingDisplay::paintOverChildren instead.
         auto ranges =
             rootAndRangeForPosition(display->currentDragPoint, display->dropElementCount, false);
         auto mul = ranges.size() > 1;
