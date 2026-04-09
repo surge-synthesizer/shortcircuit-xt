@@ -13,6 +13,7 @@ add_executable(scxt-test
 		modify_structure.cpp
 		modulator_tests.cpp
 		mod_matrix_operations_tests.cpp
+		exclusive_group_tests.cpp
 )
 
 target_link_libraries(scxt-test

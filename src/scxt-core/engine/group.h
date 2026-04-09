@@ -122,6 +122,9 @@ struct Group : MoveableOnly<Group>,
 
         PlayMode playMode{POLY};
         NotePriority notePriority{LATEST};
+
+        int32_t exclusiveGroup{0}; // 0 = off; voices in groups sharing the same non-zero ID
+                                   // choke each other on note-on
     } outputInfo;
 
     GroupTriggerConditions triggerConditions;

@@ -22,4 +22,12 @@ minst.sh
 doxy-out/
 
 .junie/
+.claude/
+.code-review-graph/
 CLAUDE.md
+.cursorrules
+.mcp.json
+.opencode.json
+.windsurfrules
+AGENTS.md
+GEMINI.md

@@ -114,6 +114,24 @@ CLIENT_TO_SERIAL(UpdateGroupOutputInfoMidiChannel, c2s_update_group_output_info_
                  scxt::engine::Group::GroupOutputInfo,
                  doUpdateGroupOutputInfoMidiChannel(payload, engine, cont));
 
+inline void
+doUpdateGroupOutputInfoExclusiveGroup(const scxt::engine::Group::GroupOutputInfo payload,
+                                      const engine::Engine &engine,
+                                      messaging::MessageController &cont)
+{
+    auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
+    if (ga.has_value())
+    {
+        cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
+            auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
+            grp->outputInfo = p;
+        });
+    }
+}
+CLIENT_TO_SERIAL(UpdateGroupOutputInfoExclusiveGroup, c2s_update_group_output_info_exclusive_group,
+                 scxt::engine::Group::GroupOutputInfo,
+                 doUpdateGroupOutputInfoExclusiveGroup(payload, engine, cont));
+
 using muteOrSoloGroup_t = std::tuple<int32_t, int32_t, bool, bool, bool>; // p, g, m, s, selected
 inline void doMuteOrSoloGroup(const muteOrSoloGroup_t &payload, const engine::Engine &engine,
                               messaging::MessageController &cont)

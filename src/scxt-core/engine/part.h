@@ -116,7 +116,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         bool solo{false};
         bool muteDueToSolo{false}; // this is unstreamed and calcs in onPartConfigurationUpdated
 
-        int32_t polyLimitVoices{0}; // poly limit. 0 means unlimited.
+        int32_t polyLimitVoices{0};    // poly limit. 0 means unlimited.
+        int32_t numExclusiveGroups{0}; // how many exclusive-group IDs have been issued (0 = none)
 
         BusAddress routeTo{DEFAULT_BUS};
 
