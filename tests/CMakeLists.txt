@@ -14,6 +14,11 @@ add_executable(scxt-test
 		modulator_tests.cpp
 		mod_matrix_operations_tests.cpp
 		exclusive_group_tests.cpp
+		undo_tests.cpp
+)
+
+target_compile_definitions(scxt-test PRIVATE
+		SCXT_TEST_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
 target_link_libraries(scxt-test
