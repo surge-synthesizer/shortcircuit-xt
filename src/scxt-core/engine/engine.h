@@ -273,6 +273,17 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         bool applyOmniToAllPartsOnSelect{false};
     } runtimeConfig;
 
+    /*
+     * A structure to store extra state which is for a DAW session but not a patch.
+     * Must be updated on the serliazation thread.
+     * Currently only contains a dummy entry. Architectural only as of this commit.
+     * Only streamed when streamReason == FOR_DAW.
+     */
+    struct DawExtraState
+    {
+        bool dummy{true};
+    } dawExtraState;
+
     void resetTuningFromRuntimeConfig();
     void setMpeTuningAwareness(bool a);
     void setPBTuningAwareness(bool a);
@@ -725,6 +736,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     std::optional<fs::path> setupUserStorageDirectory();
 
     void prepareToStream();
+    void prepareDawExtraState();
+    void onDawExtraStateLoaded();
 
   private:
     std::unique_ptr<Patch> patch;

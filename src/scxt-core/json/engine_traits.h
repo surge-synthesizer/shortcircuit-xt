@@ -86,6 +86,10 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                       {"runtimeConfig", from.runtimeConfig},
                       {"selectionManager", from.getSelectionManager()},
                       {"sampleManager", from.getSampleManager()}};
+                 if (SC_STREAMING_FOR_DAW)
+                 {
+                     addToObject<val_t>(v, "dawExtraState", from.dawExtraState);
+                 }
              }),
              SC_TO({
                  assert(to.getMessageController()->threadingChecker.isSerialThread());
@@ -113,7 +117,14 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
 
                  // and finally set the sample rate
                  to.getPatch()->setSampleRate(to.getSampleRate());
+
+                 // DAW-only: restore per-instance extra state if present
+                 if (findIf(v, "dawExtraState", to.dawExtraState))
+                     to.onDawExtraStateLoaded();
              }))
+
+SC_STREAMDEF(scxt::engine::Engine::DawExtraState, SC_FROM({ v = {{"dummy", from.dummy}}; }),
+             SC_TO({ findIf(v, "dummy", to.dummy); }))
 
 SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
                  if (SC_STREAMING_FOR_DAW)

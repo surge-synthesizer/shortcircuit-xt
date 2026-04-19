@@ -121,6 +121,7 @@ bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
     // happens in the code path.
     // engine->getSampleManager()->purgeUnreferencedSamples();
     engine->prepareToStream();
+    engine->prepareDawExtraState();
     try
     {
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_DAW);

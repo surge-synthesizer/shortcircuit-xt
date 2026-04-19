@@ -1554,6 +1554,10 @@ void Engine::prepareToStream()
     }
 }
 
+void Engine::prepareDawExtraState() {}
+
+void Engine::onDawExtraStateLoaded() { SCLOG_IF(patchIO, "Unstreamed daw extra state"); }
+
 std::string Engine::toStringTuningMode(const TuningMode &m)
 {
     switch (m)
