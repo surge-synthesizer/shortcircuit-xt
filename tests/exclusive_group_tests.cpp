@@ -26,8 +26,11 @@
  */
 
 #include "catch2/catch2.hpp"
+#include <tao/json/to_string.hpp>
+#include <tao/json/from_string.hpp>
 #include "engine/engine.h"
 #include "engine/zone.h"
+#include "voice/voice.h"
 #include "json/engine_traits.h"
 
 /*

@@ -32,6 +32,7 @@
 #include "app/shared/PartEffectsPane.h"
 
 #include "messaging/messaging.h"
+#include "messaging/client/mixer_messages.h"
 #include "utils.h"
 #include "app/SCXTEditor.h"
 

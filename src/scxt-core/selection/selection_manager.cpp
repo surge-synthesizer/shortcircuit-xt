@@ -33,6 +33,12 @@
 #include "messaging/messaging.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/processor_messages.h"
+#include "messaging/client/zone_messages.h"
+#include "messaging/client/group_messages.h"
+#include "messaging/client/group_or_zone_messages.h"
+#include "messaging/client/modulation_messages.h"
+#include "messaging/client/mixer_messages.h"
+#include "messaging/client/macro_messages.h"
 
 namespace scxt::selection
 {

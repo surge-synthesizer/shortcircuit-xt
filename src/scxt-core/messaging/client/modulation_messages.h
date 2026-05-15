@@ -29,7 +29,9 @@
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_MODULATION_MESSAGES_H
 
 #include <algorithm>
+#include "messaging/client/detail/client_serial_impl.h"
 #include "messaging/client/detail/client_json_details.h"
+#include "messaging/client/client_macros.h"
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
 #include "selection/selection_manager.h"

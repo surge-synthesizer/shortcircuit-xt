@@ -28,6 +28,9 @@
 #include <fstream>
 #include <set>
 
+#include "tao/json/to_string.hpp"
+#include "tao/json/from_string.hpp"
+
 #include "tao/json/msgpack/consume_string.hpp"
 #include "tao/json/msgpack/from_binary.hpp"
 #include "tao/json/msgpack/from_input.hpp"

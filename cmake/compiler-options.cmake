@@ -17,6 +17,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         message(STATUS "Sanitizer is ON")
     endif ()
 
+    if (SCXT_TIME_TRACE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(STATUS "-ftime-trace is ON; ClangBuildAnalyzer-ready JSONs will appear next to each .o")
+    endif ()
+
     # BP note: If you want to turn on llvm/gcc sanitize, remove this and the link options below
     add_compile_options(
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
@@ -25,6 +29,8 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
             # (LWG 3840 may yet revert this). Keep the warning visible but
             # don't fail -Werror builds over it. gcc-only; libc++/Clang is fine.
             $<$<CXX_COMPILER_ID:GNU>:-Wno-error=deprecated-declarations>
+            $<$<AND:$<BOOL:${SCXT_TIME_TRACE}>,$<CXX_COMPILER_ID:Clang,AppleClang>>:-ftime-trace>
+            $<$<AND:$<BOOL:${SCXT_TIME_TRACE}>,$<CXX_COMPILER_ID:Clang,AppleClang>>:-ftime-trace-granularity=50>
     )
 
     add_link_options(

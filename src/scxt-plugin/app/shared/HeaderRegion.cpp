@@ -27,6 +27,9 @@
 
 #include "HeaderRegion.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/interaction_messages.h"
+#include "messaging/client/patch_io_messages.h"
+#include "messaging/client/structure_messages.h"
 #include "infrastructure/user_defaults.h"
 #include "app/shared/PatchMultiIO.h"
 #include "sst/jucegui/components/ToggleButton.h"

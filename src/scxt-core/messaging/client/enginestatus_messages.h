@@ -29,6 +29,7 @@
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_ENGINESTATUS_MESSAGES_H
 
 #include "messaging/client/client_serial.h"
+#include "messaging/client/detail/client_serial_impl.h"
 #include "messaging/client/detail/client_json_details.h"
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"

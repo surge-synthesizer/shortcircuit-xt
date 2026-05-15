@@ -31,6 +31,9 @@
 #endif
 
 #include "app/SCXTEditor.h"
+#include "app/SCXTEditorReceiver.h"
+#include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/detail/client_serial_dispatch.h"
 
 #include "app/play-screen/PlayScreen.h"
 #include "sst/jucegui/style/StyleSheet.h"
@@ -59,6 +62,12 @@
 #include <mach/mach.h>
 #endif
 
+// Explicit instantiation of the s2c dispatcher for this client's receiver type. See the
+// matching extern template in client_serial.h.
+template void
+scxt::messaging::client::clientThreadExecuteSerializationMessage<scxt::ui::app::SCXTEditorReceiver>(
+    const std::string &, scxt::ui::app::SCXTEditorReceiver *);
+
 namespace scxt::ui::app
 {
 
@@ -67,6 +76,8 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
                        const engine::Engine::SharedUIMemoryState &st)
     : msgCont(e), sampleManager(s), defaultsProvider(d), browser(b), sharedUiMemoryState(st)
 {
+    receiver = std::make_unique<SCXTEditorReceiver>(*this);
+
     msgCont.threadingChecker.addAsAClientThread();
 
     sst::jucegui::style::StyleSheet::initializeStyleSheets([]() {});
@@ -331,7 +342,7 @@ void SCXTEditor::drainCallbackQueue()
         if (itemsToDrain)
         {
             assert(msgCont.threadingChecker.isClientThread());
-            cmsg::clientThreadExecuteSerializationMessage(queueMsg, this);
+            cmsg::clientThreadExecuteSerializationMessage(queueMsg, receiver.get());
 #if BUILD_IS_DEBUG
             inboundMessageCount++;
             inboundMessageBytes += queueMsg.size();

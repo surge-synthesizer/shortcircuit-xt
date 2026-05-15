@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_STRUCTURE_MESSAGES_H
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_STRUCTURE_MESSAGES_H
 
+#include "messaging/client/detail/client_serial_impl.h"
 #include "messaging/client/detail/client_json_details.h"
 #include "json/selection_traits.h"
 #include "selection/selection_manager.h"

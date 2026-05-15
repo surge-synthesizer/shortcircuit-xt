@@ -28,8 +28,6 @@
 #ifndef SCXT_SRC_SCXT_CORE_JSON_DSP_TRAITS_H
 #define SCXT_SRC_SCXT_CORE_JSON_DSP_TRAITS_H
 
-#include <tao/json/to_string.hpp>
-#include <tao/json/from_string.hpp>
 #include <tao/json/contrib/traits.hpp>
 
 #include "dsp/processor/processor.h"

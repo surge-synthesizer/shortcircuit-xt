@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "patch_io/patch_io.h"
+#include "messaging/client/patch_io_messages.h"
 #include "UIHelpers.h"
 
 namespace scxt::ui::app::shared

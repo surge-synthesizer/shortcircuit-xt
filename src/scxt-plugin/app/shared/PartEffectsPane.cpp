@@ -27,6 +27,7 @@
 
 #include "PartEffectsPane.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/mixer_messages.h"
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/edit-screen/components/PartEditScreen.h"
 

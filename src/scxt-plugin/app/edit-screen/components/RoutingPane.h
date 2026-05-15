@@ -33,6 +33,8 @@
 #include "engine/zone.h"
 #include "engine/group.h"
 #include "messaging/messaging.h"
+#include "messaging/client/zone_messages.h"
+#include "messaging/client/group_messages.h"
 #include "connectors/PayloadDataAttachment.h"
 
 namespace scxt::ui::app::edit_screen

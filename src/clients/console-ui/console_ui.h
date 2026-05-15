@@ -36,6 +36,7 @@
 #include "configuration.h"
 #include "engine/engine.h"
 #include "messaging/client/selection_messages.h"
+#include "messaging/client/client_messages.h"
 #include "messaging/messaging.h"
 #include "selection/selection_manager.h"
 

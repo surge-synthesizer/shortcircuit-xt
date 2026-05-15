@@ -28,6 +28,8 @@
 #include "PartSidebarCard.h"
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "messaging/messaging.h"
+#include "messaging/client/part_messages.h"
+#include "messaging/client/structure_messages.h"
 #include "app/SCXTEditor.h"
 #include "app/shared/PatchMultiIO.h"
 #include "app/shared/MenuValueTypein.h"

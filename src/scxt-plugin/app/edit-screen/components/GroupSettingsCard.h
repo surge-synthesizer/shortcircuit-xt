@@ -38,6 +38,7 @@
 #include "sst/jucegui/components/TickSeparatorLabel.h"
 
 #include "messaging/messaging.h"
+#include "messaging/client/group_messages.h"
 #include "connectors/PayloadDataAttachment.h"
 
 #include "app/HasEditor.h"

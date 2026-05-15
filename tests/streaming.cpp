@@ -26,6 +26,8 @@
  */
 
 #include "catch2/catch2.hpp"
+#include <tao/json/to_string.hpp>
+#include <tao/json/from_string.hpp>
 #include "json/engine_traits.h"
 #include "json/dsp_traits.h"
 #include "json/modulation_traits.h"

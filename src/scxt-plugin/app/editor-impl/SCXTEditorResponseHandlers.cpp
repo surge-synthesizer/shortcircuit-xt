@@ -26,6 +26,7 @@
  */
 
 #include "app/SCXTEditor.h"
+#include "app/SCXTEditorReceiver.h"
 #include "app/edit-screen/EditScreen.h"
 #include "app/edit-screen/components/AdsrPane.h"
 #include "app/edit-screen/components/LFOPane.h"
@@ -48,7 +49,7 @@
 
 namespace scxt::ui::app
 {
-void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
+void SCXTEditorReceiver::onGroupOrZoneEnvelopeUpdated(
     const scxt::messaging::client::adsrViewResponsePayload_t &payload)
 {
     const auto &[forZone, which, active, env] = payload;
@@ -58,22 +59,22 @@ void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
         {
             if (active)
             {
-                editScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
+                editor.editScreen->getZoneElements()->eg[which]->adsrChangedFromModel(env);
             }
             else
             {
-                editScreen->getZoneElements()->eg[which]->adsrDeactivated();
+                editor.editScreen->getZoneElements()->eg[which]->adsrDeactivated();
             }
         }
         else
         {
             if (active)
             {
-                editScreen->getZoneElements()->eg[1]->adsrChangedFromModel(env, which);
+                editor.editScreen->getZoneElements()->eg[1]->adsrChangedFromModel(env, which);
             }
             else
             {
-                editScreen->getZoneElements()->eg[1]->adsrDeactivated();
+                editor.editScreen->getZoneElements()->eg[1]->adsrDeactivated();
             }
         }
     }
@@ -82,58 +83,58 @@ void SCXTEditor::onGroupOrZoneEnvelopeUpdated(
         if (active)
         {
             // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-            editScreen->getGroupElements()->eg[which]->adsrChangedFromModel(env);
+            editor.editScreen->getGroupElements()->eg[which]->adsrChangedFromModel(env);
         }
         else
         {
-            editScreen->getGroupElements()->eg[which]->adsrDeactivated();
+            editor.editScreen->getGroupElements()->eg[which]->adsrDeactivated();
         }
     }
 }
 
-void SCXTEditor::onMappingUpdated(
+void SCXTEditorReceiver::onMappingUpdated(
     const scxt::messaging::client::mappingSelectedZoneViewResposne_t &payload)
 {
     const auto &[active, m] = payload;
     if (active)
     {
-        editScreen->mappingPane->setActive(true);
-        editScreen->mappingPane->setMappingData(m);
+        editor.editScreen->mappingPane->setActive(true);
+        editor.editScreen->mappingPane->setMappingData(m);
     }
     else
     {
         // TODO
-        editScreen->mappingPane->setActive(false);
+        editor.editScreen->mappingPane->setActive(false);
     }
 }
 
-void SCXTEditor::onSamplesUpdated(
+void SCXTEditorReceiver::onSamplesUpdated(
     const scxt::messaging::client::sampleSelectedZoneViewResposne_t &payload)
 {
     const auto &[active, s] = payload;
     if (active)
     {
-        editScreen->mappingPane->setActive(true);
-        editScreen->mappingPane->setSampleData(s);
+        editor.editScreen->mappingPane->setActive(true);
+        editor.editScreen->mappingPane->setSampleData(s);
     }
     else
     {
-        editScreen->mappingPane->setActive(false);
+        editor.editScreen->mappingPane->setActive(false);
     }
 }
 
-void SCXTEditor::onStructureUpdated(const engine::Engine::pgzStructure_t &s)
+void SCXTEditorReceiver::onStructureUpdated(const engine::Engine::pgzStructure_t &s)
 {
-    if (editScreen && editScreen->partSidebar)
+    if (editor.editScreen && editor.editScreen->partSidebar)
     {
-        editScreen->partSidebar->setPartGroupZoneStructure(s);
+        editor.editScreen->partSidebar->setPartGroupZoneStructure(s);
     }
-    if (editScreen && editScreen->mappingPane)
+    if (editor.editScreen && editor.editScreen->mappingPane)
     {
     }
 }
 
-void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(
+void SCXTEditorReceiver::onGroupOrZoneProcessorDataAndMetadata(
     const scxt::messaging::client::processorDataResponsePayload_t &d)
 {
     const auto &[forZone, which, enabled, control, storage] = d;
@@ -141,131 +142,137 @@ void SCXTEditor::onGroupOrZoneProcessorDataAndMetadata(
     assert(which >= 0 && which < edit_screen::EditScreen::numProcessorDisplays);
     if (forZone)
     {
-        editScreen->getZoneElements()->processors[which]->setEnabled(enabled);
-        editScreen->getZoneElements()->processors[which]->setProcessorControlDescriptionAndStorage(
-            control, storage);
-        editScreen->getZoneElements()->routingPane->updateFromProcessorPanes();
+        editor.editScreen->getZoneElements()->processors[which]->setEnabled(enabled);
+        editor.editScreen->getZoneElements()
+            ->processors[which]
+            ->setProcessorControlDescriptionAndStorage(control, storage);
+        editor.editScreen->getZoneElements()->routingPane->updateFromProcessorPanes();
     }
     else
     {
-        editScreen->getGroupElements()->processors[which]->setEnabled(enabled);
-        editScreen->getGroupElements()->processors[which]->setProcessorControlDescriptionAndStorage(
-            control, storage);
-        editScreen->getGroupElements()->routingPane->updateFromProcessorPanes();
+        editor.editScreen->getGroupElements()->processors[which]->setEnabled(enabled);
+        editor.editScreen->getGroupElements()
+            ->processors[which]
+            ->setProcessorControlDescriptionAndStorage(control, storage);
+        editor.editScreen->getGroupElements()->routingPane->updateFromProcessorPanes();
     }
 }
 
-void SCXTEditor::onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &d)
+void SCXTEditorReceiver::onZoneVoiceMatrixMetadata(
+    const scxt::voice::modulation::voiceMatrixMetadata_t &d)
 {
     const auto &[active, sinf, tinf, cinf] = d;
-    editScreen->getZoneElements()->modPane->setActive(active);
+    editor.editScreen->getZoneElements()->modPane->setActive(active);
     if (active)
     {
-        editScreen->getZoneElements()->modPane->matrixMetadata = d;
-        editScreen->getZoneElements()->modPane->rebuildMatrix();
+        editor.editScreen->getZoneElements()->modPane->matrixMetadata = d;
+        editor.editScreen->getZoneElements()->modPane->rebuildMatrix();
     }
 }
 
-void SCXTEditor::onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &rt)
+void SCXTEditorReceiver::onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &rt)
 {
-    assert(editScreen->getZoneElements());
-    assert(editScreen->getZoneElements()->modPane);
-    assert(editScreen->getZoneElements()->modPane->isEnabled());
-    editScreen->getZoneElements()->modPane->routingTable = rt;
-    editScreen->getZoneElements()->modPane->refreshMatrix();
+    assert(editor.editScreen->getZoneElements());
+    assert(editor.editScreen->getZoneElements()->modPane);
+    assert(editor.editScreen->getZoneElements()->modPane->isEnabled());
+    editor.editScreen->getZoneElements()->modPane->routingTable = rt;
+    editor.editScreen->getZoneElements()->modPane->refreshMatrix();
 }
 
-void SCXTEditor::onGroupMatrixMetadata(const scxt::modulation::groupMatrixMetadata_t &d)
+void SCXTEditorReceiver::onGroupMatrixMetadata(const scxt::modulation::groupMatrixMetadata_t &d)
 {
     const auto &[active, sinf, dinf, cinf] = d;
 
-    editScreen->getGroupElements()->modPane->setActive(active);
+    editor.editScreen->getGroupElements()->modPane->setActive(active);
     if (active)
     {
-        editScreen->getGroupElements()->modPane->matrixMetadata = d;
-        editScreen->getGroupElements()->modPane->rebuildMatrix();
+        editor.editScreen->getGroupElements()->modPane->matrixMetadata = d;
+        editor.editScreen->getGroupElements()->modPane->rebuildMatrix();
     }
 }
 
-void SCXTEditor::onGroupMatrix(const scxt::modulation::GroupMatrix::RoutingTable &t)
+void SCXTEditorReceiver::onGroupMatrix(const scxt::modulation::GroupMatrix::RoutingTable &t)
 {
-    assert(editScreen->getGroupElements()
+    assert(editor.editScreen->getGroupElements()
                ->modPane->isEnabled()); // we shouldn't send a matrix to a non-enabled pane
-    editScreen->getGroupElements()->modPane->routingTable = t;
-    editScreen->getGroupElements()->modPane->refreshMatrix();
+    editor.editScreen->getGroupElements()->modPane->routingTable = t;
+    editor.editScreen->getGroupElements()->modPane->refreshMatrix();
 }
 
-void SCXTEditor::onGroupOrZoneModulatorStorageUpdated(
+void SCXTEditorReceiver::onGroupOrZoneModulatorStorageUpdated(
     const scxt::messaging::client::indexedModulatorStorageUpdate_t &payload)
 {
     const auto &[forZone, active, i, r] = payload;
     if (forZone)
     {
-        editScreen->getZoneElements()->lfo->setActive(i, active);
-        editScreen->getZoneElements()->lfo->setModulatorStorage(i, r);
+        editor.editScreen->getZoneElements()->lfo->setActive(i, active);
+        editor.editScreen->getZoneElements()->lfo->setModulatorStorage(i, r);
     }
     else
     {
-        editScreen->getGroupElements()->lfo->setActive(i, active);
-        editScreen->getGroupElements()->lfo->setModulatorStorage(i, r);
+        editor.editScreen->getGroupElements()->lfo->setActive(i, active);
+        editor.editScreen->getGroupElements()->lfo->setModulatorStorage(i, r);
     }
 }
 
-void SCXTEditor::onGroupOrZoneMiscModStorageUpdated(
+void SCXTEditorReceiver::onGroupOrZoneMiscModStorageUpdated(
     const scxt::messaging::client::gzMiscStorageUpdate_t &payload)
 {
     const auto &[forZone, mm] = payload;
     if (forZone)
     {
-        editScreen->getZoneElements()->lfo->setMiscModStorage(mm);
+        editor.editScreen->getZoneElements()->lfo->setMiscModStorage(mm);
     }
     else
     {
-        editScreen->getGroupElements()->lfo->setMiscModStorage(mm);
+        editor.editScreen->getGroupElements()->lfo->setMiscModStorage(mm);
     }
 }
 
-void SCXTEditor::onGroupOrZoneAudioModStorageUpdated(
+void SCXTEditorReceiver::onGroupOrZoneAudioModStorageUpdated(
     const scxt::messaging::client::gzAudioModStorageUpdate_t &payload)
 {
     const auto &[forZone, es] = payload;
     if (forZone)
     {
-        editScreen->getZoneElements()->lfo->setAudioModStorage(es);
+        editor.editScreen->getZoneElements()->lfo->setAudioModStorage(es);
     }
     else
     {
-        editScreen->getGroupElements()->lfo->setAudioModStorage(es);
+        editor.editScreen->getGroupElements()->lfo->setAudioModStorage(es);
     }
 }
 
-void SCXTEditor::onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
+void SCXTEditorReceiver::onZoneOutputInfoUpdated(
+    const scxt::messaging::client::zoneOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
-    editorDataCache.zoneOutputInfo = inf;
-    editorDataCache.fireAllNotificationsFor(editorDataCache.zoneOutputInfo);
-    editScreen->getZoneElements()->routingPane->setActive(active);
+    editor.editorDataCache.zoneOutputInfo = inf;
+    editor.editorDataCache.fireAllNotificationsFor(editor.editorDataCache.zoneOutputInfo);
+    editor.editScreen->getZoneElements()->routingPane->setActive(active);
     if (active)
     {
-        editScreen->getZoneElements()->routingPane->updateFromOutputInfo();
+        editor.editScreen->getZoneElements()->routingPane->updateFromOutputInfo();
     }
 }
 
-void SCXTEditor::onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p)
+void SCXTEditorReceiver::onGroupOutputInfoUpdated(
+    const scxt::messaging::client::groupOutputInfoUpdate_t &p)
 {
     auto [active, inf] = p;
-    editorDataCache.groupOutputInfo = inf;
-    editorDataCache.fireAllNotificationsFor(editorDataCache.groupOutputInfo);
-    editScreen->getGroupElements()->routingPane->setActive(active);
+    editor.editorDataCache.groupOutputInfo = inf;
+    editor.editorDataCache.fireAllNotificationsFor(editor.editorDataCache.groupOutputInfo);
+    editor.editScreen->getGroupElements()->routingPane->setActive(active);
     if (active)
     {
-        editScreen->getGroupElements()->routingPane->updateFromOutputInfo();
+        editor.editScreen->getGroupElements()->routingPane->updateFromOutputInfo();
     }
 }
 
-void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &d)
+void SCXTEditorReceiver::onGroupZoneMappingSummary(
+    const scxt::engine::Part::zoneMappingSummary_t &d)
 {
-    editScreen->mappingPane->setGroupZoneMappingSummary(d);
+    editor.editScreen->mappingPane->setGroupZoneMappingSummary(d);
 
     if constexpr (scxt::log::uiStructure)
     {
@@ -277,115 +284,117 @@ void SCXTEditor::onGroupZoneMappingSummary(const scxt::engine::Part::zoneMapping
     }
 }
 
-void SCXTEditor::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
+void SCXTEditorReceiver::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
 {
     auto &[title, msg, source, line] = e;
-    displayError(title, msg);
+    editor.displayError(title, msg);
 }
 
-void SCXTEditor::onSelectionState(const scxt::messaging::client::selectedStateMessage_t &a)
+void SCXTEditorReceiver::onSelectionState(const scxt::messaging::client::selectedStateMessage_t &a)
 {
-    allZoneSelections = std::get<1>(a);
-    allGroupSelections = std::get<3>(a);
+    editor.allZoneSelections = std::get<1>(a);
+    editor.allGroupSelections = std::get<3>(a);
     auto allDisplays = std::get<4>(a);
 
-    currentLeadZoneSelection = std::get<0>(a);
-    currentLeadGroupSelection = std::get<2>(a);
+    editor.currentLeadZoneSelection = std::get<0>(a);
+    editor.currentLeadGroupSelection = std::get<2>(a);
 
-    groupsWithSelectedZones.clear();
-    for (const auto &sel : allZoneSelections)
+    editor.groupsWithSelectedZones.clear();
+    for (const auto &sel : editor.allZoneSelections)
     {
         if (sel.group >= 0)
-            groupsWithSelectedZones.insert(sel.group);
+            editor.groupsWithSelectedZones.insert(sel.group);
     }
     for (const auto &gz : allDisplays)
     {
         if (gz.group >= 0)
-            groupsWithSelectedZones.insert(gz.group);
+            editor.groupsWithSelectedZones.insert(gz.group);
     }
 
-    editScreen->partSidebar->editorSelectionChanged();
-    editScreen->mappingPane->editorSelectionChanged();
+    editor.editScreen->partSidebar->editorSelectionChanged();
+    editor.editScreen->mappingPane->editorSelectionChanged();
 
-    repaint();
+    editor.repaint();
 
     if constexpr (scxt::log::selection)
     {
         SCLOG_IF(selection, "Selection State Update");
-        for (const auto &z : allZoneSelections)
+        for (const auto &z : editor.allZoneSelections)
         {
             SCLOG_IF(selection, "   z : " << z);
         }
-        for (const auto &z : allGroupSelections)
+        for (const auto &z : editor.allGroupSelections)
         {
             SCLOG_IF(selection, "   g : " << z);
         }
     }
 }
 
-void SCXTEditor::onSelectedPart(const int16_t p)
+void SCXTEditorReceiver::onSelectedPart(const int16_t p)
 {
-    selectedPart = p; // I presume I will shortly get structure messages so don't do anything else
-    if (editScreen)
+    editor.selectedPart =
+        p; // I presume I will shortly get structure messages so don't do anything else
+    if (editor.editScreen)
     {
-        editScreen->selectedPartChanged();
-        editScreen->onOtherTabSelection();
+        editor.editScreen->selectedPartChanged();
+        editor.editScreen->onOtherTabSelection();
     }
 
-    repaint();
+    editor.repaint();
 }
 
-void SCXTEditor::onEngineStatus(const engine::Engine::EngineStatusMessage &e)
+void SCXTEditorReceiver::onEngineStatus(const engine::Engine::EngineStatusMessage &e)
 {
-    engineStatus = e;
-    aboutScreen->resetInfo();
-    repaint();
+    editor.engineStatus = e;
+    editor.aboutScreen->resetInfo();
+    editor.repaint();
 }
 
-void SCXTEditor::onBusOrPartEffectFullData(const scxt::messaging::client::busEffectFullData_t &d)
+void SCXTEditorReceiver::onBusOrPartEffectFullData(
+    const scxt::messaging::client::busEffectFullData_t &d)
 {
     auto busi = std::get<0>(d);
     auto parti = std::get<1>(d);
-    if (busi >= 0 && mixerScreen)
+    if (busi >= 0 && editor.mixerScreen)
     {
         auto slti = std::get<2>(d);
         const auto &bes = std::get<3>(d);
-        mixerScreen->onBusEffectFullData(busi, slti, bes.first, bes.second);
+        editor.mixerScreen->onBusEffectFullData(busi, slti, bes.first, bes.second);
     }
-    if (parti >= 0 && editScreen)
+    if (parti >= 0 && editor.editScreen)
     {
         auto slti = std::get<2>(d);
         const auto &bes = std::get<3>(d);
-        editScreen->partEditScreen->onPartEffectFullData(parti, slti, bes.first, bes.second);
+        editor.editScreen->partEditScreen->onPartEffectFullData(parti, slti, bes.first, bes.second);
     }
 }
 
-void SCXTEditor::onBusOrPartSendData(const scxt::messaging::client::busSendData_t &d)
+void SCXTEditorReceiver::onBusOrPartSendData(const scxt::messaging::client::busSendData_t &d)
 {
     auto busi = std::get<0>(d);
     auto parti = std::get<1>(d);
-    if (busi >= 0 && mixerScreen)
+    if (busi >= 0 && editor.mixerScreen)
     {
         const auto &busd = std::get<2>(d);
-        mixerScreen->onBusSendData(busi, busd);
+        editor.mixerScreen->onBusSendData(busi, busd);
     }
 }
 
-void SCXTEditor::onBrowserRefresh(const bool)
+void SCXTEditorReceiver::onBrowserRefresh(const bool)
 {
-    editScreen->browser->resetRoots();
-    mixerScreen->browser->resetRoots();
-    playScreen->browser->resetRoots();
+    editor.editScreen->browser->resetRoots();
+    editor.mixerScreen->browser->resetRoots();
+    editor.playScreen->browser->resetRoots();
 }
 
-void SCXTEditor::onBrowserQueueLengthRefresh(const std::pair<int32_t, int32_t> v)
+void SCXTEditorReceiver::onBrowserQueueLengthRefresh(const std::pair<int32_t, int32_t> v)
 {
-    editScreen->browser->setIndexWorkload(v);
-    mixerScreen->browser->setIndexWorkload(v);
-    playScreen->browser->setIndexWorkload(v);
+    editor.editScreen->browser->setIndexWorkload(v);
+    editor.mixerScreen->browser->setIndexWorkload(v);
+    editor.playScreen->browser->setIndexWorkload(v);
 }
 
-void SCXTEditor::onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &resp)
+void SCXTEditorReceiver::onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &resp)
 {
     for (const auto &[k, s] : resp)
     {
@@ -393,131 +402,131 @@ void SCXTEditor::onDebugInfoGenerated(const scxt::messaging::client::debugRespon
     }
 }
 
-void SCXTEditor::onColormap(const std::string &json)
+void SCXTEditorReceiver::onColormap(const std::string &json)
 {
     if (json.empty())
     {
         // DES holds no edited overlay: reset to the user-prefs baseline. The
         // engine emits this unconditionally on full refresh / extra-state load.
-        resetColorsFromUserPreferences();
+        editor.resetColorsFromUserPreferences();
     }
     else
     {
         auto cm = theme::ColorMap::jsonToColormap(json);
         if (!cm)
             return;
-        cm->hasKnobs =
-            defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::showKnobs, false);
+        cm->hasKnobs = editor.defaultsProvider.getUserDefaultValue(
+            infrastructure::DefaultKeys::showKnobs, false);
         // `jsonToColormap` does not preserve myId (serialised files are id-less
         // and it defaults to WIREFRAME). Tag as custom so the menu shows the
         // "Custom Colormap" indicator and the state machine is consistent.
         cm->myId =
             static_cast<theme::ColorMap::BuiltInColorMaps>(theme::ColorMap::CUSTOM_COLORMAP_ID);
-        themeApplier.recolorStylesheetWith(std::move(cm), style());
+        editor.themeApplier.recolorStylesheetWith(std::move(cm), editor.style());
     }
-    setStyle(style());
-    repaint();
-    if (themeEditorWindow)
-        themeEditorWindow->rebuildFromThemeApplier();
+    editor.setStyle(editor.style());
+    editor.repaint();
+    if (editor.themeEditorWindow)
+        editor.themeEditorWindow->rebuildFromThemeApplier();
 }
 
-void SCXTEditor::onMacroFullState(const scxt::messaging::client::macroFullState_t &s)
+void SCXTEditorReceiver::onMacroFullState(const scxt::messaging::client::macroFullState_t &s)
 {
     const auto &[part, index, macro] = s;
-    macroCache[part][index] = macro;
-    if (editScreen && part == selectedPart)
+    editor.macroCache[part][index] = macro;
+    if (editor.editScreen && part == editor.selectedPart)
     {
-        editScreen->macroDataChanged(part, index);
+        editor.editScreen->macroDataChanged(part, index);
     }
-    playScreen->macroDataChanged(part, index);
+    editor.playScreen->macroDataChanged(part, index);
 }
 
-void SCXTEditor::onMacroValue(const scxt::messaging::client::macroValue_t &s)
+void SCXTEditorReceiver::onMacroValue(const scxt::messaging::client::macroValue_t &s)
 {
     const auto &[part, index, value] = s;
-    macroCache[part][index].value = value;
+    editor.macroCache[part][index].value = value;
 
-    if (editScreen && part == selectedPart)
+    if (editor.editScreen && part == editor.selectedPart)
     {
-        editScreen->macroDataChanged(part, index);
+        editor.editScreen->macroDataChanged(part, index);
     }
-    playScreen->macroDataChanged(part, index);
+    editor.playScreen->macroDataChanged(part, index);
 
-    editScreen->mappingPane->repaint();
-    editScreen->partSidebar->repaint();
-    playScreen->repaint();
+    editor.editScreen->mappingPane->repaint();
+    editor.editScreen->partSidebar->repaint();
+    editor.playScreen->repaint();
 }
 
-void SCXTEditor::onOtherTabSelection(
+void SCXTEditorReceiver::onOtherTabSelection(
     const scxt::selection::SelectionManager::otherTabSelection_t &p)
 {
-    otherTabSelection = p;
+    editor.otherTabSelection = p;
 
-    auto mainScreen = queryTabSelection("main_screen");
+    auto mainScreen = editor.queryTabSelection("main_screen");
     if (mainScreen.empty())
     {
     }
     else if (mainScreen == "mixer")
     {
-        setActiveScreen(MIXER);
+        editor.setActiveScreen(SCXTEditor::MIXER);
     }
     else if (mainScreen == "multi")
     {
-        setActiveScreen(MULTI);
+        editor.setActiveScreen(SCXTEditor::MULTI);
     }
     else if (mainScreen == "play")
     {
-        setActiveScreen(PLAY);
+        editor.setActiveScreen(SCXTEditor::PLAY);
     }
     else
     {
         SCLOG_IF(warnings, "Unknown main screen " << mainScreen);
     }
 
-    if (mixerScreen)
+    if (editor.mixerScreen)
     {
-        mixerScreen->onOtherTabSelection();
+        editor.mixerScreen->onOtherTabSelection();
     }
 
-    if (editScreen)
+    if (editor.editScreen)
     {
-        editScreen->onOtherTabSelection();
+        editor.editScreen->onOtherTabSelection();
     }
 
-    auto bs = queryTabSelection("browser.source");
-    if (!bs.empty() && editScreen && editScreen->browser)
+    auto bs = editor.queryTabSelection("browser.source");
+    if (!bs.empty() && editor.editScreen && editor.editScreen->browser)
     {
         auto v = std::atoi(bs.c_str());
-        editScreen->browser->selectPane(v);
+        editor.editScreen->browser->selectPane(v);
     }
 }
 
-void SCXTEditor::onPartConfiguration(
+void SCXTEditorReceiver::onPartConfiguration(
     const scxt::messaging::client::partConfigurationPayload_t &payload)
 {
     const auto &[pt, c] = payload;
     assert(pt >= 0 && pt < scxt::numParts);
-    partConfigurations[pt] = c;
+    editor.partConfigurations[pt] = c;
     // When I have active show/hide i will need to rewrite this i bet
-    if (playScreen && playScreen->partSidebars[pt])
-        playScreen->partSidebars[pt]->resetFromEditorCache();
-    playScreen->partConfigurationChanged();
+    if (editor.playScreen && editor.playScreen->partSidebars[pt])
+        editor.playScreen->partSidebars[pt]->resetFromEditorCache();
+    editor.playScreen->partConfigurationChanged();
 
-    if (editScreen && editScreen->partSidebar)
-        editScreen->partSidebar->partConfigurationChanged(pt);
+    if (editor.editScreen && editor.editScreen->partSidebar)
+        editor.editScreen->partSidebar->partConfigurationChanged(pt);
 }
 
-void SCXTEditor::onActivityNotification(
+void SCXTEditorReceiver::onActivityNotification(
     const scxt::messaging::client::activityNotificationPayload_t &payload)
 {
     auto [idx, msg] = payload;
-    if (headerRegion)
+    if (editor.headerRegion)
     {
-        headerRegion->onActivityNotification(idx, msg);
+        editor.headerRegion->onActivityNotification(idx, msg);
     }
 }
 
-void SCXTEditor::onMissingResolutionWorkItemList(
+void SCXTEditorReceiver::onMissingResolutionWorkItemList(
     const std::vector<engine::MissingResolutionWorkItem> &items)
 {
     for (const auto &wi : items)
@@ -528,39 +537,53 @@ void SCXTEditor::onMissingResolutionWorkItemList(
         SCLOG_IF(missingResolution, "   id   : " << wi.missingID.to_string());
     }
 
-    missingResolutionScreen->setWorkItemList(items);
+    editor.missingResolutionScreen->setWorkItemList(items);
 
     if (items.empty())
     {
-        hasMissingSamples = false;
-        missingResolutionScreen->setVisible(false);
+        editor.hasMissingSamples = false;
+        editor.missingResolutionScreen->setVisible(false);
     }
     else
     {
-        hasMissingSamples = true;
-        missingResolutionScreen->setBounds(getLocalBounds());
-        missingResolutionScreen->setVisible(true);
-        missingResolutionScreen->toFront(true);
+        editor.hasMissingSamples = true;
+        editor.missingResolutionScreen->setBounds(editor.getLocalBounds());
+        editor.missingResolutionScreen->setVisible(true);
+        editor.missingResolutionScreen->toFront(true);
     }
 }
 
-void SCXTEditor::onGroupTriggerConditions(scxt::engine::GroupTriggerConditions const &g)
+void SCXTEditorReceiver::onGroupTriggerConditions(scxt::engine::GroupTriggerConditions const &g)
 {
-    editScreen->partSidebar->groupTriggerConditionChanged(g);
+    editor.editScreen->partSidebar->groupTriggerConditionChanged(g);
 }
 
-void SCXTEditor::onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &t)
+void SCXTEditorReceiver::onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &t)
 {
-    tuningStatus = t;
+    editor.tuningStatus = t;
 }
 
-void SCXTEditor::onMpeTuningAwarenessFromEngine(bool a) { tuningAwareMPE = a; }
-void SCXTEditor::onPitchBendTuningAwarenessFromEngine(bool a) { tuningAwarePitchBends = a; }
-
-void SCXTEditor::onOmniFlavorFromEngine(std::pair<int, bool> f)
+void SCXTEditorReceiver::onMpeTuningAwarenessFromEngine(bool a) { editor.tuningAwareMPE = a; }
+void SCXTEditorReceiver::onPitchBendTuningAwarenessFromEngine(bool a)
 {
-    setupOmniApplyDefault(f.second);
-    setOmniFlavor(static_cast<engine::Engine::OmniFlavor>(f.first), true);
+    editor.tuningAwarePitchBends = a;
+}
+
+void SCXTEditorReceiver::onOmniFlavorFromEngine(std::pair<int, bool> f)
+{
+    editor.setupOmniApplyDefault(f.second);
+    editor.setOmniFlavor(static_cast<engine::Engine::OmniFlavor>(f.first), true);
+}
+
+void SCXTEditorReceiver::onAllProcessorDescriptions(
+    const std::vector<dsp::processor::ProcessorDescription> &v)
+{
+    editor.allProcessors = v;
+}
+
+void SCXTEditorReceiver::onClipboardType(const scxt::engine::Clipboard::ContentType &s)
+{
+    editor.clipboardType = s;
 }
 
 } // namespace scxt::ui::app

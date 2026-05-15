@@ -30,6 +30,8 @@
 #include "PartEditScreen.h"
 #include "mapping-pane/MacroDisplay.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/part_messages.h"
+#include "messaging/client/mixer_messages.h"
 #include "app/shared/PartEffectsPane.h"
 #include "app/edit-screen/EditScreen.h"
 

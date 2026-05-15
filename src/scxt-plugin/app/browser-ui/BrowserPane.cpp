@@ -27,6 +27,9 @@
 
 #include "BrowserPane.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/browser_messages.h"
+#include "messaging/client/structure_messages.h"
 #include "browser/browser.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/NamedPanelDivider.h"

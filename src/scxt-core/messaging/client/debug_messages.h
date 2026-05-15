@@ -38,6 +38,7 @@
 #include "client_macros.h"
 #include "client_serial.h"
 #include <map>
+#include <tao/json/events/to_pretty_stream.hpp>
 #include "engine/engine.h"
 
 namespace scxt::messaging::client

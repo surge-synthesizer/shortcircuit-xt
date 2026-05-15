@@ -27,6 +27,7 @@
 
 #include "GroupSettingsCard.h"
 #include "messaging/messaging.h"
+#include "messaging/client/part_messages.h"
 #include "app/SCXTEditor.h"
 
 namespace scxt::ui::app::edit_screen

@@ -30,6 +30,7 @@
 #include <tao/json/to_string.hpp>
 #include <tao/json/from_string.hpp>
 #include <tao/json/contrib/traits.hpp>
+#include <tao/json/msgpack/from_string.hpp>
 
 #include "scxt_traits.h"
 #include "engine_traits.h"

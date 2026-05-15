@@ -28,6 +28,7 @@
 #include "configuration.h"
 #include "ChannelStrip.h"
 #include "messaging/messaging.h"
+#include "messaging/client/mixer_messages.h"
 #include <sst/jucegui/components/VUMeter.h>
 #include "app/SCXTEditor.h"
 #include "app/shared/PartEffectsPane.h"

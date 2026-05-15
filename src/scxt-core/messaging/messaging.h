@@ -422,7 +422,15 @@ struct MessageController : MoveableOnly<MessageController>
 
 } // namespace scxt::messaging
 
-#include "messaging/client/detail/client_serial_impl.h"
-#include "client/client_messages.h"
+// NOTE: client_serial_impl.h and client_messages.h are intentionally NOT
+// included here. Including them pulls the full tao JSON + msgpack template
+// tree into every TU that touches messaging.h. Call sites that need the
+// senders, dispatchers, or specific message types should include the
+// relevant header directly:
+//   - To send a message: include client_serial_impl.h (for the senders) and
+//     the specific messaging/client/<area>_messages.h that defines the type.
+//   - To receive on a client: include the dispatcher header
+//     messaging/client/detail/client_serial_dispatch.h plus the relevant
+//     <area>_messages.h headers; this is what SCXTEditorReceiver does.
 
 #endif // SHORTCIRCUIT_MESSAGING_H

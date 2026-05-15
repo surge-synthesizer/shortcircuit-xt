@@ -33,6 +33,9 @@
 #include "engine/part.h"
 #include "messaging/messaging.h"
 #include "messaging/client/client_serial.h"
+#include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/zone_messages.h"
+#include "json/engine_traits.h"
 
 namespace scxt::undo
 {

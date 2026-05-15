@@ -27,6 +27,14 @@
 
 #include <chrono>
 #include "console_ui.h"
+#include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/detail/client_serial_dispatch.h"
+
+// Explicit instantiation of the s2c dispatcher for ConsoleUI. See the matching extern template
+// in client_serial.h.
+template void scxt::messaging::client::clientThreadExecuteSerializationMessage<
+    scxt::clients::console_ui::ConsoleUI>(const std::string &,
+                                          scxt::clients::console_ui::ConsoleUI *);
 
 namespace scxt::clients::console_ui
 {

@@ -29,6 +29,8 @@
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_PROCESSOR_MESSAGES_H
 
 #include <cassert>
+#include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/detail/message_helpers.h"
 #include "client_macros.h"
 #include "selection/selection_manager.h"
 #include "undo_manager/processor_undoable_items.h"

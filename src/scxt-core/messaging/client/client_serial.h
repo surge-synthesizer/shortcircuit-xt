@@ -311,4 +311,28 @@ void clientThreadExecuteSerializationMessage(const std::string &msgView, Client 
 
 } // namespace scxt::messaging::client
 
+// Forward declarations of the known dispatch-target client types, so we can extern-template
+// the dispatcher specializations below. The body of
+// clientThreadExecuteSerializationMessage<Client> lives in
+// messaging/client/detail/client_serial_dispatch.h and is explicitly instantiated in
+// SCXTEditor.cpp and console_ui.cpp. Adding a new client requires three lines: a forward
+// declaration here, an extern template line here, and a matching explicit instantiation
+// alongside the new client's dispatch site.
+namespace scxt::ui::app
+{
+struct SCXTEditorReceiver;
+}
+namespace scxt::clients::console_ui
+{
+struct ConsoleUI;
+}
+
+namespace scxt::messaging::client
+{
+extern template void clientThreadExecuteSerializationMessage<scxt::ui::app::SCXTEditorReceiver>(
+    const std::string &, scxt::ui::app::SCXTEditorReceiver *);
+extern template void clientThreadExecuteSerializationMessage<scxt::clients::console_ui::ConsoleUI>(
+    const std::string &, scxt::clients::console_ui::ConsoleUI *);
+} // namespace scxt::messaging::client
+
 #endif // SHORTCIRCUIT_CLIENT_SERIAL_H

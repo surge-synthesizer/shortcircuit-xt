@@ -28,6 +28,7 @@
 #include "RoutingPane.h"
 #include "ProcessorPane.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/processor_messages.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/HSliderFilled.h"

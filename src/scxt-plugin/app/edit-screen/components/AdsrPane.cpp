@@ -27,6 +27,7 @@
 
 #include "AdsrPane.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/group_or_zone_messages.h"
 #include "app/edit-screen/EditScreen.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/ToggleButton.h"

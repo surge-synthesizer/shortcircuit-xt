@@ -36,6 +36,7 @@
 #include "sample/compound_file.h"
 #include "app/browser-ui/BrowserPaneInterfaces.h"
 #include "messaging/client/structure_messages.h"
+#include "messaging/client/patch_io_messages.h"
 
 namespace scxt::ui::app::shared
 {

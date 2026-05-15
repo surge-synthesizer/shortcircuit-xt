@@ -39,6 +39,8 @@
 #include "sst/clap_juce_shim/menu_helper.h"
 
 #include "app/SCXTEditor.h"
+#include "messaging/client/client_messages.h"
+#include "messaging/client/detail/client_serial_impl.h"
 #include "app/edit-screen/EditScreen.h"
 #include "app/edit-screen/components/AdsrPane.h"
 #include "app/edit-screen/components/LFOPane.h"

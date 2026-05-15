@@ -27,6 +27,7 @@
 
 #include "MissingResolutionScreen.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/missing_resolution_messages.h"
 
 #include <sst/jucegui/components/NamedPanel.h>
 #include <sst/jucegui/components/TextPushButton.h>

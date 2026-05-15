@@ -97,6 +97,12 @@ struct LogScreen;
 struct ThemeEditorWindow;
 } // namespace other_screens
 
+// Receiver of typed s2c messages. Defined in SCXTEditorReceiver.h, which is
+// the only header that pulls the full client_messages.h umbrella. Keeping
+// the forward declaration here means panel TUs that include SCXTEditor.h
+// don't parse those headers.
+struct SCXTEditorReceiver;
+
 struct SCXTEditor : sst::jucegui::components::WindowPanel,
                     juce::DragAndDropContainer,
                     sst::jucegui::screens::ScreenHolder<SCXTEditor>,
@@ -182,6 +188,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     std::unique_ptr<sst::jucegui::accessibility::FocusDebugger> focusDebugger;
 
+    // Receiver of typed s2c messages. See SCXTEditorReceiver.h.
+    std::unique_ptr<SCXTEditorReceiver> receiver;
+    friend struct SCXTEditorReceiver;
+
     SCXTEditor(messaging::MessageController &e, infrastructure::DefaultsProvider &d,
                const sample::SampleManager &s, const scxt::browser::Browser &b,
                const engine::Engine::SharedUIMemoryState &state);
@@ -203,13 +213,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     bool tuningAwareMPE{true};
     bool tuningAwarePitchBends{true};
 
-    void onMpeTuningAwarenessFromEngine(bool);
-    void onPitchBendTuningAwarenessFromEngine(bool);
-
     engine::Engine::OmniFlavor currentOmniFlavor{engine::Engine::OmniFlavor::OMNI};
     bool shouldApplyOmniOnSelect{false};
 
-    void onOmniFlavorFromEngine(std::pair<int, bool> f);
     void setupOmniApplyDefault(bool b);
     void setOmniFlavor(engine::Engine::OmniFlavor of, bool onStartup = false);
     void setOmniFlavorDefault(int f);
@@ -240,76 +246,27 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // Sometimes we don't want a popup. Se #1669
     bool supressPopupMenuForContinuous(sst::jucegui::components::ContinuousParamEditor *e) const;
 
-    // Serialization to Client Messages
-    void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
-    void onEngineStatus(const engine::Engine::EngineStatusMessage &e);
-    void onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &);
-    void onSamplesUpdated(const scxt::messaging::client::sampleSelectedZoneViewResposne_t &);
-    void onStructureUpdated(const engine::Engine::pgzStructure_t &);
-    void
-    onGroupOrZoneEnvelopeUpdated(const scxt::messaging::client::adsrViewResponsePayload_t &payload);
-    void onGroupOrZoneProcessorDataAndMetadata(
-        const scxt::messaging::client::processorDataResponsePayload_t &d);
-
-    void onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &);
-    void onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &);
-
-    void onGroupMatrixMetadata(const scxt::modulation::groupMatrixMetadata_t &);
-    void onGroupMatrix(const scxt::modulation::GroupMatrix::RoutingTable &);
-
-    void onGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &);
-
-    void onGroupOrZoneModulatorStorageUpdated(
-        const scxt::messaging::client::indexedModulatorStorageUpdate_t &);
-    void onGroupOrZoneMiscModStorageUpdated(const scxt::messaging::client::gzMiscStorageUpdate_t &);
-    void
-    onGroupOrZoneAudioModStorageUpdated(const scxt::messaging::client::gzAudioModStorageUpdate_t &);
-    void onZoneOutputInfoUpdated(const scxt::messaging::client::zoneOutputInfoUpdate_t &p);
-    void onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p);
-
-    void onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &);
-    void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &);
-    void onSelectedPart(const int16_t);
+    // Receiver state mirrored from the engine. The typed on* callbacks that
+    // update these live on SCXTEditorReceiver (see SCXTEditorReceiver.h). UI
+    // panels read these directly via editor->member.
     int16_t getSelectedPart() const;
 
-    void onPartConfiguration(const scxt::messaging::client::partConfigurationPayload_t &);
     std::array<scxt::engine::Part::PartConfiguration, scxt::numParts> partConfigurations;
 
     selection::SelectionManager::otherTabSelection_t otherTabSelection;
-    void onOtherTabSelection(const scxt::selection::SelectionManager::otherTabSelection_t &p);
     std::string queryTabSelection(const std::string &k);
     void setTabSelection(const std::string &k, const std::string &t);
 
-    void onBusOrPartEffectFullData(const scxt::messaging::client::busEffectFullData_t &);
-    void onBusOrPartSendData(const scxt::messaging::client::busSendData_t &);
-
-    void onBrowserRefresh(const bool);
-    void onBrowserQueueLengthRefresh(const std::pair<int32_t, int32_t>);
-
-    void onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &);
-
-    void onColormap(const std::string &);
-
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
-    void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)
-    {
-        allProcessors = v;
-    }
 
-    void onActivityNotification(const scxt::messaging::client::activityNotificationPayload_t &);
-
-    scxt::messaging::client::tuningStatusPayload_t tuningStatus;
-    void onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &);
+    // tuningStatusPayload_t == std::pair<TuningMode, TuningZoneResolution>;
+    // inlined here to avoid pulling enginestatus_messages.h.
+    std::pair<engine::Engine::TuningMode, engine::Engine::TuningZoneResolution> tuningStatus;
 
     std::array<std::array<scxt::engine::Macro, scxt::macrosPerPart>, scxt::numParts> macroCache;
-    void onMacroFullState(const scxt::messaging::client::macroFullState_t &);
-    void onMacroValue(const scxt::messaging::client::macroValue_t &);
-
-    void onMissingResolutionWorkItemList(const std::vector<engine::MissingResolutionWorkItem> &);
 
     // Some items which are not fully represented here have a server-side clipboard
     scxt::engine::Clipboard::ContentType clipboardType{scxt::engine::Clipboard::ContentType::NONE};
-    void onClipboardType(const scxt::engine::Clipboard::ContentType &s) { clipboardType = s; }
     // but some can be copy and pasted entirely in the ui.
     struct UISideClipboard
     {

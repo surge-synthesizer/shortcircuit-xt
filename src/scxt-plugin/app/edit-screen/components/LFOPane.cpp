@@ -32,6 +32,8 @@
 #include "datamodel/metadata.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "messaging/messaging.h"
+#include "messaging/client/group_or_zone_messages.h"
+#include "messaging/client/modulation_messages.h"
 #include "app/SCXTEditor.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/GlyphPainter.h"

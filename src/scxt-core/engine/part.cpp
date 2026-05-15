@@ -38,6 +38,9 @@
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/basic-blocks/dsp/PanLaws.h"
 #include "messaging/messaging.h"
+#include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/mixer_messages.h"
+#include "json/engine_traits.h"
 
 namespace scxt::engine
 {

@@ -28,6 +28,7 @@
 #include "VariantDisplay.h"
 #include "app/SCXTEditor.h"
 #include "messaging/client/client_serial.h"
+#include "messaging/client/structure_messages.h"
 #include "SampleWaveform.h"
 #include "app/browser-ui/BrowserPaneInterfaces.h"
 #include "app/shared/UIHelpers.h"

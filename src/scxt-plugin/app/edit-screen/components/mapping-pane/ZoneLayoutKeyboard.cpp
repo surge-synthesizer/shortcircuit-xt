@@ -30,6 +30,7 @@
 #include "app/SCXTEditor.h"
 #include "app/edit-screen/components/mapping-pane/MappingDisplay.h"
 #include "messaging/messaging.h"
+#include "messaging/client/interaction_messages.h"
 
 namespace scxt::ui::app::edit_screen
 {

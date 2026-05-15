@@ -29,8 +29,35 @@
 #include "messaging/audio/audio_serial.h"
 #include "client/client_serial.h"
 #include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/detail/client_serial_dispatch.h"
 #include "client/client_messages.h"
 #include "messaging/client/client_serial.h"
+
+namespace scxt::messaging::client
+{
+// c2s dispatcher — defined here (not inline in impl.h) so the per-message-id helper
+// instantiation tree it pulls in is parsed and instantiated in exactly one TU instead
+// of every TU that touches the messaging headers.
+void serializationThreadExecuteClientMessage(const std::string &msgView, engine::Engine &e,
+                                             MessageController &mc)
+{
+    assert(mc.threadingChecker.isSerialThread());
+    using namespace tao::json;
+
+    events::transformer<events::to_basic_value<detail::client_message_traits>> consumer;
+    encoder::events::from_string(consumer, msgView);
+    auto jv = std::move(consumer.value);
+
+    auto o = jv.get_object();
+    int idv{-1};
+    o["id"].to(idv);
+
+    detail::executeOnSerializationFor(
+        (ClientToSerializationMessagesIds)idv, jv, e, mc,
+        std::make_index_sequence<(
+            size_t)ClientToSerializationMessagesIds::num_clientToSerializationMessages>());
+}
+} // namespace scxt::messaging::client
 
 namespace scxt::messaging
 {

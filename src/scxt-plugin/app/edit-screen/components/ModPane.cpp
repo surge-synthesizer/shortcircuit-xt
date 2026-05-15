@@ -27,6 +27,7 @@
 
 #include "ModPane.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/modulation_messages.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/HSliderFilled.h"

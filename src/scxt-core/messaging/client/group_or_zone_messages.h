@@ -28,6 +28,9 @@
 #ifndef SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_GROUP_OR_ZONE_MESSAGES_H
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_GROUP_OR_ZONE_MESSAGES_H
 
+#include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/detail/message_helpers.h"
+#include "messaging/client/client_macros.h"
 #include "undo_manager/undoable_items.h"
 
 namespace scxt::messaging::client

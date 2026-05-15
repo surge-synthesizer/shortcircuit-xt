@@ -33,6 +33,9 @@
 #include "scxt-plugin.h"
 #include "sst/plugininfra/version_information.h"
 #include "app/SCXTEditor.h"
+#include "messaging/client/detail/client_serial_impl.h"
+#include "messaging/client/interaction_messages.h"
+#include "messaging/client/enginestatus_messages.h"
 #include "sst/basic-blocks/modulators/TransportClapAdapter.h"
 
 namespace scxt::clap_first::scxt_plugin

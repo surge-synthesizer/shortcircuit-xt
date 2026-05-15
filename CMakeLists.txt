@@ -59,6 +59,7 @@ endif()
 
 option(SCXT_SANITIZE "Build with clang/gcc address and undef sanitizer" OFF)
 option(SCXT_USE_CLAP_WRAPPER_STANDALONE "Build with the clap wrapper standalone rather than our temp one" ON)
+option(SCXT_TIME_TRACE "Build with clang -ftime-trace; emits a JSON per TU for ClangBuildAnalyzer" OFF)
 
 # Share some information about the  build
 message(STATUS "Shortcircuit XT ${CMAKE_PROJECT_VERSION}")

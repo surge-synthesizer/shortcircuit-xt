@@ -37,6 +37,7 @@
 #include <cassert>
 
 #include "messaging/messaging.h"
+#include "voice/voice.h"
 #include "patch.h"
 #include "engine.h"
 #include "group_and_zone_impl.h"

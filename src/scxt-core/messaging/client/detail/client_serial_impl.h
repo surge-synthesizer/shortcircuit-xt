@@ -28,8 +28,21 @@
 #ifndef SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_DETAIL_CLIENT_SERIAL_IMPL_H
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_DETAIL_CLIENT_SERIAL_IMPL_H
 
+// Inter-process messages can pack as JSON (the streaming format we use)
+// or as msgpack messages which are a lot smaller and faster. PROCESS_AS_JSON
+// is really just useful for debugging where you actually want to see a message.
+// Defined here, before includes, so the JSON-only tao headers can be skipped.
+#ifndef PROCESS_AS_JSON
+#define PROCESS_AS_JSON 0
+#endif
+
+#include "messaging/client/client_serial.h"
+
+#if PROCESS_AS_JSON
 #include "tao/json/to_string.hpp"
 #include "tao/json/from_string.hpp"
+#endif
+#include "tao/json/contrib/traits.hpp"
 
 #include "tao/json/msgpack/consume_string.hpp"
 #include "tao/json/msgpack/from_binary.hpp"
@@ -45,12 +58,6 @@
 // once it works, basically.
 namespace scxt::messaging::client
 {
-/*
- * Inter-process messages can pack as JSON (the streaming format we use)
- * or as msgpack messages which are a lot smaller and faster. PROCESS_AS_JSON
- * is really just useful for debugging where you actually want to see a message
- */
-#define PROCESS_AS_JSON 0
 #if PROCESS_AS_JSON
 namespace encoder = tao::json;
 #else
@@ -94,68 +101,12 @@ template <typename T> struct client_message_traits<ResponseWrapper<T>>
     }
 };
 
-template <size_t I, template <typename...> class Traits>
-void doExecOnSerialization(tao::json::basic_value<Traits> &o, engine::Engine &e,
-                           MessageController &mc)
-{
-    if constexpr (std::is_same<
-                      typename ClientToSerializationType<(ClientToSerializationMessagesIds)I>::T,
-                      unimpl_t>::value)
-    {
-        // If you hit this assert you have not specialized ClientToSerializationType for the ID
-        assert(false);
-        return;
-    }
-    else
-    {
-        typedef
-            typename ClientToSerializationType<(ClientToSerializationMessagesIds)I>::T handler_t;
-
-        typename handler_t::c2s_payload_t payload;
-        client_message_value mv = o.get_object()["object"];
-        mv.to(payload);
-        handler_t::executeOnSerialization(payload, e, mc);
-    }
-}
-
-template <template <typename...> class Traits, size_t... Is>
-auto executeOnSerializationFor(size_t ft, typename tao::json::basic_value<Traits> &o,
-                               engine::Engine &e, MessageController &mc, std::index_sequence<Is...>)
-{
-    using vtOp_t =
-        void (*)(tao::json::basic_value<Traits> &, engine::Engine &, MessageController &);
-    constexpr vtOp_t fnc[] = {detail::doExecOnSerialization<Is>...};
-    return fnc[ft](o, e, mc);
-}
-
-template <size_t I, typename Client, template <typename...> class Traits>
-void doExecOnClient(tao::json::basic_value<Traits> &o, Client *c)
-{
-    typedef typename SerializationToClientType<(SerializationToClientMessageIds)I>::T handler_t;
-    if constexpr (std::is_same<handler_t, unimpl_t>::value)
-    {
-        // If you hit this assert, it means you have not defined a handler type, probably
-        // skipping the SERIAL_TO_CLIENT
-        assert(false);
-        return;
-    }
-    else
-    {
-        typename handler_t::s2c_payload_t payload;
-
-        client_message_value mv = o.get_object()["object"];
-        mv.to(payload);
-        handler_t::template executeOnClient<Client>(c, payload);
-    }
-}
-template <typename Client, template <typename...> class Traits, size_t... Is>
-auto executeOnClientFor(size_t ft, typename tao::json::basic_value<Traits> &o, Client *c,
-                        std::index_sequence<Is...>)
-{
-    using vtOp_t = void (*)(tao::json::basic_value<Traits> &, Client *);
-    constexpr vtOp_t fnc[] = {detail::doExecOnClient<Is>...};
-    return fnc[ft](o, c);
-}
+// Dispatcher helpers (doExecOnSerialization / doExecOnClient / executeOnSerializationFor /
+// executeOnClientFor) and the routing entry points
+// (serializationThreadExecuteClientMessage / clientThreadExecuteSerializationMessage) used to
+// live here, but they brought a per-message-id template instantiation tree into every TU that
+// just wanted senders. They now live in client_serial_dispatch.h, which is included only by
+// the three TUs that actually dispatch (messaging.cpp, SCXTEditor.cpp, console_ui.cpp).
 
 } // namespace detail
 
@@ -206,46 +157,10 @@ inline void serializationSendToClient(SerializationToClientMessageIds id, const 
     }
 }
 
-inline void serializationThreadExecuteClientMessage(const std::string &msgView, engine::Engine &e,
-                                                    MessageController &mc)
-{
-    assert(mc.threadingChecker.isSerialThread());
-    using namespace tao::json;
-
-    // We need to unpack with the client message traits
-    events::transformer<events::to_basic_value<detail::client_message_traits>> consumer;
-    encoder::events::from_string(consumer, msgView);
-    auto jv = std::move(consumer.value);
-
-    auto o = jv.get_object();
-    int idv{-1};
-    o["id"].to(idv);
-
-    detail::executeOnSerializationFor(
-        (ClientToSerializationMessagesIds)idv, jv, e, mc,
-        std::make_index_sequence<(
-            size_t)ClientToSerializationMessagesIds::num_clientToSerializationMessages>());
-}
-
-template <typename Client>
-inline void clientThreadExecuteSerializationMessage(const std::string &msgView, Client *c)
-{
-    using namespace tao::json;
-
-    // We need to unpack with the client message traits
-    events::transformer<events::to_basic_value<detail::client_message_traits>> consumer;
-    encoder::events::from_string(consumer, msgView);
-    auto jv = std::move(consumer.value);
-
-    auto o = jv.get_object();
-    int idv{-1};
-    o["id"].to(idv);
-
-    detail::executeOnClientFor(
-        (SerializationToClientMessageIds)idv, jv, c,
-        std::make_index_sequence<(
-            size_t)SerializationToClientMessageIds::num_serializationToClientMessages>());
-}
+// serializationThreadExecuteClientMessage is defined out-of-line in messaging.cpp.
+// clientThreadExecuteSerializationMessage<Client> body lives in client_serial_dispatch.h and is
+// explicitly instantiated in the client TUs (SCXTEditor.cpp, console_ui.cpp). The matching
+// extern template declarations live in client_serial.h.
 
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_CLIENT_SERIAL_IMPL_H

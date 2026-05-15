@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_GROUP_MESSAGES_H
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_GROUP_MESSAGES_H
 
+#include "messaging/client/detail/client_serial_impl.h"
 #include "client_macros.h"
 #include "engine/group.h"
 #include "selection/selection_manager.h"
