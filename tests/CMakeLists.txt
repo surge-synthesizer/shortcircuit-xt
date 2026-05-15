@@ -15,6 +15,7 @@ add_executable(scxt-test
 		mod_matrix_operations_tests.cpp
 		exclusive_group_tests.cpp
 		undo_tests.cpp
+		importer_tests.cpp
 )
 
 target_compile_definitions(scxt-test PRIVATE
