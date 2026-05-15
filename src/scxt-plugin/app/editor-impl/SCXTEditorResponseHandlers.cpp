@@ -38,9 +38,13 @@
 #include "app/shared/HeaderRegion.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/other-screens/AboutScreen.h"
+#include "app/other-screens/ThemeEditor.h"
 #include "app/browser-ui/BrowserPane.h"
 #include "app/play-screen/PlayScreen.h"
 #include "app/missing-resolution/MissingResolutionScreen.h"
+#include "theme/ColorMap.h"
+#include "theme/ThemeApplier.h"
+#include "infrastructure/user_defaults.h"
 
 namespace scxt::ui::app
 {
@@ -387,6 +391,34 @@ void SCXTEditor::onDebugInfoGenerated(const scxt::messaging::client::debugRespon
     {
         SCLOG_IF(debug, k << " " << s);
     }
+}
+
+void SCXTEditor::onColormap(const std::string &json)
+{
+    if (json.empty())
+    {
+        // DES holds no edited overlay: reset to the user-prefs baseline. The
+        // engine emits this unconditionally on full refresh / extra-state load.
+        resetColorsFromUserPreferences();
+    }
+    else
+    {
+        auto cm = theme::ColorMap::jsonToColormap(json);
+        if (!cm)
+            return;
+        cm->hasKnobs =
+            defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::showKnobs, false);
+        // `jsonToColormap` does not preserve myId (serialised files are id-less
+        // and it defaults to WIREFRAME). Tag as custom so the menu shows the
+        // "Custom Colormap" indicator and the state machine is consistent.
+        cm->myId =
+            static_cast<theme::ColorMap::BuiltInColorMaps>(theme::ColorMap::CUSTOM_COLORMAP_ID);
+        themeApplier.recolorStylesheetWith(std::move(cm), style());
+    }
+    setStyle(style());
+    repaint();
+    if (themeEditorWindow)
+        themeEditorWindow->rebuildFromThemeApplier();
 }
 
 void SCXTEditor::onMacroFullState(const scxt::messaging::client::macroFullState_t &s)

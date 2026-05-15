@@ -94,6 +94,7 @@ namespace other_screens
 struct WelcomeScreen;
 struct AboutScreen;
 struct LogScreen;
+struct ThemeEditorWindow;
 } // namespace other_screens
 
 struct SCXTEditor : sst::jucegui::components::WindowPanel,
@@ -172,6 +173,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::unique_ptr<other_screens::AboutScreen> aboutScreen;
     std::unique_ptr<other_screens::WelcomeScreen> welcomeScreen;
     std::unique_ptr<other_screens::LogScreen> logScreen;
+    std::unique_ptr<other_screens::ThemeEditorWindow> themeEditorWindow;
     std::unique_ptr<missing_resolution::MissingResolutionScreen> missingResolutionScreen;
     bool hasMissingSamples{false};
     void showMissingResolutionScreen();
@@ -195,6 +197,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void showAboutOverlay();
     void showLogOverlay();
     void showWelcomeOverlay();
+    void showThemeEditorWindow();
     int32_t checkWelcomeCountdown{20};
 
     bool tuningAwareMPE{true};
@@ -285,6 +288,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     void onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &);
 
+    void onColormap(const std::string &);
+
     std::vector<dsp::processor::ProcessorDescription> allProcessors;
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v)
     {
@@ -374,6 +379,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void addZoomMenu(juce::PopupMenu &into, bool addTitle = true);
     void addOmniFlavorMenu(juce::PopupMenu &p);
     void addUIThemesMenu(juce::PopupMenu &p, bool addTitle = true);
+
+    void promptForSaveTheme();
+    void promptForLoadTheme();
+    void applyThemeFromFile(const fs::path &);
 
     void processorBypassToggled(int which);
 

@@ -110,6 +110,8 @@ struct ConsoleUI
 
     void onDebugInfoGenerated(const scxt::messaging::client::debugResponse_t &) ON_STUB;
 
+    void onColormap(const std::string &) ON_STUB;
+
     void
     onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v) ON_STUB;
 

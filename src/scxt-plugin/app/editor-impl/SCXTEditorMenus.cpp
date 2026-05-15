@@ -29,6 +29,9 @@
 #include "melatonin_inspector/melatonin_inspector.h"
 #endif
 
+#include <fstream>
+#include <sstream>
+
 #include "infrastructure/user_defaults.h"
 #include "sst/plugininfra/version_information.h"
 #include "sst/jucegui/component-adapters/ComponentTags.h"
@@ -45,12 +48,39 @@
 #include "app/shared/HeaderRegion.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/other-screens/AboutScreen.h"
+#include "app/other-screens/ThemeEditor.h"
 #include "app/shared/MenuValueTypein.h"
 #include "app/shared/UIHelpers.h"
 
 namespace scxt::ui::app
 {
 namespace cmsg = scxt::messaging::client;
+
+void SCXTEditor::applyThemeFromFile(const fs::path &fp)
+{
+    std::ifstream t(fp);
+    if (!t)
+        return;
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    auto cm = theme::ColorMap::jsonToColormap(buffer.str());
+    if (!cm)
+        return;
+    cm->hasKnobs =
+        defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::showKnobs, false);
+    themeApplier.recolorStylesheetWith(std::move(cm), style());
+    defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapId,
+                                            theme::ColorMap::FILE_COLORMAP_ID);
+    defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapPathIfFile,
+                                            fp.u8string());
+    // Picking a named theme discards any prior in-session edit so the DAW
+    // reload won't reapply it on top of the freshly chosen theme.
+    sendToSerialization(cmsg::StoreColormap{std::string{}});
+    setStyle(style());
+    repaint();
+    if (themeEditorWindow)
+        themeEditorWindow->rebuildFromThemeApplier();
+}
 
 void SCXTEditor::showMainMenu()
 {
@@ -451,54 +481,73 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
                 w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapId,
                                                            m);
                 w->themeApplier.recolorStylesheetWith(std::move(cm), w->style());
+                // See applyThemeFromFile: any prior in-session edit is dropped.
+                w->sendToSerialization(cmsg::StoreColormap{std::string{}});
                 w->setStyle(w->style());
             }
         });
     }
 
+    if (cid == theme::ColorMap::CUSTOM_COLORMAP_ID)
+    {
+        // In-session edits (or a reloaded edited-state DES) are live. Pure
+        // status indicator — disabled + ticked — picking a named theme
+        // above/below will discard the edits.
+        p.addItem("Custom Colormap", false, true, nullptr);
+    }
+
+    juce::PopupMenu userThemes;
+    int userThemeCount{0};
+    auto currentPath = (cid == theme::ColorMap::FILE_COLORMAP_ID)
+                           ? defaultsProvider.getUserDefaultValue(
+                                 infrastructure::DefaultKeys::colormapPathIfFile, std::string{})
+                           : std::string{};
+    try
+    {
+        if (fs::is_directory(browser.themeDirectory))
+        {
+            std::vector<fs::path> files;
+            for (const auto &entry : fs::directory_iterator(browser.themeDirectory))
+            {
+                if (!entry.is_regular_file())
+                    continue;
+                auto ext = entry.path().extension().u8string();
+                std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+                if (ext == ".sctheme")
+                    files.push_back(entry.path());
+            }
+            std::sort(files.begin(), files.end());
+            for (const auto &fp : files)
+            {
+                auto label = fp.stem().u8string();
+                auto ticked = !currentPath.empty() && fp.u8string() == currentPath;
+                userThemes.addItem(label, true, ticked,
+                                   [w = juce::Component::SafePointer(this), fp]() {
+                                       if (w)
+                                           w->applyThemeFromFile(fp);
+                                   });
+                ++userThemeCount;
+            }
+        }
+    }
+    catch (const fs::filesystem_error &)
+    {
+    }
+    if (userThemeCount > 0)
+        p.addSubMenu("User Themes", userThemes);
+
     p.addSeparator();
     p.addItem("Save Theme...", [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->fileChooser = std::make_unique<juce::FileChooser>(
-            "Save Theme", juce::File(w->browser.themeDirectory.u8string()), "*.sctheme");
-        w->fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
-                                        juce::FileBrowserComponent::saveMode |
-                                        juce::FileBrowserComponent::warnAboutOverwriting,
-                                    [w](const juce::FileChooser &c) {
-                                        auto result = c.getResults();
-                                        if (result.isEmpty() || result.size() > 1)
-                                        {
-                                            return;
-                                        }
-                                        // send a 'save multi' message
-                                        auto json = w->themeApplier.colors->toJson();
-                                        result[0].replaceWithText(json);
-                                    });
+        if (w)
+            w->promptForSaveTheme();
     });
     p.addItem("Load Theme...", [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->fileChooser = std::make_unique<juce::FileChooser>(
-            "Load Theme", juce::File(w->browser.themeDirectory.u8string()), "*.sctheme");
-        w->fileChooser->launchAsync(
-            juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
-            [w](const juce::FileChooser &c) {
-                auto result = c.getResults();
-                if (result.isEmpty() || result.size() > 1)
-                {
-                    return;
-                }
-                auto json = result[0].loadFileAsString();
-                auto cm = theme::ColorMap::jsonToColormap(json.toStdString());
-                if (cm)
-                    w->themeApplier.recolorStylesheetWith(std::move(cm), w->style());
-                w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapId,
-                                                           theme::ColorMap::FILE_COLORMAP_ID);
-                auto fp = shared::juceFileToFSPath(result[0]);
-                w->defaultsProvider.updateUserDefaultValue(
-                    infrastructure::DefaultKeys::colormapPathIfFile, fp.u8string());
-            });
+        if (w)
+            w->promptForLoadTheme();
+    });
+    p.addItem("Edit Theme...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showThemeEditorWindow();
     });
     p.addSeparator();
     auto knobsOn = themeApplier.colors->hasKnobs;
@@ -598,6 +647,54 @@ void SCXTEditor::popupMenuForContinuous(sst::jucegui::components::ContinuousPara
     }
 
     p.showMenuAsync(defaultPopupMenuOptions());
+}
+
+void SCXTEditor::promptForSaveTheme()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Save Theme", juce::File(browser.themeDirectory.u8string()), "*.sctheme");
+    fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
+            juce::FileBrowserComponent::warnAboutOverwriting,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            if (!w)
+                return;
+            auto result = c.getResults();
+            if (result.isEmpty() || result.size() > 1)
+                return;
+            auto &cm = w->themeApplier.currentColorMap();
+            result[0].replaceWithText(cm.toJson());
+            // Save promotes the current (likely custom) map to a file-backed
+            // one: tag the id, persist the path, and drop the edited DES so a
+            // subsequent reload picks up the saved file as the baseline. Any
+            // edits the user makes afterwards will re-tag as CUSTOM on top of
+            // that new baseline; next session `resetColorsFromUserPreferences`
+            // reloads the file and the DES overlay is re-applied via onColormap.
+            cm.myId =
+                static_cast<theme::ColorMap::BuiltInColorMaps>(theme::ColorMap::FILE_COLORMAP_ID);
+            w->defaultsProvider.updateUserDefaultValue(infrastructure::DefaultKeys::colormapId,
+                                                       theme::ColorMap::FILE_COLORMAP_ID);
+            w->defaultsProvider.updateUserDefaultValue(
+                infrastructure::DefaultKeys::colormapPathIfFile,
+                shared::juceFileToFSPath(result[0]).u8string());
+            w->sendToSerialization(cmsg::StoreColormap{std::string{}});
+        });
+}
+
+void SCXTEditor::promptForLoadTheme()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Load Theme", juce::File(browser.themeDirectory.u8string()), "*.sctheme");
+    fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
+                                 juce::FileBrowserComponent::openMode,
+                             [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+                                 if (!w)
+                                     return;
+                                 auto result = c.getResults();
+                                 if (result.isEmpty() || result.size() > 1)
+                                     return;
+                                 w->applyThemeFromFile(shared::juceFileToFSPath(result[0]));
+                             });
 }
 
 } // namespace scxt::ui::app

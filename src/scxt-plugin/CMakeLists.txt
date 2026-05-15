@@ -37,6 +37,7 @@ add_library(${PROJECT_NAME} STATIC
 
         app/other-screens/AboutScreen.cpp
         app/other-screens/LogScreen.cpp
+        app/other-screens/ThemeEditor.cpp
         app/other-screens/WelcomeScreen.cpp
         app/play-screen/PlayScreen.cpp
 

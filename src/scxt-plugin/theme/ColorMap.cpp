@@ -48,7 +48,7 @@ using metadata_t = std::map<std::string, std::string>;
 using colors_t = std::map<std::string, std::string>;
 using colormap_t = std::tuple<metadata_t, colors_t>;
 
-std::string keyName(ColorMap::Colors c)
+std::string ColorMap::nameOf(ColorMap::Colors c)
 {
 #define C(x)                                                                                       \
     case ColorMap::Colors::x:                                                                      \
@@ -104,7 +104,7 @@ struct StdMapColormap : ColorMap
         std::map<std::string, int> nameToIndex;
         for (int i = 0; i < lastColor + 1; ++i)
         {
-            nameToIndex[keyName((ColorMap::Colors(i)))] = i;
+            nameToIndex[ColorMap::nameOf((ColorMap::Colors(i)))] = i;
         }
         for (auto &[k, m] : colorMap)
         {
@@ -150,6 +150,13 @@ struct StdMapColormap : ColorMap
         auto nalp = res.getAlpha() * 1.f / 255 * alpha;
         return res.withAlpha(nalp);
     }
+
+    void setColor(ColorMap::Colors c, juce::Colour col) override
+    {
+        auto ic = (size_t)c;
+        if (ic <= (size_t)ColorMap::lastColor)
+            resolvedMap[ic] = col;
+    }
 };
 
 template <template <typename...> class... Transformers, template <typename...> class Traits>
@@ -169,7 +176,7 @@ std::string ColorMap::toJson() const
         auto col = getImpl(c);
         auto cols = fmt::format("#{:02x}{:02x}{:02x}{:02x}", col.getAlpha(), col.getRed(),
                                 col.getGreen(), col.getBlue());
-        auto keys = keyName(c);
+        auto keys = ColorMap::nameOf(c);
         colorMap[keys] = cols;
     }
 

@@ -119,5 +119,20 @@ inline void doResendFullState(const bool &b, engine::Engine &e, MessageControlle
 CLIENT_TO_SERIAL(ResendFullState, c2s_resend_full_state, bool,
                  doResendFullState(payload, engine, cont));
 
+/*
+ * The UI owns the colormap visual; the serialization side stores an opaque
+ * JSON blob on DawExtraState so the DAW session can round-trip an unsaved
+ * theme edit. Payload is the ColorMap JSON string.
+ */
+SERIAL_TO_CLIENT(SetColormap, s2c_set_colormap, std::string, onColormap);
+
+inline void doStoreColormap(const std::string &payload, engine::Engine &engine,
+                            MessageController &cont)
+{
+    engine.dawExtraState.editedColormap = payload;
+}
+CLIENT_TO_SERIAL(StoreColormap, c2s_store_colormap, std::string,
+                 doStoreColormap(payload, engine, cont));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_INTERACTION_MESSAGES_H

@@ -43,6 +43,7 @@
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/LogScreen.h"
+#include "app/other-screens/ThemeEditor.h"
 #include "app/other-screens/WelcomeScreen.h"
 #include "app/edit-screen/components/RoutingPane.h"
 
@@ -208,6 +209,15 @@ void SCXTEditor::showWelcomeOverlay()
     aboutScreen->setVisible(false);
     logScreen->setVisible(false);
     resized();
+}
+
+void SCXTEditor::showThemeEditorWindow()
+{
+    if (!themeEditorWindow)
+        themeEditorWindow = std::make_unique<other_screens::ThemeEditorWindow>(this);
+    themeEditorWindow->rebuildFromThemeApplier();
+    themeEditorWindow->setVisible(true);
+    themeEditorWindow->toFront(true);
 }
 
 void SCXTEditor::resized()

@@ -276,12 +276,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     /*
      * A structure to store extra state which is for a DAW session but not a patch.
      * Must be updated on the serliazation thread.
-     * Currently only contains a dummy entry. Architectural only as of this commit.
      * Only streamed when streamReason == FOR_DAW.
      */
     struct DawExtraState
     {
-        bool dummy{true};
+        std::string editedColormap{};
     } dawExtraState;
 
     void resetTuningFromRuntimeConfig();

@@ -1447,6 +1447,11 @@ void Engine::sendFullRefreshToClient() const
                               messaging::client::tuningStatusPayload_t{
                                   runtimeConfig.tuningMode, runtimeConfig.tuningZoneResolution},
                               *(getMessageController()));
+
+    // Always emit, even when empty — an empty payload tells the UI to revert
+    // to its user-prefs baseline (discard any overlay it may currently show).
+    serializationSendToClient(messaging::client::s2c_set_colormap, dawExtraState.editedColormap,
+                              *(getMessageController()));
 }
 
 void Engine::clearAll(bool alsoPurge)
@@ -1556,7 +1561,14 @@ void Engine::prepareToStream()
 
 void Engine::prepareDawExtraState() {}
 
-void Engine::onDawExtraStateLoaded() { SCLOG_IF(patchIO, "Unstreamed daw extra state"); }
+void Engine::onDawExtraStateLoaded()
+{
+    SCLOG_IF(patchIO, "Unstreamed daw extra state");
+    // Always emit, even when empty — an empty payload tells the UI to revert
+    // to its user-prefs baseline (discard any overlay it may currently show).
+    serializationSendToClient(messaging::client::s2c_set_colormap, dawExtraState.editedColormap,
+                              *(getMessageController()));
+}
 
 std::string Engine::toStringTuningMode(const TuningMode &m)
 {

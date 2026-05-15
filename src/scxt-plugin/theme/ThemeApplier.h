@@ -74,6 +74,9 @@ struct ThemeApplier
     juce::Font interLightFor(int ht) const;
     juce::Font anonmyousProRegularFor(int ht) const;
 
+    const ColorMap &currentColorMap() const { return *colors; }
+    ColorMap &currentColorMap() { return *colors; }
+
     friend scxt::ui::app::SCXTEditor;
 
   private:

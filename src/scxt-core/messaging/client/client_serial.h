@@ -214,6 +214,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_begin_zone_mapping_modification,
 
+    c2s_store_colormap,
+
     num_clientToSerializationMessages
 };
 
@@ -268,6 +270,8 @@ enum SerializationToClientMessageIds
     s2c_update_pitchbend_tuning_awareness,
 
     s2c_update_omni_flavor,
+
+    s2c_set_colormap,
 
     num_serializationToClientMessages
 };

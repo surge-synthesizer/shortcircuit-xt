@@ -21,6 +21,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     add_compile_options(
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
+            # libstdc++ in gcc 13 deprecates fs::u8path(std::string) for C++20
+            # (LWG 3840 may yet revert this). Keep the warning visible but
+            # don't fail -Werror builds over it. gcc-only; libc++/Clang is fine.
+            $<$<CXX_COMPILER_ID:GNU>:-Wno-error=deprecated-declarations>
     )
 
     add_link_options(
@@ -124,7 +128,12 @@ else ()
                 $<$<AND:$<NOT:$<BOOL:${WIN32}>>,$<COMPILE_LANGUAGE:CXX>>:-fvisibility-inlines-hidden>)
     endif ()
 
-    set(OS_COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS=1 WINDOWS=1 _USE_MATH_DEFINES=1)
+    # WIN32_LEAN_AND_MEAN keeps <windows.h> from pulling in <rpc.h>/<rpcndr.h>,
+    # which would otherwise '#define small char' and collide with the
+    # BadgeIconType::small enumerator in juce_PushNotifications.h.
+    # NOMINMAX stops the min/max macros from colliding with std::min/std::max.
+    set(OS_COMPILE_DEFINITIONS _CRT_SECURE_NO_WARNINGS=1 WINDOWS=1 _USE_MATH_DEFINES=1
+            WIN32_LEAN_AND_MEAN=1 NOMINMAX=1)
     set(OS_LINK_LIBRARIES
             shell32
             user32

@@ -123,8 +123,9 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                      to.onDawExtraStateLoaded();
              }))
 
-SC_STREAMDEF(scxt::engine::Engine::DawExtraState, SC_FROM({ v = {{"dummy", from.dummy}}; }),
-             SC_TO({ findIf(v, "dummy", to.dummy); }))
+SC_STREAMDEF(scxt::engine::Engine::DawExtraState,
+             SC_FROM({ v = {{"editedColormap", from.editedColormap}}; }),
+             SC_TO({ findIf(v, "editedColormap", to.editedColormap); }))
 
 SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
                  if (SC_STREAMING_FOR_DAW)

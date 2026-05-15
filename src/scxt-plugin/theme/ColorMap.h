@@ -45,6 +45,7 @@ struct ColorMap
 
     } myId{WIREFRAME};
     static constexpr uint32_t FILE_COLORMAP_ID{'fcmp'};
+    static constexpr uint32_t CUSTOM_COLORMAP_ID{'cust'};
     static std::unique_ptr<ColorMap> createColorMap(BuiltInColorMaps cm);
 
     virtual ~ColorMap() = default;
@@ -112,6 +113,9 @@ struct ColorMap
             return cres.darker(-hoverFactor);
     }
     virtual juce::Colour getImpl(Colors c, float alpha = 1.f) const = 0;
+    virtual void setColor(Colors c, juce::Colour col) {}
+
+    static std::string nameOf(Colors c);
 
     // https://www.youtube.com/watch?v=e0RWtQOeuRo
     std::string toJson() const;
