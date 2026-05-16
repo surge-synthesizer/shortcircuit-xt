@@ -753,7 +753,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     auto q = k + SamplePos - FIRoffset;
                     if (q >= GD->loopUpperBound || q >= WaveSize)
-                        q -= LoopOffset;
+                        q -= std::min((unsigned)LoopOffset, q);
                     loopEndBufferLF32[k] = SampleDataFL[q];
                     if (stereo)
                         loopEndBufferRF32[k] = SampleDataFR[q];
@@ -786,7 +786,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     auto q = k + SamplePos - FIRoffset;
                     if (q >= GD->loopUpperBound || q >= WaveSize)
-                        q -= LoopOffset;
+                        q -= std::min((unsigned)LoopOffset, q);
 
                     loopEndBufferL[k] = SampleDataL[q];
                     if (stereo)
@@ -1093,7 +1093,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     {
                         auto q = k + SamplePos - FIRoffset;
                         if (q >= GD->loopUpperBound || q >= WaveSize)
-                            q -= LoopOffset;
+                            q -= std::min((unsigned)LoopOffset, q);
                         loopEndBufferLF32[k] = SampleDataFL[q];
                         if (stereo)
                             loopEndBufferRF32[k] = SampleDataFR[q];
@@ -1127,7 +1127,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     {
                         auto q = k + SamplePos - FIRoffset;
                         if (q >= GD->loopUpperBound || q >= WaveSize)
-                            q -= LoopOffset;
+                            q -= std::min((unsigned)LoopOffset, q);
                         loopEndBufferL[k] = SampleDataL[q];
                         if (stereo)
                             loopEndBufferR[k] = SampleDataR[q];

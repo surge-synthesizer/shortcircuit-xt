@@ -314,7 +314,8 @@ bool Sample::parseFlac(const fs::path &p)
                         d += sizeof(loaders::SampleLoop);
 
                         meta.loop_start = smpl_loop.dwStart;
-                        meta.loop_end = smpl_loop.dwEnd + 1;
+                        meta.loop_end =
+                            std::min((uint32_t)smpl_loop.dwEnd + 1, sampleLengthPerChannel);
                         if (smpl_loop.dwType == 1)
                             meta.playmode = pm_forward_loop_bidirectional;
                         else
