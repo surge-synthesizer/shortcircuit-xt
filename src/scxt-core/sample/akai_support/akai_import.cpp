@@ -468,40 +468,14 @@ bool importAKP(const fs::path &path, engine::Engine &e)
             if (!z.mapped || z.sample.empty())
                 continue;
 
-            auto samplePath = rootDir / z.sample;
-            // Akai samples often don't have extensions in the AKP file, but are .WAV or .AIF on
-            // disk
-            if (!fs::exists(samplePath))
-            {
-                for (auto ext : {".WAV", ".wav", ".AIF", ".aif"})
-                {
-                    if (fs::exists(rootDir / (z.sample + ext)))
-                    {
-                        samplePath = rootDir / (z.sample + ext);
-                        break;
-                    }
-                }
-            }
-
-            SampleID sid;
-            if (fs::exists(samplePath))
-            {
-                auto lsid = e.getSampleManager()->loadSampleByPath(samplePath);
-                if (lsid.has_value())
-                {
-                    sid = *lsid;
-                }
-                else
-                {
-                    continue;
-                }
-            }
-            else
-            {
+            // AKP files reference samples by name without extension; the actual
+            // file on disk is .WAV or .AIF (and case may vary).
+            auto lsid =
+                ctx.loadSampleFromDisk({rootDir / z.sample}, {".WAV", ".wav", ".AIF", ".aif"});
+            if (!lsid)
                 continue;
-            }
 
-            auto zn = std::make_unique<engine::Zone>(sid);
+            auto zn = std::make_unique<engine::Zone>(*lsid);
             import_support::importZoneMapping(
                 *zn, ctx,
                 {
@@ -515,8 +489,10 @@ bool importAKP(const fs::path &path, engine::Engine &e)
                         z.semiTune + import_support::centsToSemitones((float)z.fineTune),
                 });
 
-            // If the sample itself has a root key, it will be loaded by attachToSample
-            zn->attachToSample(*e.getSampleManager());
+            // MAPPING is masked off because the AKP file already supplied root/key/vel
+            // and we don't want a smpl-chunk in the referenced WAV to clobber them.
+            zn->attachToSample(*e.getSampleManager(), 0,
+                               engine::Zone::ENDPOINTS | engine::Zone::LOOP);
 
             ctx.addZoneToGroup(groupId, std::move(zn));
         }

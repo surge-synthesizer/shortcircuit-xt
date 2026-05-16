@@ -28,7 +28,9 @@
 #ifndef SCXT_SRC_SCXT_CORE_SAMPLE_IMPORT_SUPPORT_IMPORT_HARNESS_H
 #define SCXT_SRC_SCXT_CORE_SAMPLE_IMPORT_SUPPORT_IMPORT_HARNESS_H
 
+#include <initializer_list>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -37,6 +39,7 @@
 #include "engine/part.h"
 #include "engine/zone.h"
 #include "messaging/messaging.h"
+#include "sample/sample_manager.h"
 
 namespace scxt::import_support
 {
@@ -74,6 +77,15 @@ class ImporterContext
     // Moves the zone into the named group and records its address for the
     // end-of-import selection push.
     void addZoneToGroup(int groupIdx, std::unique_ptr<engine::Zone> zone);
+
+    // Loads a sample from disk for file-based formats (SFZ/EXS/AKP/etc.). Tries
+    // each candidate path in order; for the first that exists, calls
+    // SampleManager::loadSampleByPath. extensionFallbacks (if non-empty) are
+    // appended to each candidate that doesn't exist as-given (e.g. AKP's
+    // `.WAV/.wav/.AIF/.aif` search). Returns nullopt if nothing resolved.
+    std::optional<SampleID>
+    loadSampleFromDisk(std::initializer_list<fs::path> candidates,
+                       std::initializer_list<const char *> extensionFallbacks = {});
 
     // Finalize: emits the unsupported-features summary, pushes a selection
     // action for everything added, and returns true iff ≥1 zone was added.

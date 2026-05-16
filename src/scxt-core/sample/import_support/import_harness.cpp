@@ -84,6 +84,31 @@ void ImporterContext::addZoneToGroup(int groupIdx, std::unique_ptr<engine::Zone>
     addedZoneAddresses.emplace_back(groupIdx, zoneIdx);
 }
 
+std::optional<SampleID>
+ImporterContext::loadSampleFromDisk(std::initializer_list<fs::path> candidates,
+                                    std::initializer_list<const char *> extensionFallbacks)
+{
+    auto &sm = *engineRef.getSampleManager();
+    for (const auto &candidate : candidates)
+    {
+        if (fs::exists(candidate))
+        {
+            if (auto sid = sm.loadSampleByPath(candidate))
+                return sid;
+        }
+        for (auto ext : extensionFallbacks)
+        {
+            auto withExt = fs::path{candidate.u8string() + ext};
+            if (fs::exists(withExt))
+            {
+                if (auto sid = sm.loadSampleByPath(withExt))
+                    return sid;
+            }
+        }
+    }
+    return std::nullopt;
+}
+
 bool ImporterContext::finish()
 {
     if (!unsupportedItems.empty())

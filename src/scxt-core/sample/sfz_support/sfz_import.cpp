@@ -359,40 +359,20 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             auto sampleFile = fs::path{sampleFileString};
             auto samplePath = (sampleDir / sampleFile).lexically_normal();
 
-            SampleID sid;
-            if (fs::exists(samplePath))
+            auto lsid = ctx.loadSampleFromDisk({samplePath, sampleFile});
+            if (!lsid)
             {
-                auto lsid = e.getSampleManager()->loadSampleByPath(samplePath);
-                if (lsid.has_value())
-                {
-                    sid = *lsid;
-                }
-                else
-                {
-                    ctx.raise("SFZ Import Error",
-                              "Cannot load sample '" + samplePath.u8string() + "'");
-                    break;
-                }
+                // TODO: this should trigger a missing-sample resolution flow
+                // (prompt the user to locate the file) rather than raising +
+                // skipping the region. Same shape applies to a load failure on
+                // a path that DID exist (e.g. a corrupt WAV). For now: raise a
+                // user-visible error and skip this region; the rest of the SFZ
+                // continues to import.
+                ctx.raise("SFZ Import Error", "Unable to load sample '" + samplePath.u8string() +
+                                                  "' or '" + sampleFile.u8string() + "'");
+                break;
             }
-            else if (fs::exists(sampleFile))
-            {
-                auto lsid = e.getSampleManager()->loadSampleByPath(sampleFile);
-                if (lsid.has_value())
-                {
-                    sid = *lsid;
-                }
-                else
-                {
-                    return ctx.fail("SFZ Import Error",
-                                    "Cannot load sample '" + sampleFile.u8string() + "'");
-                }
-            }
-            else
-            {
-                return ctx.fail("SFZ Import Error", "Unable to load either '" +
-                                                        samplePath.u8string() + "' or '" +
-                                                        sampleFile.u8string() + "'");
-            }
+            SampleID sid = *lsid;
 
             // OK so do we have a sequence position > 1
             int roundRobinPosition{-1};

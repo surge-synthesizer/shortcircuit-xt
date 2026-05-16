@@ -681,12 +681,8 @@ bool importEXS(const fs::path &p, engine::Engine &e)
 
     for (auto &s : info.samples)
     {
-        auto sp = fs::path{s.filePath} / s.fileName;
-        auto lsid = e.getSampleManager()->loadSampleByPath(sp);
-        if (lsid.has_value())
-        {
+        if (auto lsid = ctx.loadSampleFromDisk({fs::path{s.filePath} / s.fileName}))
             sampleIDByOrder.push_back(*lsid);
-        }
     }
 
     for (auto &g : info.groups)
@@ -721,7 +717,10 @@ bool importEXS(const fs::path &p, engine::Engine &e)
                                               .velEnd = z.velocityHigh,
                                           });
 
-        zone->attachToSample(*(e.getSampleManager()));
+        // MAPPING masked off — EXS supplies root/key/vel itself; don't let a
+        // sample-meta smpl chunk clobber it.
+        zone->attachToSample(*(e.getSampleManager()), 0,
+                             engine::Zone::ENDPOINTS | engine::Zone::LOOP);
         ctx.addZoneToGroup(gi, std::move(zone));
     }
     return ctx.finish();

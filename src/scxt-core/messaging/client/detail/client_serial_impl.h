@@ -28,16 +28,12 @@
 #ifndef SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_DETAIL_CLIENT_SERIAL_IMPL_H
 #define SCXT_SRC_SCXT_CORE_MESSAGING_CLIENT_DETAIL_CLIENT_SERIAL_IMPL_H
 
+#include "messaging/client/client_serial.h"
+
 // Inter-process messages can pack as JSON (the streaming format we use)
 // or as msgpack messages which are a lot smaller and faster. PROCESS_AS_JSON
 // is really just useful for debugging where you actually want to see a message.
-// Defined here, before includes, so the JSON-only tao headers can be skipped.
-#ifndef PROCESS_AS_JSON
 #define PROCESS_AS_JSON 0
-#endif
-
-#include "messaging/client/client_serial.h"
-
 #if PROCESS_AS_JSON
 #include "tao/json/to_string.hpp"
 #include "tao/json/from_string.hpp"

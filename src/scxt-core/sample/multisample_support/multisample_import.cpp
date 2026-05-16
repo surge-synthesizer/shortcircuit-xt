@@ -204,8 +204,15 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
                                               .pitchOffsetSemitones = ktune,
                                           });
 
-        z->attachToSample(*engine.getSampleManager());
-        if (loopOn && loopStart + loopEnd > 0)
+        // MAPPING is supplied by the multisample.xml; mask it off so a smpl
+        // chunk in the embedded WAV can't clobber root/key/vel. LOOP is masked
+        // off only when the multisample explicitly sets loop bounds.
+        bool willWriteLoop = loopOn && loopStart + loopEnd > 0;
+        int32_t loadInfo = engine::Zone::ENDPOINTS;
+        if (!willWriteLoop)
+            loadInfo |= engine::Zone::LOOP;
+        z->attachToSample(*engine.getSampleManager(), 0, loadInfo);
+        if (willWriteLoop)
         {
             import_support::importZoneLoop(*z, ctx, 0,
                                            {
