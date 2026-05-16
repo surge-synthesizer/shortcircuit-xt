@@ -28,9 +28,13 @@
 #include "akai_import.h"
 #include "sample/import_support/import_harness.h"
 #include "sample/import_support/import_mapping.h"
+#include "sample/import_support/import_envelope.h"
+#include "sample/import_support/import_filter.h"
 #include "sample/import_support/import_numeric.h"
+#include <cmath>
 #include <fstream>
 #include <map>
+#include <set>
 #include <algorithm>
 #include "configuration.h"
 #include "messaging/messaging.h"
@@ -40,6 +44,90 @@ namespace scxt::akai_support
 {
 
 // Thanks https://burnit.co.uk/AKPspec/ plus AI
+
+// AKP envelope/LFO/filter values are bytes in 0..100 (sometimes 0..127 or
+// 0..12), with curve and absolute units left undocumented in the spec.
+// These conversions are best-effort approximations — they get a reasonable
+// envelope shape but absolute times may need refinement once we audition
+// real AKP-imported instruments side-by-side with a hardware S5/S6.
+namespace
+{
+// AKP envelope time bytes (0..100) follow an exponential curve. Calibration
+// from internet google search: 0→0ms, 30→12ms, 50→58ms, 70→295ms, 100→3300ms.
+// Log-linear fit: log10(seconds) = -2.966 + 0.0349 * v, with v=0 hard-zeroed.
+inline float akpTimeToSeconds(uint16_t v)
+{
+    if (v == 0)
+        return 0.f;
+    return 0.00108f * std::exp(0.0803f * (float)v);
+}
+// AKP cutoff byte (0..100) → CytomicSVF cutoff (semitones offset from MIDI 69).
+constexpr float akpCutoffToSemis(uint16_t v) { return (v / 100.f) * 127.f - 69.f; }
+
+// AKP S5000/S6000 filter type enum, per https://burnit.co.uk/AKPspec/.
+// We currently default everything to CytomicSVF LP12 in the import; this table
+// lets us tell the user which mode they actually asked for when it differs.
+constexpr const char *akpFilterTypeName(uint16_t v)
+{
+    switch (v)
+    {
+    case 0:
+        return "2-POLE LP";
+    case 1:
+        return "4-POLE LP";
+    case 2:
+        return "2-POLE LP+";
+    case 3:
+        return "2-POLE BP";
+    case 4:
+        return "4-POLE BP";
+    case 5:
+        return "2-POLE BP+";
+    case 6:
+        return "1-POLE HP";
+    case 7:
+        return "2-POLE HP";
+    case 8:
+        return "1-POLE HP+";
+    case 9:
+        return "LO<>HI";
+    case 10:
+        return "LO<>BAND";
+    case 11:
+        return "BAND<>HI";
+    case 12:
+        return "NOTCH 1";
+    case 13:
+        return "NOTCH 2";
+    case 14:
+        return "NOTCH 3";
+    case 15:
+        return "WIDE NOTCH";
+    case 16:
+        return "BI-NOTCH";
+    case 17:
+        return "PEAK 1";
+    case 18:
+        return "PEAK 2";
+    case 19:
+        return "PEAK 3";
+    case 20:
+        return "WIDE PEAK";
+    case 21:
+        return "BI-PEAK";
+    case 22:
+        return "PHASER 1";
+    case 23:
+        return "PHASER 2";
+    case 24:
+        return "BI-PHASE";
+    case 25:
+        return "VOWELISER";
+    default:
+        return "UNKNOWN";
+    }
+}
+} // namespace
 
 struct AKPContext
 {
@@ -454,6 +542,7 @@ bool importAKP(const fs::path &path, engine::Engine &e)
 
     auto rootDir = path.parent_path();
     std::map<uint16_t, int> akaiGroupToSCGroup;
+    std::set<uint16_t> reportedFilterTypes; // dedupe filter-type warnings per import
 
     for (size_t i = 0; i < akp.keygroups.size(); ++i)
     {
@@ -476,6 +565,7 @@ bool importAKP(const fs::path &path, engine::Engine &e)
                 continue;
 
             auto zn = std::make_unique<engine::Zone>(*lsid);
+            zn->engine = &e;
             import_support::importZoneMapping(
                 *zn, ctx,
                 {
@@ -488,6 +578,55 @@ bool importAKP(const fs::path &path, engine::Engine &e)
                     .pitchOffsetSemitones =
                         z.semiTune + import_support::centsToSemitones((float)z.fineTune),
                 });
+
+            // Zone-level pan and level (per ZONE struct). AKP pan is -50..50;
+            // level is -100..100 with no spec on units — treat as dB-ish.
+            if (z.pan != 0)
+                zn->outputInfo.pan = z.pan / 50.f;
+            if (z.level != 0)
+                zn->mapping.amplitude = z.level / 2.f;
+
+            // Envelopes: AKP keygroups carry up to three envs (amp/filt/aux).
+            // SCXT egStorage[0] is the AmpEG; [1] is FilEG.
+            auto envelopeFromAkp = [](const EG &eg) -> import_support::EnvelopeArgs {
+                return {
+                    .attackSeconds = akpTimeToSeconds(eg.attack),
+                    .decaySeconds = akpTimeToSeconds(eg.decay),
+                    .sustainLevel = eg.sustain / 100.f,
+                    .releaseSeconds = akpTimeToSeconds(eg.release),
+                };
+            };
+            if (kg.egs.size() >= 1)
+                import_support::importZoneEnvelope(*zn, ctx, 0, envelopeFromAkp(kg.egs[0]));
+            if (kg.egs.size() >= 2)
+                import_support::importZoneEnvelope(*zn, ctx, 1, envelopeFromAkp(kg.egs[1]));
+
+            // Filter: AKP type is an enum 0..25 (see akpFilterTypeName above).
+            // We currently always set a CytomicSVF LP12; if the AKP asked for
+            // anything other than type 0 (2-POLE LP) we raise once per unique
+            // type so the user knows their filter mode wasn't honored.
+            if (!kg.filters.empty())
+            {
+                const auto &flt = kg.filters[0];
+                if (flt.cutoff < 100 || flt.resonance > 0)
+                {
+                    if (flt.type != 0 && reportedFilterTypes.insert(flt.type).second)
+                    {
+                        ctx.raise("AKP Filter Type Not Mapped",
+                                  std::string("AKP requested filter type ") +
+                                      std::to_string(flt.type) + " (" +
+                                      akpFilterTypeName(flt.type) +
+                                      "); defaulting to CytomicSVF LP12.");
+                    }
+                    import_support::importZoneFilter(
+                        *zn, ctx, 0,
+                        {
+                            .type = dsp::processor::ProcessorType::proct_CytomicSVF,
+                            .cutoff = akpCutoffToSemis(flt.cutoff),
+                            .resonance = flt.resonance / 12.f,
+                        });
+                }
+            }
 
             // MAPPING is masked off because the AKP file already supplied root/key/vel
             // and we don't want a smpl-chunk in the referenced WAV to clobber them.
@@ -606,4 +745,75 @@ void dumpAkaiToLog(const fs::path &path)
         }
     }
 }
+
+/*
+ * TODO — AKP import gap list (parsed by AKPFile but not yet wired into the engine):
+ *
+ * Per-keygroup data
+ * -----------------
+ *  - kg.egs[2] (AUX env): would populate egStorage[2]. Currently unused; needs
+ *    a mod target to be useful (it isn't routed automatically).
+ *  - kg.egs[*].velToAttack / keyScale / velToRel: per-env velocity and key
+ *    scaling sensitivities. Need mod routes (velocity -> egN.attack/release).
+ *  - kg.filters[0].type: AKP enum 0..25 (see akpFilterTypeName). Currently
+ *    every type collapses to CytomicSVF LP12 with a user-visible warning.
+ *    Real fix needs a mapping table AKP-type -> SCXT ProcessorType and the
+ *    appropriate cutoff/resonance scaling per SCXT filter.
+ *  - kg.filters[0].keyTrack: filter keytrack amount. Needs a key-track mod
+ *    route to filter cutoff.
+ *  - kg.lfos[]: per-keygroup LFOs (type/rate/depth/delay). Should call
+ *    importZoneLFO and then a mod route to whatever the AKP MODULATION block
+ *    targets — none of which is wired yet.
+ *  - kg.modulations[]: source/destination/amount triples. Source enum 0..14
+ *    (NO_SOURCE, MODWHEEL, BEND, AFTERTOUCH, EXTERNAL, VELOCITY, KEYBOARD,
+ *    LFO1, LFO2, AMP_ENV, FILT_ENV, AUX_ENV, dMODWHEEL, dBEND, dEXTERNAL).
+ *    Destination enum is also AKP-specific. Requires extending
+ *    import_modulation's ImportedSourceKind / ImportedTargetKind (currently
+ *    only LFO/EG sources and Pitch/FilterParam targets) before AKP mod routes
+ *    can be expressed.
+ *
+ * Per-zone data
+ * -------------
+ *  - z.filter: per-zone filter offset/level. Today only the keygroup-level
+ *    filter block is read; the zone-level filter offset is ignored.
+ *  - z.playback: playback mode (one-shot, looped, etc.). Maps to Zone loop /
+ *    playmode but the AKP enum values aren't decoded here yet.
+ *  - z.output: output bus assignment. Could map to Zone routeTo.
+ *  - z.kbTrack: per-zone keyboard tracking. Maps to mapping.tracking.
+ *  - z.velToStart: velocity -> sample-start-offset. Needs a mod route from
+ *    Velocity to SampleStartPos (target kind not in import_modulation yet).
+ *  - z.level scaling: currently z.level / 2.f as mapping.amplitude in dB.
+ *    AKP spec says -100..100 with no documented units; needs hardware
+ *    calibration like akpTimeToSeconds got.
+ *
+ * Global (program-level) data
+ * ---------------------------
+ *  - akp.out (loudness, ampMod1/2, panMod1/2/3, velSens): program-wide
+ *    output settings. Some map to Part-level config, some to Group-level.
+ *  - akp.tune (semi, fine, detune[12], pbUp, pbDown, bendMode, aftertouch):
+ *    program-wide tuning + per-note detune. pbUp/pbDown could go to Zone
+ *    pbUp/pbDown; detune[12] is a per-pitch-class tuning table SCXT doesn't
+ *    currently have a direct equivalent for.
+ *  - akp.lfos[0..1] (GLOBAL_LFO): the two AKP "global" LFOs distinct from
+ *    keygroup LFOs. Need a Group-level or Part-level LFO host, plus the same
+ *    mod-route expansion noted above.
+ *  - akp.mods (GLOBAL_MODS): cross-references that say which source modulates
+ *    each of the GLOBAL_OUT / GLOBAL_LFO targets. Resolution depends on all
+ *    the destinations above being wired first.
+ *
+ * Curve calibration
+ * -----------------
+ *  - akpCutoffToSemis: currently linear (v/100)*127 - 69. Likely needs a log
+ *    fit like akpTimeToSeconds got, once we audition against hardware.
+ *
+ * Helper layer
+ * ------------
+ *  - Extend ImportedSourceKind: MidiCC, Velocity, ChannelPressure, PolyAT,
+ *    KeyTrack, PitchTrack, NoteExpression. Required for AKP mod routes AND
+ *    SF2 modulators block AND SFZ *_oncc* family — landing this unlocks
+ *    Phase B progress on three formats at once.
+ *  - Extend ImportedTargetKind: Pan, Amplitude, PlaybackRatio, LFORate,
+ *    LFODepth, EGStage, SampleStartPos.
+ */
+
 } // namespace scxt::akai_support
