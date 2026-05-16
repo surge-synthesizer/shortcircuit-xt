@@ -158,6 +158,62 @@ TEST_CASE("Import AKAI fixture", "[importer]")
     CHECK(anyMappedRange);
 }
 
+// Skipped when the Logic Sampler Instruments aren't installed (e.g. on CI or a
+// machine without Logic). When the file IS present, this test exercises the
+// EXS importer against a known crashy patch — the referenced AIFFs (e.g.
+// Bellsp36.aif) declare more sample frames in the COMM chunk than fit in
+// the SSND chunk, and load_data_i16BE in load_aiff.cpp reads past the
+// buffer end without bounds checking. SIGSEGV.
+TEST_CASE("Import EXS Logic library fixture (skipped if absent)", "[importer][local-only]")
+{
+    auto p = fs::path("/Library/Application Support/Logic/Sampler Instruments/"
+                      "05 Synthesizers/02 Synth Pads/Bellsphere Dark Filter.exs");
+    if (!fs::exists(p))
+    {
+        WARN("Skipping Logic factory EXS test — fixture not present at " << p.string());
+        SUCCEED("Logic factory EXS not installed on this machine");
+        return;
+    }
+
+    INFO("fixture=" << p.string());
+    ImporterFixture f;
+    f.loadSample(p);
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() >= 1);
+    int totalZones = 0;
+    for (auto &g : part.getGroups())
+        totalZones += (int)g->getZones().size();
+    CHECK(totalZones >= 1);
+}
+
+TEST_CASE("Import EXS fixture", "[importer]")
+{
+    auto p = fixturePath("exs/Numbers.exs");
+    INFO("fixture=" << p.string());
+    REQUIRE(fs::exists(p));
+
+    ImporterFixture f;
+    f.loadSample(p);
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() >= 1);
+
+    int totalZones = 0;
+    for (auto &g : part.getGroups())
+        totalZones += (int)g->getZones().size();
+    REQUIRE(totalZones >= 1);
+
+    // At least one zone has a non-default keyboard range — verifies that the
+    // EXS importer reaches `importZoneMapping` and populates the range.
+    bool anyMappedRange = false;
+    for (auto &g : part.getGroups())
+        for (auto &z : g->getZones())
+            if (z->mapping.keyboardRange.keyEnd > 0)
+                anyMappedRange = true;
+    CHECK(anyMappedRange);
+}
+
 TEST_CASE("Import multisample fixture", "[importer]")
 {
     auto p = fixturePath("scxt_test.multisample");

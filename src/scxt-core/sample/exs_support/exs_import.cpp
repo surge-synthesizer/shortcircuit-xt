@@ -33,6 +33,8 @@
 #include "exs_import.h"
 #include "sample/import_support/import_harness.h"
 #include "sample/import_support/import_mapping.h"
+#include "sample/import_support/import_loop.h"
+#include "sample/import_support/import_numeric.h"
 
 #include <messaging/messaging.h>
 
@@ -679,19 +681,33 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     std::vector<int> groupIndexByOrder;
     std::vector<SampleID> sampleIDByOrder;
 
+    // EXS files store an absolute path captured when the patch was saved. When
+    // the patch is moved between machines that path won't resolve, so we also
+    // try the sample filename relative to the .exs's own directory.
+    auto exsDir = p.parent_path();
     for (auto &s : info.samples)
     {
-        if (auto lsid = ctx.loadSampleFromDisk({fs::path{s.filePath} / s.fileName}))
+        auto absolutePath = fs::path{s.filePath} / s.fileName;
+        auto siblingPath = exsDir / s.fileName;
+        if (auto lsid = ctx.loadSampleFromDisk({absolutePath, siblingPath}))
             sampleIDByOrder.push_back(*lsid);
     }
 
     for (auto &g : info.groups)
         groupIndexByOrder.push_back(ctx.addGroup(g.within.name));
 
+    int zoneOrdinal = 0;
     for (auto &z : info.zones)
     {
         auto exsgi = z.groupIndex;
         auto exssi = z.sampleIndex;
+
+        // EXS files sometimes leave sampleIndex == -1 expecting the loader to
+        // fall back to the zone ordinal as the sample index (matches the
+        // ConvertWithMoss reference implementation).
+        if (exssi < 0)
+            exssi = zoneOrdinal;
+        ++zoneOrdinal;
 
         if (exsgi < 0 || exsgi >= (int)groupIndexByOrder.size())
         {
@@ -708,19 +724,79 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         auto si = sampleIDByOrder[exssi];
         auto zone = std::make_unique<engine::Zone>(si);
 
+        // velocityRangeOn=false means "use full velocity range"; otherwise
+        // honor the per-zone velocityLow/High the EXS specifies.
+        int velStart = z.velocityRangeOn ? z.velocityLow : 0;
+        int velEnd = z.velocityRangeOn ? z.velocityHigh : 127;
+
+        // Tuning: EXS only respects coarse/fine when the `pitch` flag is set
+        // (mirrors the ConvertWithMoss reference). volumeAdjust is in dB.
+        std::optional<float> pitchOffsetSemis;
+        if (z.pitch && (z.coarseTuning != 0 || z.fineTuning != 0))
+            pitchOffsetSemis =
+                z.coarseTuning + import_support::centsToSemitones((float)z.fineTuning);
+
         import_support::importZoneMapping(*zone, ctx,
                                           {
                                               .rootKey = z.key,
                                               .keyStart = z.keyLow,
                                               .keyEnd = z.keyHigh,
-                                              .velStart = z.velocityLow,
-                                              .velEnd = z.velocityHigh,
+                                              .velStart = velStart,
+                                              .velEnd = velEnd,
+                                              .pitchOffsetSemitones = pitchOffsetSemis,
                                           });
 
-        // MAPPING masked off — EXS supplies root/key/vel itself; don't let a
-        // sample-meta smpl chunk clobber it.
-        zone->attachToSample(*(e.getSampleManager()), 0,
-                             engine::Zone::ENDPOINTS | engine::Zone::LOOP);
+        // EXS pan is -50..50 → -1..1.
+        if (z.pan != 0)
+            zone->outputInfo.pan = z.pan / 50.f;
+
+        // volumeAdjust is in dB (range -96..+12).
+        if (z.volumeAdjust != 0)
+            zone->mapping.amplitude = (float)z.volumeAdjust;
+
+        // Mask MAPPING and LOOP off attach — EXS supplies both itself. Leave
+        // ENDPOINTS on so attach populates sample-length defaults; we override
+        // below if the .exs explicitly set sampleStart/End.
+        zone->attachToSample(*(e.getSampleManager()), 0, engine::Zone::ENDPOINTS);
+
+        auto &variant = zone->variantData.variants[0];
+
+        // Explicit sample bounds win over the attach-loaded defaults.
+        if (z.sampleStart > 0)
+            variant.startSample = z.sampleStart;
+        if (z.sampleEnd > 0)
+            variant.endSample = z.sampleEnd;
+
+        variant.playReverse = z.reverse;
+        if (z.oneshot)
+            variant.playMode = engine::Zone::PlayMode::ONE_SHOT;
+
+        if (z.loopOn)
+        {
+            // EXS loopCrossfade is in milliseconds. Convert via the loaded
+            // sample's rate so it lands in samples for the engine.
+            int64_t fadeSamples = 0;
+            if (z.loopCrossfade > 0 && exssi < (int)info.samples.size())
+            {
+                const auto &smp = info.samples[exssi];
+                fadeSamples = (int64_t)z.loopCrossfade * smp.sampleRate / 1000;
+            }
+            // EXS loopDirection: 0 = forward, non-zero treated as alternate
+            // (spec doesn't enumerate other values; most loops are forward).
+            auto direction = (z.loopDirection != 0)
+                                 ? engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS
+                                 : engine::Zone::LoopDirection::FORWARD_ONLY;
+            import_support::importZoneLoop(*zone, ctx, 0,
+                                           {
+                                               .mode = engine::Zone::LoopMode::LOOP_DURING_VOICE,
+                                               .direction = direction,
+                                               .startSamples = z.loopStart,
+                                               .endSamples = z.loopEnd,
+                                               .fadeSamples = fadeSamples,
+                                               .active = true,
+                                           });
+        }
+
         ctx.addZoneToGroup(gi, std::move(zone));
     }
     return ctx.finish();

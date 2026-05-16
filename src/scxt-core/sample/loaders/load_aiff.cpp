@@ -152,9 +152,18 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     }
     uint32_t offset = sst::basic_blocks::mechanics::swap_endian_32(mf.ReadDWORD());
     uint32_t blocksize = sst::basic_blocks::mechanics::swap_endian_32(mf.ReadDWORD());
-    mf.SeekI(offset, scxt::sample::loaders::mf_FromCurrent); // skip comment
+    mf.SeekI(offset, scxt::sample::loaders::mf_FromCurrent); // skip alignment padding
 
-    unsigned char *loaddata = (unsigned char *)mf.ReadPtr(datasize - 8);
+    // SSND chunk content is: 4-byte offset + 4-byte blockSize + `offset` bytes
+    // of padding + the actual audio data. Logic factory AIFFs use a non-zero
+    // offset (e.g. 386 bytes), and ignoring it causes ReadPtr to walk past the
+    // chunk end and return null → SIGSEGV in the loader.
+    unsigned char *loaddata = (unsigned char *)mf.ReadPtr(datasize - 8 - offset);
+    if (!loaddata)
+    {
+        addError("AIFF 'SSND' chunk is shorter than the declared audio length");
+        return false;
+    }
 
     if (bitdepth == 32)
     {
