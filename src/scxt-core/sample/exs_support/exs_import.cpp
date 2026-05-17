@@ -828,9 +828,35 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     import_support::FilterArgs filterArgs;
     if (filterEnabled)
     {
-        // TODO: map FILTER1_TYPE (0..5: LP4/LP3/LP2/LP1/HP2/BP2) to the best
-        // SCXT processor type rather than always CytomicSVF.
-        filterArgs.type = dsp::processor::ProcessorType::proct_CytomicSVF;
+        // EXS24 FILTER1_TYPE enum (Logic Sampler "Filter Slope" selector):
+        //   0=LP 24dB/oct (4-pole), 1=LP 18dB (3-pole), 2=LP 12dB (2-pole),
+        //   3=LP 6dB (1-pole), 4=HP 12dB (2-pole), 5=BP 12dB (2-pole).
+        switch (params->get(EXSParam::FILTER1_TYPE))
+        {
+        case 0:
+            filterArgs.type = import_support::FilterType::LP24;
+            break;
+        case 1:
+            filterArgs.type = import_support::FilterType::LP18;
+            break;
+        case 2:
+            filterArgs.type = import_support::FilterType::LP12;
+            break;
+        case 3:
+            filterArgs.type = import_support::FilterType::LP6;
+            break;
+        case 4:
+            filterArgs.type = import_support::FilterType::HP12;
+            break;
+        case 5:
+            filterArgs.type = import_support::FilterType::BP12;
+            break;
+        default:
+            filterArgs.type = import_support::FilterType::Other;
+            ctx.unsupported("EXS filter type",
+                            "FILTER1_TYPE=" + std::to_string(params->get(EXSParam::FILTER1_TYPE)));
+            break;
+        }
         int rawCutoff = params->get(EXSParam::FILTER1_CUTOFF, 1000);
         int rawReso = params->get(EXSParam::FILTER1_RESO, 0);
         // Logic Sampler's filter cutoff is stored as 0..1000 (UI shows it as

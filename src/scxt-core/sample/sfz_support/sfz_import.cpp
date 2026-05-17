@@ -29,6 +29,7 @@
 #include "sample/import_support/import_harness.h"
 #include "sample/import_support/import_mapping.h"
 #include "sample/import_support/import_envelope.h"
+#include "sample/import_support/import_filter.h"
 #include "sample/import_support/import_loop.h"
 #include "sample/import_support/import_numeric.h"
 #include "selection/selection_manager.h"
@@ -37,6 +38,9 @@
 #include "engine/engine.h"
 #include "configuration.h"
 #include <cctype>
+#include <cmath>
+#include <algorithm>
+#include <unordered_map>
 #include <sstream>
 
 namespace scxt::sfz_support
@@ -278,6 +282,69 @@ void zoneEnvelope(std::unique_ptr<engine::Zone> &zn, import_support::ImporterCon
     import_support::importZoneEnvelope(*zn, ctx, slot, args);
 }
 
+void zoneFilter(std::unique_ptr<engine::Zone> &zn, import_support::ImporterContext &ctx,
+                opCodeMap_t &opCodes, std::set<std::string> &reportedFilTypes)
+{
+    auto cutoffOpc = consumeOpcode(opCodes, "cutoff");
+    auto resoOpc = consumeOpcode(opCodes, "resonance");
+    auto typeOpc = consumeOpcode(opCodes, "fil_type");
+
+    // No filter opcodes set → don't install a filter at all.
+    if (!cutoffOpc.has_value() && !resoOpc.has_value() && !typeOpc.has_value())
+        return;
+
+    // SFZ defaults from the spec.
+    float cutoffHz = cutoffOpc.has_value() ? (float)std::atof(cutoffOpc->c_str()) : 22050.f;
+    float resoDb = resoOpc.has_value() ? (float)std::atof(resoOpc->c_str()) : 0.f;
+    std::string filTypeStr = typeOpc.value_or("lpf_2p");
+
+    static const std::unordered_map<std::string, import_support::FilterType> typeMap{
+        {"lpf_1p", import_support::FilterType::LP6},
+        {"lpf_2p", import_support::FilterType::LP12},
+        {"lpf_2p_sv", import_support::FilterType::LP12},
+        {"lpf_4p", import_support::FilterType::LP24},
+        {"lpf_6p", import_support::FilterType::LP36},
+        {"hpf_1p", import_support::FilterType::HP6},
+        {"hpf_2p", import_support::FilterType::HP12},
+        {"hpf_2p_sv", import_support::FilterType::HP12},
+        {"hpf_4p", import_support::FilterType::HP24},
+        {"hpf_6p", import_support::FilterType::HP36},
+        {"bpf_1p", import_support::FilterType::BP6},
+        {"bpf_2p", import_support::FilterType::BP12},
+        {"bpf_2p_sv", import_support::FilterType::BP12},
+        {"brf_1p", import_support::FilterType::Notch12},
+        {"brf_2p", import_support::FilterType::Notch12},
+        {"brf_2p_sv", import_support::FilterType::Notch12},
+        {"apf_1p", import_support::FilterType::Allpass},
+        {"pkf_2p", import_support::FilterType::Peak},
+        {"comb", import_support::FilterType::Comb},
+    };
+
+    auto fType = import_support::FilterType::Other;
+    if (auto it = typeMap.find(filTypeStr); it != typeMap.end())
+    {
+        fType = it->second;
+    }
+    else if (reportedFilTypes.insert(filTypeStr).second)
+    {
+        ctx.unsupported("SFZ fil_type", filTypeStr + " (using bypassed LP)");
+    }
+
+    // cutoff: SFZ Hz → SCXT semitones from MIDI 69 (A4=440Hz)
+    float cutoffSemis = (cutoffHz > 1.f) ? 12.f * std::log2(cutoffHz / 440.f) : -69.f;
+    cutoffSemis = std::clamp(cutoffSemis, -69.f, 70.f);
+
+    // resonance: SFZ 0..40 dB → SCXT 0..1 (crude linear)
+    float resonance = std::clamp(resoDb / 40.f, 0.f, 1.f);
+
+    import_support::importZoneFilter(*zn, ctx, 0,
+                                     {
+                                         .type = fType,
+                                         .cutoff = cutoffSemis,
+                                         .resonance = resonance,
+                                     });
+}
+
 bool importSFZ(const fs::path &f, engine::Engine &e)
 {
     int octaveOffset{0};
@@ -294,6 +361,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     int regionCount{0};
     SFZParser::opCodes_t currentGroupOpcodes;
     std::set<std::string> unusedZoneOpcodes;
+    std::set<std::string> reportedSfzFilTypes;
     for (const auto &[r, list] : doc)
     {
         if (r.type != SFZParser::Header::region)
@@ -388,6 +456,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 }
             }
             auto zn = std::make_unique<engine::Zone>(sid);
+            zn->engine = &e; // required by setProcessorType in zoneFilter
             // SFZ default mapping (gets overwritten by zoneGeometry once opcodes are parsed).
             import_support::importZoneMapping(*zn, ctx,
                                               {
@@ -418,6 +487,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             auto loopArgs = zoneLoopParse(mergedOpcodes, loadInfo);
             zoneEnvelope(zn, ctx, mergedOpcodes, 0, "ampeg");
             zoneEnvelope(zn, ctx, mergedOpcodes, 1, "fileg");
+            zoneFilter(zn, ctx, mergedOpcodes, reportedSfzFilTypes);
 
             for (auto &[n, m] : mergedOpcodes)
             {
