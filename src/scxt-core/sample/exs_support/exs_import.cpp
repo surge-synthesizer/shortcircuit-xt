@@ -719,6 +719,219 @@ std::optional<scxt::SampleID> loadSampleFromEXS(const fs::path &p, int sampleInd
     return sm->loadSampleByPath(sp);
 }
 
+// Holds dedup state for EXS mod-slot warnings across all zones of one import.
+struct ExsModWarnings
+{
+    std::set<int> reportedSources;
+    std::set<int> reportedDests;
+    // Set when a MOD slot explicitly routes Env 2 (-14) → Filter Cutoff (8).
+    // Used to suppress the implicit env2→cutoff fallback so we don't duplicate.
+    bool routedEnv2ToCutoff{false};
+};
+
+// Apply the 11 EXS mod-matrix slots to a zone. Source/destination enum
+// interpretations below are best-effort: the EXS24 format isn't formally
+// documented and our reference (ConvertWithMoss) doesn't translate these
+// slots either. Refine as we encounter real files.
+static void applyExsModSlots(engine::Zone &zone, import_support::ImporterContext &ctx,
+                             const std::optional<EXSParameters> &params,
+                             import_support::EGHandle egAmpHandle,
+                             import_support::EGHandle egFilHandle,
+                             import_support::FilterHandle filterHandle, ExsModWarnings &warn)
+{
+    if (!params.has_value())
+        return;
+
+    struct SlotDef
+    {
+        EXSParam dest, source, via, amountLo, amountHi, srcInvert, bypass;
+    };
+    static const SlotDef slots[] = {
+        {EXSParam::MOD1_DESTINATION, EXSParam::MOD1_SOURCE, EXSParam::MOD1_VIA,
+         EXSParam::MOD1_AMOUNT_LOW, EXSParam::MOD1_AMOUNT_HIGH, EXSParam::MOD1_SRC_INVERT,
+         EXSParam::MOD1_BYPASS},
+        {EXSParam::MOD2_DESTINATION, EXSParam::MOD2_SOURCE, EXSParam::MOD2_VIA,
+         EXSParam::MOD2_AMOUNT_LOW, EXSParam::MOD2_AMOUNT_HIGH, EXSParam::MOD2_SRC_INVERT,
+         EXSParam::MOD2_BYPASS},
+        {EXSParam::MOD3_DESTINATION, EXSParam::MOD3_SOURCE, EXSParam::MOD3_VIA,
+         EXSParam::MOD3_AMOUNT_LOW, EXSParam::MOD3_AMOUNT_HIGH, EXSParam::MOD3_SRC_INVERT,
+         EXSParam::MOD3_BYPASS},
+        {EXSParam::MOD4_DESTINATION, EXSParam::MOD4_SOURCE, EXSParam::MOD4_VIA,
+         EXSParam::MOD4_AMOUNT_LOW, EXSParam::MOD4_AMOUNT_HIGH, EXSParam::MOD4_SRC_INVERT,
+         EXSParam::MOD4_BYPASS},
+        {EXSParam::MOD5_DESTINATION, EXSParam::MOD5_SOURCE, EXSParam::MOD5_VIA,
+         EXSParam::MOD5_AMOUNT_LOW, EXSParam::MOD5_AMOUNT_HIGH, EXSParam::MOD5_SRC_INVERT,
+         EXSParam::MOD5_BYPASS},
+        {EXSParam::MOD6_DESTINATION, EXSParam::MOD6_SOURCE, EXSParam::MOD6_VIA,
+         EXSParam::MOD6_AMOUNT_LOW, EXSParam::MOD6_AMOUNT_HIGH, EXSParam::MOD6_SRC_INVERT,
+         EXSParam::MOD6_BYPASS},
+        {EXSParam::MOD7_DESTINATION, EXSParam::MOD7_SOURCE, EXSParam::MOD7_VIA,
+         EXSParam::MOD7_AMOUNT_LOW, EXSParam::MOD7_AMOUNT_HIGH, EXSParam::MOD7_SRC_INVERT,
+         EXSParam::MOD7_BYPASS},
+        {EXSParam::MOD8_DESTINATION, EXSParam::MOD8_SOURCE, EXSParam::MOD8_VIA,
+         EXSParam::MOD8_AMOUNT_LOW, EXSParam::MOD8_AMOUNT_HIGH, EXSParam::MOD8_SRC_INVERT,
+         EXSParam::MOD8_BYPASS},
+        {EXSParam::MOD9_DESTINATION, EXSParam::MOD9_SOURCE, EXSParam::MOD9_VIA,
+         EXSParam::MOD9_AMOUNT_LOW, EXSParam::MOD9_AMOUNT_HIGH, EXSParam::MOD9_SRC_INVERT,
+         EXSParam::MOD9_BYPASS},
+        {EXSParam::MOD10_DESTINATION, EXSParam::MOD10_SOURCE, EXSParam::MOD10_VIA,
+         EXSParam::MOD10_AMOUNT_LOW, EXSParam::MOD10_AMOUNT_HIGH, EXSParam::MOD10_SRC_INVERT,
+         EXSParam::MOD10_BYPASS},
+        {EXSParam::MOD11_DESTINATION, EXSParam::MOD11_SOURCE, EXSParam::MOD11_VIA,
+         EXSParam::MOD11_AMOUNT_LOW, EXSParam::MOD11_AMOUNT_HIGH, EXSParam::MOD11_SRC_INVERT,
+         EXSParam::MOD11_BYPASS},
+    };
+
+    // EXS24 source enum → ImportedSource. Values verified against a Logic
+    // EXS instrument's mod-matrix UI (see exs_import notes). Sources can be
+    // negative; -1 is "no source".
+    auto mapSource = [&](int s) -> std::optional<import_support::ImportedSource> {
+        switch (s)
+        {
+        case 1:
+            return import_support::ImportedSource::modWheel();
+        case -3:
+            return import_support::ImportedSource::velocity();
+        case -4:
+            return import_support::ImportedSource::keyTrack();
+        case -13:
+            return egAmpHandle.egSlot >= 0
+                       ? std::optional{import_support::ImportedSource::fromEG(egAmpHandle)}
+                       : std::nullopt;
+        case -14:
+            return egFilHandle.egSlot >= 0
+                       ? std::optional{import_support::ImportedSource::fromEG(egFilHandle)}
+                       : std::nullopt;
+        default:
+            return std::nullopt;
+        }
+    };
+
+    // EXS24 destination enum → ImportedTarget. Verified values: 8 = Filter 1
+    // Cutoff, 9 = Filter 1 Resonance. Others (pitch/vol/pan) are still
+    // best-effort and may need refinement.
+    auto mapDest = [&](int d) -> std::optional<import_support::ImportedTarget> {
+        switch (d)
+        {
+        case 1: // best-effort: Pitch
+            return import_support::ImportedTarget::pitch();
+        case 8: // Filter 1 Cutoff
+            if (filterHandle.procSlot < 0)
+                return std::nullopt;
+            return import_support::ImportedTarget::filter(filterHandle,
+                                                          import_support::FilterParam::Cutoff);
+        case 9: // Filter 1 Resonance
+            if (filterHandle.procSlot < 0)
+                return std::nullopt;
+            return import_support::ImportedTarget::filter(filterHandle,
+                                                          import_support::FilterParam::Resonance);
+        case 4: // best-effort: Volume
+            return import_support::ImportedTarget::zoneAmplitude();
+        case 5: // best-effort: Pan
+            return import_support::ImportedTarget::zonePan();
+        default:
+            return std::nullopt;
+        }
+    };
+
+    // Target-native depth scale per destination enum (used to turn the EXS
+    // percent into a target-native depth that addImportedModRoute then
+    // normalizes back). Mirrors the (max-min) ranges in import_modulation.
+    auto destDepthScale = [](int d) -> float {
+        switch (d)
+        {
+        case 1:
+            return 192.f; // pitch
+        case 4:
+            return 72.f; // amp dB
+        case 5:
+            return 2.f; // pan
+        case 8:
+            return 130.f; // cutoff
+        case 9:
+            return 1.f; // resonance
+        default:
+            return 1.f;
+        }
+    };
+
+    for (const auto &sd : slots)
+    {
+        if (!params->has(sd.dest) || !params->has(sd.source))
+            continue;
+        if (params->has(sd.bypass) && params->get(sd.bypass) != 0)
+            continue;
+
+        int srcEnum = params->get(sd.source);
+        int destEnum = params->get(sd.dest);
+        // Inactive slot: -1 (Logic "no source/no dest") or 0.
+        if (destEnum <= 0 || srcEnum == -1 || srcEnum == 0)
+            continue;
+
+        auto src = mapSource(srcEnum);
+        if (!src)
+        {
+            if (warn.reportedSources.insert(srcEnum).second)
+                ctx.unsupported("EXS mod source", std::to_string(srcEnum));
+            continue;
+        }
+        auto tgt = mapDest(destEnum);
+        if (!tgt)
+        {
+            if (warn.reportedDests.insert(destEnum).second)
+                ctx.unsupported("EXS mod dest", std::to_string(destEnum));
+            continue;
+        }
+
+        // amount: stored as percent × 10. amtLo is the depth at via=0 (or the
+        // only depth when via is absent); amtHi is the depth at via=max. When
+        // via is set we emit *two* mod rows so the SCXT matrix can rebuild the
+        // Logic UI's range:
+        //   row A: src → target with depth amtLo            (always-active base)
+        //   row B: src → target via VIA, depth (amtHi-amtLo) (velocity-scaled adder)
+        int rawLo = params->has(sd.amountLo) ? params->get(sd.amountLo) : 0;
+        int rawHi = params->has(sd.amountHi) ? params->get(sd.amountHi) : 0;
+        const float scale = destDepthScale(destEnum);
+        float baseDepth = (float)rawLo / 1000.f * scale;
+        if (params->has(sd.srcInvert) && params->get(sd.srcInvert) != 0)
+            baseDepth = -baseDepth;
+
+        int viaEnum = params->has(sd.via) ? params->get(sd.via) : -1;
+        std::optional<import_support::ImportedSource> viaSrc;
+        if (viaEnum != -1 && viaEnum != 0)
+        {
+            viaSrc = mapSource(viaEnum);
+            if (!viaSrc)
+            {
+                if (warn.reportedSources.insert(viaEnum).second)
+                    ctx.unsupported("EXS mod via source", std::to_string(viaEnum));
+            }
+        }
+
+        import_support::addImportedModRoute(zone, ctx,
+                                            {
+                                                .source = *src,
+                                                .target = *tgt,
+                                                .depth = baseDepth,
+                                            });
+
+        if (viaSrc.has_value())
+        {
+            float viaDelta = (float)(rawHi - rawLo) / 1000.f * scale;
+            import_support::addImportedModRoute(zone, ctx,
+                                                {
+                                                    .source = *src,
+                                                    .via = viaSrc,
+                                                    .target = *tgt,
+                                                    .depth = viaDelta,
+                                                });
+        }
+
+        if (srcEnum == -14 && destEnum == 8)
+            warn.routedEnv2ToCutoff = true;
+    }
+}
+
 bool importEXS(const fs::path &p, engine::Engine &e)
 {
     import_support::ImporterContext ctx(e, "Loading EXS '" + p.filename().u8string() + "'");
@@ -825,6 +1038,35 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     }
 
     const bool filterEnabled = haveParams && params->get(EXSParam::FILTER1_TOGGLE) > 0;
+
+    // Pre-scan: if any active MOD slot routes Env 2 (-14) → Filter Cutoff (8),
+    // skip the implicit env2→cutoff fallback below. The file authored its own
+    // routing and our implicit route would duplicate (and clobber) it.
+    bool modSlotsRouteEnv2ToCutoff = false;
+    if (haveParams)
+    {
+        const std::pair<EXSParam, EXSParam> modSrcDest[] = {
+            {EXSParam::MOD1_SOURCE, EXSParam::MOD1_DESTINATION},
+            {EXSParam::MOD2_SOURCE, EXSParam::MOD2_DESTINATION},
+            {EXSParam::MOD3_SOURCE, EXSParam::MOD3_DESTINATION},
+            {EXSParam::MOD4_SOURCE, EXSParam::MOD4_DESTINATION},
+            {EXSParam::MOD5_SOURCE, EXSParam::MOD5_DESTINATION},
+            {EXSParam::MOD6_SOURCE, EXSParam::MOD6_DESTINATION},
+            {EXSParam::MOD7_SOURCE, EXSParam::MOD7_DESTINATION},
+            {EXSParam::MOD8_SOURCE, EXSParam::MOD8_DESTINATION},
+            {EXSParam::MOD9_SOURCE, EXSParam::MOD9_DESTINATION},
+            {EXSParam::MOD10_SOURCE, EXSParam::MOD10_DESTINATION},
+            {EXSParam::MOD11_SOURCE, EXSParam::MOD11_DESTINATION},
+        };
+        for (const auto &[s, d] : modSrcDest)
+        {
+            if (params->get(s) == -14 && params->get(d) == 8)
+            {
+                modSlotsRouteEnv2ToCutoff = true;
+                break;
+            }
+        }
+    }
     import_support::FilterArgs filterArgs;
     if (filterEnabled)
     {
@@ -906,6 +1148,7 @@ bool importEXS(const fs::path &p, engine::Engine &e)
 
     bool warnedAboutRoundRobin = false;
     int zoneOrdinal = 0;
+    ExsModWarnings exsModWarnings;
     for (auto &z : info.zones)
     {
         auto exsgi = z.groupIndex;
@@ -1062,18 +1305,27 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         // Global filter + env2-to-cutoff mod route. Logic models env2 as the
         // filter's cutoff modulator with depth 1.0; SCXT routes it through
         // the mod matrix.
+        import_support::FilterHandle filterHandle;
         if (filterEnabled)
         {
-            auto filterHandle = import_support::importZoneFilter(*zone, ctx, 0, filterArgs);
-            import_support::addImportedModRoute(
-                *zone, ctx,
-                {
-                    .source = import_support::ImportedSource::fromEG(egFilHandle),
-                    .target = import_support::ImportedTarget::filter(
-                        filterHandle, import_support::FilterParam::Cutoff),
-                    .depth = 1.0f,
-                });
+            filterHandle = import_support::importZoneFilter(*zone, ctx, 0, filterArgs);
+            // Skip implicit env2→cutoff when the MOD slots already wire it.
+            if (!modSlotsRouteEnv2ToCutoff)
+                import_support::addImportedModRoute(
+                    *zone, ctx,
+                    {
+                        .source = import_support::ImportedSource::fromEG(egFilHandle),
+                        .target = import_support::ImportedTarget::filter(
+                            filterHandle, import_support::FilterParam::Cutoff),
+                        .depth = 1.0f,
+                    });
         }
+
+        // EXS24 mod matrix (11 slots). Source/destination enum values are not
+        // formally documented; mappings here are best-effort based on common
+        // EXS24 references and may need adjustment as we encounter more files.
+        applyExsModSlots(*zone, ctx, params, egAmpHandle, egFilHandle, filterHandle,
+                         exsModWarnings);
 
         ctx.addZoneToGroup(gi, std::move(zone));
     }
@@ -1088,6 +1340,44 @@ void dumpEXSToLog(const fs::path &p)
     {
         SCLOG_IF(sampleCompoundParsers,
                  "Parameters block found with " << info.parameters->params.size() << " parameters");
+
+        // Dump the 11 MOD slots so we can verify source/destination/amount.
+        const EXSParam slotIds[][6] = {
+            {EXSParam::MOD1_DESTINATION, EXSParam::MOD1_SOURCE, EXSParam::MOD1_VIA,
+             EXSParam::MOD1_AMOUNT_LOW, EXSParam::MOD1_AMOUNT_HIGH, EXSParam::MOD1_BYPASS},
+            {EXSParam::MOD2_DESTINATION, EXSParam::MOD2_SOURCE, EXSParam::MOD2_VIA,
+             EXSParam::MOD2_AMOUNT_LOW, EXSParam::MOD2_AMOUNT_HIGH, EXSParam::MOD2_BYPASS},
+            {EXSParam::MOD3_DESTINATION, EXSParam::MOD3_SOURCE, EXSParam::MOD3_VIA,
+             EXSParam::MOD3_AMOUNT_LOW, EXSParam::MOD3_AMOUNT_HIGH, EXSParam::MOD3_BYPASS},
+            {EXSParam::MOD4_DESTINATION, EXSParam::MOD4_SOURCE, EXSParam::MOD4_VIA,
+             EXSParam::MOD4_AMOUNT_LOW, EXSParam::MOD4_AMOUNT_HIGH, EXSParam::MOD4_BYPASS},
+            {EXSParam::MOD5_DESTINATION, EXSParam::MOD5_SOURCE, EXSParam::MOD5_VIA,
+             EXSParam::MOD5_AMOUNT_LOW, EXSParam::MOD5_AMOUNT_HIGH, EXSParam::MOD5_BYPASS},
+            {EXSParam::MOD6_DESTINATION, EXSParam::MOD6_SOURCE, EXSParam::MOD6_VIA,
+             EXSParam::MOD6_AMOUNT_LOW, EXSParam::MOD6_AMOUNT_HIGH, EXSParam::MOD6_BYPASS},
+            {EXSParam::MOD7_DESTINATION, EXSParam::MOD7_SOURCE, EXSParam::MOD7_VIA,
+             EXSParam::MOD7_AMOUNT_LOW, EXSParam::MOD7_AMOUNT_HIGH, EXSParam::MOD7_BYPASS},
+            {EXSParam::MOD8_DESTINATION, EXSParam::MOD8_SOURCE, EXSParam::MOD8_VIA,
+             EXSParam::MOD8_AMOUNT_LOW, EXSParam::MOD8_AMOUNT_HIGH, EXSParam::MOD8_BYPASS},
+            {EXSParam::MOD9_DESTINATION, EXSParam::MOD9_SOURCE, EXSParam::MOD9_VIA,
+             EXSParam::MOD9_AMOUNT_LOW, EXSParam::MOD9_AMOUNT_HIGH, EXSParam::MOD9_BYPASS},
+            {EXSParam::MOD10_DESTINATION, EXSParam::MOD10_SOURCE, EXSParam::MOD10_VIA,
+             EXSParam::MOD10_AMOUNT_LOW, EXSParam::MOD10_AMOUNT_HIGH, EXSParam::MOD10_BYPASS},
+            {EXSParam::MOD11_DESTINATION, EXSParam::MOD11_SOURCE, EXSParam::MOD11_VIA,
+             EXSParam::MOD11_AMOUNT_LOW, EXSParam::MOD11_AMOUNT_HIGH, EXSParam::MOD11_BYPASS},
+        };
+        for (int i = 0; i < 11; ++i)
+        {
+            const auto &ids = slotIds[i];
+            auto get = [&](EXSParam p) -> std::string {
+                if (!info.parameters->has(p))
+                    return "?";
+                return std::to_string(info.parameters->get(p));
+            };
+            SCLOG_IF(cliTools, "MOD" << (i + 1) << " dest=" << get(ids[0]) << " src=" << get(ids[1])
+                                     << " via=" << get(ids[2]) << " amtLo=" << get(ids[3])
+                                     << " amtHi=" << get(ids[4]) << " bypass=" << get(ids[5]));
+        }
     }
     else
     {

@@ -31,6 +31,7 @@
 #include "sample/import_support/import_envelope.h"
 #include "sample/import_support/import_filter.h"
 #include "sample/import_support/import_loop.h"
+#include "sample/import_support/import_modulation.h"
 #include "sample/import_support/import_numeric.h"
 #include "selection/selection_manager.h"
 #include "sfz_parse.h"
@@ -105,6 +106,12 @@ void zoneGeometry(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes, int &
         mp.rootKey = parseMidiNote(*v, octaveOffset);
         loadInfo = loadInfo & ~engine::Zone::MAPPING;
     }
+
+    // SFZ pitch_keytrack: cents/key, default 100 (full natural keytrack).
+    // Maps directly to zone.mapping.tracking (1.0 = perfect keytrack, 0.0 =
+    // none), so divide by 100.
+    if (auto v = consumeOpcode(opCodes, "pitch_keytrack"); v.has_value())
+        mp.tracking = (float)std::atof(v->c_str()) / 100.f;
 
     if (auto v = consumeOpcode(opCodes, "lokey"); v.has_value())
     {
@@ -282,16 +289,34 @@ void zoneEnvelope(std::unique_ptr<engine::Zone> &zn, import_support::ImporterCon
     import_support::importZoneEnvelope(*zn, ctx, slot, args);
 }
 
-void zoneFilter(std::unique_ptr<engine::Zone> &zn, import_support::ImporterContext &ctx,
-                opCodeMap_t &opCodes, std::set<std::string> &reportedFilTypes)
+// Returns the FilterHandle so the caller can wire CC/aftertouch mods onto
+// it; FilterHandle{} (procSlot=-1) means no filter was installed.
+import_support::FilterHandle zoneFilter(std::unique_ptr<engine::Zone> &zn,
+                                        import_support::ImporterContext &ctx, opCodeMap_t &opCodes,
+                                        std::set<std::string> &reportedFilTypes)
 {
     auto cutoffOpc = consumeOpcode(opCodes, "cutoff");
     auto resoOpc = consumeOpcode(opCodes, "resonance");
     auto typeOpc = consumeOpcode(opCodes, "fil_type");
 
+    // Quick scan: also install a filter if any cutoff/resonance mod opcode
+    // is present, so the mod has somewhere to land. (Don't consume here —
+    // zoneFilterMods will do that.)
+    bool hasFilterMod = false;
+    for (const auto &[name, val] : opCodes)
+    {
+        if (val.second)
+            continue;
+        if (name.rfind("cutoff_", 0) == 0 || name.rfind("resonance_", 0) == 0)
+        {
+            hasFilterMod = true;
+            break;
+        }
+    }
+
     // No filter opcodes set → don't install a filter at all.
-    if (!cutoffOpc.has_value() && !resoOpc.has_value() && !typeOpc.has_value())
-        return;
+    if (!cutoffOpc.has_value() && !resoOpc.has_value() && !typeOpc.has_value() && !hasFilterMod)
+        return {};
 
     // SFZ defaults from the spec.
     float cutoffHz = cutoffOpc.has_value() ? (float)std::atof(cutoffOpc->c_str()) : 22050.f;
@@ -337,12 +362,228 @@ void zoneFilter(std::unique_ptr<engine::Zone> &zn, import_support::ImporterConte
     // resonance: SFZ 0..40 dB → SCXT 0..1 (crude linear)
     float resonance = std::clamp(resoDb / 40.f, 0.f, 1.f);
 
-    import_support::importZoneFilter(*zn, ctx, 0,
-                                     {
-                                         .type = fType,
-                                         .cutoff = cutoffSemis,
-                                         .resonance = resonance,
-                                     });
+    return import_support::importZoneFilter(*zn, ctx, 0,
+                                            {
+                                                .type = fType,
+                                                .cutoff = cutoffSemis,
+                                                .resonance = resonance,
+                                            });
+}
+
+// Resolve an SFZ source-suffix opcode name into an ImportedSource. Handles:
+//   <prefix>_oncc<N> → MidiCC(N) (or ModWheel for N==1)
+//   <prefix>_chanaft → ChannelAT
+//   <prefix>_polyaft → PolyAT (skipped; voice_matrix has a stale identifier)
+// Returns nullopt if `name` doesn't match these forms.
+std::optional<import_support::ImportedSource>
+sfzSourceForSuffix(const std::string &name, const std::string &prefix,
+                   import_support::ImporterContext &ctx)
+{
+    if (name.rfind(prefix + "_oncc", 0) == 0)
+    {
+        const auto rest = name.substr(prefix.size() + 5);
+        if (rest.empty() ||
+            !std::all_of(rest.begin(), rest.end(), [](char c) { return c >= '0' && c <= '9'; }))
+            return std::nullopt;
+        int cc = std::atoi(rest.c_str());
+        if (cc < 0 || cc > 127)
+            return std::nullopt;
+        if (cc == 1)
+            return import_support::ImportedSource::modWheel();
+        return import_support::ImportedSource::midiCC(cc);
+    }
+    if (name == prefix + "_chanaft")
+        return import_support::ImportedSource::channelAT();
+    if (name == prefix + "_polyaft")
+    {
+        ctx.unsupported("SFZ polyaft", prefix);
+        return std::nullopt;
+    }
+    return std::nullopt;
+}
+
+// SFZ <prefix>_keytrack / <prefix>_keycenter (e.g. fil_keytrack, amp_keytrack,
+// pan_keytrack). Emits a KeyTrack→target mod route. `perKeyToDepth(v)` maps
+// the SFZ per-key value into the target-native depth at one octave above
+// rootKey (where SCXT's KeyTrack source = 1.0). keycenter defaults to 60;
+// SCXT's KeyTrack is rooted at the zone's rootKey, so non-default keycenters
+// that differ from rootKey are flagged as unsupported.
+void zoneParamKeytrack(opCodeMap_t &opCodes, import_support::ImporterContext &ctx, engine::Zone &zn,
+                       const std::string &prefix,
+                       const std::function<import_support::ImportedTarget()> &targetMaker,
+                       const std::function<float(float)> &perKeyToDepth)
+{
+    auto ktOpc = consumeOpcode(opCodes, prefix + "_keytrack");
+    auto kcOpc = consumeOpcode(opCodes, prefix + "_keycenter");
+
+    if (!ktOpc.has_value())
+        return;
+
+    float perKey = (float)std::atof(ktOpc->c_str());
+    if (perKey == 0.f)
+        return;
+
+    if (kcOpc.has_value())
+    {
+        int kc = parseMidiNote(*kcOpc, 0);
+        if (kc != zn.mapping.rootKey)
+        {
+            ctx.unsupported("SFZ " + prefix + "_keycenter",
+                            "differs from zone rootKey; tracking centered on rootKey");
+        }
+    }
+
+    import_support::addImportedModRoute(zn, ctx,
+                                        {
+                                            .source = import_support::ImportedSource::keyTrack(),
+                                            .target = targetMaker(),
+                                            .depth = perKeyToDepth(perKey),
+                                        });
+}
+
+// Generic loop for the four "simple" mod-bearing SFZ params: cutoff,
+// resonance, volume, pan, pitch. Scans opCodes for <prefix>_oncc<N>,
+// _chanaft, _polyaft; converts the SFZ value to SCXT depth via `valueToDepth`
+// (a value-in-SFZ-units → depth-in-target-units function); emits a mod route
+// per match. Consumes any matched opcodes.
+void zoneParamMods(opCodeMap_t &opCodes, import_support::ImporterContext &ctx, engine::Zone &zn,
+                   const std::string &prefix,
+                   const std::function<import_support::ImportedTarget()> &targetMaker,
+                   const std::function<float(float)> &valueToDepth)
+{
+    std::vector<std::string> matchedKeys;
+    for (const auto &[name, val] : opCodes)
+    {
+        if (val.second)
+            continue;
+        if (name.rfind(prefix + "_oncc", 0) == 0 || name == prefix + "_chanaft" ||
+            name == prefix + "_polyaft")
+            matchedKeys.push_back(name);
+    }
+    for (const auto &name : matchedKeys)
+    {
+        auto valOpt = consumeOpcode(opCodes, name);
+        if (!valOpt)
+            continue;
+        auto src = sfzSourceForSuffix(name, prefix, ctx);
+        if (!src)
+            continue;
+        float raw = (float)std::atof(valOpt->c_str());
+        float depth = valueToDepth(raw);
+        import_support::addImportedModRoute(zn, ctx,
+                                            {
+                                                .source = *src,
+                                                .target = targetMaker(),
+                                                .depth = depth,
+                                            });
+    }
+}
+
+// 25-second exponential envelope time mapping (matches as25SecondExpTime in
+// ParamMetadata). seconds = (exp(A + norm*(B-A)) - 2)/1000.
+static constexpr float kEgA = 0.6931471824646f;
+static constexpr float kEgB = 10.1267113685608f;
+inline float egNormToSeconds(float norm)
+{
+    return (std::exp(kEgA + norm * (kEgB - kEgA)) - 2.f) / 1000.f;
+}
+inline float egSecondsToNorm(float secs)
+{
+    return (std::log(std::max(0.f, secs) * 1000.f + 2.f) - kEgA) / (kEgB - kEgA);
+}
+// SFZ envelope mods describe a *seconds delta at full source*. SCXT's
+// envelope time param is normalized 0..1 with exponential mapping, so the
+// linear mod-matrix addition (norm += depth) doesn't map linearly to a
+// seconds delta. We invert: at full source, the time should land at
+// (base + deltaSec); depth = norm(base + deltaSec) - norm(base).
+inline float egSecondsDeltaToDepth(float baseNorm, float deltaSec)
+{
+    float baseSec = egNormToSeconds(baseNorm);
+    return egSecondsToNorm(baseSec + deltaSec) - baseNorm;
+}
+
+// Handles ampeg_/fileg_ envelope time CC and velocity mods. Pattern is
+// different from the params above: `<env>_attackcc<N>=secs`, and
+// `<env>_vel2attack=secs`. Time-shape mods (delay/hold/decay/sustain/release)
+// follow the same shape.
+void zoneEnvelopeMods(opCodeMap_t &opCodes, import_support::ImporterContext &ctx, engine::Zone &zn,
+                      const std::string &prefix, int egSlot)
+{
+    const auto &eg = zn.egStorage[egSlot];
+
+    struct Stage
+    {
+        const char *suffix; // e.g. "attack"
+        import_support::EGWhich which;
+        bool isTime;      // false = level (sustain), true = exp-time
+        float baseNorm;   // base normalized value (for time-delta inversion)
+        float levelScale; // level path: SFZ value * scale → depth
+    };
+    const Stage stages[] = {
+        {"delay", import_support::EGWhich::Delay, true, eg.dly, 0.f},
+        {"attack", import_support::EGWhich::Attack, true, eg.a, 0.f},
+        {"hold", import_support::EGWhich::Hold, true, eg.h, 0.f},
+        {"decay", import_support::EGWhich::Decay, true, eg.d, 0.f},
+        // sustain: SFZ value is percent (0..100); target is 0..1 level.
+        {"sustain", import_support::EGWhich::Sustain, false, eg.s, 0.01f},
+        {"release", import_support::EGWhich::Release, true, eg.r, 0.f},
+    };
+
+    auto depthFor = [&](const Stage &st, float rawValue) {
+        return st.isTime ? egSecondsDeltaToDepth(st.baseNorm, rawValue) : rawValue * st.levelScale;
+    };
+
+    for (const auto &st : stages)
+    {
+        auto target = import_support::ImportedTarget::egTime(egSlot, st.which);
+
+        // <env>_vel2<stage>: velocity → stage, seconds (or percent for sustain)
+        const std::string velKey = prefix + "_vel2" + st.suffix;
+        if (auto v = consumeOpcode(opCodes, velKey))
+        {
+            float raw = (float)std::atof(v->c_str());
+            import_support::addImportedModRoute(
+                zn, ctx,
+                {
+                    .source = import_support::ImportedSource::velocity(),
+                    .target = target,
+                    .depth = depthFor(st, raw),
+                });
+        }
+
+        // <env>_<stage>cc<N>: CC<N> → stage
+        const std::string ccPrefix = prefix + "_" + st.suffix + "cc";
+        std::vector<std::string> ccKeys;
+        for (const auto &[name, val] : opCodes)
+        {
+            if (val.second)
+                continue;
+            if (name.rfind(ccPrefix, 0) == 0)
+                ccKeys.push_back(name);
+        }
+        for (const auto &name : ccKeys)
+        {
+            const auto rest = name.substr(ccPrefix.size());
+            if (rest.empty() ||
+                !std::all_of(rest.begin(), rest.end(), [](char c) { return c >= '0' && c <= '9'; }))
+                continue;
+            int cc = std::atoi(rest.c_str());
+            if (cc < 0 || cc > 127)
+                continue;
+            auto v = consumeOpcode(opCodes, name);
+            if (!v)
+                continue;
+            float raw = (float)std::atof(v->c_str());
+            auto src = (cc == 1) ? import_support::ImportedSource::modWheel()
+                                 : import_support::ImportedSource::midiCC(cc);
+            import_support::addImportedModRoute(zn, ctx,
+                                                {
+                                                    .source = src,
+                                                    .target = target,
+                                                    .depth = depthFor(st, raw),
+                                                });
+        }
+    }
 }
 
 bool importSFZ(const fs::path &f, engine::Engine &e)
@@ -487,7 +728,67 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             auto loopArgs = zoneLoopParse(mergedOpcodes, loadInfo);
             zoneEnvelope(zn, ctx, mergedOpcodes, 0, "ampeg");
             zoneEnvelope(zn, ctx, mergedOpcodes, 1, "fileg");
-            zoneFilter(zn, ctx, mergedOpcodes, reportedSfzFilTypes);
+            auto filterHandle = zoneFilter(zn, ctx, mergedOpcodes, reportedSfzFilTypes);
+
+            // Envelope CC/velocity mods
+            zoneEnvelopeMods(mergedOpcodes, ctx, *zn, "ampeg", 0);
+            zoneEnvelopeMods(mergedOpcodes, ctx, *zn, "fileg", 1);
+
+            // Filter cutoff/resonance mods (cents and dB respectively)
+            auto cutoffTarget = [&]() {
+                return import_support::ImportedTarget::filter(filterHandle,
+                                                              import_support::FilterParam::Cutoff);
+            };
+            if (filterHandle.procSlot >= 0)
+            {
+                zoneParamMods(mergedOpcodes, ctx, *zn, "cutoff", cutoffTarget,
+                              [](float v) { return v / 100.f; }); // cents → semitones
+                zoneParamMods(
+                    mergedOpcodes, ctx, *zn, "resonance",
+                    [&]() {
+                        return import_support::ImportedTarget::filter(
+                            filterHandle, import_support::FilterParam::Resonance);
+                    },
+                    [](float v) { return v / 40.f; }); // dB → 0..1
+
+                // fil_keytrack: KeyTrack → cutoff. SFZ value is cents/key;
+                // depth at one octave = 12 * cents/100 = cents * 0.12 semis.
+                zoneParamKeytrack(mergedOpcodes, ctx, *zn, "fil", cutoffTarget,
+                                  [](float v) { return v * 0.12f; });
+            }
+
+            // Volume / pan / pitch mods
+            auto volTarget = []() { return import_support::ImportedTarget::zoneAmplitude(); };
+            auto panTarget = []() { return import_support::ImportedTarget::zonePan(); };
+            zoneParamMods(mergedOpcodes, ctx, *zn, "volume", volTarget,
+                          [](float v) { return v; }); // SFZ dB → SCXT dB
+            zoneParamMods(mergedOpcodes, ctx, *zn, "pan", panTarget,
+                          [](float v) { return v / 100.f; }); // % → -1..1
+            zoneParamMods(
+                mergedOpcodes, ctx, *zn, "pitch",
+                []() { return import_support::ImportedTarget::pitch(); },
+                [](float v) { return v / 100.f; }); // cents → semitones
+
+            // amp_keytrack / pan_keytrack. SFZ pitch_keytrack is intentionally
+            // NOT handled here — SCXT applies natural pitch keytrack via sample
+            // playback rate, so an explicit KeyTrack→Pitch mod would stack.
+            zoneParamKeytrack(mergedOpcodes, ctx, *zn, "amp", volTarget,
+                              [](float v) { return v * 12.f; }); // dB/key → dB/oct
+            zoneParamKeytrack(mergedOpcodes, ctx, *zn, "pan", panTarget,
+                              [](float v) { return v * 0.12f; }); // %/key → unit/oct
+
+            // pitch_veltrack: velocity → pitch, cents at vel=127
+            if (auto v = consumeOpcode(mergedOpcodes, "pitch_veltrack"); v.has_value())
+            {
+                float depth = (float)std::atof(v->c_str()) / 100.f;
+                import_support::addImportedModRoute(
+                    *zn, ctx,
+                    {
+                        .source = import_support::ImportedSource::velocity(),
+                        .target = import_support::ImportedTarget::pitch(),
+                        .depth = depth,
+                    });
+            }
 
             for (auto &[n, m] : mergedOpcodes)
             {

@@ -34,6 +34,7 @@
 #include "engine/engine.h"
 #include "engine/part.h"
 #include "engine/zone.h"
+#include "modulation/voice_matrix.h"
 
 #ifndef SCXT_TEST_SOURCE_DIR
 #define SCXT_TEST_SOURCE_DIR ""
@@ -242,4 +243,63 @@ TEST_CASE("Import multisample fixture", "[importer]")
     CHECK(z1->mapping.keyboardRange.keyEnd == 58);
     CHECK(z1->mapping.velocityRange.velStart == 0);
     CHECK(z1->mapping.velocityRange.velEnd == 39);
+}
+
+TEST_CASE("Import SFZ filter mod fixture", "[importer]")
+{
+    auto p = fixturePath("sfz-test-subset/filter_oncc.sfz");
+    INFO("fixture=" << p.string());
+    REQUIRE(fs::exists(p));
+
+    ImporterFixture f;
+    f.loadSample(p);
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() == 1);
+    auto &group = part.getGroups()[0];
+    REQUIRE(group->getZones().size() == 1);
+    auto &zone = group->getZones()[0];
+
+    // Expected routes after parsing cutoff_oncc1=8000, cutoff_chanaft=-8000,
+    // resonance_oncc73=20. Depths land in the routing row already normalized
+    // by addImportedModRoute (target-native units / (max-min) of target).
+    // cutoff target range = 130 semis (-60..70), so:
+    //   oncc1: 8000 cents = 80 semis / 130 ≈ 0.615
+    //   chanaft: -80 / 130 ≈ -0.615
+    // resonance target range = 1 (0..1), so:
+    //   oncc73: 20 dB / 40 = 0.5 in 0..1 then / 1 = 0.5
+    using MEnd = scxt::voice::modulation::MatrixEndpoints;
+    using MidiS = MEnd::Sources::MIDISources;
+    using CCs = decltype(MEnd::Sources::midiCCSources);
+    bool foundOncc1 = false, foundChanAft = false, foundReso73 = false;
+    for (const auto &row : zone->routingTable.routes)
+    {
+        if (!row.source.has_value() || !row.target.has_value())
+            continue;
+        const auto &s = *row.source;
+        const auto &t = *row.target;
+
+        const int fp = t.whichProcessorFPTarget(0); // -1 if not a slot-0 fp
+        const bool isCutoff = (fp == 0);
+        const bool isReso = (fp == 2);
+
+        if (isCutoff && s == MidiS::modWheelA)
+        {
+            foundOncc1 = true;
+            CHECK(row.depth == Approx(80.f / 130.f).margin(0.01f));
+        }
+        if (isCutoff && s == MidiS::chanATA)
+        {
+            foundChanAft = true;
+            CHECK(row.depth == Approx(-80.f / 130.f).margin(0.01f));
+        }
+        if (isReso && s == CCs::ccSourceA(73))
+        {
+            foundReso73 = true;
+            CHECK(row.depth == Approx(0.5f).margin(0.01f));
+        }
+    }
+    CHECK(foundOncc1);
+    CHECK(foundChanAft);
+    CHECK(foundReso73);
 }
