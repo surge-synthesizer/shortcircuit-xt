@@ -938,6 +938,11 @@ bool importEXS(const fs::path &p, engine::Engine &e)
 
     auto info = parseEXS(p);
 
+    if (info.zones.empty())
+        ctx.raise("EXS Parse Warning", "Parsed file contains no zones");
+    if (info.samples.empty())
+        ctx.raise("EXS Parse Warning", "Parsed file contains no sample references");
+
     std::vector<int> groupIndexByOrder;
     std::vector<SampleID> sampleIDByOrder;
 
@@ -945,12 +950,24 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     // the patch is moved between machines that path won't resolve, so we also
     // try the sample filename relative to the .exs's own directory.
     auto exsDir = p.parent_path();
+    // Push a SampleID for every EXS sample so downstream zone lookups by
+    // index stay in range. Failed loads become an invalid SampleID (and a
+    // raised error); zones that reference them will skip with a clear error.
     for (auto &s : info.samples)
     {
         auto absolutePath = fs::path{s.filePath} / s.fileName;
         auto siblingPath = exsDir / s.fileName;
         if (auto lsid = ctx.loadSampleFromDisk({absolutePath, siblingPath}))
+        {
             sampleIDByOrder.push_back(*lsid);
+        }
+        else
+        {
+            ctx.raise("EXS Sample Not Found", "Could not locate '" + s.fileName +
+                                                  "'. Tried: " + absolutePath.u8string() + " and " +
+                                                  siblingPath.u8string());
+            sampleIDByOrder.push_back(SampleID{});
+        }
     }
 
     // Group-level config (volume/pan to GroupOutputInfo, polyphony to playMode,
@@ -1149,6 +1166,16 @@ bool importEXS(const fs::path &p, engine::Engine &e)
     bool warnedAboutRoundRobin = false;
     int zoneOrdinal = 0;
     ExsModWarnings exsModWarnings;
+    // Lazily-created fallback group for zones with groupIndex == -1 (some EXS
+    // files, particularly Logic factory FX presets, store zones without a
+    // group association — Logic itself shows them as one implicit group).
+    int fallbackGroupId = -1;
+    auto fallbackGroup = [&]() {
+        if (fallbackGroupId < 0)
+            fallbackGroupId = ctx.addGroup("Default");
+        return fallbackGroupId;
+    };
+
     for (auto &z : info.zones)
     {
         auto exsgi = z.groupIndex;
@@ -1161,20 +1188,39 @@ bool importEXS(const fs::path &p, engine::Engine &e)
             exssi = zoneOrdinal;
         ++zoneOrdinal;
 
-        if (exsgi < 0 || exsgi >= (int)groupIndexByOrder.size())
+        int gi;
+        if (exsgi == -1)
         {
-            SCLOG_IF(sampleCompoundParsers, "Out-of-bounds group index : " << SCD(exsgi));
+            gi = fallbackGroup();
+        }
+        else if (exsgi < 0 || exsgi >= (int)groupIndexByOrder.size())
+        {
+            ctx.raise("EXS Zone Skipped",
+                      "Zone references out-of-bounds group index " + std::to_string(exsgi));
             continue;
+        }
+        else
+        {
+            gi = groupIndexByOrder[exsgi];
         }
         if (exssi < 0 || exssi >= (int)sampleIDByOrder.size())
         {
-            SCLOG_IF(sampleCompoundParsers,
-                     "Out-of-bounds sample index " << SCD(exsgi) << SCD(exssi));
+            ctx.raise("EXS Zone Skipped", "Zone in group " + std::to_string(exsgi) +
+                                              " references out-of-bounds sample index " +
+                                              std::to_string(exssi));
             continue;
         }
-        auto gi = groupIndexByOrder[exsgi];
         auto si = sampleIDByOrder[exssi];
-        const auto &exsGroup = info.groups[exsgi];
+        if (!si.isValid())
+        {
+            ctx.raise("EXS Zone Skipped", "Zone references sample index " + std::to_string(exssi) +
+                                              " which failed to load");
+            continue;
+        }
+        // Group-dependent config only applies when the zone references a real
+        // EXS group; fallback-group zones (exsgi == -1) have no per-group
+        // clamps or round-robin flags to honor.
+        const EXSGroup *exsGroupPtr = (exsgi >= 0) ? &info.groups[exsgi] : nullptr;
 
         // EXS round-robin: groups flagged with enableByRoundRobin form a
         // sequence keyed by roundRobinGroupPos (-1, 0, 1, …). Each "position"
@@ -1184,7 +1230,7 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         // multiple EXS zones into a single SCXT zone instead of one-per-EXS.
         // Not implemented yet; import the zone as a regular non-RR zone for
         // now so it still plays.
-        if (exsGroup.enableByRoundRobin && !warnedAboutRoundRobin)
+        if (exsGroupPtr && exsGroupPtr->enableByRoundRobin && !warnedAboutRoundRobin)
         {
             ctx.unsupported("EXS round-robin groups",
                             "imported as parallel zones; per-variant RR not yet supported");
@@ -1203,18 +1249,22 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         // range. The "!= 0" guards on the clamps preserve the reference
         // behavior of treating zero as "no bound applied" — see EXS24Detector
         // limitByGroupAttributes.
-        if (velEnd < exsGroup.minVelocity || velStart > exsGroup.maxVelocity)
-            continue;
-        if (keyEnd < exsGroup.startNote || keyStart > exsGroup.endNote)
-            continue;
-        if (exsGroup.minVelocity != 0 && velStart < exsGroup.minVelocity)
-            velStart = exsGroup.minVelocity;
-        if (exsGroup.maxVelocity != 0 && velEnd > exsGroup.maxVelocity)
-            velEnd = exsGroup.maxVelocity;
-        if (exsGroup.startNote != 0 && keyStart < exsGroup.startNote)
-            keyStart = exsGroup.startNote;
-        if (exsGroup.endNote != 0 && keyEnd > exsGroup.endNote)
-            keyEnd = exsGroup.endNote;
+        if (exsGroupPtr)
+        {
+            const auto &exsGroup = *exsGroupPtr;
+            if (velEnd < exsGroup.minVelocity || velStart > exsGroup.maxVelocity)
+                continue;
+            if (keyEnd < exsGroup.startNote || keyStart > exsGroup.endNote)
+                continue;
+            if (exsGroup.minVelocity != 0 && velStart < exsGroup.minVelocity)
+                velStart = exsGroup.minVelocity;
+            if (exsGroup.maxVelocity != 0 && velEnd > exsGroup.maxVelocity)
+                velEnd = exsGroup.maxVelocity;
+            if (exsGroup.startNote != 0 && keyStart < exsGroup.startNote)
+                keyStart = exsGroup.startNote;
+            if (exsGroup.endNote != 0 && keyEnd > exsGroup.endNote)
+                keyEnd = exsGroup.endNote;
+        }
 
         auto zone = std::make_unique<engine::Zone>(si);
         zone->engine = &e;
@@ -1262,7 +1312,7 @@ bool importEXS(const fs::path &p, engine::Engine &e)
             variant.endSample = z.sampleEnd;
 
         variant.playReverse = z.reverse;
-        if (exsGroup.releaseTrigger)
+        if (exsGroupPtr && exsGroupPtr->releaseTrigger)
             variant.playMode = engine::Zone::PlayMode::ON_RELEASE;
         else if (z.oneshot)
             variant.playMode = engine::Zone::PlayMode::ONE_SHOT;
