@@ -1,0 +1,23 @@
+/////////////////////////////////////////////////////////////////////////////
+/// sfz definition file
+/// copyright rgc:audio 2004
+/// Originally: 43 - filter hpf_4p noise stereo.sfz
+/// -------------------------------------------------------------------------
+/// Test group: filters
+/// Test purpose: HPF_4P filter test
+///
+/// Test description:
+/// Play any key, move mod wheel (cc1), verify the filter cutoff increases.
+/// Send channel aftertouch messages, verify the cutoff decreases.
+///
+/// Filter resonance is assigned to cc73 
+/// Carefully hear the filter operation, verify the absence of clicks or
+/// discontinuities.
+
+<region> 
+sample=noise stereo.wav
+loop_mode=loop_continuous pitch_keytrack=0
+cutoff=1000 cutoff_oncc1=8000 cutoff_chanaft=-8000
+resonance=10 resonance_oncc73=20
+
+fil_type=hpf_4p

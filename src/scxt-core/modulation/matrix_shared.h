@@ -130,11 +130,26 @@ template <typename T> static std::size_t identifierToHash(const T &t)
 
 template <typename TG, uint32_t gn> struct EGTargetEndpointData
 {
+    // Stage 4cc tids: each EG stage's TargetIdentifier is {gn, tid, slot}.
+    // Exposed so external code (e.g. importers) can build identifiers without
+    // duplicating the 4cc literals.
+    static constexpr uint32_t gid = gn;
+    static constexpr TG delayA(uint32_t slot) { return TG{gn, 'dlay', slot}; }
+    static constexpr TG attackA(uint32_t slot) { return TG{gn, 'atck', slot}; }
+    static constexpr TG holdA(uint32_t slot) { return TG{gn, 'hld ', slot}; }
+    static constexpr TG decayA(uint32_t slot) { return TG{gn, 'dcay', slot}; }
+    static constexpr TG sustainA(uint32_t slot) { return TG{gn, 'sust', slot}; }
+    static constexpr TG releaseA(uint32_t slot) { return TG{gn, 'rels', slot}; }
+    static constexpr TG attackShapeA(uint32_t slot) { return TG{gn, 'atSH', slot}; }
+    static constexpr TG decayShapeA(uint32_t slot) { return TG{gn, 'dcSH', slot}; }
+    static constexpr TG releaseShapeA(uint32_t slot) { return TG{gn, 'rlSH', slot}; }
+    static constexpr TG retriggerA(uint32_t slot) { return TG{gn, 'rtrg', slot}; }
+
     uint32_t index{0};
     EGTargetEndpointData(uint32_t p)
-        : index(p), dlyT{gn, 'dlay', p}, aT{gn, 'atck', p}, hT{gn, 'hld ', p}, dT{gn, 'dcay', p},
-          sT{gn, 'sust', p}, rT{gn, 'rels', p}, asT{gn, 'atSH', p}, dsT{gn, 'dcSH', p},
-          rsT{gn, 'rlSH', p}, retriggerT{gn, 'rtrg', p}
+        : index(p), dlyT(delayA(p)), aT(attackA(p)), hT(holdA(p)), dT(decayA(p)), sT(sustainA(p)),
+          rT(releaseA(p)), asT(attackShapeA(p)), dsT(decayShapeA(p)), rsT(releaseShapeA(p)),
+          retriggerT(retriggerA(p))
     {
     }
 
@@ -472,11 +487,13 @@ template <typename CF, typename SR, uint32_t gid,
 struct MIDICCBase
 {
     static constexpr int numMidiCC{128};
+    static constexpr SR ccSourceA(uint32_t n) { return SR{gid, 'm1cc', n}; }
+
     MIDICCBase(scxt::engine::Engine *e)
     {
         for (uint32_t i = 0; i < numMidiCC; ++i)
         {
-            sources[i] = SR{gid, 'm1cc', i};
+            sources[i] = ccSourceA(i);
             registerSource(e, sources[i], "MIDI CCs", fmt::format("CC {:03}", i));
         }
     }

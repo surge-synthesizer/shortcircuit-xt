@@ -30,6 +30,7 @@
 #include "sample/import_support/import_mapping.h"
 #include "sample/import_support/import_envelope.h"
 #include "sample/import_support/import_filter.h"
+#include "sample/import_support/import_modulation.h"
 #include "sample/import_support/import_numeric.h"
 #include <cmath>
 #include <fstream>
@@ -543,6 +544,8 @@ bool importAKP(const fs::path &path, engine::Engine &e)
     auto rootDir = path.parent_path();
     std::map<uint16_t, int> akaiGroupToSCGroup;
     std::set<uint16_t> reportedFilterTypes; // dedupe filter-type warnings per import
+    std::set<int> reportedAkpModSources;    // dedupe mod-source warnings per import
+    std::set<int> reportedAkpModDests;      // dedupe mod-dest warnings per import
 
     for (size_t i = 0; i < akp.keygroups.size(); ++i)
     {
@@ -596,15 +599,19 @@ bool importAKP(const fs::path &path, engine::Engine &e)
                     .releaseSeconds = akpTimeToSeconds(eg.release),
                 };
             };
+            import_support::EGHandle egAmpHandle, egFilHandle;
             if (kg.egs.size() >= 1)
-                import_support::importZoneEnvelope(*zn, ctx, 0, envelopeFromAkp(kg.egs[0]));
+                egAmpHandle =
+                    import_support::importZoneEnvelope(*zn, ctx, 0, envelopeFromAkp(kg.egs[0]));
             if (kg.egs.size() >= 2)
-                import_support::importZoneEnvelope(*zn, ctx, 1, envelopeFromAkp(kg.egs[1]));
+                egFilHandle =
+                    import_support::importZoneEnvelope(*zn, ctx, 1, envelopeFromAkp(kg.egs[1]));
 
             // Filter: AKP type is an enum 0..25 (see akpFilterTypeName above).
             // We currently always set a CytomicSVF LP12; if the AKP asked for
             // anything other than type 0 (2-POLE LP) we raise once per unique
             // type so the user knows their filter mode wasn't honored.
+            import_support::FilterHandle filterHandle;
             if (!kg.filters.empty())
             {
                 const auto &flt = kg.filters[0];
@@ -618,7 +625,7 @@ bool importAKP(const fs::path &path, engine::Engine &e)
                                       akpFilterTypeName(flt.type) +
                                       "); defaulting to CytomicSVF LP12.");
                     }
-                    import_support::importZoneFilter(
+                    filterHandle = import_support::importZoneFilter(
                         *zn, ctx, 0,
                         {
                             // TODO: map flt.type (0..25; see akpFilterTypeName)
@@ -628,6 +635,99 @@ bool importAKP(const fs::path &path, engine::Engine &e)
                             .resonance = flt.resonance / 12.f,
                         });
                 }
+            }
+
+            // AKP modulation routes. Source enum is documented (see top-of-file
+            // TODO); destination enum is AKP-specific and only loosely
+            // documented — values here are best-effort and may need refinement.
+            for (const auto &m : kg.modulations)
+            {
+                std::optional<import_support::ImportedSource> src;
+                switch (m.source)
+                {
+                case 0: // NO_SOURCE
+                    continue;
+                case 1:  // MODWHEEL
+                case 12: // dMODWHEEL — treat as same source
+                    src = import_support::ImportedSource::modWheel();
+                    break;
+                case 2:  // BEND
+                case 13: // dBEND
+                    src = import_support::ImportedSource::pitchBend();
+                    break;
+                case 3: // AFTERTOUCH (channel)
+                    src = import_support::ImportedSource::channelAT();
+                    break;
+                case 5: // VELOCITY
+                    src = import_support::ImportedSource::velocity();
+                    break;
+                case 6: // KEYBOARD
+                    src = import_support::ImportedSource::keyTrack();
+                    break;
+                case 9: // AMP_ENV
+                    if (egAmpHandle.egSlot >= 0)
+                        src = import_support::ImportedSource::fromEG(egAmpHandle);
+                    break;
+                case 10: // FILT_ENV
+                    if (egFilHandle.egSlot >= 0)
+                        src = import_support::ImportedSource::fromEG(egFilHandle);
+                    break;
+                case 4:  // EXTERNAL
+                case 7:  // LFO1 (LFOs not yet imported)
+                case 8:  // LFO2
+                case 11: // AUX_ENV (env3 not yet wired)
+                case 14: // dEXTERNAL
+                default:
+                    if (reportedAkpModSources.insert(m.source).second)
+                        ctx.unsupported("AKP mod source", std::to_string(m.source));
+                    continue;
+                }
+                if (!src)
+                    continue;
+
+                // Best-effort AKP destination enum → ImportedTarget. AKP spec
+                // doesn't enumerate these; mapping refined as we encounter
+                // real files.
+                std::optional<import_support::ImportedTarget> tgt;
+                float scale = 1.f;
+                switch (m.destination)
+                {
+                case 0: // Pitch
+                    tgt = import_support::ImportedTarget::pitch();
+                    scale = 12.f; // ±127 ≈ ±octave
+                    break;
+                case 1: // Filter Cutoff
+                    if (filterHandle.procSlot < 0)
+                        break;
+                    tgt = import_support::ImportedTarget::filter(
+                        filterHandle, import_support::FilterParam::Cutoff);
+                    scale = 36.f;
+                    break;
+                case 3: // Amp / Volume
+                    tgt = import_support::ImportedTarget::zoneAmplitude();
+                    scale = 1.f;
+                    break;
+                case 4: // Pan
+                    tgt = import_support::ImportedTarget::zonePan();
+                    scale = 1.f;
+                    break;
+                default:
+                    break;
+                }
+                if (!tgt)
+                {
+                    if (reportedAkpModDests.insert(m.destination).second)
+                        ctx.unsupported("AKP mod dest", std::to_string(m.destination));
+                    continue;
+                }
+
+                float depth = (float)m.amount / 127.f * scale;
+                import_support::addImportedModRoute(*zn, ctx,
+                                                    {
+                                                        .source = *src,
+                                                        .target = *tgt,
+                                                        .depth = depth,
+                                                    });
             }
 
             // MAPPING is masked off because the AKP file already supplied root/key/vel

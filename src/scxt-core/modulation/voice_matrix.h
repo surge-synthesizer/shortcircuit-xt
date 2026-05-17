@@ -165,9 +165,11 @@ struct MatrixEndpoints
     {
         // so we can reach them from external multisamples
         static constexpr TG pitchOffsetA{'zmap', 'ptof', 0};
+        static constexpr TG panA{'zmap', 'pan ', 0};
+        static constexpr TG ampA{'zmap', 'ampl', 0};
+        static constexpr TG playbackRatioA{'zmap', 'pbrt', 0};
         MappingTarget(engine::Engine *e)
-            : pitchOffsetT(pitchOffsetA), panT{'zmap', 'pan ', 0}, ampT{'zmap', 'ampl', 0},
-              playbackRatioT{'zmap', 'pbrt', 0}
+            : pitchOffsetT(pitchOffsetA), panT(panA), ampT(ampA), playbackRatioT(playbackRatioA)
         {
             if (e)
             {
@@ -286,10 +288,16 @@ struct MatrixEndpoints
 
         struct KeyAndPitchSources
         {
+            static constexpr SR keyTrackA{'zmid', 'ktrk'};
+            static constexpr SR pitchTrackA{'zkap', 'ptrk'};
+            static constexpr SR keyA{'zkap', 'key '};
+            static constexpr SR pitchA{'zkap', 'pitc'};
+            static constexpr SR midiKeyTrackA{'zkap', 'mktk'};
+            static constexpr SR midiKeyA{'zkap', 'mkey'};
+
             KeyAndPitchSources(engine::Engine *e)
-                : keyTrackSource{'zmid', 'ktrk'}, pitchTrackSource{'zkap', 'ptrk'},
-                  keySource{'zkap', 'key '}, pitchSource{'zkap', 'pitc'},
-                  midiKeyTrackSource{'zkap', 'mktk'}, midiKeySource{'zkap', 'mkey'}
+                : keyTrackSource(keyTrackA), pitchTrackSource(pitchTrackA), keySource(keyA),
+                  pitchSource(pitchA), midiKeyTrackSource(midiKeyTrackA), midiKeySource(midiKeyA)
             {
                 registerVoiceModSource(e, keyTrackSource, "KeyTracking", "KeyTrack");
                 registerVoiceModSource(e, pitchTrackSource, "KeyTracking", "KeyTrack+PB+Glide");
@@ -307,10 +315,18 @@ struct MatrixEndpoints
 
         struct MIDISources
         {
+            static constexpr SR modWheelA{'zmid', 'modw'};
+            static constexpr SR velocityA{'zmid', 'velo'};
+            static constexpr SR releaseVelocityA{'zmid', 'rvel'};
+            static constexpr SR chanATA{'zmid', 'chat'};
+            static constexpr SR polyATA{'zmid', 'plyt'};
+            static constexpr SR pbpm1A{'zmid', 'pb11'};
+            static constexpr SR keyChangedLegA{'zmid', 'kclg'};
+
             MIDISources(engine::Engine *e)
-                : modWheelSource{'zmid', 'modw'}, velocitySource{'zmid', 'velo'},
-                  releaseVelocitySource{'zmid', 'rvel'}, chanATSource{'zmid', 'chat'},
-                  pbpm1Source{'zmid', 'pb11'}, keyChangedLeg{'zmid', 'kclg'}
+                : modWheelSource(modWheelA), velocitySource(velocityA),
+                  releaseVelocitySource(releaseVelocityA), polyATSource(polyATA),
+                  chanATSource(chanATA), pbpm1Source(pbpm1A), keyChangedLeg(keyChangedLegA)
             {
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 MatrixConfig::setDefaultLagFor(modWheelSource, 25);

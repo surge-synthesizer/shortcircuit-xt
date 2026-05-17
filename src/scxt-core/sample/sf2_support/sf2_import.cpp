@@ -233,6 +233,9 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         }
                     }
 
+                    // SF2 stores mod-env-to-pitch / vib-LFO-to-pitch in cents,
+                    // mod-env-to-cutoff in cents; pass target-native depths
+                    // (semitones) and let addImportedModRoute normalize.
                     if (me2p != 0)
                     {
                         import_support::addImportedModRoute(
@@ -240,7 +243,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                             {
                                 .source = import_support::ImportedSource::fromEG(egModHandle),
                                 .target = import_support::ImportedTarget::pitch(),
-                                .depth = (float)(1.0 * me2p / 19200),
+                                .depth = (float)me2p / 100.f,
                             });
                     }
                     if (me2f != 0)
@@ -251,7 +254,7 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                                 .source = import_support::ImportedSource::fromEG(egModHandle),
                                 .target = import_support::ImportedTarget::filter(
                                     filterHandle, import_support::FilterParam::Cutoff),
-                                .depth = (float)(1.0 * me2f / 100 / 130),
+                                .depth = (float)me2f / 100.f,
                             });
                     }
                     if (v2p > 0)
@@ -261,27 +264,110 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                             {
                                 .source = import_support::ImportedSource::fromLFO(vibLfoHandle),
                                 .target = import_support::ImportedTarget::pitch(),
-                                .depth = (float)(1.0 * v2p / 19200),
+                                .depth = (float)v2p / 100.f,
                             });
                     }
 
-                    if (region->modulators.size() > 0)
+                    for (size_t mi = 0; mi < region->modulators.size(); mi++)
                     {
-                        SCLOG_IF(sampleCompoundParsers, "Unsupported Modulators present in : "
-                                                            << instr->GetName() << " region " << i);
-                        SCLOG_IF(sampleCompoundParsers,
-                                 "\tCount =" << region->modulators.size() << "");
+                        const auto &m = region->modulators[mi];
 
-                        for (int mi = 0; mi < region->modulators.size(); mi++)
+                        if (m.ModAmtSrcOper.Type != ::sf2::Modulator::NO_CONTROLLER ||
+                            m.ModAmtSrcOper.MidiPalete)
                         {
-                            auto m = region->modulators[mi];
-                            SCLOG_IF(sampleCompoundParsers,
-                                     "\tsrc=" << m.ModSrcOper.Type << " target=" << m.ModDestOper
-                                              << " depth=" << m.ModAmount
-                                              << " trans=" << m.ModTransOper
-                                              << " srcamt=" << m.ModAmtSrcOper.Type);
-                            // PrintModulatorItem(&region->modulators[i]);
+                            ctx.unsupported("SF2 modulator", "secondary source not supported");
+                            continue;
                         }
+
+                        std::optional<import_support::ImportedSource> src;
+                        if (m.ModSrcOper.MidiPalete)
+                        {
+                            int cc = m.ModSrcOper.Index;
+                            if (cc < 0 || cc > 127)
+                                continue;
+                            // Use the dedicated mod wheel source for CC1.
+                            if (cc == 1)
+                                src = import_support::ImportedSource::modWheel();
+                            else
+                                src = import_support::ImportedSource::midiCC(cc);
+                        }
+                        else
+                        {
+                            using M = ::sf2::Modulator;
+                            switch (m.ModSrcOper.Type)
+                            {
+                            case M::NOTE_ON_VELOCITY:
+                                src = import_support::ImportedSource::velocity();
+                                break;
+                            case M::NOTE_ON_KEY_NUMBER:
+                                src = import_support::ImportedSource::keyTrack();
+                                break;
+                            case M::CHANNEL_PRESSURE:
+                                src = import_support::ImportedSource::channelAT();
+                                break;
+                            case M::PITCH_WHEEL:
+                                src = import_support::ImportedSource::pitchBend();
+                                break;
+                            case M::POLY_PRESSURE:
+                            case M::PITCH_WHEEL_SENSITIVITY:
+                            case M::LINK:
+                            case M::NO_CONTROLLER:
+                            default:
+                                break;
+                            }
+                            if (!src)
+                            {
+                                ctx.unsupported("SF2 modulator source",
+                                                "type=" + std::to_string(m.ModSrcOper.Type));
+                                continue;
+                            }
+                        }
+
+                        // Map destination and convert amount to SCXT target-native depth.
+                        std::optional<import_support::ImportedTarget> tgt;
+                        float depth = 0.f;
+                        int16_t amount = (int16_t)m.ModAmount;
+                        switch (m.ModDestOper)
+                        {
+                        case ::sf2::INITIAL_FILTER_FC:
+                            if (filterHandle.procSlot < 0)
+                            {
+                                ctx.unsupported("SF2 modulator dest",
+                                                "INITIAL_FILTER_FC with no filter");
+                                continue;
+                            }
+                            tgt = import_support::ImportedTarget::filter(
+                                filterHandle, import_support::FilterParam::Cutoff);
+                            depth = (float)amount / 100.f; // cents → semitones
+                            break;
+                        case ::sf2::PAN:
+                            tgt = import_support::ImportedTarget::zonePan();
+                            depth = (float)amount / 1000.f; // 0.1% → -1..1
+                            break;
+                        case ::sf2::FINE_TUNE:
+                            tgt = import_support::ImportedTarget::pitch();
+                            depth = (float)amount / 100.f; // cents → semitones
+                            break;
+                        case ::sf2::COARSE_TUNE:
+                            tgt = import_support::ImportedTarget::pitch();
+                            depth = (float)amount; // already semitones
+                            break;
+                        default:
+                            ctx.unsupported("SF2 modulator dest",
+                                            "generator=" + std::to_string(m.ModDestOper));
+                            continue;
+                        }
+
+                        if (m.ModTransOper != 0)
+                            ctx.unsupported("SF2 modulator transform",
+                                            "non-linear transform; treated as linear");
+
+                        import_support::addImportedModRoute(*zn, ctx,
+                                                            {
+                                                                .source = *src,
+                                                                .target = *tgt,
+                                                                .depth = depth,
+                                                            });
                     }
 
                     if (region->modLfoToFilterFc != 0 || region->modLfoToPitch != 0)
