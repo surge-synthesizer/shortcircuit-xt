@@ -31,16 +31,43 @@
 #include <cstdint>
 #include "utils.h"
 #include "exs_import.h"
+#include "exs_parameters.h"
 #include "sample/import_support/import_harness.h"
 #include "sample/import_support/import_mapping.h"
 #include "sample/import_support/import_loop.h"
+#include "sample/import_support/import_envelope.h"
+#include "sample/import_support/import_filter.h"
+#include "sample/import_support/import_modulation.h"
 #include "sample/import_support/import_numeric.h"
+#include "dsp/processor/processor.h"
+#include <cmath>
 
 #include <messaging/messaging.h>
 
 namespace scxt::exs_support
 {
 using byteData_t = std::vector<uint8_t>;
+
+// EXS envelope time bytes (0..127) follow Logic's quartic time control, not
+// the linear value/127*10 the Java ConvertWithMoss reference uses (which we
+// initially mirrored — they have the same bug). Logic's max release is 10
+// seconds (confirmed against Sampler); a power-law fit to readings from
+// French Horns Legato.exs and Supergrain 5.exs gives k≈4 anchored at that
+// upper bound:
+//   v=0   -> 0 s       (hard-zeroed)
+//   v=37  -> 72 ms     ✓
+//   v=47  -> 188 ms    ✓
+//   v=87  -> 2.20 s    ✓
+//   v=115 -> 6.27 s    (formula gives 6.74 s; probably display rounding)
+//   v=127 -> 10 s      (max)
+// Fit: seconds = (v/127)^4 * 10.
+inline float exsEnvByteToSeconds(int v)
+{
+    if (v <= 0)
+        return 0.f;
+    float frac = v / 127.f;
+    return frac * frac * frac * frac * 10.f;
+}
 
 uint32_t readU32(std::ifstream &f, bool bigE)
 {
@@ -537,9 +564,21 @@ struct EXSSample : EXSObject
 
 struct EXSParameters : EXSObject
 {
-    // For vals see
-    // https://github.com/git-moss/ConvertWithMoss/blob/main/src/main/java/de/mossgrabers/convertwithmoss/format/exs/EXS24Parameters.java
+    // Sparse map of (param-id -> int16 value). Named ids live in
+    // exs_parameters.h; see that header (and ConvertWithMoss's
+    // EXS24Parameters.java which it was transcribed from) for what each id
+    // means.
     std::map<uint16_t, int16_t> params;
+
+    // Typed accessor: returns the stored value if present, otherwise
+    // `defaultVal`. Use the EXSParam enum so call sites read declaratively.
+    int16_t get(EXSParam id, int16_t defaultVal = 0) const
+    {
+        auto it = params.find(static_cast<uint16_t>(id));
+        return it != params.end() ? it->second : defaultVal;
+    }
+    bool has(EXSParam id) const { return params.find(static_cast<uint16_t>(id)) != params.end(); }
+
     EXSParameters(EXSBlock in) : EXSObject(in)
     {
         assert(in.type == EXSBlock::TYPE_PARAMS);
@@ -551,12 +590,20 @@ struct EXSParameters : EXSObject
         int paramCount = (int)readU32();
         int paramBlockLength = paramCount * 3;
 
+        // After the 4-byte count we just consumed, the chunk holds
+        // `paramCount` 1-byte IDs followed by `paramCount` 2-byte LE values.
+        // Offset both lookups by the current position so we read from
+        // *after* the count, not from byte 0 of the chunk (which is the
+        // count itself).
+        const auto idsBase = position;
+        const auto valuesBase = position + paramCount;
+
         for (int i = 0; i < paramCount; i++)
         {
-            int paramId = within.content[i] & 0xFF;
+            int paramId = within.content[idsBase + i] & 0xFF;
             if (paramId != 0)
             {
-                auto offset = paramCount + 2 * i;
+                auto offset = valuesBase + 2 * i;
                 int16_t value = within.content[offset] | (within.content[offset + 1] << 8);
                 params[paramId] = value;
             }
@@ -693,9 +740,145 @@ bool importEXS(const fs::path &p, engine::Engine &e)
             sampleIDByOrder.push_back(*lsid);
     }
 
+    // Group-level config (volume/pan to GroupOutputInfo, polyphony to playMode,
+    // exclusive to choke-group ID). Bumps Part::numExclusiveGroups for any
+    // non-zero exclusive IDs we've seen.
+    int maxExclusive = 0;
     for (auto &g : info.groups)
-        groupIndexByOrder.push_back(ctx.addGroup(g.within.name));
+    {
+        int scxtGid = ctx.addGroup(g.within.name);
+        groupIndexByOrder.push_back(scxtGid);
 
+        auto &grp = *ctx.getPart().getGroup(scxtGid);
+        if (g.volume != 0)
+            grp.outputInfo.amplitude = import_support::dBToCubicAttenuation((float)g.volume);
+        if (g.pan != 0)
+            grp.outputInfo.pan = g.pan / 50.f;
+
+        if (g.polyphony == 1)
+        {
+            grp.outputInfo.playMode = engine::Group::PlayMode::MONO;
+        }
+        else if (g.polyphony > 1)
+        {
+            grp.outputInfo.hasIndependentPolyLimit = true;
+            grp.outputInfo.polyLimit = g.polyphony;
+        }
+        // polyphony == 0: leave defaults (POLY, no limit).
+
+        if (g.exclusive > 0)
+        {
+            grp.outputInfo.exclusiveGroup = g.exclusive;
+            if (g.exclusive > maxExclusive)
+                maxExclusive = g.exclusive;
+        }
+    }
+    if (maxExclusive > 0)
+    {
+        auto &cfg = ctx.getPart().configuration;
+        if (maxExclusive > cfg.numExclusiveGroups)
+            cfg.numExclusiveGroups = maxExclusive;
+    }
+
+    // --- Global "parameters block" wiring ----------------------------------
+    //
+    // Logic stores program-wide settings (master tune, pitch-bend range,
+    // global filter, global ENV1=amp / ENV2=filter envelopes) in the
+    // parameters chunk. SCXT doesn't have a program-level filter or
+    // envelope, so we project these onto every zone — every zone gets the
+    // same ENV1/ENV2 + filter, and the global filter envelope (ENV2) is
+    // wired to filter cutoff via a mod route.
+    //
+    // Param IDs are in exs_parameters.h (named from ConvertWithMoss's
+    // EXS24Parameters.java); conversions follow the same reference unless
+    // noted.
+    const bool haveParams = info.parameters.has_value();
+    const auto &params = info.parameters;
+
+    float globalTuneSemis = 0;
+    if (haveParams)
+    {
+        int coarse = params->get(EXSParam::COARSE_TUNE);
+        int fine = params->get(EXSParam::FINE_TUNE);
+        globalTuneSemis = coarse + import_support::centsToSemitones((float)fine);
+    }
+
+    int16_t globalPbUp = 2, globalPbDown = 2;
+    bool haveGlobalPb = false;
+    if (haveParams && params->has(EXSParam::PITCH_BEND_UP))
+    {
+        haveGlobalPb = true;
+        int up = params->get(EXSParam::PITCH_BEND_UP, 2);
+        int down = params->get(EXSParam::PITCH_BEND_DOWN, -1);
+        globalPbUp = (int16_t)up;
+        // EXS convention: PITCH_BEND_DOWN == -1 means "match PITCH_BEND_UP"
+        globalPbDown = (int16_t)((down == -1) ? up : down);
+    }
+    if (haveGlobalPb)
+    {
+        for (int gid : groupIndexByOrder)
+        {
+            auto &grp = *ctx.getPart().getGroup(gid);
+            grp.outputInfo.pbUp = globalPbUp;
+            grp.outputInfo.pbDown = globalPbDown;
+        }
+    }
+
+    const bool filterEnabled = haveParams && params->get(EXSParam::FILTER1_TOGGLE) > 0;
+    import_support::FilterArgs filterArgs;
+    if (filterEnabled)
+    {
+        // TODO: map FILTER1_TYPE (0..5: LP4/LP3/LP2/LP1/HP2/BP2) to the best
+        // SCXT processor type rather than always CytomicSVF.
+        filterArgs.type = dsp::processor::ProcessorType::proct_CytomicSVF;
+        int rawCutoff = params->get(EXSParam::FILTER1_CUTOFF, 1000);
+        int rawReso = params->get(EXSParam::FILTER1_RESO, 0);
+        // Logic Sampler's filter cutoff is stored as 0..1000 (UI shows it as
+        // a 0..100% percentage with no Hz reading). The raw value maps
+        // logarithmically to Hz across the audio range: 0% → 20 Hz,
+        // 100% → 20 kHz. The Java ConvertWithMoss reference uses a linear
+        // 0..20kHz map which is wrong — they have the same bug.
+        // Formula: hz = 20 * 1000^(rawCutoff/1000).
+        float pct = std::clamp(rawCutoff / 1000.f, 0.f, 1.f);
+        float hz = 20.f * std::pow(1000.f, pct);
+        float cutoffSemis = 12.f * std::log2(hz / 440.f);
+        filterArgs.cutoff = std::clamp(cutoffSemis, -69.f, 70.f);
+        filterArgs.resonance = std::clamp(rawReso / 1000.f, 0.f, 1.f);
+    }
+
+    // Times go through exsEnvByteToSeconds (exponential curve, calibrated
+    // against Logic Sampler — not the linear /127*10 the Java reference
+    // uses). Sustain is a 0..127 byte → 0..1 level. Only write the field
+    // if the file actually specified it (matches Java's null-default
+    // behavior — important for sustain so an omitted param means "full
+    // sustain" 1.0 not "silent" 0).
+    auto envFromParams = [&](EXSParam delay, EXSParam attack, EXSParam hold, EXSParam decay,
+                             EXSParam sustain, EXSParam release) -> import_support::EnvelopeArgs {
+        import_support::EnvelopeArgs args;
+        if (!haveParams)
+            return args;
+        if (params->has(delay))
+            args.delaySeconds = exsEnvByteToSeconds(params->get(delay));
+        if (params->has(attack))
+            args.attackSeconds = exsEnvByteToSeconds(params->get(attack));
+        if (params->has(hold))
+            args.holdSeconds = exsEnvByteToSeconds(params->get(hold));
+        if (params->has(decay))
+            args.decaySeconds = exsEnvByteToSeconds(params->get(decay));
+        if (params->has(sustain))
+            args.sustainLevel = params->get(sustain) / 127.f;
+        if (params->has(release))
+            args.releaseSeconds = exsEnvByteToSeconds(params->get(release));
+        return args;
+    };
+    auto env1Args =
+        envFromParams(EXSParam::ENV1_DELAY_START, EXSParam::ENV1_ATK_HI_VEL, EXSParam::ENV1_HOLD,
+                      EXSParam::ENV1_DECAY, EXSParam::ENV1_SUSTAIN, EXSParam::ENV1_RELEASE);
+    auto env2Args =
+        envFromParams(EXSParam::ENV2_DELAY_START, EXSParam::ENV2_ATK_HI_VEL, EXSParam::ENV2_HOLD,
+                      EXSParam::ENV2_DECAY, EXSParam::ENV2_SUSTAIN, EXSParam::ENV2_RELEASE);
+
+    bool warnedAboutRoundRobin = false;
     int zoneOrdinal = 0;
     for (auto &z : info.zones)
     {
@@ -722,25 +905,67 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         }
         auto gi = groupIndexByOrder[exsgi];
         auto si = sampleIDByOrder[exssi];
-        auto zone = std::make_unique<engine::Zone>(si);
+        const auto &exsGroup = info.groups[exsgi];
+
+        // EXS round-robin: groups flagged with enableByRoundRobin form a
+        // sequence keyed by roundRobinGroupPos (-1, 0, 1, …). Each "position"
+        // is a separate EXS group covering the same key/vel range; played
+        // back in order on repeated note-ons. SCXT does this via Zone
+        // variants — one zone with N variants — which would require gathering
+        // multiple EXS zones into a single SCXT zone instead of one-per-EXS.
+        // Not implemented yet; import the zone as a regular non-RR zone for
+        // now so it still plays.
+        if (exsGroup.enableByRoundRobin && !warnedAboutRoundRobin)
+        {
+            ctx.unsupported("EXS round-robin groups",
+                            "imported as parallel zones; per-variant RR not yet supported");
+            warnedAboutRoundRobin = true;
+        }
 
         // velocityRangeOn=false means "use full velocity range"; otherwise
         // honor the per-zone velocityLow/High the EXS specifies.
         int velStart = z.velocityRangeOn ? z.velocityLow : 0;
         int velEnd = z.velocityRangeOn ? z.velocityHigh : 127;
+        int keyStart = z.keyLow;
+        int keyEnd = z.keyHigh;
+
+        // Intersect with the group's vel/key range (per the ConvertWithMoss
+        // reference). Skip the zone entirely if it falls outside the group's
+        // range. The "!= 0" guards on the clamps preserve the reference
+        // behavior of treating zero as "no bound applied" — see EXS24Detector
+        // limitByGroupAttributes.
+        if (velEnd < exsGroup.minVelocity || velStart > exsGroup.maxVelocity)
+            continue;
+        if (keyEnd < exsGroup.startNote || keyStart > exsGroup.endNote)
+            continue;
+        if (exsGroup.minVelocity != 0 && velStart < exsGroup.minVelocity)
+            velStart = exsGroup.minVelocity;
+        if (exsGroup.maxVelocity != 0 && velEnd > exsGroup.maxVelocity)
+            velEnd = exsGroup.maxVelocity;
+        if (exsGroup.startNote != 0 && keyStart < exsGroup.startNote)
+            keyStart = exsGroup.startNote;
+        if (exsGroup.endNote != 0 && keyEnd > exsGroup.endNote)
+            keyEnd = exsGroup.endNote;
+
+        auto zone = std::make_unique<engine::Zone>(si);
+        zone->engine = &e;
 
         // Tuning: EXS only respects coarse/fine when the `pitch` flag is set
         // (mirrors the ConvertWithMoss reference). volumeAdjust is in dB.
-        std::optional<float> pitchOffsetSemis;
+        // Global COARSE_TUNE+FINE_TUNE adds on top.
+        float perZoneTune = 0;
         if (z.pitch && (z.coarseTuning != 0 || z.fineTuning != 0))
-            pitchOffsetSemis =
-                z.coarseTuning + import_support::centsToSemitones((float)z.fineTuning);
+            perZoneTune = z.coarseTuning + import_support::centsToSemitones((float)z.fineTuning);
+        float totalTune = perZoneTune + globalTuneSemis;
+        std::optional<float> pitchOffsetSemis;
+        if (totalTune != 0)
+            pitchOffsetSemis = totalTune;
 
         import_support::importZoneMapping(*zone, ctx,
                                           {
                                               .rootKey = z.key,
-                                              .keyStart = z.keyLow,
-                                              .keyEnd = z.keyHigh,
+                                              .keyStart = keyStart,
+                                              .keyEnd = keyEnd,
                                               .velStart = velStart,
                                               .velEnd = velEnd,
                                               .pitchOffsetSemitones = pitchOffsetSemis,
@@ -768,7 +993,9 @@ bool importEXS(const fs::path &p, engine::Engine &e)
             variant.endSample = z.sampleEnd;
 
         variant.playReverse = z.reverse;
-        if (z.oneshot)
+        if (exsGroup.releaseTrigger)
+            variant.playMode = engine::Zone::PlayMode::ON_RELEASE;
+        else if (z.oneshot)
             variant.playMode = engine::Zone::PlayMode::ONE_SHOT;
 
         if (z.loopOn)
@@ -795,6 +1022,31 @@ bool importEXS(const fs::path &p, engine::Engine &e)
                                                .fadeSamples = fadeSamples,
                                                .active = true,
                                            });
+        }
+
+        // Global env1 (AmpEG) / env2 (FilEG) — every zone gets the same
+        // global envelope shape.
+        import_support::EGHandle egAmpHandle, egFilHandle;
+        if (haveParams)
+        {
+            egAmpHandle = import_support::importZoneEnvelope(*zone, ctx, 0, env1Args);
+            egFilHandle = import_support::importZoneEnvelope(*zone, ctx, 1, env2Args);
+        }
+
+        // Global filter + env2-to-cutoff mod route. Logic models env2 as the
+        // filter's cutoff modulator with depth 1.0; SCXT routes it through
+        // the mod matrix.
+        if (filterEnabled)
+        {
+            auto filterHandle = import_support::importZoneFilter(*zone, ctx, 0, filterArgs);
+            import_support::addImportedModRoute(
+                *zone, ctx,
+                {
+                    .source = import_support::ImportedSource::fromEG(egFilHandle),
+                    .target = import_support::ImportedTarget::filter(
+                        filterHandle, import_support::FilterParam::Cutoff),
+                    .depth = 1.0f,
+                });
         }
 
         ctx.addZoneToGroup(gi, std::move(zone));

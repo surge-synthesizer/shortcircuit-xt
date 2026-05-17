@@ -40,6 +40,13 @@ inline float centibelsToLinear(double cB) { return (float)std::pow(10.0, (-cB / 
 
 // SF2 pan is -64..63 (signed byte) — negative half divides by 64, positive by 63.
 inline float sf2NormalizedPan(int pan) { return pan < 0 ? pan / 64.f : pan / 63.f; }
+
+// Convert dB to the "cubic attenuation" parameter scxt uses on group amplitudes
+// (the runtime applies value*value*value to get linear amplitude, after
+// clamping value to 0..1). To invert: go to linear amplitude first, then
+// cube-root that. Note that group.cpp clamps the cube input to [0, 1] before
+// applying, so positive-dB input here will saturate at 0 dB at runtime.
+inline float dBToCubicAttenuation(float dB) { return (float)std::cbrt(std::pow(10.0, dB / 20.0)); }
 } // namespace scxt::import_support
 
 #endif
