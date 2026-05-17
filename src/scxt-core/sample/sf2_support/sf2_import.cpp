@@ -203,7 +203,8 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                         filterHandle = import_support::importZoneFilter(
                             *zn, ctx, 0,
                             {
-                                .type = dsp::processor::ProcessorType::proct_CytomicSVF,
+                                // SF2 spec: -12 dB/oct 2nd-order resonant LP.
+                                .type = import_support::FilterType::LP12,
                                 .cutoff = (float)((fc / 100.0) - 69.0),
                                 .resonance = (float)std::clamp((fq / 100.0), 0., 1.),
                             });

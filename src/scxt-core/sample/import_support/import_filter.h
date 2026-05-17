@@ -36,6 +36,48 @@ namespace scxt::import_support
 {
 class ImporterContext;
 
+// Format-agnostic filter "shape" each importer maps its native filter type
+// onto. The helper translates this into the underlying SCXT processor +
+// passband + slope config. When an importer doesn't know how to map its
+// native type, it should pass `Other` — the helper installs a bypassed
+// (mix=0) CytomicSVF LP and the importer is responsible for surfacing a
+// user-visible warning with format-specific context.
+//
+// Not every slope has a native SCXT model — the helper picks the closest
+// available and any approximation is silent (importers free to warn if they
+// care about fidelity). Today CytomicSVF gives us 12dB LP/HP/BP/Notch/Peak/
+// Allpass; VemberClassic gives us 12dB and 24dB LP/HP/BP/Notch. Anything
+// 6dB rounds up to 12dB; anything 18/36/48dB rounds to 24dB.
+enum class FilterType
+{
+    Other, // Unmapped / unrecognized — helper installs a bypassed LP.
+
+    LP6,
+    LP12,
+    LP18,
+    LP24,
+    LP36,
+    LP48,
+
+    HP6,
+    HP12,
+    HP18,
+    HP24,
+    HP36,
+    HP48,
+
+    BP6,
+    BP12,
+    BP24,
+
+    Notch12,
+    Notch24,
+
+    Peak,
+    Allpass,
+    Comb,
+};
+
 // Handle returned by importZoneFilter; carries the slot index and processor
 // type so the modulation resolver can map FilterParam::Cutoff to the right
 // floatParams index.
@@ -47,11 +89,12 @@ struct FilterHandle
 
 // type is required; the helper logs + asserts + returns if it is unset.
 // cutoff and resonance are left at the processor's current value when unset.
-// Values are in the processor's native units (e.g. for CytomicSVF, cutoff is
-// semitones offset from MIDI 69, resonance is 0..1).
+// Values are in the chosen processor's native units (for CytomicSVF/
+// VemberClassic this is semitones offset from MIDI 69 for cutoff, 0..1 for
+// resonance).
 struct FilterArgs
 {
-    std::optional<dsp::processor::ProcessorType> type;
+    std::optional<FilterType> type;
     std::optional<float> cutoff;
     std::optional<float> resonance;
 };

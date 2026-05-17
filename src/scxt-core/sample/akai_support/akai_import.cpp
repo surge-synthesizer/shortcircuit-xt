@@ -621,7 +621,9 @@ bool importAKP(const fs::path &path, engine::Engine &e)
                     import_support::importZoneFilter(
                         *zn, ctx, 0,
                         {
-                            .type = dsp::processor::ProcessorType::proct_CytomicSVF,
+                            // TODO: map flt.type (0..25; see akpFilterTypeName)
+                            // to a more specific FilterType than the default LP12.
+                            .type = import_support::FilterType::LP12,
                             .cutoff = akpCutoffToSemis(flt.cutoff),
                             .resonance = flt.resonance / 12.f,
                         });
