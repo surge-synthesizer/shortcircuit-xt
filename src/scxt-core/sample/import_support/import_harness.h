@@ -63,6 +63,10 @@ class ImporterContext
     void raise(const std::string &title, const std::string &msg);
     // raise() + returns false — for the early-out idiom `return ctx.fail(...)`.
     bool fail(const std::string &title, const std::string &msg);
+    // User-visible warning (non-fatal). Use for things the importer
+    // auto-corrects (e.g. SFZ keyrange swaps) so they don't show up as
+    // hard errors in headless scanners.
+    void warn(const std::string &title, const std::string &msg);
 
     // Programmer-level invariant violations (e.g. helper required-field missing).
     // Reported now via raise() under a "Software Error" title prefix; the marker

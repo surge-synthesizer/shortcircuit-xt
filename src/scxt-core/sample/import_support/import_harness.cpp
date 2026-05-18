@@ -56,6 +56,11 @@ bool ImporterContext::fail(const std::string &title, const std::string &msg)
     return false;
 }
 
+void ImporterContext::warn(const std::string &title, const std::string &msg)
+{
+    RAISE_WARN_CONT(*engineRef.getMessageController(), title, msg);
+}
+
 void ImporterContext::software_error(const std::string &where, const std::string &what)
 {
     SCLOG_IF(warnings, "Software error in " << where << ": " << what);

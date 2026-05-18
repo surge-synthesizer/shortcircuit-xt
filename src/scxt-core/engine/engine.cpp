@@ -39,6 +39,7 @@
 #include "messaging/messaging.h"
 #include "messaging/client/detail/client_serial_impl.h"
 #include "messaging/client/enginestatus_messages.h"
+#include "messaging/client/interaction_messages.h"
 #include "messaging/client/part_messages.h"
 #include "messaging/client/macro_messages.h"
 #include "messaging/audio/audio_messages.h"
@@ -779,21 +780,30 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
     assert(messageController->threadingChecker.isSerialThread());
 
     // If you add a type here add it to Browser::isLoadableFile also
+    // Emits s2c_compound_import_complete so headless scanners and the UI
+    // can sync on a per-file boundary instead of guessing at async drain.
+    auto emitComplete = [this](const fs::path &fp, bool ok) {
+        serializationSendToClient(messaging::client::s2c_compound_import_complete,
+                                  messaging::client::s2cImportComplete_t{fp.u8string(), ok},
+                                  *messageController);
+    };
+
     if (extensionMatches(p, ".sf2"))
     {
         // TODO ok this refresh and restart is a bit unsatisfactory
-        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
             sf2_support::importSF2(p, *this, -1);
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
+            emitComplete(p, true);
         });
         return;
     }
     else if (extensionMatches(p, ".sfz"))
     {
         // TODO ok this refresh and restart is a bit unsatisfactory
-        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
             auto res = sfz_support::importSFZ(p, *this);
             if (!res)
                 RAISE_ERROR_CONT(*messageController, "SFZ Import Failed",
@@ -801,13 +811,14 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
+            emitComplete(p, res);
         });
         return;
     }
     else if (extensionMatches(p, ".exs"))
     {
         // TODO ok this refresh and restart is a bit unsatisfactory
-        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
             auto res = exs_support::importEXS(p, *this);
             if (!res)
                 RAISE_ERROR_CONT(*messageController, "EXS Import Failed",
@@ -815,12 +826,13 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
+            emitComplete(p, res);
         });
         return;
     }
     else if (extensionMatches(p, ".multisample"))
     {
-        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
             auto res = multisample_support::importMultisample(p, *this);
             if (!res)
                 RAISE_ERROR_CONT(*messageController, "Multisample Import Failed",
@@ -828,12 +840,13 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
+            emitComplete(p, res);
         });
         return;
     }
     else if (extensionMatches(p, ".akp"))
     {
-        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
             auto res = akai_support::importAKP(p, *this);
             if (!res)
                 RAISE_ERROR_CONT(*messageController, "AKP Import Failed",
@@ -841,17 +854,19 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
+            emitComplete(p, res);
         });
         return;
     }
     if (extensionMatches(p, ".gig"))
     {
         // TODO ok this refresh and restart is a bit unsatisfactory
-        messageController->stopAudioThreadThenRunOnSerial([this, p](const auto &) {
+        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
             gig_support::importGIG(p, *this, -1);
             messageController->restartAudioThreadFromSerial();
             serializationSendToClient(messaging::client::s2c_send_pgz_structure,
                                       getPartGroupZoneStructure(), *messageController);
+            emitComplete(p, true);
         });
         return;
     }

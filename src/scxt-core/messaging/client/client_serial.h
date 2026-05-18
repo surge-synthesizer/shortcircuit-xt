@@ -265,6 +265,7 @@ enum SerializationToClientMessageIds
     s2c_update_macro_value,
 
     s2c_send_missing_resolution_workitem_list,
+    s2c_compound_import_complete,
 
     s2c_send_tuning_status,
     s2c_update_mpe_tuning_awareness,

@@ -71,6 +71,7 @@ struct SCXTEditorReceiver
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
     void onUnusedItemsFromEngine(const scxt::messaging::client::s2cUnusedItems_t &);
+    void onImportCompleteFromEngine(const scxt::messaging::client::s2cImportComplete_t &);
     void onEngineStatus(const engine::Engine::EngineStatusMessage &e);
     void onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &);
     void onSamplesUpdated(const scxt::messaging::client::sampleSelectedZoneViewResposne_t &);
