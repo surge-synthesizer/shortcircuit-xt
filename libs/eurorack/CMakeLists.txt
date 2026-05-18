@@ -2,7 +2,7 @@ project(eurorack VERSION 0.0.0 LANGUAGES CXX)
 
 add_library(${PROJECT_NAME})
 
-option(EURORACK_CLOUDS_IS_CLOUDS "Use the clouds (as opposed to superparasites) firmware for clouds" FALSE)
+option(EURORACK_CLOUDS_IS_CLOUDS "Use the clouds (as opposed to superparasites) firmware for clouds" TRUE)
 
 if(EURORACK_CLOUDS_IS_CLOUDS)
   target_sources(${PROJECT_NAME} PRIVATE
