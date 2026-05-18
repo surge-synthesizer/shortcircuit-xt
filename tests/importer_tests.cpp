@@ -303,3 +303,26 @@ TEST_CASE("Import SFZ filter mod fixture", "[importer]")
     CHECK(foundChanAft);
     CHECK(foundReso73);
 }
+
+TEST_CASE("Import SFZ *square generator", "[importer]")
+{
+    auto p = fixturePath("sfz-test-subset/square_generator.sfz");
+    INFO("fixture=" << p.string());
+    REQUIRE(fs::exists(p));
+
+    ImporterFixture f;
+    f.loadSample(p);
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() == 1);
+    auto &group = part.getGroups()[0];
+    REQUIRE(group->getZones().size() == 1);
+    auto &zone = group->getZones()[0];
+
+    // sample=*square should install the EllipticBlepWaveforms generator
+    // (proct_osc_EBWaveforms) in processor slot 0 with the PULSE waveform.
+    REQUIRE(zone->processorStorage[0].type ==
+            scxt::dsp::processor::ProcessorType::proct_osc_EBWaveforms);
+    CHECK(zone->processorStorage[0].intParams[0] == 2); // PULSE
+    CHECK(zone->processorStorage[0].mix == Approx(1.0f));
+}

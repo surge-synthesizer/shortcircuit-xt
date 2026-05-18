@@ -1,0 +1,20 @@
+/////////////////////////////////////////////////////////////////////////////
+/// sfz definition file
+/// Adapted from filter_oncc.sfz to exercise the *<name> virtual-sample path.
+/// -------------------------------------------------------------------------
+/// Test group: generators
+/// Test purpose: SFZ *square magic sample name + filter mod
+///
+/// Test description:
+/// Play any key, move mod wheel (cc1), verify the filter cutoff increases.
+/// Send channel aftertouch messages, verify the cutoff decreases.
+///
+/// Filter resonance is assigned to cc73
+
+<region>
+sample=*square
+loop_mode=loop_continuous pitch_keytrack=0
+cutoff=1000 cutoff_oncc1=8000 cutoff_chanaft=-8000
+resonance=10 resonance_oncc73=20
+
+fil_type=hpf_4p

@@ -30,6 +30,7 @@
 #include "sample/import_support/import_mapping.h"
 #include "sample/import_support/import_envelope.h"
 #include "sample/import_support/import_filter.h"
+#include "sample/import_support/import_generator.h"
 #include "sample/import_support/import_loop.h"
 #include "sample/import_support/import_modulation.h"
 #include "sample/import_support/import_numeric.h"
@@ -290,10 +291,12 @@ void zoneEnvelope(std::unique_ptr<engine::Zone> &zn, import_support::ImporterCon
 }
 
 // Returns the FilterHandle so the caller can wire CC/aftertouch mods onto
-// it; FilterHandle{} (procSlot=-1) means no filter was installed.
+// it; FilterHandle{} (procSlot=-1) means no filter was installed. The
+// `procSlot` argument lets the caller route the filter past a generator
+// processor that already occupies slot 0 (see `installVirtualSample`).
 import_support::FilterHandle zoneFilter(std::unique_ptr<engine::Zone> &zn,
                                         import_support::ImporterContext &ctx, opCodeMap_t &opCodes,
-                                        std::set<std::string> &reportedFilTypes)
+                                        std::set<std::string> &reportedFilTypes, int procSlot = 0)
 {
     auto cutoffOpc = consumeOpcode(opCodes, "cutoff");
     auto resoOpc = consumeOpcode(opCodes, "resonance");
@@ -362,7 +365,7 @@ import_support::FilterHandle zoneFilter(std::unique_ptr<engine::Zone> &zn,
     // resonance: SFZ 0..40 dB → SCXT 0..1 (crude linear)
     float resonance = std::clamp(resoDb / 40.f, 0.f, 1.f);
 
-    return import_support::importZoneFilter(*zn, ctx, 0,
+    return import_support::importZoneFilter(*zn, ctx, procSlot,
                                             {
                                                 .type = fType,
                                                 .cutoff = cutoffSemis,
@@ -637,8 +640,11 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 groupId = ctx.addGroup();
             auto &group = ctx.getPart().getGroup(groupId);
 
-            // Find the sample
-            std::string sampleFileString = "<-->";
+            // Find the sample. Default to `*silence` so regions without a
+            // `sample=` opcode (e.g. SFZ files that author only effects, or
+            // stray empty `<region>` headers) come through as silent generator
+            // zones rather than a sample-load failure.
+            std::string sampleFileString = "*silence";
             for (auto &oc : currentGroupOpcodes)
             {
                 if (oc.name == "sample")
@@ -662,26 +668,37 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                                     " contains invalid UTF-8 sequence. Stopping SFZ import");
             }
 
+            // SFZ magic generator names (`*sine`, `*saw`, `*square`, `*triangle`,
+            // `*tri`, `*noise`, `*silence`) skip the sample-loading path entirely;
+            // the zone is built around a synthetic silent sample plus a generator
+            // processor — see installVirtualSample.
+            const bool isVirtual = import_support::isVirtualSampleName(sampleFileString);
+
             // fs always works with / and on windows also works with back. Quotes are
             // stripped by the parser now
             std::replace(sampleFileString.begin(), sampleFileString.end(), '\\', '/');
             auto sampleFile = fs::path{sampleFileString};
             auto samplePath = (sampleDir / sampleFile).lexically_normal();
 
-            auto lsid = ctx.loadSampleFromDisk({samplePath, sampleFile});
-            if (!lsid)
+            SampleID sid;
+            if (!isVirtual)
             {
-                // TODO: this should trigger a missing-sample resolution flow
-                // (prompt the user to locate the file) rather than raising +
-                // skipping the region. Same shape applies to a load failure on
-                // a path that DID exist (e.g. a corrupt WAV). For now: raise a
-                // user-visible error and skip this region; the rest of the SFZ
-                // continues to import.
-                ctx.raise("SFZ Import Error", "Unable to load sample '" + samplePath.u8string() +
-                                                  "' or '" + sampleFile.u8string() + "'");
-                break;
+                auto lsid = ctx.loadSampleFromDisk({samplePath, sampleFile});
+                if (!lsid)
+                {
+                    // TODO: this should trigger a missing-sample resolution flow
+                    // (prompt the user to locate the file) rather than raising +
+                    // skipping the region. Same shape applies to a load failure on
+                    // a path that DID exist (e.g. a corrupt WAV). For now: raise a
+                    // user-visible error and skip this region; the rest of the SFZ
+                    // continues to import.
+                    ctx.raise("SFZ Import Error", "Unable to load sample '" +
+                                                      samplePath.u8string() + "' or '" +
+                                                      sampleFile.u8string() + "'");
+                    break;
+                }
+                sid = *lsid;
             }
-            SampleID sid = *lsid;
 
             // OK so do we have a sequence position > 1
             int roundRobinPosition{-1};
@@ -696,8 +713,18 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     };
                 }
             }
-            auto zn = std::make_unique<engine::Zone>(sid);
-            zn->engine = &e; // required by setProcessorType in zoneFilter
+            auto zn =
+                isVirtual ? std::make_unique<engine::Zone>() : std::make_unique<engine::Zone>(sid);
+            zn->engine = &e; // required by setProcessorType in zoneFilter / virtual
+            if (isVirtual)
+            {
+                if (!import_support::installVirtualSample(*zn, ctx, sampleFileString))
+                {
+                    ctx.raise("SFZ Import Error",
+                              "Unknown virtual sample name '" + sampleFileString + "'");
+                    break;
+                }
+            }
             // SFZ default mapping (gets overwritten by zoneGeometry once opcodes are parsed).
             import_support::importZoneMapping(*zn, ctx,
                                               {
@@ -728,7 +755,10 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             auto loopArgs = zoneLoopParse(mergedOpcodes, loadInfo);
             zoneEnvelope(zn, ctx, mergedOpcodes, 0, "ampeg");
             zoneEnvelope(zn, ctx, mergedOpcodes, 1, "fileg");
-            auto filterHandle = zoneFilter(zn, ctx, mergedOpcodes, reportedSfzFilTypes);
+            // Virtual generator zones occupy proc slot 0 with the oscillator;
+            // route the filter to slot 1 so both can live in the same chain.
+            int filterSlot = isVirtual ? 1 : 0;
+            auto filterHandle = zoneFilter(zn, ctx, mergedOpcodes, reportedSfzFilTypes, filterSlot);
 
             // Envelope CC/velocity mods
             zoneEnvelopeMods(mergedOpcodes, ctx, *zn, "ampeg", 0);
@@ -797,7 +827,13 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 unusedZoneOpcodes.insert(n);
             }
             int variantIndex{-1};
-            if (roundRobinPosition > 0)
+            if (isVirtual)
+            {
+                // installVirtualSample already attached the silent sample; just
+                // record the variant index so the loop/etc. plumbing below works.
+                variantIndex = 0;
+            }
+            else if (roundRobinPosition > 0)
             {
                 bool attached{false};
 
