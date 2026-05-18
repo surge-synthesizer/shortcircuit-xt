@@ -29,8 +29,10 @@
 #define SCXT_SRC_CLIENTS_CONSOLE_UI_CONSOLE_UI_H
 
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <atomic>
+#include <vector>
 
 #include "utils.h"
 #include "configuration.h"
@@ -64,7 +66,32 @@ struct ConsoleUI
     }
 
     // Serialization to Client Messages
-    void onErrorFromEngine(const scxt::messaging::client::s2cError_t &) ON_STUB;
+    void onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
+    {
+        std::lock_guard<std::mutex> lk(errorMutex);
+        errorStack.push_back(e);
+        if (logMessages)
+            SCLOG_WFUNC_IF(cliTools, "Error from engine");
+    }
+
+    // Error stack accessors — useful for headless tools (e.g.
+    // check-multi-loadability) that want to detect and report per-file
+    // import failures.
+    bool hasErrors()
+    {
+        std::lock_guard<std::mutex> lk(errorMutex);
+        return !errorStack.empty();
+    }
+    std::vector<scxt::messaging::client::s2cError_t> readErrors()
+    {
+        std::lock_guard<std::mutex> lk(errorMutex);
+        return errorStack;
+    }
+    void clearErrors()
+    {
+        std::lock_guard<std::mutex> lk(errorMutex);
+        errorStack.clear();
+    }
     void onEngineStatus(const engine::Engine::EngineStatusMessage &e) ON_STUB;
     void
     onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &) ON_STUB;
@@ -136,6 +163,9 @@ struct ConsoleUI
     std::mutex callbackMutex;
     std::queue<std::string> callbackQueue;
     void drainQueue();
+
+    std::mutex errorMutex;
+    std::vector<scxt::messaging::client::s2cError_t> errorStack;
 };
 
 } // namespace scxt::clients::console_ui
