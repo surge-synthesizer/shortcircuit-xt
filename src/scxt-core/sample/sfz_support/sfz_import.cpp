@@ -604,7 +604,9 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     int groupId = -1;
     int regionCount{0};
     SFZParser::opCodes_t currentGroupOpcodes;
-    std::set<std::string> unusedZoneOpcodes;
+    // Captures (opcode -> first observed value) across all regions; flushed
+    // to ctx.recordUnusedItem at the end of the import.
+    std::map<std::string, std::string> unusedZoneOpcodes;
     std::set<std::string> reportedSfzFilTypes;
     for (const auto &[r, list] : doc)
     {
@@ -747,6 +749,22 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             consumeOpcode(mergedOpcodes, "sample");
             consumeOpcode(mergedOpcodes, "seq_position");
 
+            // Group-level opcodes that may appear in either the <group>
+            // header or a <region> (merged here). Apply to the parent group;
+            // consuming dedups against the unused-opcodes histogram.
+            if (auto v = consumeOpcode(mergedOpcodes, "group_label"); v.has_value())
+                group->name = *v;
+            if (auto v = consumeOpcode(mergedOpcodes, "name"); v.has_value())
+                group->name = *v;
+            if (auto v = consumeOpcode(mergedOpcodes, "amp_veltrack"); v.has_value())
+            {
+                // SCXT velocity sensitivity is a group-level scalar; SFZ
+                // amp_veltrack can sit on either group or region. Apply
+                // last-seen value; (veltrack/127)^2 is the SCXT-side calibration.
+                float vt = (float)std::atof(v->c_str()) / 127.f;
+                group->outputInfo.velocitySensitivity = vt * vt;
+            }
+
             auto onError = [&ctx](const std::string &title, const std::string &msg) {
                 ctx.raise(title, msg);
             };
@@ -824,7 +842,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             {
                 if (m.second)
                     continue;
-                unusedZoneOpcodes.insert(n);
+                unusedZoneOpcodes.emplace(n, m.first);
             }
             int variantIndex{-1};
             if (isVirtual)
@@ -836,6 +854,19 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             else if (roundRobinPosition > 0)
             {
                 bool attached{false};
+                int idx = roundRobinPosition - 1;
+
+                if (idx >= scxt::maxVariantsPerZone)
+                {
+                    // SCXT zones have a fixed cap on round-robin variants
+                    // (scxt::maxVariantsPerZone). Anything past that would
+                    // OOB-write into Zone::variantData; raise + skip instead.
+                    ctx.raise("SFZ Round Robin",
+                              "SCXT only supports " + std::to_string(scxt::maxVariantsPerZone) +
+                                  " variations in round robin; seq_position=" +
+                                  std::to_string(roundRobinPosition) + " dropped.");
+                    break;
+                }
 
                 for (const auto &z : *group)
                 {
@@ -843,7 +874,6 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                         z->mapping.keyboardRange == zn->mapping.keyboardRange &&
                         z->mapping.velocityRange == zn->mapping.velocityRange)
                     {
-                        int idx = roundRobinPosition - 1;
                         variantIndex = idx;
                         z->attachToSampleAtVariation(*e.getSampleManager(), sid, idx, loadInfo);
                         attached = true;
@@ -919,8 +949,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         break;
         }
     }
-    for (auto &oc : unusedZoneOpcodes)
-        ctx.unsupported("SFZ opcode", oc);
+    for (auto &[k, v] : unusedZoneOpcodes)
+        ctx.recordUnusedItem("sfz", k, v);
 
     return ctx.finish();
 }

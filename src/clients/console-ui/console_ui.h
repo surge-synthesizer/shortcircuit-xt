@@ -92,6 +92,31 @@ struct ConsoleUI
         std::lock_guard<std::mutex> lk(errorMutex);
         errorStack.clear();
     }
+
+    // Unused-items channel (importer-recorded tokens we recognized but didn't
+    // route — see ImporterContext::recordUnusedItem).
+    void onUnusedItemsFromEngine(const scxt::messaging::client::s2cUnusedItems_t &items)
+    {
+        std::lock_guard<std::mutex> lk(unusedItemsMutex);
+        for (const auto &it : items)
+            unusedItems.push_back(it);
+    }
+    bool hasUnusedItems()
+    {
+        std::lock_guard<std::mutex> lk(unusedItemsMutex);
+        return !unusedItems.empty();
+    }
+    scxt::messaging::client::s2cUnusedItems_t readUnusedItems()
+    {
+        std::lock_guard<std::mutex> lk(unusedItemsMutex);
+        return unusedItems;
+    }
+    void clearUnusedItems()
+    {
+        std::lock_guard<std::mutex> lk(unusedItemsMutex);
+        unusedItems.clear();
+    }
+
     void onEngineStatus(const engine::Engine::EngineStatusMessage &e) ON_STUB;
     void
     onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &) ON_STUB;
@@ -166,6 +191,9 @@ struct ConsoleUI
 
     std::mutex errorMutex;
     std::vector<scxt::messaging::client::s2cError_t> errorStack;
+
+    std::mutex unusedItemsMutex;
+    scxt::messaging::client::s2cUnusedItems_t unusedItems;
 };
 
 } // namespace scxt::clients::console_ui

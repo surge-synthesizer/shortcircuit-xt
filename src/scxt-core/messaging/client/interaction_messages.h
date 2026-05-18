@@ -42,6 +42,14 @@ namespace scxt::messaging::client
 typedef std::tuple<std::string, std::string, std::string, int> s2cError_t;
 SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 
+// Behind-the-scenes batch of (format, key, value) triples emitted by an
+// importer at finish() to surface tokens it recognized but didn't route.
+// Not user-facing; used by diagnostic tools (e.g. check-multi-loadability)
+// to aggregate coverage gaps.
+typedef std::vector<std::tuple<std::string, std::string, std::string>> s2cUnusedItems_t;
+SERIAL_TO_CLIENT(ReportUnusedItems, s2c_report_unused_items, s2cUnusedItems_t,
+                 onUnusedItemsFromEngine);
+
 inline void raiseDebugError(MessageController &c, int count)
 {
     for (int i = 0; i < count; ++i)

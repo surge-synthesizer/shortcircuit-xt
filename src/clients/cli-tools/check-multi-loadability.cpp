@@ -30,6 +30,8 @@
 
 #include <algorithm>
 #include <iostream>
+#include <map>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -64,24 +66,49 @@ bool hasSuffix(const std::string &name, const std::string &suffix)
     return std::equal(a, name.end(), suffix.begin(),
                       [](char x, char y) { return std::tolower(x) == std::tolower(y); });
 }
+
+// Collapse trailing CC number into a literal "N" so a histogram doesn't
+// fragment across cc1..cc127. e.g. cutoff_oncc73 → cutoff_onccN,
+// ampeg_attackcc11 → ampeg_attackccN, locc64 → loccN.
+std::string normalizeUnusedKey(const std::string &key)
+{
+    static const std::regex ccTail{R"(cc\d+$)"};
+    return std::regex_replace(key, ccTail, "ccN");
+}
 } // namespace
 
 int main(int argc, char **argv)
 {
-    if (argc < 2)
+    // Extract optional flags (only --unused-per-file for now), keeping positional args in argv.
+    std::vector<std::string> args(argv + 1, argv + argc);
+    bool unusedPerFile = false;
+    args.erase(std::remove_if(args.begin(), args.end(),
+                              [&](const std::string &a) {
+                                  if (a == "--unused-per-file")
+                                  {
+                                      unusedPerFile = true;
+                                      return true;
+                                  }
+                                  return false;
+                              }),
+               args.end());
+
+    if (args.empty())
     {
-        std::cerr << "Usage: " << argv[0] << " <file>\n"
-                  << "       " << argv[0] << " <directory> <suffix>\n"
+        std::cerr << "Usage: " << argv[0] << " [--unused-per-file] <file>\n"
+                  << "       " << argv[0] << " [--unused-per-file] <directory> <suffix>\n"
                   << "  Single-file mode: loads <file> and reports zone count + errors.\n"
                   << "  Directory mode: recursively loads every file under <directory>\n"
-                  << "  whose name ends with <suffix> (case-insensitive, e.g. \".exs\").\n";
+                  << "  whose name ends with <suffix> (case-insensitive, e.g. \".exs\").\n"
+                  << "  --unused-per-file: list importer-recorded unused tokens per file in\n"
+                  << "      addition to the rolled-up histogram.\n";
         return 1;
     }
 
     std::vector<fs::path> files;
-    if (argc == 2)
+    if (args.size() == 1)
     {
-        fs::path target{argv[1]};
+        fs::path target{args[0]};
         if (!fs::exists(target) || !fs::is_regular_file(target))
         {
             std::cerr << "Not a regular file: " << target << "\n";
@@ -92,8 +119,8 @@ int main(int argc, char **argv)
     }
     else
     {
-        fs::path root{argv[1]};
-        std::string suffix{argv[2]};
+        fs::path root{args[0]};
+        std::string suffix{args[1]};
         if (!suffix.empty() && suffix[0] != '.')
             suffix = "." + suffix;
 
@@ -127,15 +154,30 @@ int main(int argc, char **argv)
     std::vector<FailureRecord> failures;
     std::vector<std::pair<fs::path, size_t>> loaded;
 
+    // (format, normalized-key) → count. Filled from importer recordUnusedItem
+    // calls (see ImporterContext::recordUnusedItem).
+    std::map<std::pair<std::string, std::string>, int> unusedHisto;
+
     for (const auto &f : files)
     {
+        // Print + flush before send so that a crash inside the importer
+        // names the offending file. The OK/FAIL line below will overwrite
+        // visually on successful return (different lead char).
+        std::cerr << ">>> " << f.u8string() << std::endl;
+
         th.editor->clearErrors();
+        th.editor->clearUnusedItems();
         size_t before = countZones(*th.engine);
         th.sendToSerialization(cmsg::AddSample(f.u8string()));
         th.stepUI(50);
         size_t after = countZones(*th.engine);
         size_t added = after - before;
         auto errs = th.editor->readErrors();
+        auto unused = th.editor->readUnusedItems();
+
+        // Aggregate unused tokens (after normalizing cc-suffixes).
+        for (const auto &[format, key, value] : unused)
+            unusedHisto[{format, normalizeUnusedKey(key)}]++;
 
         if (added == 0 || !errs.empty())
         {
@@ -152,6 +194,16 @@ int main(int argc, char **argv)
         {
             loaded.emplace_back(f, added);
             std::cout << "OK   " << added << "\t" << f.u8string() << "\n";
+        }
+
+        if (unusedPerFile && !unused.empty())
+        {
+            // De-dup per file (importer can record the same key in many regions).
+            std::map<std::pair<std::string, std::string>, int> perFile;
+            for (const auto &[format, key, value] : unused)
+                perFile[{format, normalizeUnusedKey(key)}]++;
+            for (const auto &[k, c] : perFile)
+                std::cout << "       · " << k.first << "  " << k.second << "  (x" << c << ")\n";
         }
     }
 
@@ -170,6 +222,22 @@ int main(int argc, char **argv)
                 std::cout << "      " << title << ": " << body << "\n";
         }
     }
+
+    if (!unusedHisto.empty())
+    {
+        // Sort by descending count, then format, then key.
+        std::vector<std::pair<std::pair<std::string, std::string>, int>> sorted(unusedHisto.begin(),
+                                                                                unusedHisto.end());
+        std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b) {
+            if (a.second != b.second)
+                return a.second > b.second;
+            return a.first < b.first;
+        });
+        std::cout << "\n=== Unused-item frequency (count, format, key) ===\n";
+        for (const auto &[k, c] : sorted)
+            std::cout << "  " << c << "\t" << k.first << "\t" << k.second << "\n";
+    }
+
     return failures.empty() ? 0 : 2;
 }
 

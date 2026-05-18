@@ -29,6 +29,7 @@
 #include "selection/selection_manager.h"
 #include "configuration.h"
 #include "utils.h"
+#include "messaging/client/client_messages.h"
 
 #include <cassert>
 #include <sstream>
@@ -65,6 +66,12 @@ void ImporterContext::unsupported(const std::string &category, const std::string
 {
     unsupportedItems.emplace_back(category, detail);
     SCLOG_IF(sampleCompoundParsers, "Unsupported " << category << ": " << detail);
+}
+
+void ImporterContext::recordUnusedItem(const std::string &format, const std::string &key,
+                                       const std::string &value)
+{
+    unusedItems.emplace_back(format, key, value);
 }
 
 int ImporterContext::addGroup(const std::string &name)
@@ -121,6 +128,13 @@ bool ImporterContext::finish()
             pfx = "; ";
         }
         SCLOG_IF(sampleCompoundParsers, "Unsupported features in this import: " << oss.str());
+    }
+
+    if (!unusedItems.empty())
+    {
+        messaging::client::serializationSendToClient(messaging::client::s2c_report_unused_items,
+                                                     unusedItems,
+                                                     *engineRef.getMessageController());
     }
 
     if (addedZoneAddresses.empty())
