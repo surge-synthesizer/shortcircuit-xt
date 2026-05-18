@@ -765,10 +765,13 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 group->outputInfo.velocitySensitivity = vt * vt;
             }
 
-            auto onError = [&ctx](const std::string &title, const std::string &msg) {
-                ctx.raise(title, msg);
+            // zoneGeometry only uses the callback for non-fatal auto-fixes
+            // (key/velocity range swaps); route them through ctx.warn so they
+            // don't drown headless scanners in pseudo-errors.
+            auto onAutofix = [&ctx](const std::string &title, const std::string &msg) {
+                ctx.warn(title, msg);
             };
-            zoneGeometry(zn, mergedOpcodes, loadInfo, onError, octaveOffset);
+            zoneGeometry(zn, mergedOpcodes, loadInfo, onAutofix, octaveOffset);
             zonePlayback(zn, mergedOpcodes);
             auto loopArgs = zoneLoopParse(mergedOpcodes, loadInfo);
             zoneEnvelope(zn, ctx, mergedOpcodes, 0, "ampeg");
@@ -860,11 +863,11 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 {
                     // SCXT zones have a fixed cap on round-robin variants
                     // (scxt::maxVariantsPerZone). Anything past that would
-                    // OOB-write into Zone::variantData; raise + skip instead.
-                    ctx.raise("SFZ Round Robin",
-                              "SCXT only supports " + std::to_string(scxt::maxVariantsPerZone) +
-                                  " variations in round robin; seq_position=" +
-                                  std::to_string(roundRobinPosition) + " dropped.");
+                    // OOB-write into Zone::variantData; warn + skip.
+                    ctx.warn("SFZ Round Robin",
+                             "SCXT only supports " + std::to_string(scxt::maxVariantsPerZone) +
+                                 " variations in round robin; seq_position=" +
+                                 std::to_string(roundRobinPosition) + " dropped.");
                     break;
                 }
 

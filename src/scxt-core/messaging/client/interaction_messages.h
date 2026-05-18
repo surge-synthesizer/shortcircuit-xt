@@ -38,8 +38,17 @@
 
 namespace scxt::messaging::client
 {
-// title, message, source file, source line
-typedef std::tuple<std::string, std::string, std::string, int> s2cError_t;
+// Severity for reportItem-style messages. Order matters — Error must be 0
+// for back-compat with the original error-only tuple.
+enum ReportItemSeverity : int
+{
+    Severity_Error = 0,
+    Severity_Warning = 1,
+    Severity_Info = 2,
+};
+
+// severity, title, message, source file, source line
+typedef std::tuple<int, std::string, std::string, std::string, int> s2cError_t;
 SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 
 // Behind-the-scenes batch of (format, key, value) triples emitted by an
@@ -49,6 +58,14 @@ SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 typedef std::vector<std::tuple<std::string, std::string, std::string>> s2cUnusedItems_t;
 SERIAL_TO_CLIENT(ReportUnusedItems, s2c_report_unused_items, s2cUnusedItems_t,
                  onUnusedItemsFromEngine);
+
+// Fired by the engine after a compound-file import (SFZ/EXS/AKP/multisample/
+// SF2/GIG) finishes — successfully or not. Payload is (path, success). The
+// scanner tool waits on this so async error/warn messages get attributed to
+// the correct file.
+typedef std::tuple<std::string, bool> s2cImportComplete_t;
+SERIAL_TO_CLIENT(ReportImportComplete, s2c_compound_import_complete, s2cImportComplete_t,
+                 onImportCompleteFromEngine);
 
 inline void raiseDebugError(MessageController &c, int count)
 {

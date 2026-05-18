@@ -65,18 +65,33 @@ struct ConsoleUI
             SCLOG_WFUNC_IF(cliTools, "Message");                                                   \
     }
 
-    // Serialization to Client Messages
+    // Serialization to Client Messages — split error/warning routing keyed on
+    // the severity prefix in the tuple. Headless tools (e.g.
+    // check-multi-loadability) want errors separate from auto-fix warnings
+    // when deciding whether a file is a "failure".
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
     {
-        std::lock_guard<std::mutex> lk(errorMutex);
-        errorStack.push_back(e);
+        int sev = std::get<0>(e);
+        if (sev == scxt::messaging::client::Severity_Warning)
+        {
+            std::lock_guard<std::mutex> lk(warningMutex);
+            warningStack.push_back(e);
+        }
+        else if (sev == scxt::messaging::client::Severity_Info)
+        {
+            std::lock_guard<std::mutex> lk(infoMutex);
+            infoStack.push_back(e);
+        }
+        else
+        {
+            std::lock_guard<std::mutex> lk(errorMutex);
+            errorStack.push_back(e);
+        }
         if (logMessages)
-            SCLOG_WFUNC_IF(cliTools, "Error from engine");
+            SCLOG_WFUNC_IF(cliTools, "Reported item from engine");
     }
 
-    // Error stack accessors — useful for headless tools (e.g.
-    // check-multi-loadability) that want to detect and report per-file
-    // import failures.
+    // Per-channel stack accessors.
     bool hasErrors()
     {
         std::lock_guard<std::mutex> lk(errorMutex);
@@ -91,6 +106,46 @@ struct ConsoleUI
     {
         std::lock_guard<std::mutex> lk(errorMutex);
         errorStack.clear();
+    }
+
+    bool hasWarnings()
+    {
+        std::lock_guard<std::mutex> lk(warningMutex);
+        return !warningStack.empty();
+    }
+    std::vector<scxt::messaging::client::s2cError_t> readWarnings()
+    {
+        std::lock_guard<std::mutex> lk(warningMutex);
+        return warningStack;
+    }
+    void clearWarnings()
+    {
+        std::lock_guard<std::mutex> lk(warningMutex);
+        warningStack.clear();
+    }
+
+    // Import-complete channel: ImporterContext-driven callers can wait for
+    // a specific path (or any) to complete before reading the per-file
+    // error/warn/unused stacks so message attribution lines up.
+    void onImportCompleteFromEngine(const scxt::messaging::client::s2cImportComplete_t &c)
+    {
+        std::lock_guard<std::mutex> lk(importCompleteMutex);
+        completedImports.push_back(c);
+    }
+    bool hasImportComplete()
+    {
+        std::lock_guard<std::mutex> lk(importCompleteMutex);
+        return !completedImports.empty();
+    }
+    std::vector<scxt::messaging::client::s2cImportComplete_t> readImportComplete()
+    {
+        std::lock_guard<std::mutex> lk(importCompleteMutex);
+        return completedImports;
+    }
+    void clearImportComplete()
+    {
+        std::lock_guard<std::mutex> lk(importCompleteMutex);
+        completedImports.clear();
     }
 
     // Unused-items channel (importer-recorded tokens we recognized but didn't
@@ -191,6 +246,15 @@ struct ConsoleUI
 
     std::mutex errorMutex;
     std::vector<scxt::messaging::client::s2cError_t> errorStack;
+
+    std::mutex warningMutex;
+    std::vector<scxt::messaging::client::s2cError_t> warningStack;
+
+    std::mutex infoMutex;
+    std::vector<scxt::messaging::client::s2cError_t> infoStack;
+
+    std::mutex importCompleteMutex;
+    std::vector<scxt::messaging::client::s2cImportComplete_t> completedImports;
 
     std::mutex unusedItemsMutex;
     scxt::messaging::client::s2cUnusedItems_t unusedItems;

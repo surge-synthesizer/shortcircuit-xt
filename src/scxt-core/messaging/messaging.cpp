@@ -387,10 +387,14 @@ void MessageController::sendRawFromClient(const clientToSerializationMessage_t &
     clientToSerializationConditionVar.notify_one();
 }
 
-void MessageController::reportErrorToClient(const std::string &title, const std::string &body,
-                                            const std::string &source, int line)
+void MessageController::reportItemToClient(int severity, const std::string &title,
+                                           const std::string &body, const std::string &source,
+                                           int line)
 {
-    SCLOG_IF(warnings, "[[" << title << "]] (loc: " << source << ":" << line << ")");
+    const char *tag = (severity == client::Severity_Warning)
+                          ? "WARN"
+                          : (severity == client::Severity_Info ? "INFO" : "ERROR");
+    SCLOG_IF(warnings, "[[" << tag << ": " << title << "]] (loc: " << source << ":" << line << ")");
     auto blog = body;
     auto pos{0};
     while ((pos = blog.find("\n", pos)) != std::string::npos)
@@ -398,8 +402,26 @@ void MessageController::reportErrorToClient(const std::string &title, const std:
         blog[pos] = ' ';
     }
     SCLOG_IF(warnings, blog);
-    client::serializationSendToClient(client::s2c_report_error,
-                                      client::s2cError_t{title, body, source, line}, *(this));
+    client::serializationSendToClient(
+        client::s2c_report_error, client::s2cError_t{severity, title, body, source, line}, *(this));
+}
+
+void MessageController::reportErrorToClient(const std::string &title, const std::string &body,
+                                            const std::string &source, int line)
+{
+    reportItemToClient(client::Severity_Error, title, body, source, line);
+}
+
+void MessageController::reportWarningToClient(const std::string &title, const std::string &body,
+                                              const std::string &source, int line)
+{
+    reportItemToClient(client::Severity_Warning, title, body, source, line);
+}
+
+void MessageController::reportInfoToClient(const std::string &title, const std::string &body,
+                                           const std::string &source, int line)
+{
+    reportItemToClient(client::Severity_Info, title, body, source, line);
 }
 
 void MessageController::prepareSerializationThreadForAudioQueueDrain()

@@ -286,14 +286,26 @@ void SCXTEditorReceiver::onGroupZoneMappingSummary(
 
 void SCXTEditorReceiver::onErrorFromEngine(const scxt::messaging::client::s2cError_t &e)
 {
-    auto &[title, msg, source, line] = e;
-    editor.displayError(title, msg);
+    auto &[severity, title, msg, source, line] = e;
+    // Tag non-error severities in the title; the existing error dialog stays
+    // the single display path.
+    const char *tag = (severity == scxt::messaging::client::Severity_Warning)
+                          ? "[WARN] "
+                          : (severity == scxt::messaging::client::Severity_Info ? "[INFO] " : "");
+    editor.displayError(std::string(tag) + title, msg);
 }
 
 void SCXTEditorReceiver::onUnusedItemsFromEngine(const scxt::messaging::client::s2cUnusedItems_t &)
 {
     // Intentionally discarded in the UI for now. Headless diagnostic tooling
     // (e.g. check-multi-loadability) reads this channel via ConsoleUI.
+}
+
+void SCXTEditorReceiver::onImportCompleteFromEngine(
+    const scxt::messaging::client::s2cImportComplete_t &)
+{
+    // Intentionally discarded; the UI doesn't need a per-import callback yet.
+    // Headless scanners use this to synchronize per-file message attribution.
 }
 
 void SCXTEditorReceiver::onSelectionState(const scxt::messaging::client::selectedStateMessage_t &a)

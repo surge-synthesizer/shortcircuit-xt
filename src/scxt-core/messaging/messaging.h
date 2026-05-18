@@ -325,10 +325,18 @@ struct MessageController : MoveableOnly<MessageController>
     ThreadingChecker threadingChecker;
 
     /*
-     * A convenience function to report an error to the UI
+     * Report a (severity, title, body) item to the UI client. The thin
+     * reportErrorToClient / reportWarningToClient / reportInfoToClient
+     * helpers wrap with a fixed severity for the RAISE_*_CONT macros.
      */
+    void reportItemToClient(int severity, const std::string &title, const std::string &body,
+                            const std::string &source, int line);
     void reportErrorToClient(const std::string &title, const std::string &body,
                              const std::string &source, int line);
+    void reportWarningToClient(const std::string &title, const std::string &body,
+                               const std::string &source, int line);
+    void reportInfoToClient(const std::string &title, const std::string &body,
+                            const std::string &source, int line);
 
     /*
      * Some stats on messages back

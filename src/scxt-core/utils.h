@@ -323,6 +323,9 @@ std::string logTimestamp();
 #define RAISE_ERROR_ENGINE(E, title, msg)                                                          \
     RAISE_ERROR_CONT(*((E).getMessageController()), title, msg)
 
+#define RAISE_WARN_CONT(C, title, msg) (C).reportWarningToClient((title), (msg), __FILE__, __LINE__)
+#define RAISE_INFO_CONT(C, title, msg) (C).reportInfoToClient((title), (msg), __FILE__, __LINE__)
+
 struct DebugTimeGuard
 {
     std::string msg, file;

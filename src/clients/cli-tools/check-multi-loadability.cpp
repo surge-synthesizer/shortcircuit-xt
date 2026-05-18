@@ -166,13 +166,27 @@ int main(int argc, char **argv)
         std::cerr << ">>> " << f.u8string() << std::endl;
 
         th.editor->clearErrors();
+        th.editor->clearWarnings();
         th.editor->clearUnusedItems();
+        th.editor->clearImportComplete();
         size_t before = countZones(*th.engine);
         th.sendToSerialization(cmsg::AddSample(f.u8string()));
-        th.stepUI(50);
+        // Step the UI until the engine fires s2c_compound_import_complete (or
+        // until we run out of patience). This synchronizes message attribution
+        // to the file currently being loaded.
+        constexpr int kMaxSteps = 5000;
+        int steps = 0;
+        while (steps < kMaxSteps && !th.editor->hasImportComplete())
+        {
+            th.stepUI(1);
+            steps++;
+        }
+        // One more drain to scoop any messages that landed just before complete.
+        th.stepUI(5);
         size_t after = countZones(*th.engine);
         size_t added = after - before;
         auto errs = th.editor->readErrors();
+        auto warns = th.editor->readWarnings();
         auto unused = th.editor->readUnusedItems();
 
         // Aggregate unused tokens (after normalizing cc-suffixes).
@@ -186,14 +200,23 @@ int main(int argc, char **argv)
             if (!errs.empty())
                 std::cout << "  [" << errs.size() << " error" << (errs.size() == 1 ? "" : "s")
                           << "]";
+            if (!warns.empty())
+                std::cout << "  [" << warns.size() << " warn" << (warns.size() == 1 ? "" : "s")
+                          << "]";
             std::cout << "\n";
-            for (const auto &[title, body, source, line] : errs)
+            for (const auto &[sev, title, body, source, line] : errs)
                 std::cout << "       └ " << title << ": " << body << "\n";
+            for (const auto &[sev, title, body, source, line] : warns)
+                std::cout << "       · [warn] " << title << ": " << body << "\n";
         }
         else
         {
             loaded.emplace_back(f, added);
-            std::cout << "OK   " << added << "\t" << f.u8string() << "\n";
+            std::cout << "OK   " << added << "\t" << f.u8string();
+            if (!warns.empty())
+                std::cout << "  [" << warns.size() << " warn" << (warns.size() == 1 ? "" : "s")
+                          << "]";
+            std::cout << "\n";
         }
 
         if (unusedPerFile && !unused.empty())
@@ -218,7 +241,7 @@ int main(int argc, char **argv)
         for (const auto &fr : failures)
         {
             std::cout << "  " << fr.path.u8string() << "\n";
-            for (const auto &[title, body, source, line] : fr.errors)
+            for (const auto &[sev, title, body, source, line] : fr.errors)
                 std::cout << "      " << title << ": " << body << "\n";
         }
     }
