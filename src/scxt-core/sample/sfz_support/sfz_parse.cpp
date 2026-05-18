@@ -46,12 +46,18 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
     document_t res;
 
     auto lookAheadForOpcode = [&](auto from, auto &opcode) {
+        // Opcodes are case-insensitive per the SFZ spec — `Sample=` and
+        // `sample=` should both parse. Normalize to lower-case at the source
+        // so every downstream consumeOpcode("foo") match works.
         opcode.clear();
         while (from < s.size() && s[from] != ' ' && s[from] != '\n' && s[from] != '\r')
         {
             if (s[from] == '=')
                 return true;
-            opcode += s[from];
+            char c = s[from];
+            if (c >= 'A' && c <= 'Z')
+                c = (char)(c - 'A' + 'a');
+            opcode += c;
             from++;
         }
         return false;

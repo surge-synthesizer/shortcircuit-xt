@@ -290,6 +290,12 @@ void SCXTEditorReceiver::onErrorFromEngine(const scxt::messaging::client::s2cErr
     editor.displayError(title, msg);
 }
 
+void SCXTEditorReceiver::onUnusedItemsFromEngine(const scxt::messaging::client::s2cUnusedItems_t &)
+{
+    // Intentionally discarded in the UI for now. Headless diagnostic tooling
+    // (e.g. check-multi-loadability) reads this channel via ConsoleUI.
+}
+
 void SCXTEditorReceiver::onSelectionState(const scxt::messaging::client::selectedStateMessage_t &a)
 {
     editor.allZoneSelections = std::get<1>(a);

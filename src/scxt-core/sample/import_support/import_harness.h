@@ -72,6 +72,15 @@ class ImporterContext
     // Soft, collected — consolidated and emitted in finish().
     void unsupported(const std::string &category, const std::string &detail);
 
+    // Behind-the-scenes record of a format token we recognized but didn't
+    // route (e.g. SFZ opcodes the parser knew about but no helper consumed,
+    // or in the future XML attributes the multisample parser sees but
+    // doesn't handle). Not surfaced to end users; available via
+    // s2c_unused_items for headless diagnostic tools (see
+    // check-multi-loadability).
+    void recordUnusedItem(const std::string &format, const std::string &key,
+                          const std::string &value);
+
     // Adds a new group to the part and tracks it. Returns the group index.
     int addGroup(const std::string &name = "");
     // Moves the zone into the named group and records its address for the
@@ -101,6 +110,8 @@ class ImporterContext
     std::vector<int> addedGroups;
     std::vector<std::pair<int, int>> addedZoneAddresses; // (groupIdx, zoneIdx)
     std::vector<std::pair<std::string, std::string>> unsupportedItems;
+    // (format, key, value)
+    std::vector<std::tuple<std::string, std::string, std::string>> unusedItems;
 };
 
 // Looks up the SCXT group index for a native key (e.g. sf2::Instrument*, AKP group
