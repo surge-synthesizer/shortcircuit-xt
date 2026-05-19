@@ -198,6 +198,11 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         MAPPING = 1 << 0,
         LOOP = 1 << 1,
         ENDPOINTS = 1 << 2,
+        // Subset of MAPPING: pulls just the sample's root key (if present), leaving
+        // keyboard range and velocity range untouched. Useful for formats like AKP
+        // that supply key/vel range themselves but rely on the sample for root pitch.
+        // Ignored when MAPPING is also set.
+        ROOTKEY_ONLY = 1 << 3,
 
         ALL = MAPPING | LOOP | ENDPOINTS
     };
