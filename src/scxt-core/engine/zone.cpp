@@ -263,6 +263,15 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index, int s
             }
         }
     }
+    else if (sir & ROOTKEY_ONLY)
+    {
+        if (samplePointers[index] && index == 0)
+        {
+            const auto &m = samplePointers[index]->meta;
+            if (m.rootkey_present)
+                mapping.rootKey = m.key_root;
+        }
+    }
     if (sir & (LOOP | ENDPOINTS))
     {
         if (samplePointers[index])

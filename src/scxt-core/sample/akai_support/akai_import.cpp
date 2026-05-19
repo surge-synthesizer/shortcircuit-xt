@@ -567,13 +567,17 @@ bool importAKP(const fs::path &path, engine::Engine &e)
             if (!lsid)
                 continue;
 
+            // AKP keygroups don't store a root key — the KLOC chunk only has
+            // lo/hi (key range) and semi/fine (tune offsets). Default the root
+            // to the midpoint of the key range; if the sample carries a root
+            // (e.g. WAV smpl chunk), attachToSample below will overwrite via
+            // Zone::ROOTKEY_ONLY.
             auto zn = std::make_unique<engine::Zone>(*lsid);
             zn->engine = &e;
             import_support::importZoneMapping(
                 *zn, ctx,
                 {
-                    // This might be wrong, need to check Akai root key logic
-                    .rootKey = kg.kloc.lo + (kg.kloc.semi - 60),
+                    .rootKey = (kg.kloc.lo + kg.kloc.hi) / 2,
                     .keyStart = kg.kloc.lo,
                     .keyEnd = kg.kloc.hi,
                     .velStart = z.lov,
@@ -730,10 +734,12 @@ bool importAKP(const fs::path &path, engine::Engine &e)
                                                     });
             }
 
-            // MAPPING is masked off because the AKP file already supplied root/key/vel
-            // and we don't want a smpl-chunk in the referenced WAV to clobber them.
+            // AKP authoritatively supplies key/vel range; the root key, however, is
+            // carried by the sample (e.g. WAV smpl chunk), so request ROOTKEY_ONLY
+            // alongside ENDPOINTS/LOOP rather than the full MAPPING set.
             zn->attachToSample(*e.getSampleManager(), 0,
-                               engine::Zone::ENDPOINTS | engine::Zone::LOOP);
+                               engine::Zone::ENDPOINTS | engine::Zone::LOOP |
+                                   engine::Zone::ROOTKEY_ONLY);
 
             ctx.addZoneToGroup(groupId, std::move(zn));
         }
