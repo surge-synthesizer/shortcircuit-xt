@@ -53,6 +53,9 @@ static scxt::engine::Engine *makeEngine()
 {
     auto *e = new scxt::engine::Engine();
     e->prepareToPlay(TEST_SAMPLE_RATE);
+    // Pin tuning to 12-TET so any MTS-ESP master running on the dev box
+    // doesn't remap test keys out of the zone ranges.
+    e->midikeyRetuner.setTuningMode(scxt::tuning::MidikeyRetuner::TWELVE_TET);
     return e;
 }
 
