@@ -64,8 +64,7 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel,
     void partConfigurationChanged(int i);
     void groupTriggerConditionChanged(const scxt::engine::GroupTriggerConditions &);
 
-    void setAllToOmniFlavor(engine::Engine::OmniFlavor of);
-    void updateMidiMenuLabel();
+    void refreshAllPartCards();
     void setMpeBendRange(int r);
     void setMpePitchSmoothingTime(int t);
 

@@ -368,12 +368,6 @@ void SCXTEditor::addOmniFlavorMenu(juce::PopupMenu &p)
                       w->setOmniFlavorDefault(static_cast<int>(w->currentOmniFlavor));
               });
     p.addSeparator();
-    p.addItem("Set all parts on selection", true, shouldApplyOmniOnSelect,
-              [w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                      w->setupOmniApplyDefault(!w->shouldApplyOmniOnSelect);
-              });
-    p.addSeparator();
     auto msm = juce::PopupMenu();
     msm.addSectionHeader("MPE Settings");
     msm.addSeparator();

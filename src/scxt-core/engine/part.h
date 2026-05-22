@@ -78,23 +78,9 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
 
     std::array<bool, 16> groupChannelMask{};
 
-    bool respondsToMIDIChannelExcludingGroupMask(int16_t channel) const
-    {
-        return channel < 0 || configuration.channel == PartConfiguration::omniChannel ||
-               configuration.channel == PartConfiguration::mpeChannel ||
-               configuration.channel == PartConfiguration::chPerOctaveChannel ||
-               channel == configuration.channel;
-    }
-
-    bool respondsToMIDIChannel(int16_t channel) const
-    {
-        return respondsToMIDIChannelExcludingGroupMask(channel) || groupChannelMask[channel];
-    }
-    bool isMPEVoiceChannel(int16_t channel) const
-    {
-        return configuration.channel == PartConfiguration::mpeChannel &&
-               channel != configuration.mpeGlobalChannel;
-    }
+    bool respondsToMIDIChannelExcludingGroupMask(int16_t channel) const;
+    bool respondsToMIDIChannel(int16_t channel) const;
+    bool isMPEVoiceChannel(int16_t channel) const;
     int getChannelBasedTransposition(int16_t channel) const;
     void rebuildGroupChannelMask();
 
@@ -102,8 +88,6 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     {
         static constexpr size_t maxName{256};
         static constexpr int16_t omniChannel{-1};
-        static constexpr int16_t mpeChannel{-2};
-        static constexpr int16_t chPerOctaveChannel{-3};
 
         char name[maxName]{0};
         int mpePitchBendRange{24};

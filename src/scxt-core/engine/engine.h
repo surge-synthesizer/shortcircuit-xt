@@ -270,7 +270,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         bool tuningAwarePitchBends{true};
         OmniFlavor omniFlavor{OmniFlavor::OMNI};
         OmniFlavor defaultOmniFlavor{OmniFlavor::OMNI};
-        bool applyOmniToAllPartsOnSelect{false};
     } runtimeConfig;
 
     /*

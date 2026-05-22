@@ -236,7 +236,7 @@ struct ConsoleUI
     void onMpeTuningAwarenessFromEngine(bool b) ON_STUB;
     void onPitchBendTuningAwarenessFromEngine(bool b) ON_STUB;
     void onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &) ON_STUB;
-    void onOmniFlavorFromEngine(std::pair<int, bool> f) ON_STUB;
+    void onOmniFlavorFromEngine(int f) ON_STUB;
     void stepUI();
 
   private:

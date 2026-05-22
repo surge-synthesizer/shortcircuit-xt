@@ -157,9 +157,7 @@ inline void applyOmniFlavorPayload(const omniFlavor_t &payload, messaging::Messa
 CLIENT_TO_SERIAL(SetOmniFlavor, c2s_set_omni_flavor, omniFlavor_t,
                  applyOmniFlavorPayload(payload, cont));
 
-using omniFlavorUpdate_t = std::pair<int, bool>;
-SERIAL_TO_CLIENT(UpdateOmniFlavor, s2c_update_omni_flavor, omniFlavorUpdate_t,
-                 onOmniFlavorFromEngine);
+SERIAL_TO_CLIENT(UpdateOmniFlavor, s2c_update_omni_flavor, int, onOmniFlavorFromEngine);
 
 } // namespace scxt::messaging::client
 

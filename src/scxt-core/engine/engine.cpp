@@ -169,9 +169,6 @@ Engine::Engine()
         defaults->getUserDefaultValue(scxt::infrastructure::DefaultKeys::omniFlavor, 0));
     runtimeConfig.omniFlavor = runtimeConfig.defaultOmniFlavor;
 
-    runtimeConfig.applyOmniToAllPartsOnSelect = defaults->getUserDefaultValue(
-        scxt::infrastructure::DefaultKeys::applyOmniToAllOnSelect, false);
-
     onPartConfigurationUpdated();
 }
 
@@ -1414,9 +1411,8 @@ void Engine::sendFullRefreshToClient() const
 {
     auto &cont = getMessageController();
     assert(cont->threadingChecker.isSerialThread());
-    std::pair<int, bool> ofu = {static_cast<int>(this->runtimeConfig.omniFlavor),
-                                this->runtimeConfig.applyOmniToAllPartsOnSelect};
-    serializationSendToClient(messaging::client::s2c_update_omni_flavor, ofu,
+    serializationSendToClient(messaging::client::s2c_update_omni_flavor,
+                              static_cast<int>(this->runtimeConfig.omniFlavor),
                               *getMessageController());
 
     messaging::client::serializationSendToClient(messaging::client::s2c_update_mpe_tuning_awareness,
@@ -1538,12 +1534,12 @@ void Engine::processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int
 
 void Engine::onPartConfigurationUpdated()
 {
-    auto midiM = voiceManager_t::MIDI1Dialect::MIDI1;
+    auto midiM = (runtimeConfig.omniFlavor == OmniFlavor::MPE)
+                     ? voiceManager_t::MIDI1Dialect::MIDI1_MPE
+                     : voiceManager_t::MIDI1Dialect::MIDI1;
     auto anySolo = false;
     for (auto &p : *getPatch())
     {
-        if (p->configuration.channel == Part::PartConfiguration::mpeChannel)
-            midiM = voiceManager_t::MIDI1Dialect::MIDI1_MPE;
         if (p->configuration.solo)
             anySolo = true;
         p->configuration.muteDueToSolo = false;
@@ -1658,27 +1654,7 @@ void Engine::setPBTuningAwareness(bool a) { this->runtimeConfig.tuningAwarePitch
 void Engine::setOmniFlavor(const OmniFlavor &of)
 {
     this->runtimeConfig.omniFlavor = of;
-
-    int16_t nof{0};
-    switch (of)
-    {
-    case OmniFlavor::OMNI:
-        nof = engine::Part::PartConfiguration::omniChannel;
-        break;
-    case OmniFlavor::MPE:
-        nof = engine::Part::PartConfiguration::mpeChannel;
-        break;
-    case OmniFlavor::CHOCT:
-        nof = engine::Part::PartConfiguration::chPerOctaveChannel;
-        break;
-    }
-    for (auto &part : *getPatch())
-    {
-        if (part->configuration.channel < 0)
-        {
-            part->configuration.channel = nof;
-        }
-    }
+    onPartConfigurationUpdated();
 }
 
 std::string Engine::toStringOmniFlavor(const OmniFlavor &z)

@@ -434,24 +434,42 @@ void Part::rebuildGroupChannelMask()
     }
 }
 
-int Part::getChannelBasedTransposition(int16_t channel) const
-
+bool Part::respondsToMIDIChannelExcludingGroupMask(int16_t channel) const
 {
-    if (configuration.channel == PartConfiguration::chPerOctaveChannel)
+    if (parentPatch->parentEngine->runtimeConfig.omniFlavor != Engine::OmniFlavor::OMNI)
+        return true;
+    return channel < 0 || configuration.channel == PartConfiguration::omniChannel ||
+           channel == configuration.channel;
+}
+
+bool Part::respondsToMIDIChannel(int16_t channel) const
+{
+    if (respondsToMIDIChannelExcludingGroupMask(channel))
+        return true;
+    return channel >= 0 && channel < (int16_t)groupChannelMask.size() && groupChannelMask[channel];
+}
+
+bool Part::isMPEVoiceChannel(int16_t channel) const
+{
+    return parentPatch->parentEngine->runtimeConfig.omniFlavor == Engine::OmniFlavor::MPE &&
+           channel != configuration.mpeGlobalChannel;
+}
+
+int Part::getChannelBasedTransposition(int16_t channel) const
+{
+    if (parentPatch->parentEngine->runtimeConfig.omniFlavor != Engine::OmniFlavor::CHOCT)
+        return 0;
+    float shift = 0;
+    if (channel > 7)
     {
-        float shift = 0;
-        if (channel > 7)
-        {
-            shift = channel - 16;
-        }
-        else
-        {
-            shift = channel;
-        }
-        auto ri = parentPatch->parentEngine->midikeyRetuner.getRepetitionInterval();
-        return shift * ri;
+        shift = channel - 16;
     }
-    return 0;
+    else
+    {
+        shift = channel;
+    }
+    auto ri = parentPatch->parentEngine->midikeyRetuner.getRepetitionInterval();
+    return shift * ri;
 }
 
 } // namespace scxt::engine
