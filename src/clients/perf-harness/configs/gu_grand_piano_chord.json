@@ -1,0 +1,31 @@
+{
+  "name": "GeneralUser-GS GrandPiano — C major chord loop",
+  "description": "Loads only the GrandPiano preset from GeneralUser-GS and loops a C major chord (C-E-G-C).",
+  "engine": {
+    "sample_rate": 48000.0
+  },
+  "load": [
+    {
+      "kind": "load_instrument",
+      "path": "/Users/paul/Music/Samples/SCTests/GeneralUser-GS/GeneralUser-GS.sf2",
+      "preset_name": "Grand Piano"
+    }
+  ],
+  "sequence": {
+    "preset": "c_major_chord",
+    "params": {
+      "note_len_s": 0.8,
+      "gap_s": 0.4,
+      "repeats": 8,
+      "velocity": 100,
+      "chord_keys": [60, 64, 67, 72]
+    }
+  },
+  "run": {
+    "mode": "measure",
+    "warmup_iterations": 1,
+    "measure_iterations": 3,
+    "tail_silence_s": 1.0,
+    "report_path": "/tmp/perf_gu_grandpiano.json"
+  }
+}

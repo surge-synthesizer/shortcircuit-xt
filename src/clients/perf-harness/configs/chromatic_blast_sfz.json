@@ -1,0 +1,30 @@
+{
+  "name": "Music Box SFZ — chromatic blast",
+  "description": "Chromatic sweep across an octave.",
+  "engine": {
+    "sample_rate": 48000.0
+  },
+  "load": [
+    {
+      "kind": "load_instrument",
+      "path": "resources/test_samples/malicex_sfz/YM-FM_Font Music Box.sfz"
+    }
+  ],
+  "sequence": {
+    "preset": "chromatic_blast",
+    "params": {
+      "lo": 60,
+      "hi": 72,
+      "note_len_s": 0.5,
+      "gap_s": 0.1,
+      "velocity": 100
+    }
+  },
+  "run": {
+    "mode": "measure",
+    "warmup_iterations": 1,
+    "measure_iterations": 3,
+    "tail_silence_s": 0.5,
+    "report_path": "/tmp/perf_musicbox.json"
+  }
+}

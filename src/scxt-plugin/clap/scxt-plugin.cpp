@@ -179,7 +179,7 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
 
     auto data = std::string(buffer.data());
 
-    engine->getMessageController()->threadingChecker.bypassThreadChecks = true;
+    engine->getMessageController()->threadingChecker.bypassThreadChecks++;
     SCLOG_IF(plugin, "State has size " << buffer.size());
 
     synchronousEngineUnstream(engine, data);
@@ -189,7 +189,7 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
         scxt::messaging::client::RequestHostCallback{(uint64_t)RESCAN_PARAM_IVT},
         *engine->getMessageController());
 
-    engine->getMessageController()->threadingChecker.bypassThreadChecks = false;
+    engine->getMessageController()->threadingChecker.bypassThreadChecks--;
     return true;
 }
 
