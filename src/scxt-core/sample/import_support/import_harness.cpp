@@ -82,8 +82,11 @@ void ImporterContext::recordUnusedItem(const std::string &format, const std::str
 int ImporterContext::addGroup(const std::string &name)
 {
     int idx = partPtr->addGroup() - 1;
+    auto &group = partPtr->getGroup(idx);
     if (!name.empty())
-        partPtr->getGroup(idx)->name = name;
+        group->name = name;
+    // Imported content rarely needs the default 2x oversample
+    group->outputInfo.oversample = false;
     addedGroups.push_back(idx);
     return idx;
 }
