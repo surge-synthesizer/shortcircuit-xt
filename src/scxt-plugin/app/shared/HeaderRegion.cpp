@@ -245,6 +245,12 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     editor->themeApplier.applyHeaderSCButtonTheme(scMenu.get());
 }
 
+void HeaderRegion::mouseDown(const juce::MouseEvent &e)
+{
+    if (e.mods.isPopupMenu())
+        editor->showMainMenu(false);
+}
+
 void HeaderRegion::setShowUndoRedo(bool show)
 {
     if (undoButton)

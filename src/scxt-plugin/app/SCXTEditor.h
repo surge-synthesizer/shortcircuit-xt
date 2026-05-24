@@ -331,7 +331,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
         setTooltipContents(title, std::vector<std::string>{display});
     }
 
-    void showMainMenu();
+    void showMainMenu(bool alignWithHeaderButton = true);
     void addTuningMenu(juce::PopupMenu &into, bool addTitle = true);
     void addZoomMenu(juce::PopupMenu &into, bool addTitle = true);
     void addOmniFlavorMenu(juce::PopupMenu &p);

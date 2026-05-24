@@ -84,7 +84,7 @@ void SCXTEditor::applyThemeFromFile(const fs::path &fp)
         themeEditorWindow->rebuildFromThemeApplier();
 }
 
-void SCXTEditor::showMainMenu()
+void SCXTEditor::showMainMenu(bool alignWithHeaderButton)
 {
     juce::PopupMenu m;
 
@@ -260,7 +260,7 @@ void SCXTEditor::showMainMenu()
 
     m.addSubMenu("Developer", dp);
 
-    if (headerRegion && headerRegion->scMenu)
+    if (alignWithHeaderButton && headerRegion && headerRegion->scMenu)
     {
         m.showMenuAsync(defaultPopupMenuOptions(headerRegion->scMenu.get()));
     }

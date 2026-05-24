@@ -1,6 +1,6 @@
 [
     {
-        "version": "1",
+        "version": "2",
         "hoverfactor": "0.1"
     },
     {
@@ -17,6 +17,7 @@
         "accent_2b_alpha_a": "#14004f8a",
         "accent_2b_alpha_b": "#52004f8a",
         "accent_2b_alpha_c": "#80004f8a",
+        "bg_main": "#ff1b1d20",
         "bg_1": "#ff1b1d20",
         "bg_2": "#ff262a2f",
         "bg_3": "#ff333333",
