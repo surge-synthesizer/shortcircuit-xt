@@ -66,6 +66,7 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     ~HeaderRegion();
 
     void resized() override;
+    void mouseDown(const juce::MouseEvent &) override;
 
     uint32_t voiceCount{0};
     void setVoiceCount(uint32_t vc)

@@ -68,6 +68,7 @@ struct ColorMap
         accent_2b_alpha_a,
         accent_2b_alpha_b,
         accent_2b_alpha_c,
+        bg_main, // window panel background; older themes fall back to bg_1
         bg_1,
         bg_2,
         bg_3,

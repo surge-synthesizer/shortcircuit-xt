@@ -1,7 +1,7 @@
 [
    {
       "hoverfactor": "0.100000",
-      "version": "1"
+      "version": "2"
    },
    {
       "accent_1a": "#ff266ba2",
@@ -17,6 +17,7 @@
       "accent_2b_alpha_a": "#60268bd2",
       "accent_2b_alpha_b": "#90268bd2",
       "accent_2b_alpha_c": "#B0268bd2",
+      "bg_main": "#ffa9a9a5",
       "bg_1": "#ffa9a9a5",
       "bg_2": "#ffa5a5a2",
       "bg_3": "#ff9E9E99",

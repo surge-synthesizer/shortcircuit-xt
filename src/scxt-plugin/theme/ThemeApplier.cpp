@@ -468,9 +468,9 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
                     cols.get(ColorMap::bg_1));
 
     base->setColour(jcmp::WindowPanel::Styles::styleClass, jcmp::WindowPanel::Styles::bgstart,
-                    cols.get(ColorMap::bg_1));
+                    cols.get(ColorMap::bg_main));
     base->setColour(jcmp::WindowPanel::Styles::styleClass, jcmp::WindowPanel::Styles::bgend,
-                    cols.get(ColorMap::bg_1).darker(0.05));
+                    cols.get(ColorMap::bg_main).darker(0.05));
 
     base->setColour(jcmp::NamedPanel::Styles::styleClass, jcmp::NamedPanel::Styles::background,
                     cols.get(ColorMap::bg_2));

@@ -69,6 +69,7 @@ std::string ColorMap::nameOf(ColorMap::Colors c)
         C(accent_2b_alpha_a);
         C(accent_2b_alpha_b);
         C(accent_2b_alpha_c);
+        C(bg_main);
         C(bg_1);
         C(bg_2);
         C(bg_3);
@@ -180,7 +181,7 @@ std::string ColorMap::toJson() const
         colorMap[keys] = cols;
     }
 
-    metadata_t meta{{"version", "1"}, {"hoverfactor", std::to_string(hoverFactor)}};
+    metadata_t meta{{"version", "2"}, {"hoverfactor", std::to_string(hoverFactor)}};
     colormap_t doc{meta, colorMap};
 
     tao::json::value jsonv = doc;
@@ -199,7 +200,17 @@ std::unique_ptr<ColorMap> ColorMap::jsonToColormap(const std::string &json)
 
     auto meta = std::get<0>(cm);
 
-    auto res = std::make_unique<StdMapColormap>(std::get<1>(cm));
+    // Pre-bg_main themes (version "1") split window background from element
+    // background, so map bg_main onto bg_1 if the loaded theme omits it.
+    auto &colors = std::get<1>(cm);
+    if (colors.find("bg_main") == colors.end())
+    {
+        auto bg1 = colors.find("bg_1");
+        if (bg1 != colors.end())
+            colors["bg_main"] = bg1->second;
+    }
+
+    auto res = std::make_unique<StdMapColormap>(colors);
     auto hvi = meta.find("hoverfactor");
     if (hvi != meta.end())
     {
