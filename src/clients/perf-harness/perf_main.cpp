@@ -132,6 +132,10 @@ int main(int argc, char **argv)
     scxt::engine::Engine engine;
     engine.prepareToPlay(cfg.engine.sampleRate);
 
+    // Force 12-TET so MTS-ESP retuning doesn't show up in the perf profile.
+    engine.runtimeConfig.tuningMode = scxt::engine::Engine::TuningMode::TWELVE_TET;
+    engine.resetTuningFromRuntimeConfig();
+
     auto load = scxt::perf::applyLoad(engine, cfg.load);
     if (!load.ok)
     {

@@ -114,6 +114,7 @@ void Voice::voiceStarted()
     lfosActive = zone->lfosActive;
     egsActive = zone->egsActive;
     phasorsActive = zone->phasorsActive;
+    envFollowersActive = zone->envFollowersActive;
 
     for (auto i = 0U; i < engine::lfosPerZone; ++i)
     {
@@ -664,6 +665,8 @@ template <bool OS> bool Voice::processWithOS()
     {
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
         {
+            if (!envFollowersActive[i])
+                continue;
             if (zone->audioSourceStorage.followers[i].followSource ==
                 scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
             {
@@ -675,6 +678,8 @@ template <bool OS> bool Voice::processWithOS()
     {
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
         {
+            if (!envFollowersActive[i])
+                continue;
             if (zone->audioSourceStorage.followers[i].followSource ==
                 scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
             {
@@ -803,6 +808,8 @@ template <bool OS> bool Voice::processWithOS()
     {
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
         {
+            if (!envFollowersActive[i])
+                continue;
             if (zone->audioSourceStorage.followers[i].followSource ==
                 scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
             {
@@ -814,6 +821,8 @@ template <bool OS> bool Voice::processWithOS()
     {
         for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
         {
+            if (!envFollowersActive[i])
+                continue;
             if (zone->audioSourceStorage.followers[i].followSource ==
                 scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
             {

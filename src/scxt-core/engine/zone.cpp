@@ -71,39 +71,37 @@ template <bool OS> void Zone::processWithOS(scxt::engine::Engine &onto)
     std::array<voice::Voice *, maxVoices> toCleanUp;
     size_t cleanupIdx{0};
     gatedVoiceCount = 0;
-    for (auto &v : voiceWeakPointers)
+    for (int i = 0; i < activeVoices; ++i)
     {
-        if (v && v->isVoiceAssigned)
+        auto &v = voiceWeakPointers[i];
+        assert(v);
+        assert(v->isVoiceAssigned);
+        if (v->process())
         {
-            if (v->process())
+            if (outputInfo.routeTo == DEFAULT_BUS)
             {
-                if (outputInfo.routeTo == DEFAULT_BUS)
+                blk::accumulate_from_to<osBlock>(v->output[0], output[0]);
+                blk::accumulate_from_to<osBlock>(v->output[1], output[1]);
+            }
+            else if (outputInfo.routeTo >= 0)
+            {
+                auto &tb = getEngine()->getPatch()->getBusForOutput(outputInfo.routeTo);
+                blk::accumulate_from_to<osBlock>(v->output[0], OS ? tb.outputOS[0] : tb.output[0]);
+                blk::accumulate_from_to<osBlock>(v->output[1], OS ? tb.outputOS[1] : tb.output[1]);
+                if constexpr (OS)
                 {
-                    blk::accumulate_from_to<osBlock>(v->output[0], output[0]);
-                    blk::accumulate_from_to<osBlock>(v->output[1], output[1]);
-                }
-                else if (outputInfo.routeTo >= 0)
-                {
-                    auto &tb = getEngine()->getPatch()->getBusForOutput(outputInfo.routeTo);
-                    blk::accumulate_from_to<osBlock>(v->output[0],
-                                                     OS ? tb.outputOS[0] : tb.output[0]);
-                    blk::accumulate_from_to<osBlock>(v->output[1],
-                                                     OS ? tb.outputOS[1] : tb.output[1]);
-                    if constexpr (OS)
-                    {
-                        tb.hasOSSignal = true;
-                    }
+                    tb.hasOSSignal = true;
                 }
             }
-            if (!v->isVoicePlaying)
-            {
-                toCleanUp[cleanupIdx++] = v;
-            }
+        }
+        if (!v->isVoicePlaying)
+        {
+            toCleanUp[cleanupIdx++] = v;
+        }
 
-            if (v->isGated)
-            {
-                gatedVoiceCount++;
-            }
+        if (v->isGated)
+        {
+            gatedVoiceCount++;
         }
     }
 
@@ -430,6 +428,7 @@ void Zone::onRoutingChanged()
     std::fill(lfosActive.begin(), lfosActive.end(), false);
     auto pglfo = glfosActive;
     std::fill(glfosActive.begin(), glfosActive.end(), false);
+    std::fill(envFollowersActive.begin(), envFollowersActive.end(), false);
 
     for (int i = 0; i < egsPerZone; ++i)
         egsActive[i] = false;
@@ -465,6 +464,15 @@ void Zone::onRoutingChanged()
             if (src == usedForScanning.transportSources.phasors[i])
             {
                 phasorsActive = true;
+            }
+        }
+
+        for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
+        {
+            if (src == usedForScanning.envFollowerSources.envFollowersL[i] ||
+                src == usedForScanning.envFollowerSources.envFollowersR[i])
+            {
+                envFollowersActive[i] = true;
             }
         }
     };

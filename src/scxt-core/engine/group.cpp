@@ -66,6 +66,7 @@ void Group::rePrepareAndBindGroupMatrix()
     modMatrix.process();
 
     std::fill(lfosActive.begin(), lfosActive.end(), false);
+    std::fill(envFollowersActive.begin(), envFollowersActive.end(), false);
     egsActive[0] = false; // no AEG here
     egsActive[1] = false;
 
@@ -84,6 +85,10 @@ void Group::rePrepareAndBindGroupMatrix()
         if (source.gid == 'grlf')
         {
             lfosActive[source.index] = true;
+        }
+        if (source.gid == 'gef')
+        {
+            envFollowersActive[source.index] = true;
         }
         if (modulation::GroupMatrixEndpoints::Sources::KeyAndPitchSources::isKeyAndPitchSource(
                 source))
@@ -313,6 +318,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
     {
+        if (!envFollowersActive[i])
+            continue;
         if (this->audioSourceStorage.followers[i].followSource ==
             scxt::modulation::modulators::EnvFollowerStorage::PRE_PROC)
         {
@@ -389,6 +396,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     for (int i = 0; i < envFollowersPerGroupOrZone; ++i)
     {
+        if (!envFollowersActive[i])
+            continue;
         if (this->audioSourceStorage.followers[i].followSource ==
             scxt::modulation::modulators::EnvFollowerStorage::POST_PROC)
         {
