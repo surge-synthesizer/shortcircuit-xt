@@ -100,6 +100,7 @@ template <typename T, size_t egsPerObject> struct HasModulators
 
     std::array<bool, lfosPerObject> lfosActive{};
     std::array<bool, egsPerObject> egsActive{};
+    std::array<bool, scxt::envFollowersPerGroupOrZone> envFollowersActive{};
     bool phasorsActive{false};
 
     void setHasModulatorsSampleRate(double sr, double sri) { doubleRate.resetRates(); }

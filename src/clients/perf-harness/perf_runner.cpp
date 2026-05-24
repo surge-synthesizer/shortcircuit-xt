@@ -181,10 +181,25 @@ RunResult runMeasure(scxt::engine::Engine &engine, const BakedSequence &seq, con
         return s;
     };
 
+    std::cout << "scxt-perf: starting " << cfg.warmupIterations << " warmup + "
+              << cfg.measureIterations << " measure iteration(s) of " << r.scenario.totalSeconds
+              << "s each" << std::endl;
+
     for (int i = 0; i < cfg.warmupIterations; ++i)
-        r.warmupIterations.push_back(runOne(/*capture=*/false, /*wantTiming=*/false));
+    {
+        auto s = runOne(/*capture=*/false, /*wantTiming=*/false);
+        std::cout << "  warmup  " << (i + 1) << "/" << cfg.warmupIterations << ": wall=" << s.wallMs
+                  << "ms  realtime=" << s.realtimeRatio << "x" << std::endl;
+        r.warmupIterations.push_back(std::move(s));
+    }
     for (int i = 0; i < cfg.measureIterations; ++i)
-        r.measureIterations.push_back(runOne(/*capture=*/i == 0, /*wantTiming=*/true));
+    {
+        auto s = runOne(/*capture=*/i == 0, /*wantTiming=*/true);
+        std::cout << "  measure " << (i + 1) << "/" << cfg.measureIterations
+                  << ": wall=" << s.wallMs << "ms  realtime=" << s.realtimeRatio << "x"
+                  << std::endl;
+        r.measureIterations.push_back(std::move(s));
+    }
 
     return r;
 }
