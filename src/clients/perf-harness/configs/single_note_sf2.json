@@ -1,0 +1,30 @@
+{
+  "name": "harpsi SF2 — C3 single note × 5",
+  "description": "Bundled test asset for the perf harness smoke test.",
+  "engine": {
+    "sample_rate": 48000.0
+  },
+  "load": [
+    {
+      "kind": "load_instrument",
+      "path": "resources/test_samples/harpsi.sf2"
+    }
+  ],
+  "sequence": {
+    "preset": "single_note",
+    "params": {
+      "lo": 60,
+      "note_len_s": 0.5,
+      "gap_s": 0.5,
+      "repeats": 5,
+      "velocity": 100
+    }
+  },
+  "run": {
+    "mode": "measure",
+    "warmup_iterations": 1,
+    "measure_iterations": 3,
+    "tail_silence_s": 0.5,
+    "report_path": "/tmp/perf_harpsi.json"
+  }
+}

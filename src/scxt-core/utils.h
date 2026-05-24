@@ -219,7 +219,9 @@ struct SampleRateSupport
 
 struct ThreadingChecker
 {
-    std::atomic<bool> bypassThreadChecks{false};
+    // Counter, not a flag — BypassGuard increments/decrements so nested scopes
+    // don't have an inner guard's destructor clear an outer guard's state.
+    std::atomic<int> bypassThreadChecks{0};
 
     std::thread::id serialThreadId{}, audioThreadId{};
     std::set<std::thread::id> clientThreadIds{};
@@ -229,7 +231,7 @@ struct ThreadingChecker
     inline bool isClientThread() const
     {
 #if BUILD_IS_DEBUG
-        return (bypassThreadChecks ||
+        return (bypassThreadChecks > 0 ||
                 (clientThreadIds.find(std::this_thread::get_id()) != clientThreadIds.end()));
 #else
         return true;
@@ -239,7 +241,7 @@ struct ThreadingChecker
     inline bool isSerialThread() const
     {
 #if BUILD_IS_DEBUG
-        return (bypassThreadChecks || serialThreadId == std::this_thread::get_id());
+        return (bypassThreadChecks > 0 || serialThreadId == std::this_thread::get_id());
 #else
         return true;
 #endif
@@ -248,7 +250,7 @@ struct ThreadingChecker
     inline bool isAudioThread() const
     {
 #if BUILD_IS_DEBUG
-        return (bypassThreadChecks || audioThreadId == std::thread::id() ||
+        return (bypassThreadChecks > 0 || audioThreadId == std::thread::id() ||
                 audioThreadId == std::this_thread::get_id());
 #else
         return true;
@@ -271,15 +273,14 @@ struct ThreadingChecker
 #endif
     }
 
-    // RAII guard for the bypassThreadChecks flag; restores on scope exit.
+    // RAII guard that increments bypassThreadChecks on entry and decrements on
+    // exit. Nestable: inner guard's destructor only takes the count down one
+    // step, so an outer scope keeps the bypass live.
     struct BypassGuard
     {
         ThreadingChecker &checker;
-        explicit BypassGuard(ThreadingChecker &c) : checker(c)
-        {
-            checker.bypassThreadChecks = true;
-        }
-        ~BypassGuard() { checker.bypassThreadChecks = false; }
+        explicit BypassGuard(ThreadingChecker &c) : checker(c) { checker.bypassThreadChecks++; }
+        ~BypassGuard() { checker.bypassThreadChecks--; }
         BypassGuard(const BypassGuard &) = delete;
         BypassGuard &operator=(const BypassGuard &) = delete;
     };

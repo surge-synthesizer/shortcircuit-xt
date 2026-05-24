@@ -578,12 +578,17 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     /*
      * Serialization thread originated mutation apis
      */
+    // forceSynchronous: when true, runs all import work on the caller's thread
+    // and skips audio-thread stop/restart coordination. Use only when no audio
+    // thread is processing (e.g. offline harnesses). Caller is responsible for
+    // satisfying any thread-checker asserts (typically via BypassGuard).
     void loadSampleIntoSelectedPartAndGroup(const fs::path &, int16_t rootKey, KeyboardRange krange,
                                             VelocityRange vrange,
-                                            bool sampleRangeInfoOverridesArguments = false);
-    void loadSampleIntoSelectedPartAndGroup(const fs::path &p)
+                                            bool sampleRangeInfoOverridesArguments = false,
+                                            bool forceSynchronous = false);
+    void loadSampleIntoSelectedPartAndGroup(const fs::path &p, bool forceSynchronous = false)
     {
-        loadSampleIntoSelectedPartAndGroup(p, 60, {48, 72}, {0, 127}, true);
+        loadSampleIntoSelectedPartAndGroup(p, 60, {48, 72}, {0, 127}, true, forceSynchronous);
     }
     // Drop a single audio file into an explicit group, bypassing selection
     void loadSampleIntoGroup(const fs::path &p, int part, int group);

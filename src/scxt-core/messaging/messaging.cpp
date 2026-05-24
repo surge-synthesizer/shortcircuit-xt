@@ -183,13 +183,13 @@ void MessageController::scheduleAudioThreadFunctionCallback(
     {
         // In this case our audio thread checks will be wrong.
         // We could elevate ourselves to audio thread for as econd or just...
-        threadingChecker.bypassThreadChecks = true;
+        threadingChecker.bypassThreadChecks++;
         if (cb)
             cb(engine);
         if (sercb)
             sercb(engine);
 
-        threadingChecker.bypassThreadChecks = false;
+        threadingChecker.bypassThreadChecks--;
     }
     else
     {

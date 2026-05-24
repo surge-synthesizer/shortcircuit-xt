@@ -186,7 +186,7 @@ Engine::~Engine()
         }
     }
     messageController->stop();
-    messageController->threadingChecker.bypassThreadChecks = true;
+    messageController->threadingChecker.bypassThreadChecks++;
     sampleManager->purgeUnreferencedSamples();
 
     /*
@@ -775,7 +775,7 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
 
 void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootKey,
                                                 KeyboardRange krange, VelocityRange vrange,
-                                                bool useSampleRangeInfo)
+                                                bool useSampleRangeInfo, bool forceSynchronous)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
@@ -787,85 +787,92 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
                                   messaging::client::s2cImportComplete_t{fp.u8string(), ok},
                                   *messageController);
     };
+    auto sendStructure = [this]() {
+        serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                  getPartGroupZoneStructure(), *messageController);
+    };
+
+    // Either runs work() directly (forceSynchronous) or sandwiches it between
+    // audio-thread stop/restart via the message controller. In the async path
+    // restart now happens after the structure-refresh send rather than between
+    // import and send — a microseconds-longer audio pause but UI sees the new
+    // structure before audio resumes, which is arguably more correct.
+    auto runOnAudioPaused = [this, forceSynchronous](std::function<void()> work) {
+        if (forceSynchronous)
+        {
+            work();
+        }
+        else
+        {
+            messageController->stopAudioThreadThenRunOnSerial([this, work](const auto &) {
+                work();
+                messageController->restartAudioThreadFromSerial();
+            });
+        }
+    };
 
     if (extensionMatches(p, ".sf2"))
     {
-        // TODO ok this refresh and restart is a bit unsatisfactory
-        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
+        runOnAudioPaused([this, p, sendStructure, emitComplete]() {
             sf2_support::importSF2(p, *this, -1);
-            messageController->restartAudioThreadFromSerial();
-            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(), *messageController);
+            sendStructure();
             emitComplete(p, true);
         });
         return;
     }
     else if (extensionMatches(p, ".sfz"))
     {
-        // TODO ok this refresh and restart is a bit unsatisfactory
-        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
+        runOnAudioPaused([this, p, sendStructure, emitComplete]() {
             auto res = sfz_support::importSFZ(p, *this);
             if (!res)
                 RAISE_ERROR_CONT(*messageController, "SFZ Import Failed",
                                  "Check log for further errors");
-            messageController->restartAudioThreadFromSerial();
-            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(), *messageController);
+            sendStructure();
             emitComplete(p, res);
         });
         return;
     }
     else if (extensionMatches(p, ".exs"))
     {
-        // TODO ok this refresh and restart is a bit unsatisfactory
-        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
+        runOnAudioPaused([this, p, sendStructure, emitComplete]() {
             auto res = exs_support::importEXS(p, *this);
             if (!res)
                 RAISE_ERROR_CONT(*messageController, "EXS Import Failed",
                                  "Check log for subsequent errors");
-            messageController->restartAudioThreadFromSerial();
-            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(), *messageController);
+            sendStructure();
             emitComplete(p, res);
         });
         return;
     }
     else if (extensionMatches(p, ".multisample"))
     {
-        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
+        runOnAudioPaused([this, p, sendStructure, emitComplete]() {
             auto res = multisample_support::importMultisample(p, *this);
             if (!res)
                 RAISE_ERROR_CONT(*messageController, "Multisample Import Failed",
                                  "Check log for subsequent errors");
-            messageController->restartAudioThreadFromSerial();
-            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(), *messageController);
+            sendStructure();
             emitComplete(p, res);
         });
         return;
     }
     else if (extensionMatches(p, ".akp"))
     {
-        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
+        runOnAudioPaused([this, p, sendStructure, emitComplete]() {
             auto res = akai_support::importAKP(p, *this);
             if (!res)
                 RAISE_ERROR_CONT(*messageController, "AKP Import Failed",
                                  "Check log for subsequent errors");
-            messageController->restartAudioThreadFromSerial();
-            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(), *messageController);
+            sendStructure();
             emitComplete(p, res);
         });
         return;
     }
     if (extensionMatches(p, ".gig"))
     {
-        // TODO ok this refresh and restart is a bit unsatisfactory
-        messageController->stopAudioThreadThenRunOnSerial([this, p, emitComplete](const auto &) {
+        runOnAudioPaused([this, p, sendStructure, emitComplete]() {
             gig_support::importGIG(p, *this, -1);
-            messageController->restartAudioThreadFromSerial();
-            serializationSendToClient(messaging::client::s2c_send_pgz_structure,
-                                      getPartGroupZoneStructure(), *messageController);
+            sendStructure();
             emitComplete(p, true);
         });
         return;
@@ -915,22 +922,34 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
         undoManager.storeUndoStep(std::move(undoItem));
     }
 
-    // 3. Send a message to the audio thread saying to add that zone and
-    messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
-            std::unique_ptr<Zone> zptr;
-            zptr.reset(zone);
-            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
-            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+    if (forceSynchronous)
+    {
+        getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+        getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+        messaging::audio::sendStructureRefresh(*messageController);
+        auto &g = getPatch()->getPart(sp)->getGroup(sg);
+        int32_t zi = g->getZones().size() - 1;
+        selectionManager->applySelectActions({sp, sg, zi, true, true, true});
+    }
+    else
+    {
+        // 3. Send a message to the audio thread saying to add that zone and
+        messageController->scheduleAudioThreadCallbackUnderStructureLock(
+            [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+                std::unique_ptr<Zone> zptr;
+                zptr.reset(zone);
+                e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+                e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
 
-            // 4. have the audio thread message back here to refresh the ui
-            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
-        },
-        [sp = sp, sg = sg](auto &e) {
-            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
-            int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
-        });
+                // 4. have the audio thread message back here to refresh the ui
+                messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+            },
+            [sp = sp, sg = sg](auto &e) {
+                auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+                int32_t zi = g->getZones().size() - 1;
+                e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
+            });
+    }
 }
 
 void Engine::loadSampleIntoGroup(const fs::path &p, int part, int group)
