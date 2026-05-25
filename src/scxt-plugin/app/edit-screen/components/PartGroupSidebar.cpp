@@ -760,13 +760,14 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
         }
         else if (rowZone.group >= 0)
         {
-            // Group Selection on the server side selects all in the group
+            // forZone=false so empty groups can become the lead group; for non-empty
+            // groups the server still expands this into per-zone selections
             auto se = selection::SelectionManager::SelectActionContents(rowZone);
 
             se.selecting = true;
             se.distinct = !mods.isAltDown();
-            se.selectingAsLead = false;
-            se.forZone = true;
+            se.selectingAsLead = true;
+            se.forZone = false;
             editor->doSelectionAction(se);
         }
         else

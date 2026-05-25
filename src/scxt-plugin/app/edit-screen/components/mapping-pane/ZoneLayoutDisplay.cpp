@@ -376,18 +376,19 @@ void ZoneLayoutDisplay::createEmptyZoneAt(const juce::Point<int> &pos)
             keyMin++;
     }
 
-    auto za{editor->currentLeadZoneSelection};
+    // Prefer the lead group so that selecting an empty group routes here
+    auto ga{editor->currentLeadGroupSelection};
 
     namespace cmsg = scxt::messaging::client;
 
-    if (!za.has_value())
+    if (ga.has_value())
     {
-        sendToSerialization(cmsg::AddBlankZone({-1, -1, keyMin, keyMax, velMin, velMax}));
+        sendToSerialization(
+            cmsg::AddBlankZone({ga->part, ga->group, keyMin, keyMax, velMin, velMax}));
     }
     else
     {
-        sendToSerialization(
-            cmsg::AddBlankZone({za->part, za->group, keyMin, keyMax, velMin, velMax}));
+        sendToSerialization(cmsg::AddBlankZone({-1, -1, keyMin, keyMax, velMin, velMax}));
     }
 }
 
@@ -678,15 +679,16 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         auto ve = (int)std::clamp(127.f - std::ceil(r.getY() / vh), 0.f, 127.f);
 
         namespace cmsg = scxt::messaging::client;
-        auto za{editor->currentLeadZoneSelection};
+        // Prefer lead group so an empty selected group still routes here
+        auto ga{editor->currentLeadGroupSelection};
 
-        if (!za.has_value())
+        if (ga.has_value())
         {
-            sendToSerialization(cmsg::AddBlankZone({-1, -1, ks, ke, vs, ve}));
+            sendToSerialization(cmsg::AddBlankZone({ga->part, ga->group, ks, ke, vs, ve}));
         }
         else
         {
-            sendToSerialization(cmsg::AddBlankZone({za->part, za->group, ks, ke, vs, ve}));
+            sendToSerialization(cmsg::AddBlankZone({-1, -1, ks, ke, vs, ve}));
         }
     }
     mouseState = NONE;

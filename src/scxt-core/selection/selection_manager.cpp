@@ -256,6 +256,18 @@ void SelectionManager::adjustInternalStateForAction(
             if (z.distinct)
             {
                 allSelectedGroups[selectedPart].clear();
+                // For an empty group, transformSelectionActions emitted no zone
+                // actions, so clear zone state here to keep the group the sole lead
+                if (za.part >= 0 && za.group >= 0)
+                {
+                    const auto &pt = engine.getPatch()->getPart(za.part);
+                    if (za.group < (int)pt->getGroups().size() &&
+                        pt->getGroup(za.group)->getZones().empty())
+                    {
+                        allSelectedZones[selectedPart].clear();
+                        leadZone[selectedPart] = {};
+                    }
+                }
             }
             allSelectedGroups[selectedPart].insert(za);
             if (z.selectingAsLead)
@@ -386,12 +398,28 @@ void SelectionManager::guaranteeSelectedLeadSomewhereIn(int part, int group, int
 
 void SelectionManager::guaranteeSelectedLead()
 {
+    // If lead group is explicitly an empty group, treat the empty zone state as
+    // intentional and don't auto-pick a zone from somewhere else.
+    bool leadGroupIsEmpty{false};
+    {
+        const auto &lg = leadGroup[selectedPart];
+        if (lg.part >= 0 && lg.group >= 0)
+        {
+            const auto &pt = engine.getPatch()->getPart(lg.part);
+            if (lg.group < (int)pt->getGroups().size() &&
+                pt->getGroup(lg.group)->getZones().empty())
+            {
+                leadGroupIsEmpty = true;
+            }
+        }
+    }
+
     // Now at the end of this the lead zone could not be selected
     if (allSelectedZones[selectedPart].find(leadZone[selectedPart]) ==
         allSelectedZones[selectedPart].end())
     {
         // Nothing is selected. So we need to pick the first zone of the first group
-        if (allSelectedZones[selectedPart].empty())
+        if (allSelectedZones[selectedPart].empty() && !leadGroupIsEmpty)
         {
             SCLOG_IF(selection, "Selected zones is empty. Looking for a candidate");
             auto &pt = engine.getPatch()->getPart(selectedPart);
