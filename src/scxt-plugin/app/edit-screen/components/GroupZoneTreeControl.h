@@ -171,7 +171,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 muteProvider->setup();
                 muteProvider->onValueChanged = [this](bool v) {
                     auto shift = juce::ModifierKeys::getCurrentModifiers().isShiftDown();
-                    setMuteTo(v, shift);
+                    setMuteTo(v, !shift);
                 };
                 addAndMakeVisible(*muteProvider->widget);
                 resized();
