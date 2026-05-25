@@ -276,9 +276,23 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
                 auto bx = getLocalBounds().withWidth(grouplabelPad);
                 auto nb = getLocalBounds().withTrimmedLeft(grouplabelPad);
-                g.setColour(lowTextColor);
+                auto digitColor = lowTextColor;
+                bool groupIsSelected =
+                    editor->allGroupSelections.find(sg.address) != editor->allGroupSelections.end();
+                if (isLeadGroup)
+                {
+                    digitColor = editor->themeColor(theme::ColorMap::generic_content_highest);
+                    g.setFont(editor->themeApplier.interBoldFor(11));
+                }
+                else if (groupIsSelected)
+                {
+                    digitColor = editor->themeColor(theme::ColorMap::generic_content_high);
+                }
+                g.setColour(digitColor);
                 g.drawText(std::to_string(sg.address.group + 1), bx,
                            juce::Justification::centredLeft);
+                if (isLeadGroup)
+                    g.setFont(groupFont);
                 g.setColour(textColor);
                 g.drawText(sg.name, nb, juce::Justification::centredLeft);
 
@@ -423,6 +437,13 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                                   auto za = w->getZoneAddress();
                                   w->gsb->sendToSerialization(cmsg::PasteZone(za));
                               });
+                    p.addItem("Create Empty Zone", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(
+                            cmsg::AddBlankZone({za.part, za.group, 48, 72, 0, 127}));
+                    });
                     p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
                         if (!w)
                             return;
