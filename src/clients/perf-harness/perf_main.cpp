@@ -68,6 +68,19 @@ int main(int argc, char **argv)
         return argc < 2 ? 1 : 0;
     }
 
+#if BUILD_IS_DEBUG
+    fmt::print(stderr, "\n");
+    fmt::print(stderr, "##############################################################\n");
+    fmt::print(stderr, "##                                                          ##\n");
+    fmt::print(stderr, "##   !!!  DEBUG BUILD  !!!  TIMINGS ARE NOT MEANINGFUL  !!! ##\n");
+    fmt::print(stderr, "##                                                          ##\n");
+    fmt::print(stderr, "##   Rebuild with -DCMAKE_BUILD_TYPE=Release (or            ##\n");
+    fmt::print(stderr, "##   RelWithDebInfo) before drawing perf conclusions.       ##\n");
+    fmt::print(stderr, "##                                                          ##\n");
+    fmt::print(stderr, "##############################################################\n");
+    fmt::print(stderr, "\n");
+#endif
+
     std::filesystem::path configPath = argv[1];
     scxt::perf::Config cfg;
     try
