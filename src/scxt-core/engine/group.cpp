@@ -163,8 +163,11 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     fGatedCount = 0;
     fVoiceCount = 0;
 
-    for (const auto &z : zones)
+    for (int i = 0; i < activeZones; ++i)
     {
+        auto z = activeZoneWeakRefs[i];
+        assert(z);
+        assert(z->isActive());
         gated = gated || (z->gatedVoiceCount > 0);
         fGatedCount += z->gatedVoiceCount;
         fVoiceCount += z->activeVoices;
@@ -775,10 +778,11 @@ void Group::setupGroupPitch()
     keyTrack.prepare();
     float vc = 0.f;
 
-    for (const auto &z : zones)
+    for (int i = 0; i < activeZones; ++i)
     {
-        if (z->activeVoices == 0)
-            continue;
+        auto z = activeZoneWeakRefs[i];
+        assert(z);
+        assert(z->isActive());
         for (int i = 0; i < z->activeVoices; ++i)
         {
             auto v = z->voiceWeakPointers[i];
