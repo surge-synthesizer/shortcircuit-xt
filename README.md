@@ -83,8 +83,9 @@ software.
 
 At the initial open-sourcing of Shortcircuit 2 (later renamed to Shortcircuit XT), the copyright to the Shortcircuit
 source was held by Claes (@kurasu) on the initial code and Paul (@baconpaul) on his diffs since Claes shared the code.
-The current repository and program have GPL3 dependencies, so Shortcircuit XT binaries are distributed under the terms
-of GPL3, due to the transitive nature of GPL3.
+The current repository and program have GPL3 and AGPL3 dependencies, so Shortcircuit XT binaries are distributed under
+the terms
+of AGPL3, due to the transitive nature of these licenses, and the expanded restrictions of AGPL3.
 
 But, at the outset of the project, Paul and Claes both wanted the option to take the source which we developed for
 Shortcircuit-as-Shortcircuit and potentially use it or fragments of it in a variety of other projects. So, since project
@@ -99,14 +100,15 @@ As we approached the beta, we decided to exercise that option. As such - as of J
    here in the file "LICENSE". The copyright to any particular line is still held by the author of that line as
    described on GitHub.
 2. Each dependency in `libs/` folder has a license in the particular library repository. All these licenses are
-   compatible with MIT source code and resulting GPL3 distribution.
+   compatible with MIT source code and resulting AGPL3 distribution.
 3. The resulting combined product - Shortcircuit XT binaries and other associated CLI tools - are distributed under the
-   GNU GPL v3 license or later, found at `resources/LICENSE.gpl3`
+   AGPL v3 license or later, found at `resources/LICENSE.agpl3`
 3. Users no longer have to agree to the CLA in order to contribute to the project. Their contributions are owned by them
    and governed under the MIT license.
 4. In the event you choose to use Shortcircuit XT code in your project, you must either modify the code to break each of
-   the GPL3 dependencies, license the GPL3 dependency in a non-GPL3 context, or distribute your final product under GPL3
-   license.
+   the GPL3 and AGPL3 dependencies, license the (A)GPL3 dependency in a non-(A)GPL3 context, or distribute your final
+   product
+   under the AGPL3 license.
 
 If this is unclear and you have a relevant question related to your contribution to the project, please open an issue
 here on GitHub, or ask on our [Discord](https://discord.gg/RcHTt5M55M)
