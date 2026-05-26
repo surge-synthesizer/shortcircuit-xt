@@ -129,6 +129,10 @@ static constexpr const char *noneDisplayName{"None"};
 
 bool isProcessorImplemented(ProcessorType id); // choice: return 'true' for none
 const char *getProcessorName(ProcessorType id);
+std::string getProcessorShortName(ProcessorType id);
+// Default fallback used when a processor has no static displayNameShort: strip non-alphanumerics,
+// drop vowels, take first 4 chars, uppercase. If <4 consonants, fall back to first 4 alphanumerics.
+std::string computeFallbackShortName(const char *src);
 const char *getProcessorStreamingName(ProcessorType id);
 const char *getProcessorDisplayGroup(ProcessorType id);
 std::string getProcessorSSTVoiceDisplayName(ProcessorType id);
@@ -144,7 +148,8 @@ std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s);
 struct ProcessorDescription
 {
     ProcessorType id;
-    std::string streamingName{"ERROR"}, displayName{"ERROR"}, displayGroup{"ERROR"};
+    std::string streamingName{"ERROR"}, displayName{"ERROR"}, displayGroup{"ERROR"},
+        shortName{"ERR"};
     bool groupOnly{false};
 };
 
@@ -212,6 +217,7 @@ struct ProcessorControlDescription
 
     ProcessorType type{proct_none};
     std::string typeDisplayName{noneDisplayName};
+    std::string typeShortName{noneDisplayName};
 
     bool requiresConsistencyCheck{false};
     bool supportsKeytrack{false};

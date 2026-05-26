@@ -1224,7 +1224,22 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
 
         ed->setEnabled(en);
 
-        if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this))
+        std::optional<std::string> labelOverride;
+        // Default policy: if the JSON specifies neither "label" nor "label-source", use
+        // pmd.shortName
+        auto labelSource = ctrl.labelSource;
+        if (!labelSource.has_value() && !ctrl.label.has_value())
+            labelSource = "short";
+        if (labelSource.has_value())
+        {
+            const auto &pmd = processorControlDescription.floatControlDescriptions[idx];
+            if (*labelSource == "short")
+                labelOverride = pmd.shortName;
+            else if (*labelSource == "name")
+                labelOverride = pmd.name;
+        }
+        if (auto lab =
+                connectors::jsonlayout::createControlLabel(ctrl, cls, *this, {0, 0}, labelOverride))
         {
             getContentAreaComponent()->addAndMakeVisible(*lab);
             jsonLabels.push_back(std::move(lab));
@@ -1289,7 +1304,22 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         auto &att = intAttachments[idx];
         connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl, cls);
 
-        if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this))
+        std::optional<std::string> labelOverride;
+        // Default policy: if the JSON specifies neither "label" nor "label-source", use
+        // pmd.shortName
+        auto labelSource = ctrl.labelSource;
+        if (!labelSource.has_value() && !ctrl.label.has_value())
+            labelSource = "short";
+        if (labelSource.has_value())
+        {
+            const auto &pmd = processorControlDescription.intControlDescriptions[idx];
+            if (*labelSource == "short")
+                labelOverride = pmd.shortName;
+            else if (*labelSource == "name")
+                labelOverride = pmd.name;
+        }
+        if (auto lab =
+                connectors::jsonlayout::createControlLabel(ctrl, cls, *this, {0, 0}, labelOverride))
         {
             getContentAreaComponent()->addAndMakeVisible(*lab);
             jsonLabels.push_back(std::move(lab));

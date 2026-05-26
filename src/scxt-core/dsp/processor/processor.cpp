@@ -80,6 +80,26 @@ template <size_t I> const char *implGetProcessorName()
         return ProcessorImplementor<(ProcessorType)I>::T::processorName;
 }
 
+template <typename T>
+concept HasDisplayNameShort = requires { T::displayNameShort; };
+
+template <size_t I> std::string implGetProcessorShortName()
+{
+    if constexpr (I == ProcessorType::proct_none)
+        return scxt::dsp::processor::noneDisplayName;
+
+    if constexpr (std::is_same<typename ProcessorImplementor<(ProcessorType)I>::T, unimpl_t>::value)
+        return "ERR";
+    else
+    {
+        using PT = typename ProcessorImplementor<(ProcessorType)I>::T;
+        if constexpr (HasDisplayNameShort<PT>)
+            return PT::displayNameShort;
+        else
+            return computeFallbackShortName(PT::processorName);
+    }
+}
+
 template <size_t I> const char *implGetProcessorStreamingName()
 {
     if constexpr (I == ProcessorType::proct_none)
@@ -252,6 +272,41 @@ const char *getProcessorName(ProcessorType id)
     }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
+std::string computeFallbackShortName(const char *src)
+{
+    if (!src)
+        return "ERR";
+    std::string alphaNum;
+    for (auto p = src; *p; ++p)
+    {
+        if (std::isalnum(static_cast<unsigned char>(*p)))
+            alphaNum.push_back(*p);
+    }
+    auto isVowel = [](char c) {
+        c = std::tolower(static_cast<unsigned char>(c));
+        return c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u';
+    };
+    std::string consonants;
+    for (auto c : alphaNum)
+    {
+        if (!isVowel(c))
+            consonants.push_back(c);
+    }
+    std::string out = consonants.size() >= 4 ? consonants.substr(0, 4) : alphaNum.substr(0, 4);
+    for (auto &c : out)
+        c = std::toupper(static_cast<unsigned char>(c));
+    if (out.empty())
+        return "ERR";
+    return out;
+}
+
+std::string getProcessorShortName(ProcessorType id)
+{
+    return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
+        return detail::genericWrapper<std::string, detail::implGetProcessorShortName<Is>...>(ft);
+    }(id, std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
+}
+
 const char *getProcessorStreamingName(ProcessorType id)
 {
     return []<size_t... Is>(size_t ft, std::index_sequence<Is...>) {
@@ -340,7 +395,8 @@ processorList_t getAllProcessorDescriptions()
             auto pn = getProcessorName(pt);
             auto spn = getProcessorSSTVoiceDisplayName(pt);
             res.push_back({pt, getProcessorStreamingName(pt), getProcessorName(pt),
-                           getProcessorDisplayGroup(pt), getProcessorGroupOnly(pt)});
+                           getProcessorDisplayGroup(pt), getProcessorShortName(pt),
+                           getProcessorGroupOnly(pt)});
         }
     }
     std::sort(res.begin(), res.end(), [](const auto &a, const auto &b) {
@@ -436,6 +492,7 @@ ProcessorControlDescription Processor::getControlDescription() const
     ProcessorControlDescription res;
     res.type = getType();
     res.typeDisplayName = getName();
+    res.typeShortName = getProcessorShortName(getType());
     res.numFloatParams = getFloatParameterCount();
     res.numIntParams = getIntParameterCount();
 

@@ -429,12 +429,28 @@ struct MatrixEndpoints
 
     static void registerVoiceModTarget(engine::Engine *e, const MatrixConfig::TargetIdentifier &t,
                                        const std::string &path, const std::string &name,
-                                       bool supportsMultiplicative = false)
+                                       bool supportsMultiplicative = false,
+                                       const std::string &shortPath = "",
+                                       const std::string &shortName = "")
     {
+        auto pathFn = [p = path](const auto &a, const auto &b) -> std::string { return p; };
+        auto nameFn = [n = name](const auto &a, const auto &b) -> std::string { return n; };
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            shortPathFn{};
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            shortNameFn{};
+        if (!shortPath.empty())
+            shortPathFn = [s = shortPath](const auto &a, const auto &b) -> std::string {
+                return s;
+            };
+        if (!shortName.empty())
+            shortNameFn = [s = shortName](const auto &a, const auto &b) -> std::string {
+                return s;
+            };
         registerVoiceModTarget(
-            e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
-            [n = name](const auto &a, const auto &b) -> std::string { return n; },
-            [s = supportsMultiplicative](const auto &a, const auto &b) -> bool { return s; });
+            e, t, pathFn, nameFn,
+            [s = supportsMultiplicative](const auto &a, const auto &b) -> int32_t { return s; },
+            [](const auto &, const auto &) { return true; }, shortPathFn, shortNameFn);
     }
 
     static void registerVoiceModTarget(
@@ -443,11 +459,16 @@ struct MatrixEndpoints
             pathFn,
         std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             nameFn,
-        bool supportsMultiplicative = false)
+        bool supportsMultiplicative = false,
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            shortPathFn = {},
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            shortNameFn = {})
     {
         registerVoiceModTarget(
             e, t, pathFn, nameFn,
-            [s = supportsMultiplicative](const auto &a, const auto &b) { return s; });
+            [s = supportsMultiplicative](const auto &a, const auto &b) -> int32_t { return s; },
+            [](const auto &, const auto &) { return true; }, shortPathFn, shortNameFn);
     }
 
     static void registerVoiceModTarget(
@@ -460,7 +481,11 @@ struct MatrixEndpoints
             additiveFn,
         std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
             enabledFn =
-                [](const engine::Zone &, const MatrixConfig::TargetIdentifier &) { return true; });
+                [](const engine::Zone &, const MatrixConfig::TargetIdentifier &) { return true; },
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            shortPathFn = {},
+        std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+            shortNameFn = {});
 
     static void registerVoiceModSource(
         engine::Engine *e, const MatrixConfig::SourceIdentifier &,
@@ -476,9 +501,17 @@ struct MatrixEndpoints
  */
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
+// path, name, shortPath, shortName for matrix targets. Short variants are used in compact
+// matrix-row display; long variants appear in the popup menu.
+typedef std::tuple<std::string, std::string, std::string, std::string> targetDisplayName_t;
+inline const std::string &displayPath(const targetDisplayName_t &d) { return std::get<0>(d); }
+inline const std::string &displayName(const targetDisplayName_t &d) { return std::get<1>(d); }
+inline const std::string &displayShortPath(const targetDisplayName_t &d) { return std::get<2>(d); }
+inline const std::string &displayShortName(const targetDisplayName_t &d) { return std::get<3>(d); }
+
 // The last two are "multiplcative" and "enabled"
 // "multiplcaitve" uses first bit as can and second bit as should
-typedef std::tuple<MatrixConfig::TargetIdentifier, identifierDisplayName_t, int32_t, bool>
+typedef std::tuple<MatrixConfig::TargetIdentifier, targetDisplayName_t, int32_t, bool>
     namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<MatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;

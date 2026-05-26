@@ -283,8 +283,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
 
             for (const auto &[di, dn, ca, isen] : dsts)
             {
+                // long name in the multi-select consistency banner (room for full text)
                 if (di == row.target)
-                    d = dn.second;
+                    d = std::get<1>(dn);
             }
 
             auto lbl = s.empty() ? "off" : s;
@@ -336,7 +337,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
         {
             if (di == row.target)
             {
-                target->setLabel(dn.first + ": " + dn.second);
+                // matrix-row uses short path/name; menu uses long (below)
+                target->setLabel(std::get<2>(dn) + ": " + std::get<3>(dn));
                 target->paintLabelNonEnabled = !en;
                 allowsMultiplicative = ca;
             }
@@ -756,7 +758,10 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
 
         for (const auto &[ti, tn, mulConfig, isEnabled] : tgts)
         {
-            if (tn.second.empty())
+            // tn is targetDisplayName_t = tuple<path, name, shortPath, shortName>; menu shows longs
+            const auto &tnPath = std::get<0>(tn);
+            const auto &tnName = std::get<1>(tn);
+            if (tnName.empty())
                 continue;
 
             auto canMul = mulConfig & 1;
@@ -781,25 +786,25 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
                 w->pushRowUpdate(true);
             };
 
-            if (tn.first.empty())
+            if (tnPath.empty())
             {
-                p.addItem(tn.second, isEnabled, selected, mop);
+                p.addItem(tnName, isEnabled, selected, mop);
             }
             else
             {
-                if (tn.first != lastPath)
+                if (tnPath != lastPath)
                 {
                     if (subMenu.getNumItems())
                     {
                         p.addSubMenu(lastPath, subMenu, true, nullptr, checkPath);
                     }
-                    lastPath = tn.first;
+                    lastPath = tnPath;
                     checkPath = false;
                     subMenu = juce::PopupMenu();
-                    subMenu.addSectionHeader(tn.first);
+                    subMenu.addSectionHeader(tnPath);
                     subMenu.addSeparator();
                 }
-                subMenu.addItem(tn.second, isEnabled, selected, mop);
+                subMenu.addItem(tnName, isEnabled, selected, mop);
                 checkPath = checkPath || selected;
             }
         }
