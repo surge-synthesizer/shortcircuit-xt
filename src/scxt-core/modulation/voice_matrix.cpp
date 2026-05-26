@@ -184,12 +184,16 @@ void MatrixEndpoints::registerVoiceModTarget(
     std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> pathFn,
     std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> nameFn,
     std::function<int32_t(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> additiveFn,
-    std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> enabledFn)
+    std::function<bool(const engine::Zone &, const MatrixConfig::TargetIdentifier &)> enabledFn,
+    std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+        shortPathFn,
+    std::function<std::string(const engine::Zone &, const MatrixConfig::TargetIdentifier &)>
+        shortNameFn)
 {
     if (!e)
         return;
 
-    e->registerVoiceModTarget(t, pathFn, nameFn, additiveFn, enabledFn);
+    e->registerVoiceModTarget(t, pathFn, nameFn, additiveFn, enabledFn, shortPathFn, shortNameFn);
 }
 
 void MatrixEndpoints::registerVoiceModSource(
@@ -240,20 +244,42 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
         return strnatcasecmp(ida.first.c_str(), idb.first.c_str()) < 0;
     };
 
-    auto tgtCmp = [identCmp](const auto &a, const auto &b) {
+    // Targets carry a 4-tuple displayName (path, name, shortPath, shortName); sort by long
+    // path/name
+    auto tgtCmp = [](const namedTarget_t &a, const namedTarget_t &b) {
         const auto &ta = std::get<0>(a);
         const auto &tb = std::get<0>(b);
         if (ta.gid == 'proc' && tb.gid == ta.gid && tb.index == ta.index)
         {
             return ta.tid < tb.tid;
         }
-        return identCmp(a, b);
+        const auto &dna = std::get<1>(a);
+        const auto &dnb = std::get<1>(b);
+        if (displayPath(dna) == displayPath(dnb))
+        {
+            if (displayName(dna) == displayName(dnb))
+            {
+                return std::hash<MatrixConfig::TargetIdentifier>{}(ta) <
+                       std::hash<MatrixConfig::TargetIdentifier>{}(tb);
+            }
+            return strnatcasecmp(displayName(dna).c_str(), displayName(dnb).c_str()) < 0;
+        }
+        return strnatcasecmp(displayPath(dna).c_str(), displayPath(dnb).c_str()) < 0;
     };
 
     for (const auto &[t, fns] : e->voiceModTargets)
     {
-        tg.emplace_back(t, identifierDisplayName_t{std::get<0>(fns)(z, t), std::get<1>(fns)(z, t)},
-                        std::get<2>(fns)(z, t), std::get<3>(fns)(z, t));
+        const auto &pathFn = std::get<0>(fns);
+        const auto &nameFn = std::get<1>(fns);
+        const auto &shortPathFn = std::get<2>(fns);
+        const auto &shortNameFn = std::get<3>(fns);
+        const auto &additiveFn = std::get<4>(fns);
+        const auto &enabledFn = std::get<5>(fns);
+        auto p = pathFn(z, t);
+        auto n = nameFn(z, t);
+        auto sp = shortPathFn ? shortPathFn(z, t) : p;
+        auto sn = shortNameFn ? shortNameFn(z, t) : n;
+        tg.emplace_back(t, targetDisplayName_t{p, n, sp, sn}, additiveFn(z, t), enabledFn(z, t));
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);
 
@@ -283,6 +309,14 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         return std::string("P") + std::to_string(t.index + 1) + " " + d.typeDisplayName;
     };
 
+    auto ptShortFn = [](const engine::Zone &z,
+                        const MatrixConfig::TargetIdentifier &t) -> std::string {
+        auto &d = z.processorDescription[t.index];
+        if (d.type == dsp::processor::proct_none)
+            return "";
+        return std::string("P") + std::to_string(t.index + 1) + "." + d.typeShortName;
+    };
+
     auto mixFn = [](const engine::Zone &z, const MatrixConfig::TargetIdentifier &t) -> std::string {
         auto &d = z.processorDescription[t.index];
         if (d.type == dsp::processor::proct_none)
@@ -297,8 +331,16 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         return "Output Level";
     };
 
-    registerVoiceModTarget(e, mixT, ptFn, mixFn);
-    registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn, true);
+    auto levShortFn = [](const engine::Zone &z,
+                         const MatrixConfig::TargetIdentifier &t) -> std::string {
+        auto &d = z.processorDescription[t.index];
+        if (d.type == dsp::processor::proct_none)
+            return "";
+        return "Out Lvl";
+    };
+
+    registerVoiceModTarget(e, mixT, ptFn, mixFn, false, ptShortFn, mixFn);
+    registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn, true, ptShortFn, levShortFn);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
@@ -308,6 +350,13 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
             if (d.type == dsp::processor::proct_none)
                 return "";
             return d.floatControlDescriptions[icopy].name;
+        };
+        auto elShortFn = [icopy = i](const engine::Zone &z,
+                                     const MatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return "";
+            return d.floatControlDescriptions[icopy].shortName;
         };
         auto adFn = [icopy = i](const engine::Zone &z,
                                 const MatrixConfig::TargetIdentifier &t) -> int32_t {
@@ -329,7 +378,7 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
             return d.floatControlDescriptions[icopy].isEnabled();
         };
 
-        registerVoiceModTarget(e, fpT[i], ptFn, elFn, adFn, enFn);
+        registerVoiceModTarget(e, fpT[i], ptFn, elFn, adFn, enFn, ptShortFn, elShortFn);
     }
 }
 

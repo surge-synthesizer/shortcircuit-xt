@@ -52,6 +52,14 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
             return std::string("P") + std::to_string(t.index + 1) + " " + d.typeDisplayName;
         };
 
+        auto ptShortFn = [](const engine::Group &z,
+                            const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return "";
+            return std::string("P") + std::to_string(t.index + 1) + "." + d.typeShortName;
+        };
+
         auto mixFn = [](const engine::Group &z,
                         const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
             auto &d = z.processorDescription[t.index];
@@ -68,8 +76,16 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
             return "Output Level";
         };
 
-        registerGroupModTarget(e, mixT, ptFn, mixFn);
-        registerGroupModTarget(e, outputLevelDbT, ptFn, levFn, true);
+        auto levShortFn = [](const engine::Group &z,
+                             const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return "";
+            return "Out Lvl";
+        };
+
+        registerGroupModTarget(e, mixT, ptFn, mixFn, false, ptShortFn, mixFn);
+        registerGroupModTarget(e, outputLevelDbT, ptFn, levFn, true, ptShortFn, levShortFn);
 
         for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
         {
@@ -79,6 +95,14 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
                 if (d.type == dsp::processor::proct_none)
                     return "";
                 return d.floatControlDescriptions[icopy].name;
+            };
+            auto elShortFn = [icopy =
+                                  i](const engine::Group &z,
+                                     const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+                auto &d = z.processorDescription[t.index];
+                if (d.type == dsp::processor::proct_none)
+                    return "";
+                return d.floatControlDescriptions[icopy].shortName;
             };
 
             auto adFn = [icopy = i](const engine::Group &z,
@@ -93,7 +117,7 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
                     !d.floatControlDescriptions[icopy].hasMultiplicativeModulationOffByDefault();
                 return can * 1 + should * 2;
             };
-            registerGroupModTarget(e, fpT[i], ptFn, elFn, adFn);
+            registerGroupModTarget(e, fpT[i], ptFn, elFn, adFn, ptShortFn, elShortFn);
         }
     }
 }
@@ -282,12 +306,18 @@ void GroupMatrixEndpoints::registerGroupModTarget(
     std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
         nameFn,
     std::function<int32_t(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
-        additiveFn)
+        additiveFn,
+    std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+        shortPathFn,
+    std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+        shortNameFn)
 {
     if (!e)
         return;
 
-    e->registerGroupModTarget(t, pathFn, nameFn, additiveFn);
+    e->registerGroupModTarget(
+        t, pathFn, nameFn, additiveFn, [](const auto &, const auto &) { return true; }, shortPathFn,
+        shortNameFn);
 }
 
 void GroupMatrixEndpoints::registerGroupModSource(
@@ -343,21 +373,42 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
         return strnatcasecmp(ida.first.c_str(), idb.first.c_str()) < 0;
     };
 
-    auto tgtCmp = [identCmp](const auto &a, const auto &b) {
+    // Targets carry a 4-tuple displayName (path, name, shortPath, shortName); sort by long
+    // path/name
+    auto tgtCmp = [](const namedTarget_t &a, const namedTarget_t &b) {
         const auto &ta = std::get<0>(a);
         const auto &tb = std::get<0>(b);
         if (ta.gid == 'gprc' && tb.gid == ta.gid && tb.index == ta.index)
         {
             return ta.tid < tb.tid;
         }
-        return identCmp(a, b);
+        const auto &dna = std::get<1>(a);
+        const auto &dnb = std::get<1>(b);
+        if (displayPath(dna) == displayPath(dnb))
+        {
+            if (displayName(dna) == displayName(dnb))
+            {
+                return std::hash<GroupMatrixConfig::TargetIdentifier>{}(ta) <
+                       std::hash<GroupMatrixConfig::TargetIdentifier>{}(tb);
+            }
+            return strnatcasecmp(displayName(dna).c_str(), displayName(dnb).c_str()) < 0;
+        }
+        return strnatcasecmp(displayPath(dna).c_str(), displayPath(dnb).c_str()) < 0;
     };
 
     for (const auto &[t, fns] : e->groupModTargets)
     {
-        tg.emplace_back(t, identifierDisplayName_t{std::get<0>(fns)(g, t), std::get<1>(fns)(g, t)},
-                        std::get<2>(fns)(g, t),
-                        std::get<3>(fns)(g, t)); // GroupMatrixConfig::getIsMultiplicative(t));
+        const auto &pathFn = std::get<0>(fns);
+        const auto &nameFn = std::get<1>(fns);
+        const auto &shortPathFn = std::get<2>(fns);
+        const auto &shortNameFn = std::get<3>(fns);
+        const auto &additiveFn = std::get<4>(fns);
+        const auto &enabledFn = std::get<5>(fns);
+        auto p = pathFn(g, t);
+        auto n = nameFn(g, t);
+        auto sp = shortPathFn ? shortPathFn(g, t) : p;
+        auto sn = shortNameFn ? shortNameFn(g, t) : n;
+        tg.emplace_back(t, targetDisplayName_t{p, n, sp, sn}, additiveFn(g, t), enabledFn(g, t));
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);
 

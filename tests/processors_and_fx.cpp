@@ -79,6 +79,45 @@ TEST_CASE("Processors have Formatting")
     }
 }
 
+TEST_CASE("Processor Short Names")
+{
+    namespace pdsp = scxt::dsp::processor;
+
+    SECTION("Fallback algorithm")
+    {
+        // Drop vowels, take first 4, uppercase: "Treemonster" -> "TRMN"
+        REQUIRE(pdsp::computeFallbackShortName("Treemonster") == "TRMN");
+        // Spaces stripped, vowels dropped: "Auto Wah" -> "TWH" -> pads with first-4 alphanum
+        // consonants = "tWh" (3 chars) -> not >=4 -> fall back to first-4 alphanum "AutoW" ->
+        // "AUTO"
+        REQUIRE(pdsp::computeFallbackShortName("Auto Wah") == "AUTO");
+        // Mixed: "Bitcrusher" -> consonants "Btcrshr" -> "BTCR"
+        REQUIRE(pdsp::computeFallbackShortName("Bitcrusher") == "BTCR");
+        // Short input: "EQ" -> "EQ"
+        REQUIRE(pdsp::computeFallbackShortName("EQ") == "EQ");
+        // Empty/null
+        REQUIRE(pdsp::computeFallbackShortName(nullptr) == "ERR");
+    }
+
+    SECTION("Every implemented processor has a non-empty short name")
+    {
+        for (int i = 1; i < pdsp::proct_num_types; ++i)
+        {
+            auto pt = (pdsp::ProcessorType)i;
+            if (pdsp::isProcessorImplemented(pt))
+            {
+                DYNAMIC_SECTION("Short name for " << pdsp::getProcessorName(pt))
+                {
+                    auto sn = pdsp::getProcessorShortName(pt);
+                    INFO("Processor: " << pdsp::getProcessorName(pt) << " short=" << sn);
+                    REQUIRE(!sn.empty());
+                    REQUIRE(sn.size() <= 4);
+                }
+            }
+        }
+    }
+}
+
 TEST_CASE("Dump Processor Silence Lengths")
 {
     namespace pdsp = scxt::dsp::processor;

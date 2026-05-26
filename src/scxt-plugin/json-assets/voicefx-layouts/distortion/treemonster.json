@@ -3,7 +3,6 @@
     "controls": {
         "threshold": {
             "class": "vslider",
-            "label": "Threshold",
             "binding": {
                 "type": "float",
                 "index": 0
@@ -13,9 +12,8 @@
                 "y": 8
             }
         },
-        "tilt": {
+        "speed": {
             "class": "knob50",
-            "label": "Speed",
             "binding": {
                 "type": "float",
                 "index": 1
@@ -25,9 +23,8 @@
                 "y": 4
             }
         },
-        "envelope": {
+        "pitch": {
             "class": "knob50",
-            "label": "Pitch",
             "binding": {
                 "type": "float",
                 "index": 2
@@ -39,7 +36,6 @@
         },
         "depth": {
             "class": "vslider",
-            "label": "Amount",
             "binding": {
                 "type": "float",
                 "index": 3

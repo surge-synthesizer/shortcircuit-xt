@@ -698,11 +698,15 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     using gmodSrcStrFn_t = std::function<std::string(
         const Group &, const voice::modulation::MatrixConfig::SourceIdentifier &)>;
 
+    // Function order: pathFn, nameFn, shortPathFn, shortNameFn, additiveFn, enabledFn.
+    // shortPathFn/shortNameFn may be empty; consumers should fall back to pathFn/nameFn.
     std::unordered_map<voice::modulation::MatrixConfig::TargetIdentifier,
-                       std::tuple<vmodTgtStrFn_t, vmodTgtStrFn_t, vmodTgtIntFn_t, vmodTgtBoolFn_t>>
+                       std::tuple<vmodTgtStrFn_t, vmodTgtStrFn_t, vmodTgtStrFn_t, vmodTgtStrFn_t,
+                                  vmodTgtIntFn_t, vmodTgtBoolFn_t>>
         voiceModTargets;
     std::unordered_map<modulation::GroupMatrixConfig::TargetIdentifier,
-                       std::tuple<gmodTgtStrFn_t, gmodTgtStrFn_t, gmodTgtIntFn_t, gmodTgtBoolFn_t>>
+                       std::tuple<gmodTgtStrFn_t, gmodTgtStrFn_t, gmodTgtStrFn_t, gmodTgtStrFn_t,
+                                  gmodTgtIntFn_t, gmodTgtBoolFn_t>>
         groupModTargets;
 
     std::unordered_map<voice::modulation::MatrixConfig::SourceIdentifier,
@@ -712,16 +716,20 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                        std::pair<gmodSrcStrFn_t, gmodSrcStrFn_t>>
         groupModSources;
 
+    // shortPathFn / shortNameFn may be empty std::function; in that case the metadata builder
+    // falls back to pathFn / nameFn.
     void registerVoiceModTarget(
         const voice::modulation::MatrixConfig::TargetIdentifier &, vmodTgtStrFn_t pathFn,
         vmodTgtStrFn_t nameFn, vmodTgtIntFn_t additiveFn,
-        vmodTgtBoolFn_t enabledFn = [](const auto &, const auto &) { return true; });
+        vmodTgtBoolFn_t enabledFn = [](const auto &, const auto &) { return true; },
+        vmodTgtStrFn_t shortPathFn = {}, vmodTgtStrFn_t shortNameFn = {});
     void registerVoiceModSource(const voice::modulation::MatrixConfig::SourceIdentifier &,
                                 vmodSrcStrFn_t pathFn, vmodSrcStrFn_t nameFn);
     void registerGroupModTarget(
         const modulation::GroupMatrixConfig::TargetIdentifier &, gmodTgtStrFn_t pathFn,
         gmodTgtStrFn_t nameFn, gmodTgtIntFn_t additiveFn,
-        gmodTgtBoolFn_t enabledFn = [](const auto &, const auto &) { return true; });
+        gmodTgtBoolFn_t enabledFn = [](const auto &, const auto &) { return true; },
+        gmodTgtStrFn_t shortPathFn = {}, gmodTgtStrFn_t shortNameFn = {});
     void registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &,
                                 gmodSrcStrFn_t pathFn, gmodSrcStrFn_t nameFn);
 

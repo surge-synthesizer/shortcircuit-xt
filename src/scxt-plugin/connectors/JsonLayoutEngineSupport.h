@@ -101,10 +101,13 @@ inline bool isEnabled(const sst::jucegui::layouts::json_document::Control &ctrl,
 inline std::unique_ptr<sst::jucegui::components::Label>
 createControlLabel(const sst::jucegui::layouts::json_document::Control &ctrl,
                    const sst::jucegui::layouts::json_document::Class &cls,
-                   sst::jucegui::style::StyleConsumer &sc, juce::Point<int> zeroPoint = {0, 0})
+                   sst::jucegui::style::StyleConsumer &sc, juce::Point<int> zeroPoint = {0, 0},
+                   std::optional<std::string> labelOverride = std::nullopt)
 {
     namespace jcmp = sst::jucegui::components;
-    if (ctrl.label.has_value())
+    // Effective text: explicit override (e.g. from pmd.shortName) > json "label" field.
+    std::optional<std::string> effectiveLabel = labelOverride ? labelOverride : ctrl.label;
+    if (effectiveLabel.has_value())
     {
         auto lab = std::make_unique<jcmp::Label>();
 
@@ -135,14 +138,14 @@ createControlLabel(const sst::jucegui::layouts::json_document::Control &ctrl,
 
         auto ft =
             sc.style()->getFont(jcmp::Label::Styles::styleClass, jcmp::Label::Styles::labelfont);
-        auto wid = SST_STRING_WIDTH_FLOAT(ft, *ctrl.label);
+        auto wid = SST_STRING_WIDTH_FLOAT(ft, *effectiveLabel);
         wid = wid + 5;
         auto bx = juce::Rectangle<int>(ctrl.position.x + zeroPoint.x + ctrl.position.w / 2,
                                        ctrl.position.y + zeroPoint.y + ctrl.position.h + yOff, 0,
                                        ft.getHeight() + 2 * lpPad);
         bx = bx.expanded(wid / 2, 0);
         lab->setBounds(bx);
-        lab->setText(*ctrl.label);
+        lab->setText(*effectiveLabel);
         lab->setJustification(juce::Justification::centred);
         return lab;
     }

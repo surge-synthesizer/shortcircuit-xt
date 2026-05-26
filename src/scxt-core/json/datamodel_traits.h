@@ -44,6 +44,7 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
 
                  v = {{"t", (int)t.type},
                       {"n", t.name},
+                      {"sn", t.shortName},
                       {"mn", t.minVal},
                       {"mx", t.maxVal},
                       {"df", t.defaultVal},
@@ -78,6 +79,7 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
              SC_TO({
                  findEnumIf(v, "t", to.type);
                  findIf(v, "n", to.name);
+                 findIf(v, "sn", to.shortName);
                  findIf(v, "mn", to.minVal);
                  findIf(v, "mx", to.maxVal);
                  findIf(v, "df", to.defaultVal);

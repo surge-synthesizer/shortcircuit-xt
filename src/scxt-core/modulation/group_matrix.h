@@ -191,12 +191,29 @@ struct GroupMatrixEndpoints
     static void registerGroupModTarget(engine::Engine *e,
                                        const GroupMatrixConfig::TargetIdentifier &t,
                                        const std::string &path, const std::string &name,
-                                       bool supportsMul = false)
+                                       bool supportsMul = false, const std::string &shortPath = "",
+                                       const std::string &shortName = "")
     {
+        auto pathFn = [p = path](const auto &a, const auto &b) -> std::string { return p; };
+        auto nameFn = [n = name](const auto &a, const auto &b) -> std::string { return n; };
+        std::function<std::string(const engine::Group &,
+                                  const GroupMatrixConfig::TargetIdentifier &)>
+            shortPathFn{};
+        std::function<std::string(const engine::Group &,
+                                  const GroupMatrixConfig::TargetIdentifier &)>
+            shortNameFn{};
+        if (!shortPath.empty())
+            shortPathFn = [s = shortPath](const auto &a, const auto &b) -> std::string {
+                return s;
+            };
+        if (!shortName.empty())
+            shortNameFn = [s = shortName](const auto &a, const auto &b) -> std::string {
+                return s;
+            };
         registerGroupModTarget(
-            e, t, [p = path](const auto &a, const auto &b) -> std::string { return p; },
-            [n = name](const auto &a, const auto &b) -> std::string { return n; },
-            [s = supportsMul](const auto &a, const auto &b) -> bool { return s; });
+            e, t, pathFn, nameFn,
+            [s = supportsMul](const auto &a, const auto &b) -> int32_t { return s; }, shortPathFn,
+            shortNameFn);
     }
 
     static void
@@ -207,11 +224,18 @@ struct GroupMatrixEndpoints
                            std::function<std::string(const engine::Group &,
                                                      const GroupMatrixConfig::TargetIdentifier &)>
                                nameFn,
-                           bool supportsMul = false)
+                           bool supportsMul = false,
+                           std::function<std::string(const engine::Group &,
+                                                     const GroupMatrixConfig::TargetIdentifier &)>
+                               shortPathFn = {},
+                           std::function<std::string(const engine::Group &,
+                                                     const GroupMatrixConfig::TargetIdentifier &)>
+                               shortNameFn = {})
     {
         registerGroupModTarget(
             e, t, pathFn, nameFn,
-            [s = supportsMul](const auto &a, const auto &b) -> bool { return s; });
+            [s = supportsMul](const auto &a, const auto &b) -> int32_t { return s; }, shortPathFn,
+            shortNameFn);
     }
 
     static void registerGroupModTarget(
@@ -223,7 +247,13 @@ struct GroupMatrixEndpoints
                                   const GroupMatrixConfig::TargetIdentifier &)>
             nameFn,
         std::function<int32_t(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
-            additiveFn);
+            additiveFn,
+        std::function<std::string(const engine::Group &,
+                                  const GroupMatrixConfig::TargetIdentifier &)>
+            shortPathFn = {},
+        std::function<std::string(const engine::Group &,
+                                  const GroupMatrixConfig::TargetIdentifier &)>
+            shortNameFn = {});
 
     static void registerGroupModSource(engine::Engine *e,
                                        const GroupMatrixConfig::SourceIdentifier &t,
@@ -323,9 +353,17 @@ struct GroupMatrixEndpoints
 
 typedef std::pair<std::string, std::string> identifierDisplayName_t;
 
+// path, name, shortPath, shortName for matrix targets. Short variants are used in compact
+// matrix-row display; long variants appear in the popup menu.
+typedef std::tuple<std::string, std::string, std::string, std::string> targetDisplayName_t;
+inline const std::string &displayPath(const targetDisplayName_t &d) { return std::get<0>(d); }
+inline const std::string &displayName(const targetDisplayName_t &d) { return std::get<1>(d); }
+inline const std::string &displayShortPath(const targetDisplayName_t &d) { return std::get<2>(d); }
+inline const std::string &displayShortName(const targetDisplayName_t &d) { return std::get<3>(d); }
+
 // The last two are "multiplicative" and "enabled"
 // "multiplicative" uses first bit as can and second bit as should
-typedef std::tuple<GroupMatrixConfig::TargetIdentifier, identifierDisplayName_t, int32_t, bool>
+typedef std::tuple<GroupMatrixConfig::TargetIdentifier, targetDisplayName_t, int32_t, bool>
     namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<GroupMatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;
