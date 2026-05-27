@@ -39,6 +39,7 @@
 #include "messaging/client/modulation_messages.h"
 #include "messaging/client/mixer_messages.h"
 #include "messaging/client/macro_messages.h"
+#include "messaging/client/structure_messages.h"
 
 namespace scxt::selection
 {
@@ -343,6 +344,46 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
         else
         {
             git++;
+        }
+    }
+
+    // Remap collapsed-group indices to follow the deletion. For a single-group
+    // delete (whatIDeleted.group >= 0) the deleted index drops and any index
+    // above it shifts down by one — the FOLDED bit travels with its group.
+    // For bulk deletes (DeleteEmptyGroups, group == -1) we only know the
+    // post-state, so we fall back to dropping out-of-range entries.
+    if (!zoneDeleted)
+    {
+        auto p = whatIDeleted.part;
+        if (p >= 0 && p < scxt::numParts)
+        {
+            const auto &part = engine.getPatch()->getPart(p);
+            int n = (int)part->getGroups().size();
+            auto &cset = collapsedGroupsByPart[p];
+
+            if (whatIDeleted.group >= 0)
+            {
+                std::unordered_set<int32_t> nset;
+                for (auto i : cset)
+                {
+                    if (i == whatIDeleted.group)
+                        continue;
+                    int j = i > whatIDeleted.group ? i - 1 : i;
+                    if (j >= 0 && j < n)
+                        nset.insert(j);
+                }
+                cset = std::move(nset);
+            }
+            else
+            {
+                for (auto it = cset.begin(); it != cset.end();)
+                {
+                    if (*it < 0 || *it >= n)
+                        it = cset.erase(it);
+                    else
+                        ++it;
+                }
+            }
         }
     }
 
@@ -926,6 +967,112 @@ void SelectionManager::sendOtherTabsSelectionToClient()
     SCLOG_WFUNC_IF(selection, "");
     serializationSendToClient(cms::s2c_send_othertab_selection, otherTabSelection,
                               *(engine.getMessageController()));
+}
+
+// Fold state rides on s2c_send_pgz_structure: getPartGroupZoneStructure() stamps
+// the FOLDED bit onto group-row features using SelectionManager state.
+static void broadcastStructure(const engine::Engine &engine)
+{
+    serializationSendToClient(cms::s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
+                              *(engine.getMessageController()));
+}
+
+void SelectionManager::setGroupCollapsed(int part, int group, bool collapsed)
+{
+    if (part < 0 || part >= scxt::numParts || group < 0)
+        return;
+    auto &s = collapsedGroupsByPart[part];
+    bool changed = collapsed ? s.insert(group).second : (s.erase(group) > 0);
+    if (changed)
+        broadcastStructure(engine);
+}
+
+void SelectionManager::setAllGroupsCollapsed(int part, bool collapsed)
+{
+    if (part < 0 || part >= scxt::numParts)
+        return;
+    auto &s = collapsedGroupsByPart[part];
+    s.clear();
+    if (collapsed)
+    {
+        const auto &p = engine.getPatch()->getPart(part);
+        int n = (int)p->getGroups().size();
+        for (int g = 0; g < n; ++g)
+            s.insert(g);
+    }
+    broadcastStructure(engine);
+}
+
+void SelectionManager::remapCollapsedOnSwap(int part, int gA, int gB)
+{
+    if (part < 0 || part >= scxt::numParts || gA == gB)
+        return;
+    auto &s = collapsedGroupsByPart[part];
+    bool a = s.count(gA) > 0;
+    bool b = s.count(gB) > 0;
+    if (a == b)
+        return;
+    if (a)
+    {
+        s.erase(gA);
+        s.insert(gB);
+    }
+    else
+    {
+        s.erase(gB);
+        s.insert(gA);
+    }
+}
+
+void SelectionManager::remapCollapsedOnMoveAfter(int part, int whichGroup, int toAfter)
+{
+    if (part < 0 || part >= scxt::numParts || whichGroup == toAfter || whichGroup < 0 ||
+        toAfter < 0)
+        return;
+    auto &s = collapsedGroupsByPart[part];
+
+    // The move only affects indices in a contiguous window; everything else
+    // keeps its FOLDED bit. Snapshot just the affected window and rotate.
+    int lo, hi;
+    if (whichGroup < toAfter)
+    {
+        // src→tgt; range [src, tgt] rotates left by 1 (src lands at tgt).
+        lo = whichGroup;
+        hi = toAfter;
+    }
+    else
+    {
+        // src→tgt+1; range [tgt+1, src] rotates right by 1 (src lands at tgt+1).
+        lo = toAfter + 1;
+        hi = whichGroup;
+    }
+    int len = hi - lo + 1;
+    std::vector<bool> fold(len);
+    for (int i = 0; i < len; ++i)
+        fold[i] = s.count(lo + i) > 0;
+
+    if (whichGroup < toAfter)
+    {
+        bool moved = fold[0];
+        for (int i = 0; i < len - 1; ++i)
+            fold[i] = fold[i + 1];
+        fold[len - 1] = moved;
+    }
+    else
+    {
+        bool moved = fold[len - 1];
+        for (int i = len - 1; i > 0; --i)
+            fold[i] = fold[i - 1];
+        fold[0] = moved;
+    }
+
+    for (int i = 0; i < len; ++i)
+    {
+        if (fold[i])
+            s.insert(lo + i);
+        else
+            s.erase(lo + i);
+    }
 }
 
 void SelectionManager::clearAllSelections()

@@ -96,5 +96,20 @@ CLIENT_TO_SERIAL(BeginEdit, c2s_begin_edit, editGestureFor_t,
 CLIENT_TO_SERIAL(EndEdit, c2s_end_edit, editGestureFor_t,
                  doBeginEndEdit(false, payload, engine, cont));
 
+// Group/zone tree fold state. Per-part set of collapsed group indices.
+// The result is broadcast back to the client via the regular structure
+// broadcast — the FOLDED bit is stamped onto group-row features.
+using setGroupCollapsedPayload_t = std::tuple<int32_t, int32_t, bool>; // part, group, collapsed
+CLIENT_TO_SERIAL(SetGroupCollapsed, c2s_set_group_collapsed, setGroupCollapsedPayload_t,
+                 engine.getSelectionManager()->setGroupCollapsed(std::get<0>(payload),
+                                                                 std::get<1>(payload),
+                                                                 std::get<2>(payload)));
+
+using setAllGroupsCollapsedPayload_t = std::pair<int32_t, bool>; // part, collapsed
+CLIENT_TO_SERIAL(SetAllGroupsCollapsed, c2s_set_all_groups_collapsed,
+                 setAllGroupsCollapsedPayload_t,
+                 engine.getSelectionManager()->setAllGroupsCollapsed(payload.first,
+                                                                     payload.second));
+
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUIT_SELECTION_MESSAGES_H

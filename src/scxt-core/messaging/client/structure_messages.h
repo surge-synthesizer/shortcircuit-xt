@@ -486,7 +486,13 @@ inline void moveGroupTo(const moveGroupAddress_t &payload, engine::Engine &engin
                 pt->moveGroupToAfter(ss.group, tt.group);
             }
         },
-        [tt = tgt](auto &engine) {
+        [ss = src, tt = tgt](auto &engine) {
+            // Keep fold-state index keys aligned with the group reorder.
+            if (tt.zone < 0)
+                engine.getSelectionManager()->remapCollapsedOnSwap(ss.part, ss.group, tt.group);
+            else
+                engine.getSelectionManager()->remapCollapsedOnMoveAfter(ss.part, ss.group,
+                                                                        tt.group);
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,

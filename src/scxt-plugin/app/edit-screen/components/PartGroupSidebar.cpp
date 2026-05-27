@@ -984,6 +984,20 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
     repaint();
 }
 
+void PartGroupSidebar::collapsedGroupsChanged()
+{
+    if (groupSidebar && groupSidebar->gzTreeControl)
+    {
+        groupSidebar->gzTreeControl->rebuildVisible();
+        groupSidebar->gzTreeControl->refresh();
+    }
+    if (zoneSidebar && zoneSidebar->gzTreeControl)
+    {
+        zoneSidebar->gzTreeControl->rebuildVisible();
+        zoneSidebar->gzTreeControl->refresh();
+    }
+}
+
 void PartGroupSidebar::selectedPartChanged()
 {
     groupSidebar->showSelectedPart(editor->selectedPart);

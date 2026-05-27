@@ -27,6 +27,7 @@
 
 #include "catch2/catch2.hpp"
 #include "engine/engine.h"
+#include "engine/feature_enums.h"
 
 #include "console_harness.h"
 
@@ -257,4 +258,263 @@ TEST_CASE("Switching from empty group to non-empty group selects its zones")
     REQUIRE(sm->allSelectedZones[0].size() == 2);
     REQUIRE(sm->leadZone[0].part == 0);
     REQUIRE(sm->leadZone[0].group == 0);
+}
+
+// ---- Group fold state (sidebar tree) ----
+
+namespace
+{
+// Find the group row for (part, group) in the pgz structure and return its
+// features bitfield. Returns 0 if not found (so feature tests are robust to
+// missing rows).
+int32_t pgzGroupFeatures(scxt::clients::console_ui::ConsoleHarness &th, int part, int group)
+{
+    auto pgz = th.engine->getPartGroupZoneStructure();
+    for (const auto &b : pgz)
+        if (b.address.part == part && b.address.group == group && b.address.zone == -1)
+            return b.features;
+    return 0;
+}
+
+// Make `n` extra groups in part 0 (engine starts with group 0). After calling,
+// part 0 has exactly n+1 groups (indices 0..n).
+void makeGroups(scxt::clients::console_ui::ConsoleHarness &th, int n)
+{
+    namespace cmsg = scxt::messaging::client;
+    for (int i = 0; i < n; ++i)
+        th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI();
+}
+} // namespace
+
+TEST_CASE("Fold: setGroupCollapsed toggles a single group")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    makeGroups(th, 5); // 5 groups: 0..4
+
+    const auto &sm = th.engine->getSelectionManager();
+    REQUIRE(sm->collapsedGroupsByPart[0].empty());
+    REQUIRE(!sm->isGroupCollapsed(0, 2));
+
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
+    th.stepUI();
+    REQUIRE(sm->isGroupCollapsed(0, 2));
+    REQUIRE(sm->collapsedGroupsByPart[0].size() == 1);
+
+    INFO("FOLDED bit shows up on the structure broadcast for that group");
+    REQUIRE((pgzGroupFeatures(th, 0, 2) & scxt::engine::GroupZoneFeatures::FOLDED) != 0);
+    REQUIRE((pgzGroupFeatures(th, 0, 1) & scxt::engine::GroupZoneFeatures::FOLDED) == 0);
+
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, false}));
+    th.stepUI();
+    REQUIRE(!sm->isGroupCollapsed(0, 2));
+    REQUIRE(sm->collapsedGroupsByPart[0].empty());
+    REQUIRE((pgzGroupFeatures(th, 0, 2) & scxt::engine::GroupZoneFeatures::FOLDED) == 0);
+}
+
+TEST_CASE("Fold: setAllGroupsCollapsed true/false")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    makeGroups(th, 5); // 5 groups
+    const auto &sm = th.engine->getSelectionManager();
+
+    th.sendToSerialization(cmsg::SetAllGroupsCollapsed({0, true}));
+    th.stepUI();
+    REQUIRE(sm->collapsedGroupsByPart[0].size() == 5);
+    for (int g = 0; g < 5; ++g)
+        REQUIRE(sm->isGroupCollapsed(0, g));
+
+    th.sendToSerialization(cmsg::SetAllGroupsCollapsed({0, false}));
+    th.stepUI();
+    REQUIRE(sm->collapsedGroupsByPart[0].empty());
+}
+
+TEST_CASE("Fold: deleting a group below a folded group keeps the right group folded")
+{
+    // Bug repro: fold 3, delete group 1. Without remapping, old group 3 (now at
+    // index 2) would appear unfolded and old group 4 (now at index 3) would
+    // appear folded. Fix: shift higher indices down by one on delete.
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    using zad = scxt::selection::SelectionManager::ZoneAddress;
+
+    // AddBlankZone creates group 0; makeGroups adds 4 more — total 5 groups (0..4).
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    makeGroups(th, 4); // total 5 groups: 0..4
+    const auto &sm = th.engine->getSelectionManager();
+
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 3, true}));
+    th.stepUI();
+    REQUIRE(sm->isGroupCollapsed(0, 3));
+
+    th.sendToSerialization(cmsg::DeleteGroup(zad{0, 1, -1}));
+    th.stepUI();
+    REQUIRE(th.engine->getPatch()->getPart(0)->getGroups().size() == 4);
+    // Old group 3 is now at index 2; its FOLDED bit must have travelled.
+    REQUIRE(sm->isGroupCollapsed(0, 2));
+    REQUIRE(!sm->isGroupCollapsed(0, 3));
+}
+
+TEST_CASE("Fold: delete-fixup drops the deleted group's fold bit and clamps out-of-range")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    using zad = scxt::selection::SelectionManager::ZoneAddress;
+
+    // AddBlankZone creates group 0; makeGroups adds 4 more — total 5 groups (0..4).
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    makeGroups(th, 4); // total 5 groups: 0..4
+    const auto &sm = th.engine->getSelectionManager();
+
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 4, true}));
+    th.stepUI();
+    REQUIRE(sm->collapsedGroupsByPart[0].size() == 2);
+
+    // Delete the folded group 2. Group 2's bit is gone; group 4's bit shifts to 3.
+    th.sendToSerialization(cmsg::DeleteGroup(zad{0, 2, -1}));
+    th.stepUI();
+    REQUIRE(th.engine->getPatch()->getPart(0)->getGroups().size() == 4);
+    REQUIRE(!sm->isGroupCollapsed(0, 2));
+    REQUIRE(sm->isGroupCollapsed(0, 3));
+    REQUIRE(sm->collapsedGroupsByPart[0].size() == 1);
+}
+
+TEST_CASE("Fold: swap groups remaps fold state")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    using zad = scxt::selection::SelectionManager::ZoneAddress;
+
+    makeGroups(th, 5); // 5 groups
+    const auto &sm = th.engine->getSelectionManager();
+
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
+    th.stepUI();
+    REQUIRE(sm->isGroupCollapsed(0, 2));
+    REQUIRE(!sm->isGroupCollapsed(0, 4));
+
+    INFO("Swap group 2 and group 4 (tgt.zone == -1 path)");
+    th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, -1}}));
+    th.stepUI();
+
+    REQUIRE(!sm->isGroupCollapsed(0, 2));
+    REQUIRE(sm->isGroupCollapsed(0, 4));
+
+    INFO("Swap again with both endpoints collapsed — both stay collapsed");
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 1, true}));
+    th.stepUI();
+    REQUIRE(sm->isGroupCollapsed(0, 1));
+    REQUIRE(sm->isGroupCollapsed(0, 4));
+    th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 1, -1}, zad{0, 4, -1}}));
+    th.stepUI();
+    REQUIRE(sm->isGroupCollapsed(0, 1));
+    REQUIRE(sm->isGroupCollapsed(0, 4));
+}
+
+TEST_CASE("Fold: moveGroupToAfter remaps fold state (src<tgt)")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    using zad = scxt::selection::SelectionManager::ZoneAddress;
+
+    makeGroups(th, 5); // 5 groups: 0..4
+    const auto &sm = th.engine->getSelectionManager();
+
+    // Initial fold state: group 2 collapsed, group 4 expanded.
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
+    th.stepUI();
+    REQUIRE(sm->isGroupCollapsed(0, 2));
+    REQUIRE(!sm->isGroupCollapsed(0, 4));
+
+    // Move group 2 to after group 4 (tgt.zone >= 0 triggers moveAfter).
+    // Layout: 0 1 2 3 4 -> 0 1 3 4 2. Original-2 (collapsed) now sits at index 4.
+    // Originals at 3 and 4 shift down to 2 and 3.
+    th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, 0}}));
+    th.stepUI();
+
+    REQUIRE(!sm->isGroupCollapsed(0, 2));
+    REQUIRE(!sm->isGroupCollapsed(0, 3));
+    REQUIRE(sm->isGroupCollapsed(0, 4));
+}
+
+TEST_CASE("Fold: moveGroupToAfter remaps fold state (src>tgt)")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    using zad = scxt::selection::SelectionManager::ZoneAddress;
+
+    makeGroups(th, 5); // 5 groups: 0..4
+    const auto &sm = th.engine->getSelectionManager();
+
+    // Mirrors the bug Paul reported: fold 2, then drag 2 past 4. Original-2's
+    // fold state must travel with it.
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 4, true}));
+    th.stepUI();
+    REQUIRE(sm->isGroupCollapsed(0, 4));
+    REQUIRE(!sm->isGroupCollapsed(0, 1));
+
+    // Move group 4 to after group 1.
+    // Layout: 0 1 2 3 4 -> 0 1 4 2 3. Original-4 (collapsed) sits at index 2.
+    // Originals at 2,3 shift up to 3,4.
+    th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 4, -1}, zad{0, 1, 0}}));
+    th.stepUI();
+
+    REQUIRE(sm->isGroupCollapsed(0, 2));
+    REQUIRE(!sm->isGroupCollapsed(0, 3));
+    REQUIRE(!sm->isGroupCollapsed(0, 4));
+}
+
+TEST_CASE("Fold: moveGroupToAfter preserves fold state outside the affected window")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    using zad = scxt::selection::SelectionManager::ZoneAddress;
+
+    // 7 groups so we can fold indices both inside and outside the move window.
+    makeGroups(th, 7);
+    const auto &sm = th.engine->getSelectionManager();
+
+    // Fold 1 (outside the move window), 2 (inside, source), and 6 (outside).
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 1, true}));
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 6, true}));
+    th.stepUI();
+    REQUIRE(sm->collapsedGroupsByPart[0].size() == 3);
+
+    // Move 2 to after 4. Affected window [2, 4] — group 6 must NOT be lost.
+    th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, 0}}));
+    th.stepUI();
+
+    REQUIRE(sm->isGroupCollapsed(0, 1));
+    REQUIRE(!sm->isGroupCollapsed(0, 2));
+    REQUIRE(!sm->isGroupCollapsed(0, 3));
+    REQUIRE(sm->isGroupCollapsed(0, 4));
+    REQUIRE(sm->isGroupCollapsed(0, 6));
 }

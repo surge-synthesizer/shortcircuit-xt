@@ -227,6 +227,26 @@ struct SelectionManager
     std::array<selectedZones_t, scxt::numParts> allSelectedZones, allSelectedGroups,
         allDisplayGroups;
     std::array<ZoneAddress, scxt::numParts> leadZone, leadGroup;
+
+    // Per-part set of collapsed group indices for the group/zone tree sidebar.
+    // Streamed in save/load; broadcast to the client by stamping the FOLDED bit
+    // onto group-row features in getPartGroupZoneStructure.
+    using collapsedGroupSet_t = std::unordered_set<int32_t>;
+    std::array<collapsedGroupSet_t, scxt::numParts> collapsedGroupsByPart;
+
+    bool isGroupCollapsed(int part, int group) const
+    {
+        if (part < 0 || part >= scxt::numParts || group < 0)
+            return false;
+        return collapsedGroupsByPart[part].count(group) > 0;
+    }
+    void setGroupCollapsed(int part, int group, bool collapsed);
+    void setAllGroupsCollapsed(int part, bool collapsed);
+
+    // Index remapping helpers, mirrors Part::swapGroups / Part::moveGroupToAfter.
+    // Caller is responsible for broadcasting structure after the move.
+    void remapCollapsedOnSwap(int part, int gA, int gB);
+    void remapCollapsedOnMoveAfter(int part, int whichGroup, int toAfter);
 };
 } // namespace scxt::selection
 

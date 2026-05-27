@@ -527,12 +527,17 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
         res.push_back({{partidx, -1, -1}, part->getName()});
 
         int32_t groupidx{0};
+        const auto &sm = *getSelectionManager();
         for (const auto &group : *part)
         {
             int32_t groupFeatures{0};
             if (group->outputInfo.muted)
             {
-                groupFeatures += GroupZoneFeatures::MUTED;
+                groupFeatures |= GroupZoneFeatures::MUTED;
+            }
+            if (sm.isGroupCollapsed(partidx, groupidx))
+            {
+                groupFeatures |= GroupZoneFeatures::FOLDED;
             }
             res.push_back({{partidx, groupidx, -1}, group->getName(), groupFeatures});
             int32_t zoneidx{0};
