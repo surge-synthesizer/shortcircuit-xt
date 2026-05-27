@@ -63,6 +63,8 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel,
 
     void partConfigurationChanged(int i);
     void groupTriggerConditionChanged(const scxt::engine::GroupTriggerConditions &);
+    // Refresh both sidebars after a fold-state mutation (no structure change).
+    void collapsedGroupsChanged();
 
     void setAllToOmniFlavor(engine::Engine::OmniFlavor of);
     void updateMidiMenuLabel();

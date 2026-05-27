@@ -197,6 +197,8 @@ enum ClientToSerializationMessagesIds
     c2s_macro_begin_end_edit,
 
     c2s_set_othertab_selection,
+    c2s_set_group_collapsed,
+    c2s_set_all_groups_collapsed,
 
     c2s_send_full_part_config,
 

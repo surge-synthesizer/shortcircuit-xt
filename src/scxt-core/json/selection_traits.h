@@ -76,9 +76,13 @@ SC_STREAMDEF(scxt::selection::SelectionManager::ZoneAddress, SC_FROM({
 
 SC_STREAMDEF(selection::SelectionManager, SC_FROM({
                  auto &e = from;
-                 v = {{"zones", e.allSelectedZones},   {"leadZone", e.leadZone},
-                      {"groups", e.allSelectedGroups}, {"dgroups", e.allDisplayGroups},
-                      {"tabs", e.otherTabSelection},   {"selectedPart", e.selectedPart}};
+                 v = {{"zones", e.allSelectedZones},
+                      {"leadZone", e.leadZone},
+                      {"groups", e.allSelectedGroups},
+                      {"dgroups", e.allDisplayGroups},
+                      {"tabs", e.otherTabSelection},
+                      {"selectedPart", e.selectedPart},
+                      {"collapsedGroups", e.collapsedGroupsByPart}};
              }),
              SC_TO({
                  auto &z = to;
@@ -98,6 +102,7 @@ SC_STREAMDEF(selection::SelectionManager, SC_FROM({
                      findIf(v, "dgroups", z.allDisplayGroups);
                      findIf(v, "leadZone", z.leadZone);
                      findIf(v, "selectedPart", z.selectedPart);
+                     findIf(v, "collapsedGroups", z.collapsedGroupsByPart);
                  }
 
                  selection::SelectionManager::ZoneAddress za;

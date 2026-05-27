@@ -34,6 +34,7 @@ enum GroupZoneFeatures
 {
     MISSING_SAMPLE = 1 << 0,
     MUTED = 1 << 1,
+    FOLDED = 1 << 2, // group rows only: the group's zones are hidden in the tree sidebar
 };
 }
 

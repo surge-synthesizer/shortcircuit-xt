@@ -31,6 +31,8 @@
 #include <juce_graphics/juce_graphics.h>
 #include <juce_core/juce_core.h>
 
+#include <vector>
+
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/ListView.h"
@@ -55,18 +57,48 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
     engine::Engine::pgzStructure_t gzData;
     std::set<selection::SelectionManager::ZoneAddress> selectedZones;
 
+    // Indices into gzData of the rows the ListView should actually show.
+    std::vector<size_t> visibleRows;
+
+    // Map a ListView row index to its gzData index.
+    size_t gzIndexForRow(int row) const { return visibleRows[row]; }
+
+    // True if the group at gzData[gzIdx] has at least one zone (next entry is a zone).
+    bool groupHasZones(size_t gzIdx) const
+    {
+        return gzIdx + 1 < gzData.size() && gzData[gzIdx + 1].address.zone >= 0;
+    }
+
+    // Fold state lives on the wire: the FOLDED feature bit on group rows in
+    // gzData. The server stamps it; the widget just reads it.
+    bool isGroupCollapsed(size_t gzIdx) const
+    {
+        if (gzIdx >= gzData.size())
+            return false;
+        return (gzData[gzIdx].features & engine::GroupZoneFeatures::FOLDED) != 0;
+    }
+    void setGroupCollapsedLocal(size_t gzIdx, bool collapsed)
+    {
+        if (gzIdx >= gzData.size())
+            return;
+        if (collapsed)
+            gzData[gzIdx].features |= engine::GroupZoneFeatures::FOLDED;
+        else
+            gzData[gzIdx].features &= ~engine::GroupZoneFeatures::FOLDED;
+    }
+
     GroupZoneSidebarWidget(SidebarParent *sb) : sidebar(sb)
     {
         rebuild();
         setSelectionMode(jcmp::ListView::SelectionMode::MULTI_SELECTION);
-        getRowCount = [this]() { return gzData.size() + 1; };
+        getRowCount = [this]() { return visibleRows.size() + 1; };
         getRowHeight = [this]() { return 18; };
         makeRowComponent = [this]() { return std::make_unique<rowTopComponent>(); };
         assignComponentToRow = [this](const std::unique_ptr<juce::Component> &c, uint32_t row) {
             auto rc = dynamic_cast<rowTopComponent *>(c.get());
             if (rc)
             {
-                if (row == gzData.size())
+                if (row == visibleRows.size())
                 {
                     rc->enableAdd();
                     rc->addRow->gsb = sidebar;
@@ -79,7 +111,8 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                     rc->gzRow->lbm = this;
                     rc->gzRow->gsb = sidebar;
                     rc->gzRow->isSelected =
-                        selectedZones.find(gzData[row].address) != selectedZones.end();
+                        selectedZones.find(gzData[gzIndexForRow(row)].address) !=
+                        selectedZones.end();
                     rc->gzRow->complete();
                 }
                 rc->resized();
@@ -104,15 +137,36 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         for (const auto &el : pgz)
             if (el.address.part == sidebar->editor->selectedPart && el.address.group >= 0)
                 gzData.push_back(el);
+        rebuildVisible();
+    }
+
+    // Recompute visibleRows from gzData. Fold state lives on each group row's
+    // features bitfield (FOLDED) — set server-side and stamped on the wire.
+    void rebuildVisible()
+    {
+        visibleRows.clear();
+        visibleRows.reserve(gzData.size());
+        bool skipping{false};
+        for (size_t i = 0; i < gzData.size(); ++i)
+        {
+            const auto &addr = gzData[i].address;
+            if (addr.zone < 0)
+            {
+                visibleRows.push_back(i); // group row: always visible
+                skipping = (gzData[i].features & engine::GroupZoneFeatures::FOLDED) != 0;
+            }
+            else if (!skipping)
+            {
+                visibleRows.push_back(i);
+            }
+        }
     }
 
     selection::SelectionManager::ZoneAddress getZoneAddress(int rowNumber)
     {
-        auto &tgl = gzData;
-        if (rowNumber < 0 || rowNumber >= (int)tgl.size())
+        if (rowNumber < 0 || rowNumber >= (int)visibleRows.size())
             return {};
-        auto &sad = tgl[rowNumber].address;
-        return sad;
+        return gzData[gzIndexForRow(rowNumber)].address;
     }
 
     // Returns the group ZoneAddress (zone==-1) for the row at position (x,y) in this widget's
@@ -130,9 +184,9 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         if (contentY < 0)
             return std::nullopt;
         int rowIdx = contentY / rh;
-        if (rowIdx < 0 || rowIdx >= (int)gzData.size())
+        if (rowIdx < 0 || rowIdx >= (int)visibleRows.size())
             return std::nullopt;
-        auto addr = gzData[rowIdx].address;
+        auto addr = gzData[gzIndexForRow(rowIdx)].address;
         // If this is a zone row, return the parent group address
         if (addr.zone >= 0)
             addr.zone = -1;
@@ -151,6 +205,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             sst::jucegui::component_adapters::DiscreteToValueReference<jcmp::ToggleButton, bool>;
         std::unique_ptr<bdm_t> muteProvider;
         bool muteValue{false};
+        bool glyphHovered{false};
         rowComponent()
         {
             renameEditor = std::make_unique<juce::TextEditor>();
@@ -158,12 +213,45 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             renameEditor->addListener(this);
         }
 
+        // Hover-on-glyph: highlight the fold arrow when the mouse is over the gutter
+        // of a foldable group row (empty groups show a status dot, no hover).
+        bool computeGlyphHovered(int x) const
+        {
+            if (!lbm || rowNumber < 0 || rowNumber >= (int)lbm->visibleRows.size())
+                return false;
+            const auto &addr = lbm->gzData[lbm->gzIndexForRow(rowNumber)].address;
+            if (addr.zone >= 0)
+                return false;
+            if (!lbm->groupHasZones(lbm->gzIndexForRow(rowNumber)))
+                return false;
+            return x < grouplabelPad;
+        }
+
+        void mouseMove(const juce::MouseEvent &e) override
+        {
+            bool h = computeGlyphHovered(e.x);
+            if (h != glyphHovered)
+            {
+                glyphHovered = h;
+                repaint();
+            }
+        }
+
+        void mouseExit(const juce::MouseEvent &) override
+        {
+            if (glyphHovered)
+            {
+                glyphHovered = false;
+                repaint();
+            }
+        }
+
         void complete()
         {
             if (!isZone())
             {
                 const auto &tgl = lbm->gzData;
-                const auto &sg = tgl[rowNumber];
+                const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
 
                 muteValue = sg.features & engine::GroupZoneFeatures::MUTED;
                 muteProvider = std::make_unique<bdm_t>(muteValue);
@@ -196,7 +284,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         {
             assert(!isZone());
             const auto &tgl = lbm->gzData;
-            const auto &sg = tgl[rowNumber];
+            const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
             gsb->sendToSerialization(
                 cmsg::MuteOrSoloGroup({sg.address.part, sg.address.group, v, false, allSel}));
         }
@@ -207,10 +295,10 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 return;
 
             const auto &tgl = lbm->gzData;
-            if (rowNumber < 0 || rowNumber >= tgl.size())
+            if (rowNumber < 0 || rowNumber >= (int)lbm->visibleRows.size())
                 return;
 
-            const auto &sg = tgl[rowNumber];
+            const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
 
             bool isLeadZone = isZone() && gsb->isLeadZone(sg.address);
             bool isLeadGroup = isGroup() && gsb->isLeadGroup(sg.address);
@@ -222,7 +310,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             auto groupFont = editor->themeApplier.interRegularFor(11);
 
             if (isZone())
-                g.setFont(zoneFont);
+                g.setFont(isLeadZone ? editor->themeApplier.interBoldFor(11) : zoneFont);
             else
                 g.setFont(groupFont);
 
@@ -276,23 +364,23 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
                 auto bx = getLocalBounds().withWidth(grouplabelPad);
                 auto nb = getLocalBounds().withTrimmedLeft(grouplabelPad);
-                auto digitColor = lowTextColor;
+                auto glyphColor = lowTextColor;
                 bool groupIsSelected =
                     editor->allGroupSelections.find(sg.address) != editor->allGroupSelections.end();
                 if (isLeadGroup)
-                {
-                    digitColor = editor->themeColor(theme::ColorMap::generic_content_highest);
-                    g.setFont(editor->themeApplier.interBoldFor(11));
-                }
+                    glyphColor = editor->themeColor(theme::ColorMap::generic_content_highest);
                 else if (groupIsSelected)
-                {
-                    digitColor = editor->themeColor(theme::ColorMap::generic_content_high);
-                }
-                g.setColour(digitColor);
-                g.drawText(std::to_string(sg.address.group + 1), bx,
-                           juce::Justification::centredLeft);
-                if (isLeadGroup)
-                    g.setFont(groupFont);
+                    glyphColor = editor->themeColor(theme::ColorMap::generic_content_high);
+
+                bool hasZones = lbm->groupHasZones(lbm->gzIndexForRow(rowNumber));
+                bool collapsed = lbm->isGroupCollapsed(lbm->gzIndexForRow(rowNumber));
+                auto gb = bx.reduced(2);
+                auto glyph = !hasZones ? jcmp::GlyphPainter::MINUS
+                                       : (collapsed ? jcmp::GlyphPainter::JOG_RIGHT
+                                                    : jcmp::GlyphPainter::JOG_DOWN);
+                if (hasZones && glyphHovered)
+                    glyphColor = editor->themeColor(theme::ColorMap::generic_content_high);
+                jcmp::GlyphPainter::paintGlyph(g, gb, glyph, glyphColor);
                 g.setColour(textColor);
                 g.drawText(sg.name, nb, juce::Justification::centredLeft);
 
@@ -344,15 +432,6 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 g.drawText(sg.name, getLocalBounds().translated(zonePad + 2, 0),
                            juce::Justification::centredLeft);
 
-                if (isLeadZone && voiceCount == 0)
-                {
-                    auto b = getLocalBounds().withWidth(zonePad).withTrimmedLeft(2);
-                    auto q = b.getHeight() - b.getWidth();
-                    b = b.withTrimmedTop(q / 2).withTrimmedBottom(q / 2);
-                    jcmp::GlyphPainter::paintGlyph(g, b, jcmp::GlyphPainter::JOG_RIGHT,
-                                                   textColor.withAlpha(0.5f));
-                }
-
                 if (voiceCount > 0)
                 {
                     auto b = getLocalBounds()
@@ -370,7 +449,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             }
         }
 
-        bool isDragging{false}, isPopup{false};
+        bool isDragging{false}, isPopup{false}, consumedFoldClick{false};
         selection::SelectionManager::ZoneAddress getZoneAddress()
         {
             return lbm->getZoneAddress(rowNumber);
@@ -381,6 +460,27 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         void mouseDown(const juce::MouseEvent &e) override
         {
             isPopup = false;
+            consumedFoldClick = false;
+
+            // Left-click in the group-row gutter toggles fold; right-click falls through.
+            // Empty groups show a status dot instead of an arrow — no fold action there.
+            if (!e.mods.isPopupMenu() && isGroup() && e.x < grouplabelPad &&
+                lbm->groupHasZones(lbm->gzIndexForRow(rowNumber)))
+            {
+                auto za = getZoneAddress();
+                auto gzIdx = lbm->gzIndexForRow(rowNumber);
+                bool nowCollapsed = !lbm->isGroupCollapsed(gzIdx);
+                // Optimistic: flip the local FOLDED bit and refresh both sidebars
+                // so the click feels instant. The c2s round-trip will trigger a
+                // structure broadcast that reaffirms the state.
+                lbm->setGroupCollapsedLocal(gzIdx, nowCollapsed);
+                gsb->partGroupSidebar->collapsedGroupsChanged();
+                gsb->sendToSerialization(
+                    cmsg::SetGroupCollapsed({za.part, za.group, nowCollapsed}));
+                consumedFoldClick = true;
+                return;
+            }
+
             if (e.mods.isPopupMenu())
             {
                 juce::PopupMenu p;
@@ -388,7 +488,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 {
                     auto za = getZoneAddress();
                     const auto &tgl = lbm->gzData;
-                    const auto &sg = tgl[rowNumber];
+                    const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
 
                     shared::populateZoneRightMouseMenuForZone(gsb, this, p, za, sg.name);
                     p.addSeparator();
@@ -397,10 +497,10 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 else if (isGroup())
                 {
                     const auto &tgl = lbm->gzData;
-                    if (rowNumber < 0 || rowNumber >= tgl.size())
+                    if (rowNumber < 0 || rowNumber >= (int)lbm->visibleRows.size())
                         return;
 
-                    const auto &sg = tgl[rowNumber];
+                    const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
 
                     p.addSectionHeader(sg.name);
                     p.addSeparator();
@@ -457,6 +557,20 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                         w->gsb->sendToSerialization(cmsg::DeleteEmptyGroups(za.part));
                     });
 
+                    p.addSeparator();
+                    p.addItem("Expand All Groups", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::SetAllGroupsCollapsed({za.part, false}));
+                    });
+                    p.addItem("Collapse All Groups", [w = juce::Component::SafePointer(this)]() {
+                        if (!w)
+                            return;
+                        auto za = w->getZoneAddress();
+                        w->gsb->sendToSerialization(cmsg::SetAllGroupsCollapsed({za.part, true}));
+                    });
+
                     auto za = getZoneAddress();
 
                     p.addSeparator();
@@ -506,6 +620,11 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
         void mouseUp(const juce::MouseEvent &event) override
         {
+            if (consumedFoldClick)
+            {
+                consumedFoldClick = false;
+                return;
+            }
             if (isDragging || isPopup)
             {
                 isDragging = false;
@@ -619,7 +738,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         {
             const auto &tgl = lbm->gzData;
 
-            const auto &sg = tgl[rowNumber];
+            const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
             assert(sg.address.zone < 0);
             auto st = gsb->partGroupSidebar->style();
             auto groupFont = gsb->editor->themeApplier.interRegularFor(11);
@@ -636,7 +755,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         {
             const auto &tgl = lbm->gzData;
 
-            const auto &sg = tgl[rowNumber];
+            const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
             auto st = gsb->partGroupSidebar->style();
             auto zoneFont = gsb->editor->themeApplier.interLightFor(11);
             renameEditor->setFont(zoneFont);
