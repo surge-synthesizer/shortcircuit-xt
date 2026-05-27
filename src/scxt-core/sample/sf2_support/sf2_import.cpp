@@ -183,6 +183,16 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                     if (auto pan = region->GetPan(presetRegion); pan != 0)
                         zn->outputInfo.pan = import_support::sf2NormalizedPan(pan);
 
+                    {
+                        auto attn = region->GetInitialAttenuation(presetRegion);
+                        auto attnInst = region->initialAttenuation;
+                        auto attnPre = presetRegion ? presetRegion->initialAttenuation : sf2::NONE;
+
+                        if (attn > 0)
+                            zn->outputInfo.amplitude =
+                                import_support::dBToCubicAttenuation((float)(-attn / 10.0));
+                    }
+
                     auto me2p = region->GetModEnvToPitch(presetRegion);
                     auto me2f = region->GetModEnvToFilterFc(presetRegion);
                     auto v2p = region->GetVibLfoToPitch(presetRegion);
