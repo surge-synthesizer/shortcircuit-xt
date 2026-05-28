@@ -214,9 +214,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     bool tuningAwarePitchBends{true};
 
     engine::Engine::OmniFlavor currentOmniFlavor{engine::Engine::OmniFlavor::OMNI};
-    bool shouldApplyOmniOnSelect{false};
 
-    void setupOmniApplyDefault(bool b);
     void setOmniFlavor(engine::Engine::OmniFlavor of, bool onStartup = false);
     void setOmniFlavorDefault(int f);
 

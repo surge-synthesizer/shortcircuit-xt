@@ -587,10 +587,9 @@ void SCXTEditorReceiver::onPitchBendTuningAwarenessFromEngine(bool a)
     editor.tuningAwarePitchBends = a;
 }
 
-void SCXTEditorReceiver::onOmniFlavorFromEngine(std::pair<int, bool> f)
+void SCXTEditorReceiver::onOmniFlavorFromEngine(int f)
 {
-    editor.setupOmniApplyDefault(f.second);
-    editor.setOmniFlavor(static_cast<engine::Engine::OmniFlavor>(f.first), true);
+    editor.setOmniFlavor(static_cast<engine::Engine::OmniFlavor>(f), true);
 }
 
 void SCXTEditorReceiver::onAllProcessorDescriptions(

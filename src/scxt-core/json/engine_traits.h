@@ -106,6 +106,48 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  findIf(v, "selectionManager", *(to.getSelectionManager()));
                  findIf(v, "runtimeConfig", to.runtimeConfig);
 
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'05'21))
+                 {
+                     // Legacy patches encoded MPE/CHOCT per-part with magic
+                     // sentinels -2/-3 on Part::configuration.channel. The
+                     // flavor is now global; recover the user's intent before
+                     // clamping the channel back into {-1, 0..15}.
+                     bool sawMpe{false}, sawChOct{false};
+                     for (auto &p : *(to.getPatch()))
+                     {
+                         if (p->configuration.channel == -2)
+                             sawMpe = true;
+                         else if (p->configuration.channel == -3)
+                             sawChOct = true;
+                     }
+                     auto curFlavor = to.runtimeConfig.omniFlavor;
+                     if (sawMpe && curFlavor != engine::Engine::OmniFlavor::MPE)
+                     {
+                         to.runtimeConfig.omniFlavor = engine::Engine::OmniFlavor::MPE;
+                         std::string body = "Loaded patch had MPE on some parts but the global "
+                                            "mode was not MPE; switched global mode to MPE.";
+                         if (sawChOct)
+                             body += " (Ch/Oct sentinels were also present and "
+                                     "have been ignored.)";
+                         RAISE_WARN_CONT(*to.getMessageController(),
+                                         "Recovered MPE mode from legacy patch", body);
+                     }
+                     else if (sawChOct && curFlavor != engine::Engine::OmniFlavor::CHOCT)
+                     {
+                         to.runtimeConfig.omniFlavor = engine::Engine::OmniFlavor::CHOCT;
+                         RAISE_WARN_CONT(*to.getMessageController(),
+                                         "Recovered Ch/Oct mode from legacy patch",
+                                         "Loaded patch had Ch/Oct on some parts but the "
+                                         "global mode was not Ch/Oct; switched global "
+                                         "mode to Ch/Oct.");
+                     }
+                     for (auto &p : *(to.getPatch()))
+                     {
+                         if (p->configuration.channel < -1)
+                             p->configuration.channel = -1;
+                     }
+                 }
+
                  // Now we need to restore the bus effects
                  to.getPatch()->setupPatchOnUnstream(to);
                  to.onPartConfigurationUpdated();
@@ -220,10 +262,15 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, chTmp);
                  if (!(SC_STREAMING_FOR_PART))
                  {
+                     // Engine-level migration in Engine::SC_TO recovers MPE/CHOCT
+                     // intent from legacy -2/-3 sentinels, so leave them in place
+                     // here and let that pass clamp after the recovery scan.
                      to.channel = chTmp;
                  }
                  else
                  {
+                     // SCP load discards the streamed channel entirely. Belt-and-
+                     // braces: if that ever changes, clamp legacy negatives.
                      SCLOG_IF(streaming, "Unstreaming part: ignoring channel " << chTmp);
                  }
                  findOrSet(v, "a", true, to.active);

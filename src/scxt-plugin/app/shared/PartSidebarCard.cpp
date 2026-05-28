@@ -301,53 +301,22 @@ void PartSidebarCard::setMidiChannel(int c)
 
 void PartSidebarCard::showMidiModeMenu()
 {
+    // Per-part channel only meaningful in OMNI; control is disabled otherwise.
+    if (editor->currentOmniFlavor != engine::Engine::OmniFlavor::OMNI)
+        return;
+
     auto makeMenuCallback = [w = juce::Component::SafePointer(this)](int ch) {
         return [w, ch]() {
-            if (!w)
-                return;
-            if (ch >= 0)
-            {
+            if (w)
                 w->setMidiChannel(ch);
-            }
-            else
-            {
-                int16_t nof{0};
-                switch (w->editor->currentOmniFlavor)
-                {
-                case engine::Engine::OmniFlavor::OMNI:
-                    nof = engine::Part::PartConfiguration::omniChannel;
-                    break;
-                case engine::Engine::OmniFlavor::MPE:
-                    nof = engine::Part::PartConfiguration::mpeChannel;
-                    break;
-                case engine::Engine::OmniFlavor::CHOCT:
-                    nof = engine::Part::PartConfiguration::chPerOctaveChannel;
-                    break;
-                }
-                w->setMidiChannel(nof);
-            }
         };
     };
-
-    std::string cof;
-    switch (editor->currentOmniFlavor)
-    {
-    case engine::Engine::OmniFlavor::OMNI:
-        cof = "Omni";
-        break;
-    case engine::Engine::OmniFlavor::MPE:
-        cof = "MPE";
-        break;
-    case engine::Engine::OmniFlavor::CHOCT:
-        cof = "Channel/Octave";
-        break;
-    }
 
     auto p = juce::PopupMenu();
     auto ch = editor->partConfigurations[part].channel;
     p.addSectionHeader("MIDI");
     p.addSeparator();
-    p.addItem(cof, true, ch == engine::Part::PartConfiguration::omniChannel,
+    p.addItem("Omni", true, ch == engine::Part::PartConfiguration::omniChannel,
               makeMenuCallback(engine::Part::PartConfiguration::omniChannel));
     p.addSeparator();
     for (int i = 0; i < 16; ++i)
@@ -432,27 +401,23 @@ void PartSidebarCard::resetFromEditorCache()
     const auto &conf = editor->partConfigurations[part];
     auto mc = conf.channel;
 
-    std::string cof;
     switch (editor->currentOmniFlavor)
     {
-    case engine::Engine::OmniFlavor::OMNI:
-        cof = "Omni";
-        break;
     case engine::Engine::OmniFlavor::MPE:
-        cof = "MPE";
+        midiMode->setLabel("MPE");
+        midiMode->setEnabled(false);
         break;
     case engine::Engine::OmniFlavor::CHOCT:
-        cof = "Ch/Oct";
+        midiMode->setLabel("Ch/Oct");
+        midiMode->setEnabled(false);
         break;
-    }
-
-    if (mc < 0)
-    {
-        midiMode->setLabel(cof);
-    }
-    else
-    {
-        midiMode->setLabel("CH " + std::to_string(mc + 1));
+    case engine::Engine::OmniFlavor::OMNI:
+        midiMode->setEnabled(true);
+        if (mc < 0)
+            midiMode->setLabel("Omni");
+        else
+            midiMode->setLabel("CH " + std::to_string(mc + 1));
+        break;
     }
 
     auto rt = conf.routeTo;

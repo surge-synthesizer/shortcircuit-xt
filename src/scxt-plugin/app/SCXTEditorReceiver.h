@@ -130,7 +130,7 @@ struct SCXTEditorReceiver
 
     void onMpeTuningAwarenessFromEngine(bool);
     void onPitchBendTuningAwarenessFromEngine(bool);
-    void onOmniFlavorFromEngine(std::pair<int, bool> f);
+    void onOmniFlavorFromEngine(int f);
 };
 } // namespace scxt::ui::app
 

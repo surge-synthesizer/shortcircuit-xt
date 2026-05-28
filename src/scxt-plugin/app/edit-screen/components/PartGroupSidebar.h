@@ -66,8 +66,7 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel,
     // Refresh both sidebars after a fold-state mutation (no structure change).
     void collapsedGroupsChanged();
 
-    void setAllToOmniFlavor(engine::Engine::OmniFlavor of);
-    void updateMidiMenuLabel();
+    void refreshAllPartCards();
     void setMpeBendRange(int r);
     void setMpePitchSmoothingTime(int t);
 
