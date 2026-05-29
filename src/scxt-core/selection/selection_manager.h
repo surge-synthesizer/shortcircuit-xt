@@ -187,19 +187,19 @@ struct SelectionManager
   public:
     int16_t selectedPart{0};
     typedef std::unordered_set<ZoneAddress, ZoneAddress::Hash> selectedZones_t;
-    selectedZones_t currentlySelectedZones() { return allSelectedZones[selectedPart]; }
+    selectedZones_t currentlySelectedZones() { return state[selectedPart].selectedZones; }
     // This will have -1 for every zone of course
-    selectedZones_t currentlySelectedGroups() { return allSelectedGroups[selectedPart]; }
+    selectedZones_t currentlySelectedGroups() { return state[selectedPart].selectedGroups; }
     std::optional<ZoneAddress> currentLeadZone(const engine::Engine &e) const
     {
-        if (leadZone[selectedPart].isIn(e))
-            return leadZone[selectedPart];
+        if (state[selectedPart].leadZone.isIn(e))
+            return state[selectedPart].leadZone;
         return std::nullopt;
     }
     std::optional<ZoneAddress> currentLeadGroup(const engine::Engine &e) const
     {
-        if (leadGroup[selectedPart].isInPartGroup(e))
-            return leadGroup[selectedPart];
+        if (state[selectedPart].leadGroup.isInPartGroup(e))
+            return state[selectedPart].leadGroup;
         return std::nullopt;
     }
     std::pair<int, int> bestPartGroupForNewSample(const engine::Engine &e);
@@ -224,21 +224,37 @@ struct SelectionManager
   public:
     using otherTabSelection_t = std::unordered_map<std::string, std::string>;
     otherTabSelection_t otherTabSelection;
-    std::array<selectedZones_t, scxt::numParts> allSelectedZones, allSelectedGroups,
-        allDisplayGroups;
-    std::array<ZoneAddress, scxt::numParts> leadZone, leadGroup;
-
     // Per-part set of collapsed group indices for the group/zone tree sidebar.
     // Streamed in save/load; broadcast to the client by stamping the FOLDED bit
     // onto group-row features in getPartGroupZoneStructure.
     using collapsedGroupSet_t = std::unordered_set<int32_t>;
-    std::array<collapsedGroupSet_t, scxt::numParts> collapsedGroupsByPart;
+
+    // All selection state for a single part, grouped so one part's slice can be
+    // streamed/loaded as a unit (used by .scp part save/load to preserve selection).
+    struct PerPartState
+    {
+        selectedZones_t selectedZones;
+        selectedZones_t selectedGroups;
+        selectedZones_t displayGroups;
+        ZoneAddress leadZone;
+        ZoneAddress leadGroup;
+        collapsedGroupSet_t collapsedGroups;
+
+        bool operator==(const PerPartState &o) const
+        {
+            return selectedZones == o.selectedZones && selectedGroups == o.selectedGroups &&
+                   displayGroups == o.displayGroups && leadZone == o.leadZone &&
+                   leadGroup == o.leadGroup && collapsedGroups == o.collapsedGroups;
+        }
+        bool operator!=(const PerPartState &o) const { return !(*this == o); }
+    };
+    std::array<PerPartState, scxt::numParts> state;
 
     bool isGroupCollapsed(int part, int group) const
     {
         if (part < 0 || part >= scxt::numParts || group < 0)
             return false;
-        return collapsedGroupsByPart[part].count(group) > 0;
+        return state[part].collapsedGroups.count(group) > 0;
     }
     void setGroupCollapsed(int part, int group, bool collapsed);
     void setAllGroupsCollapsed(int part, bool collapsed);

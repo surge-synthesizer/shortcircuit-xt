@@ -28,8 +28,12 @@
 #include "catch2/catch2.hpp"
 #include "engine/engine.h"
 #include "engine/feature_enums.h"
+#include "engine/zone.h"
+#include "patch_io/patch_io.h"
 
 #include "console_harness.h"
+
+#include <filesystem>
 
 TEST_CASE("Create a Single Blank Zone and it is Selected")
 {
@@ -40,7 +44,7 @@ TEST_CASE("Create a Single Blank Zone and it is Selected")
     th.sendToSerialization(scxt::messaging::client::AddBlankZone({0, 0, 60, 72, 0, 64}));
     th.stepUI();
 
-    REQUIRE(th.engine->getSelectionManager()->leadZone[0] ==
+    REQUIRE(th.engine->getSelectionManager()->state[0].leadZone ==
             scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 }
 
@@ -70,46 +74,46 @@ TEST_CASE("Create five zones then multi-select")
     th.sendToSerialization(abz({0, 0, 83, 92, 0, 127}));
     th.stepUI();
 
-    REQUIRE(sm->leadZone[0] == zad{0, 0, 4});
-    REQUIRE(sm->allSelectedZones[0].size() == 1);
+    REQUIRE(sm->state[0].leadZone == zad{0, 0, 4});
+    REQUIRE(sm->state[0].selectedZones.size() == 1);
 
     INFO("Single select other zones");
     // remember SAC is p/g/z select, distinct, as-lead
     sel(0, 0, 2, true, true, true);
     th.stepUI();
-    REQUIRE(sm->leadZone[0] == zad{0, 0, 2});
-    REQUIRE(sm->allSelectedZones[0].size() == 1);
+    REQUIRE(sm->state[0].leadZone == zad{0, 0, 2});
+    REQUIRE(sm->state[0].selectedZones.size() == 1);
 
     INFO("Single select a second zone not as lead");
     sel(0, 0, 0, true, false, false);
     th.stepUI();
-    REQUIRE(sm->leadZone[0] == zad{0, 0, 2});
-    REQUIRE(sm->allSelectedZones[0].size() == 2);
+    REQUIRE(sm->state[0].leadZone == zad{0, 0, 2});
+    REQUIRE(sm->state[0].selectedZones.size() == 2);
 
     INFO("Swap the lead");
     sel(0, 0, 0, true, false, true);
     th.stepUI();
-    REQUIRE(sm->leadZone[0] == zad{0, 0, 0});
-    REQUIRE(sm->allSelectedZones[0].size() == 2);
+    REQUIRE(sm->state[0].leadZone == zad{0, 0, 0});
+    REQUIRE(sm->state[0].selectedZones.size() == 2);
 
     INFO("Unselect the non-lead");
     sel(0, 0, 2, false, false, false);
     th.stepUI();
-    REQUIRE(sm->leadZone[0] == zad{0, 0, 0});
-    REQUIRE(sm->allSelectedZones[0].size() == 1);
+    REQUIRE(sm->state[0].leadZone == zad{0, 0, 0});
+    REQUIRE(sm->state[0].selectedZones.size() == 1);
 
     INFO("Select two more groups as non-lead and lead");
     sel(0, 0, 1, true, false, true);
     sel(0, 0, 3, true, false, false);
     th.stepUI();
-    REQUIRE(sm->leadZone[0] == zad{0, 0, 1});
-    REQUIRE(sm->allSelectedZones[0].size() == 3);
+    REQUIRE(sm->state[0].leadZone == zad{0, 0, 1});
+    REQUIRE(sm->state[0].selectedZones.size() == 3);
 
     INFO("Select a different zone disticnt and get it lead with set clear");
     sel(0, 0, 4, true, true, true);
     th.stepUI();
-    REQUIRE(sm->leadZone[0] == zad{0, 0, 4});
-    REQUIRE(sm->allSelectedZones[0].size() == 1);
+    REQUIRE(sm->state[0].leadZone == zad{0, 0, 4});
+    REQUIRE(sm->state[0].selectedZones.size() == 1);
 }
 
 TEST_CASE("Selecting an empty group makes it the lead group")
@@ -142,9 +146,9 @@ TEST_CASE("Selecting an empty group makes it the lead group")
     selGroup(0, 1, true, true, true);
     th.stepUI();
 
-    REQUIRE(sm->leadGroup[0] == zad{0, 1, -1});
-    REQUIRE(sm->allSelectedGroups[0].size() == 1);
-    REQUIRE(sm->allSelectedGroups[0].count(zad{0, 1, -1}) == 1);
+    REQUIRE(sm->state[0].leadGroup == zad{0, 1, -1});
+    REQUIRE(sm->state[0].selectedGroups.size() == 1);
+    REQUIRE(sm->state[0].selectedGroups.count(zad{0, 1, -1}) == 1);
 }
 
 TEST_CASE("Selecting an empty group clears prior zone selections")
@@ -171,16 +175,16 @@ TEST_CASE("Selecting an empty group clears prior zone selections")
     th.sendToSerialization(cmsg::CreateGroup(0));
     th.stepUI();
 
-    REQUIRE(sm->leadZone[0] == zad{0, 0, 1});
-    REQUIRE(!sm->allSelectedZones[0].empty());
+    REQUIRE(sm->state[0].leadZone == zad{0, 0, 1});
+    REQUIRE(!sm->state[0].selectedZones.empty());
 
     INFO("Distinct-select the empty group; zone state should clear");
     selGroup(0, 1, true, true, true);
     th.stepUI();
 
-    REQUIRE(sm->leadGroup[0] == zad{0, 1, -1});
-    REQUIRE(sm->allSelectedZones[0].empty());
-    REQUIRE(sm->leadZone[0] == zad{});
+    REQUIRE(sm->state[0].leadGroup == zad{0, 1, -1});
+    REQUIRE(sm->state[0].selectedZones.empty());
+    REQUIRE(sm->state[0].leadZone == zad{});
 }
 
 TEST_CASE("AddBlankZone after selecting empty group lands in that group")
@@ -208,7 +212,7 @@ TEST_CASE("AddBlankZone after selecting empty group lands in that group")
     selGroup(0, 1, true, true, true);
     th.stepUI();
 
-    REQUIRE(sm->leadGroup[0] == zad{0, 1, -1});
+    REQUIRE(sm->state[0].leadGroup == zad{0, 1, -1});
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroup(1)->getZones().empty());
 
     INFO("Create a blank zone explicitly targeting the empty group");
@@ -217,7 +221,7 @@ TEST_CASE("AddBlankZone after selecting empty group lands in that group")
 
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroup(0)->getZones().size() == 1);
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroup(1)->getZones().size() == 1);
-    REQUIRE(sm->leadZone[0] == zad{0, 1, 0});
+    REQUIRE(sm->state[0].leadZone == zad{0, 1, 0});
 }
 
 TEST_CASE("Switching from empty group to non-empty group selects its zones")
@@ -245,19 +249,19 @@ TEST_CASE("Switching from empty group to non-empty group selects its zones")
 
     selGroup(0, 1, true, true, true);
     th.stepUI();
-    REQUIRE(sm->leadGroup[0] == zad{0, 1, -1});
-    REQUIRE(sm->allSelectedZones[0].empty());
+    REQUIRE(sm->state[0].leadGroup == zad{0, 1, -1});
+    REQUIRE(sm->state[0].selectedZones.empty());
 
     INFO("Now distinct-select the non-empty group 0");
     selGroup(0, 0, true, true, true);
     th.stepUI();
 
-    REQUIRE(sm->leadGroup[0] == zad{0, 0, -1});
-    REQUIRE(sm->allSelectedGroups[0].size() == 1);
-    REQUIRE(sm->allSelectedGroups[0].count(zad{0, 0, -1}) == 1);
-    REQUIRE(sm->allSelectedZones[0].size() == 2);
-    REQUIRE(sm->leadZone[0].part == 0);
-    REQUIRE(sm->leadZone[0].group == 0);
+    REQUIRE(sm->state[0].leadGroup == zad{0, 0, -1});
+    REQUIRE(sm->state[0].selectedGroups.size() == 1);
+    REQUIRE(sm->state[0].selectedGroups.count(zad{0, 0, -1}) == 1);
+    REQUIRE(sm->state[0].selectedZones.size() == 2);
+    REQUIRE(sm->state[0].leadZone.part == 0);
+    REQUIRE(sm->state[0].leadZone.group == 0);
 }
 
 // ---- Group fold state (sidebar tree) ----
@@ -297,13 +301,13 @@ TEST_CASE("Fold: setGroupCollapsed toggles a single group")
     makeGroups(th, 5); // 5 groups: 0..4
 
     const auto &sm = th.engine->getSelectionManager();
-    REQUIRE(sm->collapsedGroupsByPart[0].empty());
+    REQUIRE(sm->state[0].collapsedGroups.empty());
     REQUIRE(!sm->isGroupCollapsed(0, 2));
 
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
     th.stepUI();
     REQUIRE(sm->isGroupCollapsed(0, 2));
-    REQUIRE(sm->collapsedGroupsByPart[0].size() == 1);
+    REQUIRE(sm->state[0].collapsedGroups.size() == 1);
 
     INFO("FOLDED bit shows up on the structure broadcast for that group");
     REQUIRE((pgzGroupFeatures(th, 0, 2) & scxt::engine::GroupZoneFeatures::FOLDED) != 0);
@@ -312,7 +316,7 @@ TEST_CASE("Fold: setGroupCollapsed toggles a single group")
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, false}));
     th.stepUI();
     REQUIRE(!sm->isGroupCollapsed(0, 2));
-    REQUIRE(sm->collapsedGroupsByPart[0].empty());
+    REQUIRE(sm->state[0].collapsedGroups.empty());
     REQUIRE((pgzGroupFeatures(th, 0, 2) & scxt::engine::GroupZoneFeatures::FOLDED) == 0);
 }
 
@@ -328,13 +332,13 @@ TEST_CASE("Fold: setAllGroupsCollapsed true/false")
 
     th.sendToSerialization(cmsg::SetAllGroupsCollapsed({0, true}));
     th.stepUI();
-    REQUIRE(sm->collapsedGroupsByPart[0].size() == 5);
+    REQUIRE(sm->state[0].collapsedGroups.size() == 5);
     for (int g = 0; g < 5; ++g)
         REQUIRE(sm->isGroupCollapsed(0, g));
 
     th.sendToSerialization(cmsg::SetAllGroupsCollapsed({0, false}));
     th.stepUI();
-    REQUIRE(sm->collapsedGroupsByPart[0].empty());
+    REQUIRE(sm->state[0].collapsedGroups.empty());
 }
 
 TEST_CASE("Fold: deleting a group below a folded group keeps the right group folded")
@@ -383,7 +387,7 @@ TEST_CASE("Fold: delete-fixup drops the deleted group's fold bit and clamps out-
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 4, true}));
     th.stepUI();
-    REQUIRE(sm->collapsedGroupsByPart[0].size() == 2);
+    REQUIRE(sm->state[0].collapsedGroups.size() == 2);
 
     // Delete the folded group 2. Group 2's bit is gone; group 4's bit shifts to 3.
     th.sendToSerialization(cmsg::DeleteGroup(zad{0, 2, -1}));
@@ -391,7 +395,7 @@ TEST_CASE("Fold: delete-fixup drops the deleted group's fold bit and clamps out-
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroups().size() == 4);
     REQUIRE(!sm->isGroupCollapsed(0, 2));
     REQUIRE(sm->isGroupCollapsed(0, 3));
-    REQUIRE(sm->collapsedGroupsByPart[0].size() == 1);
+    REQUIRE(sm->state[0].collapsedGroups.size() == 1);
 }
 
 TEST_CASE("Fold: swap groups remaps fold state")
@@ -506,7 +510,7 @@ TEST_CASE("Fold: moveGroupToAfter preserves fold state outside the affected wind
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 6, true}));
     th.stepUI();
-    REQUIRE(sm->collapsedGroupsByPart[0].size() == 3);
+    REQUIRE(sm->state[0].collapsedGroups.size() == 3);
 
     // Move 2 to after 4. Affected window [2, 4] — group 6 must NOT be lost.
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, 0}}));
@@ -517,4 +521,94 @@ TEST_CASE("Fold: moveGroupToAfter preserves fold state outside the affected wind
     REQUIRE(!sm->isGroupCollapsed(0, 3));
     REQUIRE(sm->isGroupCollapsed(0, 4));
     REQUIRE(sm->isGroupCollapsed(0, 6));
+}
+
+TEST_CASE("SCP preserves selection across parts", "[selection]")
+{
+    namespace cmsg = scxt::messaging::client;
+    using zad = scxt::selection::SelectionManager::ZoneAddress;
+
+    auto tmp = std::filesystem::temp_directory_path() / "scxt_scp_selection_test.scp";
+
+    // --- Source: three zones in part 3, with a distinctive selection on it. ---
+    {
+        scxt::clients::console_ui::ConsoleHarness srcH;
+        srcH.start();
+        srcH.stepUI();
+
+        // Select part 3 first, then add zones into it (the natural UI flow).
+        srcH.sendToSerialization(cmsg::SelectPart(3));
+        srcH.sendToSerialization(cmsg::AddBlankZone({3, 0, 48, 60, 0, 127}));
+        srcH.sendToSerialization(cmsg::AddBlankZone({3, 0, 61, 72, 0, 127}));
+        srcH.sendToSerialization(cmsg::AddBlankZone({3, 0, 73, 84, 0, 127}));
+        srcH.stepUI();
+
+        srcH.sendToSerialization(cmsg::ApplySelectActions({{3, 0, 1, true, true, true}}));
+        srcH.sendToSerialization(cmsg::SetGroupCollapsed({3, 0, true}));
+        srcH.stepUI();
+
+        const auto &sm = srcH.engine->getSelectionManager();
+        REQUIRE(sm->selectedPart == 3);
+        REQUIRE(sm->state[3].leadZone == zad{3, 0, 1});
+        REQUIRE(sm->state[3].selectedZones.size() == 1);
+        REQUIRE(sm->isGroupCollapsed(3, 0));
+
+        srcH.sendToSerialization(
+            cmsg::SavePart({tmp.u8string(), 3, scxt::patch_io::SaveStyles::NO_SAMPLES}));
+        srcH.stepUI();
+    }
+    REQUIRE(std::filesystem::exists(tmp));
+
+    // --- Dest: load the .scp into part 7 and verify the selection came along. ---
+    {
+        scxt::clients::console_ui::ConsoleHarness dstH;
+        dstH.start();
+        dstH.stepUI();
+
+        const auto &dsm = dstH.engine->getSelectionManager();
+        auto preState0 = dsm->state[0];
+        auto preState5 = dsm->state[5];
+
+        dstH.sendToSerialization(cmsg::LoadPartInto({tmp.u8string(), (int16_t)7}));
+        dstH.stepUI();
+        dstH.stepUI();
+
+        // Structure loaded into part 7, and the selection slice landed at state[7]
+        // with every .part remapped onto part 7.
+        REQUIRE(dstH.engine->getPatch()->getPart(7)->getGroups().size() == 1);
+        REQUIRE(dsm->state[7].leadZone == zad{7, 0, 1});
+        REQUIRE(dsm->isGroupCollapsed(7, 0));
+        REQUIRE(dsm->state[7].selectedZones.size() == 1);
+        for (const auto &za : dsm->state[7].selectedZones)
+            REQUIRE(za.part == 7);
+
+        // SCP load leaves other parts alone.
+        REQUIRE(dsm->state[0] == preState0);
+        REQUIRE(dsm->state[5] == preState5);
+    }
+
+    // --- Load into the *currently selected* part: the restored selection must
+    //     survive (loadPartInto used to force-select group 0 in this case). ---
+    {
+        scxt::clients::console_ui::ConsoleHarness dstH;
+        dstH.start();
+        dstH.stepUI();
+
+        const auto &dsm = dstH.engine->getSelectionManager();
+        dstH.sendToSerialization(cmsg::SelectPart(2));
+        dstH.stepUI();
+        REQUIRE(dsm->selectedPart == 2);
+
+        dstH.sendToSerialization(cmsg::LoadPartInto({tmp.u8string(), (int16_t)2}));
+        dstH.stepUI();
+        dstH.stepUI();
+
+        // The saved selection (one zone, lead {2,0,1}) survived; we did NOT fall
+        // back to "all of group 0 selected".
+        REQUIRE(dsm->state[2].leadZone == zad{2, 0, 1});
+        REQUIRE(dsm->state[2].selectedZones.size() == 1);
+        REQUIRE(dsm->isGroupCollapsed(2, 0));
+    }
+
+    std::filesystem::remove(tmp);
 }

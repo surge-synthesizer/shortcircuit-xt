@@ -899,10 +899,16 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
                 nonconste.getSampleManager()->clearMonolithBinaryIndex();
 
                 auto &pt = nonconste.getPatch()->getPart(part);
-                if (!pt->getGroups().empty() &&
-                    part == nonconste.getSelectionManager()->selectedPart)
+                auto &sm = nonconste.getSelectionManager();
+                // Only default-select group 0 when loading into the active part AND
+                // the stream didn't restore a selection of its own. SCPs from
+                // 0x2026'05'29 on carry a per-part selection slice; clobbering it
+                // here would lose the saved selection.
+                if (!pt->getGroups().empty() && part == sm->selectedPart &&
+                    !sm->currentLeadZone(nonconste).has_value() &&
+                    !sm->currentLeadGroup(nonconste).has_value())
                 {
-                    nonconste.getSelectionManager()->applySelectActions({part, 0, -1});
+                    sm->applySelectActions({part, 0, -1});
                 }
                 auto &cont = *e.getMessageController();
                 cont.restartAudioThreadFromSerial();

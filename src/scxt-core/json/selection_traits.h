@@ -74,49 +74,82 @@ SC_STREAMDEF(scxt::selection::SelectionManager::ZoneAddress, SC_FROM({
                  findOrSet(v, {"z", "zone"}, -1, result.zone);
              }));
 
-SC_STREAMDEF(selection::SelectionManager, SC_FROM({
+SC_STREAMDEF(selection::SelectionManager::PerPartState, SC_FROM({
                  auto &e = from;
-                 v = {{"zones", e.allSelectedZones},
-                      {"leadZone", e.leadZone},
-                      {"groups", e.allSelectedGroups},
-                      {"dgroups", e.allDisplayGroups},
-                      {"tabs", e.otherTabSelection},
-                      {"selectedPart", e.selectedPart},
-                      {"collapsedGroups", e.collapsedGroupsByPart}};
+                 v = {{"zones", e.selectedZones},   {"groups", e.selectedGroups},
+                      {"dgroups", e.displayGroups}, {"leadZone", e.leadZone},
+                      {"leadGroup", e.leadGroup},   {"collapsedGroups", e.collapsedGroups}};
              }),
              SC_TO({
                  auto &z = to;
-                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'07'24))
-                 {
-                     z.selectedPart = 0;
-                     findIf(v, "tabs", z.otherTabSelection);
-                     findIf(v, "zones", z.allSelectedZones[0]);
-                     findIf(v, "groups", z.allSelectedGroups[0]);
-                     findIf(v, "leadZone", z.leadZone[0]);
-                 }
-                 else
-                 {
-                     findIf(v, "tabs", z.otherTabSelection);
-                     findIf(v, "zones", z.allSelectedZones);
-                     findIf(v, "groups", z.allSelectedGroups);
-                     findIf(v, "dgroups", z.allDisplayGroups);
-                     findIf(v, "leadZone", z.leadZone);
-                     findIf(v, "selectedPart", z.selectedPart);
-                     findIf(v, "collapsedGroups", z.collapsedGroupsByPart);
-                 }
-
-                 selection::SelectionManager::ZoneAddress za;
-
-                 if (!z.allSelectedZones[z.selectedPart].empty())
-                 {
-                     selection::SelectionManager::SelectActionContents sac{
-                         z.leadZone[z.selectedPart]};
-                     sac.distinct = false;
-                     sac.selectingAsLead = true;
-                     sac.selecting = true;
-                     z.applySelectActions({sac});
-                 }
+                 findIf(v, "zones", z.selectedZones);
+                 findIf(v, "groups", z.selectedGroups);
+                 findIf(v, "dgroups", z.displayGroups);
+                 findIf(v, "leadZone", z.leadZone);
+                 findIf(v, "leadGroup", z.leadGroup);
+                 findIf(v, "collapsedGroups", z.collapsedGroups);
              }));
+
+SC_STREAMDEF(
+    selection::SelectionManager, SC_FROM({
+        auto &e = from;
+        v = {{"state", e.state}, {"tabs", e.otherTabSelection}, {"selectedPart", e.selectedPart}};
+    }),
+    SC_TO({
+        auto &z = to;
+        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'07'24))
+        {
+            z.selectedPart = 0;
+            findIf(v, "tabs", z.otherTabSelection);
+            findIf(v, "zones", z.state[0].selectedZones);
+            findIf(v, "groups", z.state[0].selectedGroups);
+            findIf(v, "leadZone", z.state[0].leadZone);
+        }
+        else if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'05'29))
+        {
+            // Legacy array-of-arrays format (stable 0x2024'07'24 ..
+            // 0x2026'05'21): read each parallel array, then scatter by
+            // part index into z.state[p].field. leadGroup was never
+            // streamed in this era, so it stays default.
+            findIf(v, "tabs", z.otherTabSelection);
+            findIf(v, "selectedPart", z.selectedPart);
+
+            std::array<selection::SelectionManager::selectedZones_t, scxt::numParts> tmpZ, tmpG,
+                tmpDG;
+            std::array<selection::SelectionManager::ZoneAddress, scxt::numParts> tmpLZ;
+            std::array<selection::SelectionManager::collapsedGroupSet_t, scxt::numParts> tmpCG;
+
+            findIf(v, "zones", tmpZ);
+            findIf(v, "groups", tmpG);
+            findIf(v, "dgroups", tmpDG);
+            findIf(v, "leadZone", tmpLZ);
+            findIf(v, "collapsedGroups", tmpCG);
+
+            for (int p = 0; p < scxt::numParts; ++p)
+            {
+                z.state[p].selectedZones = std::move(tmpZ[p]);
+                z.state[p].selectedGroups = std::move(tmpG[p]);
+                z.state[p].displayGroups = std::move(tmpDG[p]);
+                z.state[p].leadZone = tmpLZ[p];
+                z.state[p].collapsedGroups = std::move(tmpCG[p]);
+            }
+        }
+        else
+        {
+            findIf(v, "tabs", z.otherTabSelection);
+            findIf(v, "selectedPart", z.selectedPart);
+            findIf(v, "state", z.state);
+        }
+
+        if (!z.state[z.selectedPart].selectedZones.empty())
+        {
+            selection::SelectionManager::SelectActionContents sac{z.state[z.selectedPart].leadZone};
+            sac.distinct = false;
+            sac.selectingAsLead = true;
+            sac.selecting = true;
+            z.applySelectActions({sac});
+        }
+    }));
 } // namespace scxt::json
 
 #endif // SHORTCIRCUIT_SELECTION_TRAITS_H

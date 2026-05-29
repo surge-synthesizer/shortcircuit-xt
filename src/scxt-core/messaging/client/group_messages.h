@@ -138,7 +138,7 @@ inline void doMuteOrSoloGroup(const muteOrSoloGroup_t &payload, const engine::En
                               messaging::MessageController &cont)
 {
     auto &[p, g, m, s, sel] = payload;
-    auto &gs = engine.getSelectionManager()->allSelectedGroups[p];
+    auto &gs = engine.getSelectionManager()->state[p].selectedGroups;
     bool muteSelected{false};
     if (sel)
     {
