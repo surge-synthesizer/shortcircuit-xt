@@ -80,7 +80,7 @@ inline void doApplyZoneDelta(const applyZoneDeltaPayload_t &payload, const engin
                              MessageController &cont)
 {
     auto part = std::get<2>(payload);
-    auto &sc = engine.getSelectionManager()->allSelectedZones[part];
+    auto &sc = engine.getSelectionManager()->state[part].selectedZones;
     auto lz = engine.getSelectionManager()->currentLeadZone(engine);
     if (!sc.empty())
     {

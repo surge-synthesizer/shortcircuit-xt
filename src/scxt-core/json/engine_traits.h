@@ -316,68 +316,103 @@ SC_STREAMDEF(scxt::engine::Part::ZoneMappingItem,
                  findIf(v, "features", to.features);
              }))
 
-SC_STREAMDEF(scxt::engine::Part, SC_FROM({
-                 v = {{"config", from.configuration},
-                      {"groups", from.getGroups()},
-                      {"macros", from.macros},
-                      {"partEffectStorage", from.partEffectStorage}};
-                 if (SC_STREAMING_FOR_PART)
-                 {
-                     addToObject<val_t>(v, "streamingVersion", currentStreamingVersion);
-                     addToObject<val_t>(v, "streamedForPart", true);
-                     assert(from.parentPatch->parentEngine);
-                     addToObject<val_t>(
-                         v, "samplesUsedByPart",
-                         from.parentPatch->parentEngine->getSampleManager()->getSampleAddressesFor(
-                             from.getSamplesUsedByPart()));
-                 }
-             }),
-             SC_TO({
-                 auto &part = to;
-                 part.clearGroups();
+SC_STREAMDEF(
+    scxt::engine::Part, SC_FROM({
+        v = {{"config", from.configuration},
+             {"groups", from.getGroups()},
+             {"macros", from.macros},
+             {"partEffectStorage", from.partEffectStorage}};
+        if (SC_STREAMING_FOR_PART)
+        {
+            addToObject<val_t>(v, "streamingVersion", currentStreamingVersion);
+            addToObject<val_t>(v, "streamedForPart", true);
+            assert(from.parentPatch->parentEngine);
+            addToObject<val_t>(
+                v, "samplesUsedByPart",
+                from.parentPatch->parentEngine->getSampleManager()->getSampleAddressesFor(
+                    from.getSamplesUsedByPart()));
 
-                 std::unique_ptr<engine::Engine::UnstreamGuard> sg;
-                 bool streamedForPart{false};
-                 findOrSet(v, "streamedForPart", false, streamedForPart);
-                 if (streamedForPart)
-                 {
-                     uint64_t partStreamingVersion{0};
-                     findIf(v, "streamingVersion", partStreamingVersion);
-                     SCLOG_IF(streaming, "Unstreaming part state. Stream version : "
-                                             << scxt::humanReadableVersion(partStreamingVersion));
+            // Per-part selection slice, so .scp save/load preserves selection.
+            addToObject<val_t>(
+                v, "selection",
+                from.parentPatch->parentEngine->getSelectionManager()->state[from.partNumber]);
+        }
+    }),
+    SC_TO({
+        auto &part = to;
+        part.clearGroups();
 
-                     scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
-                     findIf(v, "samplesUsedByPart", samples);
-                     to.parentPatch->parentEngine->getSampleManager()
-                         ->restoreFromSampleAddressesAndIDs(samples);
+        std::unique_ptr<engine::Engine::UnstreamGuard> sg;
+        bool streamedForPart{false};
+        findOrSet(v, "streamedForPart", false, streamedForPart);
+        if (streamedForPart)
+        {
+            uint64_t partStreamingVersion{0};
+            findIf(v, "streamingVersion", partStreamingVersion);
+            SCLOG_IF(streaming, "Unstreaming part state. Stream version : "
+                                    << scxt::humanReadableVersion(partStreamingVersion));
 
-                     to.parentPatch->parentEngine->onPartConfigurationUpdated();
-                     sg = std::make_unique<engine::Engine::UnstreamGuard>(partStreamingVersion);
-                 }
+            scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
+            findIf(v, "samplesUsedByPart", samples);
+            to.parentPatch->parentEngine->getSampleManager()->restoreFromSampleAddressesAndIDs(
+                samples);
 
-                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'18))
-                 {
-                     findIf(v, "channel", part.configuration.channel);
-                 }
-                 else
-                 {
-                     findIf(v, "config", part.configuration);
-                 }
-                 findIf(v, "macros", part.macros);
+            to.parentPatch->parentEngine->onPartConfigurationUpdated();
+            sg = std::make_unique<engine::Engine::UnstreamGuard>(partStreamingVersion);
+        }
 
-                 part.partEffectStorage = {};
-                 findIf(v, "partEffectStorage", part.partEffectStorage);
-                 auto vzones = v.at("groups").get_array();
-                 for (const auto vz : vzones)
-                 {
-                     auto idx = part.addGroup() - 1;
-                     vz.to(*(part.getGroup(idx)));
-                 }
-                 if (to.parentPatch->parentEngine)
-                 {
-                     part.setupOnUnstream(*to.parentPatch->parentEngine);
-                 }
-             }))
+        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2024'08'18))
+        {
+            findIf(v, "channel", part.configuration.channel);
+        }
+        else
+        {
+            findIf(v, "config", part.configuration);
+        }
+        findIf(v, "macros", part.macros);
+
+        part.partEffectStorage = {};
+        findIf(v, "partEffectStorage", part.partEffectStorage);
+        auto vzones = v.at("groups").get_array();
+        for (const auto vz : vzones)
+        {
+            auto idx = part.addGroup() - 1;
+            vz.to(*(part.getGroup(idx)));
+        }
+        // Restore this part's selection slice (.scp part load). After the groups
+        // loop so the referenced zones/groups exist; .part is remapped onto the
+        // part we are loading into.
+        selection::SelectionManager::PerPartState selSlice;
+        if (to.parentPatch->parentEngine && findIf(v, "selection", selSlice))
+        {
+            auto loadTargetPart = to.partNumber;
+            auto remapZA = [&](selection::SelectionManager::ZoneAddress &za) {
+                if (za.part >= 0)
+                    za.part = loadTargetPart;
+            };
+            remapZA(selSlice.leadZone);
+            remapZA(selSlice.leadGroup);
+            auto remapSet = [&](selection::SelectionManager::selectedZones_t &s) {
+                selection::SelectionManager::selectedZones_t out;
+                for (auto za : s)
+                {
+                    remapZA(za);
+                    out.insert(za);
+                }
+                s = std::move(out);
+            };
+            remapSet(selSlice.selectedZones);
+            remapSet(selSlice.selectedGroups);
+            remapSet(selSlice.displayGroups);
+            auto *sm = to.parentPatch->parentEngine->getSelectionManager().get();
+            sm->state[loadTargetPart] = std::move(selSlice);
+        }
+
+        if (to.parentPatch->parentEngine)
+        {
+            part.setupOnUnstream(*to.parentPatch->parentEngine);
+        }
+    }))
 
 STREAM_ENUM(engine::GroupTriggerID, engine::toStringGroupTriggerID,
             engine::fromStringGroupTriggerID);

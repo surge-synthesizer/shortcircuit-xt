@@ -228,7 +228,7 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
 {
     auto part = engine.getSelectionManager()->selectedPart;
 
-    auto zs = engine.getSelectionManager()->allSelectedZones[part];
+    auto zs = engine.getSelectionManager()->state[part].selectedZones;
 
     if (zs.empty())
         return;

@@ -54,7 +54,7 @@ void SelectionManager::sendClientDataForLeadSelectionState()
     serializationSendToClient(cms::s2c_send_selected_part, selectedPart,
                               *(engine.getMessageController()));
 
-    auto [p, g, z] = leadZone[selectedPart];
+    auto [p, g, z] = state[selectedPart].leadZone;
     assert(p < 0 || p == selectedPart);
 
     // Check if I deserialized a valid zone and adjust if not
@@ -115,18 +115,18 @@ void SelectionManager::applySelectActions(const std::vector<SelectActionContents
     auto r = transformSelectionActions(v);
     if (v.size() == 1 && v[0].isDeselectSentinel())
     {
-        for (auto &g : allSelectedGroups[selectedPart])
+        for (auto &g : state[selectedPart].selectedGroups)
         {
-            allDisplayGroups[selectedPart].insert(g);
+            state[selectedPart].displayGroups.insert(g);
         }
-        allSelectedGroups[selectedPart].clear();
-        leadGroup[selectedPart] = {};
-        allSelectedZones[selectedPart].clear();
-        leadZone[selectedPart] = {};
+        state[selectedPart].selectedGroups.clear();
+        state[selectedPart].leadGroup = {};
+        state[selectedPart].selectedZones.clear();
+        state[selectedPart].leadZone = {};
     }
     else
     {
-        allDisplayGroups[selectedPart].clear();
+        state[selectedPart].displayGroups.clear();
         for (const auto &z : r)
         {
             if (!z.addr().isInWithPartials(engine))
@@ -211,22 +211,22 @@ void SelectionManager::adjustInternalStateForAction(
         // OK so basically theres a few cases
         if (!z.selecting)
         {
-            allSelectedZones[selectedPart].erase(za);
+            state[selectedPart].selectedZones.erase(za);
         }
         else
         {
             // So we are selecting
             if (z.distinct)
             {
-                allSelectedZones[selectedPart].clear();
-                allSelectedZones[selectedPart].insert(za);
-                leadZone[selectedPart] = za;
+                state[selectedPart].selectedZones.clear();
+                state[selectedPart].selectedZones.insert(za);
+                state[selectedPart].leadZone = za;
             }
             else
             {
-                allSelectedZones[selectedPart].insert(za);
+                state[selectedPart].selectedZones.insert(za);
                 if (z.selectingAsLead)
-                    leadZone[selectedPart] = za;
+                    state[selectedPart].leadZone = za;
             }
         }
 
@@ -236,19 +236,19 @@ void SelectionManager::adjustInternalStateForAction(
          * - lead group is the group of lead zone
          */
         std::set<int32_t> gset;
-        allSelectedGroups[selectedPart].clear();
-        for (const auto &z : allSelectedZones[selectedPart])
+        state[selectedPart].selectedGroups.clear();
+        for (const auto &z : state[selectedPart].selectedZones)
         {
             gset.insert(z.group);
         }
         for (auto g : gset)
         {
-            allSelectedGroups[selectedPart].insert({selectedPart, g, -1});
+            state[selectedPart].selectedGroups.insert({selectedPart, g, -1});
         }
-        leadGroup[selectedPart] = {selectedPart, leadZone[selectedPart].group, -1};
+        state[selectedPart].leadGroup = {selectedPart, state[selectedPart].leadZone.group, -1};
         SCLOG_IF(selection,
                  "AllSelectedGroups[" << selectedPart << "] " << gset.size() << " groups");
-        SCLOG_IF(selection, "LeadGroup[" << selectedPart << "] " << leadGroup[selectedPart]);
+        SCLOG_IF(selection, "LeadGroup[" << selectedPart << "] " << state[selectedPart].leadGroup);
     }
     else
     {
@@ -256,7 +256,7 @@ void SelectionManager::adjustInternalStateForAction(
         {
             if (z.distinct)
             {
-                allSelectedGroups[selectedPart].clear();
+                state[selectedPart].selectedGroups.clear();
                 // For an empty group, transformSelectionActions emitted no zone
                 // actions, so clear zone state here to keep the group the sole lead
                 if (za.part >= 0 && za.group >= 0)
@@ -265,24 +265,24 @@ void SelectionManager::adjustInternalStateForAction(
                     if (za.group < (int)pt->getGroups().size() &&
                         pt->getGroup(za.group)->getZones().empty())
                     {
-                        allSelectedZones[selectedPart].clear();
-                        leadZone[selectedPart] = {};
+                        state[selectedPart].selectedZones.clear();
+                        state[selectedPart].leadZone = {};
                     }
                 }
             }
-            allSelectedGroups[selectedPart].insert(za);
+            state[selectedPart].selectedGroups.insert(za);
             if (z.selectingAsLead)
-                leadGroup[selectedPart] = za;
+                state[selectedPart].leadGroup = za;
         }
         else
         {
-            allSelectedGroups[selectedPart].erase(za);
-            if (leadGroup[selectedPart] == za)
+            state[selectedPart].selectedGroups.erase(za);
+            if (state[selectedPart].leadGroup == za)
             {
                 if (engine.getPatch()->getPart(selectedPart)->getGroups().size() > 0)
-                    leadGroup[selectedPart] = {selectedPart, 0, -1};
+                    state[selectedPart].leadGroup = {selectedPart, 0, -1};
                 else
-                    leadGroup[selectedPart] = {};
+                    state[selectedPart].leadGroup = {};
             }
         }
     }
@@ -304,20 +304,20 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
                                                         const ZoneAddress &whatIDeleted)
 {
     bool morphed{false};
-    auto zit = allSelectedZones[selectedPart].begin();
-    while (zit != allSelectedZones[selectedPart].end())
+    auto zit = state[selectedPart].selectedZones.begin();
+    while (zit != state[selectedPart].selectedZones.end())
     {
         if (!zit->isIn(engine))
         {
             SCLOG_IF(groupZoneMutation,
                      "Removing zone " << *zit << " from selection on group delete");
-            if (leadZone[selectedPart] == *zit)
+            if (state[selectedPart].leadZone == *zit)
             {
                 SCLOG_IF(groupZoneMutation, "Lead zone removed from selection");
-                leadZone[selectedPart] = {};
+                state[selectedPart].leadZone = {};
             }
             morphed = true;
-            zit = allSelectedZones[selectedPart].erase(zit);
+            zit = state[selectedPart].selectedZones.erase(zit);
         }
         else
         {
@@ -325,21 +325,21 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
         }
     }
 
-    auto git = allSelectedGroups[selectedPart].begin();
-    while (git != allSelectedGroups[selectedPart].end())
+    auto git = state[selectedPart].selectedGroups.begin();
+    while (git != state[selectedPart].selectedGroups.end())
     {
         if (!git->isIn(engine))
         {
             morphed = true;
             SCLOG_IF(groupZoneMutation,
                      "Removing group " << *git << " from selection on group delete");
-            if (leadGroup[selectedPart] == *git)
+            if (state[selectedPart].leadGroup == *git)
             {
                 SCLOG_IF(groupZoneMutation, "Lead group removed from selection");
-                leadGroup[selectedPart] = {};
+                state[selectedPart].leadGroup = {};
             }
 
-            git = allSelectedGroups[selectedPart].erase(git);
+            git = state[selectedPart].selectedGroups.erase(git);
         }
         else
         {
@@ -359,7 +359,7 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
         {
             const auto &part = engine.getPatch()->getPart(p);
             int n = (int)part->getGroups().size();
-            auto &cset = collapsedGroupsByPart[p];
+            auto &cset = state[p].collapsedGroups;
 
             if (whatIDeleted.group >= 0)
             {
@@ -400,7 +400,7 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
 void SelectionManager::guaranteeSelectedLeadSomewhereIn(int part, int group, int zone)
 {
     guaranteeSelectedLead();
-    if (leadZone[selectedPart] == ZoneAddress())
+    if (state[selectedPart].leadZone == ZoneAddress())
     {
         const auto &partO = engine.getPatch()->getPart(part);
         bool gotOne{false};
@@ -411,8 +411,8 @@ void SelectionManager::guaranteeSelectedLeadSomewhereIn(int part, int group, int
                 auto &groupO = partO->getGroup(group);
                 if (!groupO->getZones().empty())
                 {
-                    leadZone[selectedPart] = {part, group, 0};
-                    leadGroup[selectedPart] = {part, group, -1};
+                    state[selectedPart].leadZone = {part, group, 0};
+                    state[selectedPart].leadGroup = {part, group, -1};
                     gotOne = true;
                 }
             }
@@ -423,8 +423,8 @@ void SelectionManager::guaranteeSelectedLeadSomewhereIn(int part, int group, int
                 {
                     if (!partO->getGroup(i)->getZones().empty())
                     {
-                        leadZone[selectedPart] = {part, i, 0};
-                        leadGroup[selectedPart] = {part, group, -1};
+                        state[selectedPart].leadZone = {part, i, 0};
+                        state[selectedPart].leadGroup = {part, group, -1};
                         gotOne = true;
                     }
                 }
@@ -443,7 +443,7 @@ void SelectionManager::guaranteeSelectedLead()
     // intentional and don't auto-pick a zone from somewhere else.
     bool leadGroupIsEmpty{false};
     {
-        const auto &lg = leadGroup[selectedPart];
+        const auto &lg = state[selectedPart].leadGroup;
         if (lg.part >= 0 && lg.group >= 0)
         {
             const auto &pt = engine.getPatch()->getPart(lg.part);
@@ -456,18 +456,18 @@ void SelectionManager::guaranteeSelectedLead()
     }
 
     // Now at the end of this the lead zone could not be selected
-    if (allSelectedZones[selectedPart].find(leadZone[selectedPart]) ==
-        allSelectedZones[selectedPart].end())
+    if (state[selectedPart].selectedZones.find(state[selectedPart].leadZone) ==
+        state[selectedPart].selectedZones.end())
     {
         // Nothing is selected. So we need to pick the first zone of the first group
-        if (allSelectedZones[selectedPart].empty() && !leadGroupIsEmpty)
+        if (state[selectedPart].selectedZones.empty() && !leadGroupIsEmpty)
         {
             SCLOG_IF(selection, "Selected zones is empty. Looking for a candidate");
             auto &pt = engine.getPatch()->getPart(selectedPart);
             if (pt->getGroups().empty())
             {
                 SCLOG_IF(selection, "No groups are present - no lead zone");
-                leadZone = {};
+                state[selectedPart].leadZone = {};
             }
             else
             {
@@ -478,7 +478,7 @@ void SelectionManager::guaranteeSelectedLead()
                     if (!g->getZones().empty())
                     {
                         gotOne = true;
-                        leadZone[selectedPart] = {selectedPart, gidx, 0};
+                        state[selectedPart].leadZone = {selectedPart, gidx, 0};
                         SCLOG_IF(selection, "Lead zone is first zone of group " << gidx);
                         break;
                     }
@@ -487,34 +487,34 @@ void SelectionManager::guaranteeSelectedLead()
                 if (!gotOne)
                 {
                     SCLOG_IF(selection, "No zones in any group - no lead zone");
-                    leadZone[selectedPart] = {};
+                    state[selectedPart].leadZone = {};
                 }
                 else
                 {
-                    SCLOG_IF(selection, "Selected leadZone[" << selectedPart
-                                                             << "]=" << leadZone[selectedPart]);
-                    allSelectedZones[selectedPart].insert(leadZone[selectedPart]);
+                    SCLOG_IF(selection, "Selected state[" << selectedPart << "].leadZone="
+                                                          << state[selectedPart].leadZone);
+                    state[selectedPart].selectedZones.insert(state[selectedPart].leadZone);
                 }
             }
         }
-        else if (!allSelectedZones[selectedPart].empty())
+        else if (!state[selectedPart].selectedZones.empty())
         {
-            leadZone[selectedPart] = *(allSelectedZones[selectedPart].begin());
+            state[selectedPart].leadZone = *(state[selectedPart].selectedZones.begin());
         }
     }
 
     // Still at group single so far
-    if (allSelectedGroups[selectedPart].find(leadGroup[selectedPart]) ==
-        allSelectedGroups[selectedPart].end())
+    if (state[selectedPart].selectedGroups.find(state[selectedPart].leadGroup) ==
+        state[selectedPart].selectedGroups.end())
     {
         SCLOG_IF(selection, "Promoting lead group in guaranteeSelectedLead");
-        leadGroup[selectedPart] = {selectedPart, leadZone[selectedPart].group, -1};
-        if (allSelectedGroups[selectedPart].find(leadGroup[selectedPart]) ==
-                allSelectedGroups[selectedPart].end() &&
-            leadGroup[selectedPart].group >= 0)
+        state[selectedPart].leadGroup = {selectedPart, state[selectedPart].leadZone.group, -1};
+        if (state[selectedPart].selectedGroups.find(state[selectedPart].leadGroup) ==
+                state[selectedPart].selectedGroups.end() &&
+            state[selectedPart].leadGroup.group >= 0)
         {
             SCLOG_IF(selection, "Adding zone lead to AllSelectedGroups");
-            allSelectedGroups[selectedPart].insert(leadGroup[selectedPart]);
+            state[selectedPart].selectedGroups.insert(state[selectedPart].leadGroup);
         }
     }
 }
@@ -525,14 +525,14 @@ void SelectionManager::debugDumpSelectionState()
     {
         SCLOG_IF(selection, "---------------------------");
         SCLOG_IF(selection, "PART: " << selectedPart);
-        SCLOG_IF(selection, "ZONES: Selected=" << allSelectedZones[selectedPart].size());
-        SCLOG_IF(selection, "   LEAD ZONE : " << leadZone[selectedPart]);
-        for (const auto &z : allSelectedZones[selectedPart])
+        SCLOG_IF(selection, "ZONES: Selected=" << state[selectedPart].selectedZones.size());
+        SCLOG_IF(selection, "   LEAD ZONE : " << state[selectedPart].leadZone);
+        for (const auto &z : state[selectedPart].selectedZones)
             SCLOG_IF(selection, "      Z Selected : " << z);
 
-        SCLOG_IF(selection, "GROUPS: Selected=" << allSelectedGroups[selectedPart].size());
-        SCLOG_IF(selection, "   LEAD GROUP : " << leadGroup[selectedPart]);
-        for (const auto &z : allSelectedGroups[selectedPart])
+        SCLOG_IF(selection, "GROUPS: Selected=" << state[selectedPart].selectedGroups.size());
+        SCLOG_IF(selection, "   LEAD GROUP : " << state[selectedPart].leadGroup);
+        for (const auto &z : state[selectedPart].selectedGroups)
             SCLOG_IF(selection, "      G Selected : " << z);
         SCLOG_IF(selection, "---------------------------");
     }
@@ -546,12 +546,12 @@ void SelectionManager::sendSelectedZonesToClient()
         debugDumpSelectionState();
     }
 
-    serializationSendToClient(
-        cms::s2c_send_selection_state,
-        cms::selectedStateMessage_t{leadZone[selectedPart], allSelectedZones[selectedPart],
-                                    leadGroup[selectedPart], allSelectedGroups[selectedPart],
-                                    allDisplayGroups[selectedPart]},
-        *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_send_selection_state,
+                              cms::selectedStateMessage_t{
+                                  state[selectedPart].leadZone, state[selectedPart].selectedZones,
+                                  state[selectedPart].leadGroup, state[selectedPart].selectedGroups,
+                                  state[selectedPart].displayGroups},
+                              *(engine.getMessageController()));
 }
 
 bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e) const
@@ -606,7 +606,7 @@ std::pair<int, int> SelectionManager::bestPartGroupForNewSample(const engine::En
 
         return {sp, sg};
     }
-    if (allSelectedZones[selectedPart].empty())
+    if (state[selectedPart].selectedZones.empty())
     {
         return {selectedPart, 0};
     }
@@ -615,7 +615,7 @@ std::pair<int, int> SelectionManager::bestPartGroupForNewSample(const engine::En
     auto pt = selectedPart;
     auto gp = 0;
 
-    for (const auto &s : allSelectedZones[selectedPart])
+    for (const auto &s : state[selectedPart].selectedZones)
     {
         if (s.part == pt && s.group >= 0)
             gp = std::max(gp, s.group);
@@ -800,12 +800,12 @@ void SelectionManager::copyZoneOrGroupProcessorLeadToAll(bool forZone, int which
         auto lz = currentLeadZone(engine);
         if (!lz.has_value())
             return;
-        if (allSelectedZones[selectedPart].size() < 2)
+        if (state[selectedPart].selectedZones.size() < 2)
             return;
 
         auto &cont = engine.getMessageController();
         cont->scheduleAudioThreadCallback(
-            [asz = allSelectedZones[selectedPart], from = *lz, which](auto &e) {
+            [asz = state[selectedPart].selectedZones, from = *lz, which](auto &e) {
                 const auto &fz =
                     e.getPatch()->getPart(from.part)->getGroup(from.group)->getZone(from.zone);
                 auto ftype = fz->processorStorage[which].type;
@@ -836,12 +836,12 @@ void SelectionManager::copyZoneOrGroupProcessorLeadToAll(bool forZone, int which
         auto lg = currentLeadGroup(engine);
         if (!lg.has_value())
             return;
-        if (allSelectedGroups[selectedPart].size() < 2)
+        if (state[selectedPart].selectedGroups.size() < 2)
             return;
 
         auto &cont = engine.getMessageController();
         cont->scheduleAudioThreadCallback(
-            [asg = allSelectedGroups[selectedPart], from = *lg, which](auto &e) {
+            [asg = state[selectedPart].selectedGroups, from = *lg, which](auto &e) {
                 const auto &fz = e.getPatch()->getPart(from.part)->getGroup(from.group);
                 auto ftype = fz->processorStorage[which].type;
                 for (const auto &sg : asg)
@@ -981,7 +981,7 @@ void SelectionManager::setGroupCollapsed(int part, int group, bool collapsed)
 {
     if (part < 0 || part >= scxt::numParts || group < 0)
         return;
-    auto &s = collapsedGroupsByPart[part];
+    auto &s = state[part].collapsedGroups;
     bool changed = collapsed ? s.insert(group).second : (s.erase(group) > 0);
     if (changed)
         broadcastStructure(engine);
@@ -991,7 +991,7 @@ void SelectionManager::setAllGroupsCollapsed(int part, bool collapsed)
 {
     if (part < 0 || part >= scxt::numParts)
         return;
-    auto &s = collapsedGroupsByPart[part];
+    auto &s = state[part].collapsedGroups;
     s.clear();
     if (collapsed)
     {
@@ -1007,7 +1007,7 @@ void SelectionManager::remapCollapsedOnSwap(int part, int gA, int gB)
 {
     if (part < 0 || part >= scxt::numParts || gA == gB)
         return;
-    auto &s = collapsedGroupsByPart[part];
+    auto &s = state[part].collapsedGroups;
     bool a = s.count(gA) > 0;
     bool b = s.count(gB) > 0;
     if (a == b)
@@ -1029,7 +1029,7 @@ void SelectionManager::remapCollapsedOnMoveAfter(int part, int whichGroup, int t
     if (part < 0 || part >= scxt::numParts || whichGroup == toAfter || whichGroup < 0 ||
         toAfter < 0)
         return;
-    auto &s = collapsedGroupsByPart[part];
+    auto &s = state[part].collapsedGroups;
 
     // The move only affects indices in a contiguous window; everything else
     // keeps its FOLDED bit. Snapshot just the affected window and rotate.
@@ -1077,15 +1077,13 @@ void SelectionManager::remapCollapsedOnMoveAfter(int part, int whichGroup, int t
 
 void SelectionManager::clearAllSelections()
 {
-    for (auto &s : allSelectedZones)
-        s.clear();
-    for (auto &s : allSelectedGroups)
-        s.clear();
-    for (auto &z : leadZone)
-        z = {};
-    for (auto &g : leadGroup)
-        g = {};
-    selectedPart = 0;
+    for (auto &s : state)
+    {
+        s.selectedZones.clear();
+        s.selectedGroups.clear();
+        s.leadZone = {};
+        s.leadGroup = {};
+    }
 }
 
 bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck,
@@ -1130,14 +1128,14 @@ bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck
 
     if (forZone)
     {
-        auto &lza = leadZone[selectedPart];
+        auto &lza = state[selectedPart].leadZone;
         if (!lza.isInWithPartials(engine))
             return true;
 
         const auto &lz =
             engine.getPatch()->getPart(lza.part)->getGroup(lza.group)->getZone(lza.zone);
 
-        for (auto &s : allSelectedZones[selectedPart])
+        for (auto &s : state[selectedPart].selectedZones)
         {
             if (!s.isInWithPartials(engine))
                 continue;
@@ -1148,13 +1146,13 @@ bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck
     }
     else
     {
-        auto &lga = leadGroup[selectedPart];
+        auto &lga = state[selectedPart].leadGroup;
         if (!lga.isInWithPartials(engine))
             return true;
 
         const auto &lg = engine.getPatch()->getPart(lga.part)->getGroup(lga.group);
 
-        for (auto &s : allSelectedGroups[selectedPart])
+        for (auto &s : state[selectedPart].selectedGroups)
         {
             if (!s.isInWithPartials(engine))
                 continue;

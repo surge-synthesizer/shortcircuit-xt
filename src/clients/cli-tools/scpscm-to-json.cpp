@@ -34,6 +34,9 @@
 #include "json/engine_traits.h"
 
 #include "tao/json/msgpack/to_string.hpp"
+#include "tao/json/msgpack/from_string.hpp"
+#include "tao/json/to_string.hpp"
+#include "tao/json/from_string.hpp"
 
 template <template <typename...> class... Transformers, template <typename...> class Traits>
 void to_pretty_stream(std::ostream &os, const tao::json::basic_value<Traits> &v)
