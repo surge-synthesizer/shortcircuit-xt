@@ -132,7 +132,7 @@ struct DriveArea : juce::Component, HasEditor
             p.addSectionHeader(nm);
             p.addSeparator();
 
-            p.addItem("Remove '" + nm + "' from Locations", [w = juce::Component::SafePointer(
+            p.addItem("Remove '" + nm + "' from Favorites", [w = juce::Component::SafePointer(
                                                                  driveArea->browserPane),
                                                              removeThis = pth]() {
                 if (!w)
@@ -166,9 +166,9 @@ struct DriveArea : juce::Component, HasEditor
 #endif
             )
             {
-                std::string lab = "Add Location...";
+                std::string lab = "Add Favorite...";
                 if (idx)
-                    lab = "Add and Index Location...";
+                    lab = "Add and Index Favorite...";
                 p.addItem(lab, [idxx = idx, w = juce::Component::SafePointer(this)]() {
                     if (!w)
                         return;
@@ -178,6 +178,10 @@ struct DriveArea : juce::Component, HasEditor
                         juce::FileBrowserComponent::canSelectDirectories,
                         [idxxx = idxx, w, ed](const auto &c) {
                             auto result = c.getResults();
+                            if (result.size() != 1)
+                            {
+                                return;
+                            }
                             namespace cmsg = scxt::messaging::client;
                             auto fsp = shared::juceFileToFSPath(result[0]);
                             w->driveArea->browserPane->sendToSerialization(
@@ -712,7 +716,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 
             p.addSectionHeader("Directory");
             p.addSeparator();
-            p.addItem("Add to Locations",
+            p.addItem("Add to Favorites",
                       [w = juce::Component::SafePointer(browserPane), d = data[rowNumber]]() {
                           if (!w)
                               return;
@@ -721,7 +725,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                               cmsg::AddBrowserDeviceLocation({d.dirent.path().u8string(), false}));
                       });
 #if SHOW_INDEX_MENUS
-            p.addItem("Add to Index and Locations",
+            p.addItem("Add to Index and Favorites",
                       [w = juce::Component::SafePointer(browserPane), d = data[rowNumber]]() {
                           if (!w)
                               return;
