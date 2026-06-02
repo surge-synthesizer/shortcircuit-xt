@@ -114,7 +114,7 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
 
         wid = std::make_unique<typename std::remove_reference_t<decltype(wid)>::element_type>();
         wid->setSource(att.get());
-        setupWidgetForValueTooltip(wid.get(), att.get());
+        setupFloatWidget(wid.get(), att.get());
         addAndMakeVisible(*wid);
     };
     att(editor->partConfigurations[part].level, level, levelAtt);

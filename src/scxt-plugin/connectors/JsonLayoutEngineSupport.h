@@ -380,7 +380,7 @@ void attachAndPosition(P *parent, const std::unique_ptr<W> &ed, const std::uniqu
         return;
     if (ctrl.binding->type == "float" || cls.controlType == "integer-knob")
     {
-        parent->setupWidgetForValueTooltip(ed.get(), att);
+        parent->setupFloatWidget(ed.get(), att);
     }
     applyTooltipPositionFromExtra(*ed, ctrl, cls);
     ed->setSource(att.get());

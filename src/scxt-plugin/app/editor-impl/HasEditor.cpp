@@ -32,4 +32,8 @@ namespace scxt::ui::app
 {
 HasEditor::HasEditor(SCXTEditor *e) : editor(e) {}
 HasEditor::HasEditor(HasEditor *e) : editor(e->editor) {}
+void HasEditor::reportError(const std::string &title, const std::string &message) const
+{
+    editor->displayError(title, message);
+}
 } // namespace scxt::ui::app

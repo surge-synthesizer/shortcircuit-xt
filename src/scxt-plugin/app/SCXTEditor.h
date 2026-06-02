@@ -401,6 +401,16 @@ template <typename T> inline void HasEditor::sendToSerialization(const T &msg)
     editor->sendToSerialization(msg);
 }
 
+template <typename A> inline void HasEditor::wireErrorReporter(A &att)
+{
+    if constexpr (requires { att.onError; })
+    {
+        att.onError = [this](const std::string &title, const std::string &message) {
+            reportError(title, message);
+        };
+    }
+}
+
 template <typename T>
 concept HasValueAlternate = requires(T a) {
     { a.getValueAlternateAsString() } -> std::convertible_to<std::optional<std::string>>;
@@ -425,9 +435,9 @@ template <typename T> inline void HasEditor::updateValueTooltip(const T &at)
     editor->setTooltipContents(at.getLabel(), vas);
 }
 
-template <typename W, typename A>
-inline void HasEditor::setupWidgetForValueTooltip(W *w, const A &a)
+template <typename W, typename A> inline void HasEditor::setupFloatWidget(W *w, const A &a)
 {
+    wireErrorReporter(*a);
     w->onBeginEdit = [this, &slRef = *w, &atRef = *a]() {
         updateValueTooltip(atRef);
         editor->showTooltip(slRef);
@@ -453,9 +463,9 @@ inline void HasEditor::setupWidgetForValueTooltip(W *w, const A &a)
     }
 }
 
-template <typename W, typename A>
-inline void HasEditor::setupIntAttachedWidgetForValueMenu(W *w, const A &a)
+template <typename W, typename A> inline void HasEditor::setupIntWidget(W *w, const A &a)
 {
+    wireErrorReporter(*a);
     w->onPopupMenu = [this, q = juce::Component::SafePointer(w)](auto &mods) {
         auto qc = dynamic_cast<sst::jucegui::components::ContinuousParamEditor *>(q.getComponent());
         if (qc)

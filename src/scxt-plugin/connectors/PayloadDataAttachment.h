@@ -102,6 +102,7 @@ inline void configureUpdater(A &att, const typename A::payload_t &p, app::HasEdi
                              Args... args)
 {
     att.onGuiValueChanged = makeUpdater<M, A, ABase>(att, p, e, std::forward<Args>(args)...);
+    e->wireErrorReporter(att);
 }
 
 template <typename A, typename F> inline void addGuiStepBeforeSend(A &att, F preStep)
@@ -132,6 +133,8 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     std::string label;
     std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged{nullptr};
     std::function<bool(const PayloadDataAttachment &at)> isTemposynced{nullptr};
+    // reports a user-visible error (title, message); set by configureUpdater
+    std::function<void(const std::string &, const std::string &)> onError{nullptr};
 
     PayloadDataAttachment(const datamodel::pmd &cd,
                           std::function<void(const PayloadDataAttachment &at)> oGVC, ValueType &v)
@@ -257,6 +260,14 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
                 setValueFromGUI(*res);
                 return;
             }
+            else
+            {
+                if (onError)
+                    onError(label + ": Invalid Value", em);
+                else
+                    SCLOG_IF(debug, em);
+                return;
+            }
         }
         if (stringToValue)
         {
@@ -353,6 +364,8 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     ValueType prevValue;
     std::string label;
     std::function<void(const onGui_t &at)> onGuiValueChanged;
+    // reports a user-visible error (title, message); set by configureUpdater
+    std::function<void(const std::string &, const std::string &)> onError{nullptr};
 
     DiscretePayloadDataAttachment(const datamodel::pmd &cd,
                                   std::function<void(const onGui_t &at)> oGVC, ValueType &v)
@@ -568,11 +581,11 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
         }
         else if (showTT)
         {
-            e->setupWidgetForValueTooltip(wid.get(), att.get());
+            e->setupFloatWidget(wid.get(), att.get());
         }
         else
         {
-            e->setupIntAttachedWidgetForValueMenu(wid.get(), att.get());
+            e->setupIntWidget(wid.get(), att.get());
         }
         e->addSubscription(val, att);
 
