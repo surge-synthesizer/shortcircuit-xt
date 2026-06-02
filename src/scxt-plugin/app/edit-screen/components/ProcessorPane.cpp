@@ -1001,13 +1001,16 @@ void ProcessorPane::itemDropped(const juce::DragAndDropTarget::SourceDetails &dr
     if (!pp)
         return;
 
+    // ctrl (or cmd, natural on macOS) turns a swap-drag into a copy-drag
+    auto m = juce::ModifierKeys::getCurrentModifiers();
+    auto copy = m.isCtrlDown() || m.isCommandDown();
     if (forZone)
     {
-        sendToSerialization(cmsg::SwapZoneProcessors({index, pp->index}));
+        sendToSerialization(cmsg::SwapZoneProcessors({index, pp->index, copy}));
     }
     else
     {
-        sendToSerialization(cmsg::SwapGroupProcessors({index, pp->index}));
+        sendToSerialization(cmsg::SwapGroupProcessors({index, pp->index, copy}));
     }
     setIsAccented(false);
 }

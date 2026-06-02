@@ -279,24 +279,36 @@ CLIENT_TO_SERIAL_CONSTRAINED(
         }));
 
 // C2S set processor type (sends back data and metadata)
-typedef std::pair<int32_t, int32_t> processorPair_t;
+// tuple is {to, from, copy}. When copy is true the source processor is left
+// intact and the target becomes a copy of it rather than the two swapping.
+typedef std::tuple<int32_t, int32_t, bool> processorPair_t;
 inline void swapZoneProcessors(const processorPair_t &whichToType, const engine::Engine &engine,
                                messaging::MessageController &cont)
 {
-    const auto &[to, from] = whichToType;
+    const auto &[to, from, copy] = whichToType;
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     auto lz = engine.getSelectionManager()->currentLeadZone(engine);
 
     if (!sz.empty() && lz.has_value())
     {
         cont.scheduleAudioThreadCallback(
-            [q = sz, t = to, f = from](auto &engine) {
+            [q = sz, t = to, f = from, cp = copy](auto &engine) {
                 for (const auto &a : q)
                 {
                     const auto &z =
                         engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
                     auto fs = z->processorStorage[f];
                     auto ts = z->processorStorage[t];
+
+                    if (cp)
+                    {
+                        z->setProcessorType(t, (dsp::processor::ProcessorType)fs.type);
+                        z->processorStorage[t] = fs;
+
+                        z->checkOrAdjustBoolConsistency(t, false);
+                        z->checkOrAdjustIntConsistency(t, false);
+                        continue;
+                    }
 
                     z->setProcessorType(f, (dsp::processor::ProcessorType)ts.type);
                     z->setProcessorType(t, (dsp::processor::ProcessorType)fs.type);
@@ -331,19 +343,31 @@ CLIENT_TO_SERIAL(SwapZoneProcessors, c2s_swap_zone_processors, processorPair_t,
 inline void swapGroupProcessors(const processorPair_t &whichToType, const engine::Engine &engine,
                                 messaging::MessageController &cont)
 {
-    const auto &[to, from] = whichToType;
+    const auto &[to, from, copy] = whichToType;
     auto sg = engine.getSelectionManager()->currentlySelectedGroups();
     auto lg = engine.getSelectionManager()->currentLeadGroup(engine);
 
     if (!sg.empty() && lg.has_value())
     {
         cont.scheduleAudioThreadCallback(
-            [q = sg, t = to, f = from](auto &engine) {
+            [q = sg, t = to, f = from, cp = copy](auto &engine) {
                 for (const auto &a : q)
                 {
                     const auto &g = engine.getPatch()->getPart(a.part)->getGroup(a.group);
                     auto fs = g->processorStorage[f];
                     auto ts = g->processorStorage[t];
+
+                    if (cp)
+                    {
+                        g->setProcessorType(t, (dsp::processor::ProcessorType)fs.type);
+                        g->processorStorage[t] = fs;
+
+                        g->checkOrAdjustBoolConsistency(t, false);
+                        g->checkOrAdjustIntConsistency(t, false);
+
+                        g->rePrepareAndBindGroupMatrix();
+                        continue;
+                    }
 
                     g->setProcessorType(f, (dsp::processor::ProcessorType)ts.type);
                     g->setProcessorType(t, (dsp::processor::ProcessorType)fs.type);
