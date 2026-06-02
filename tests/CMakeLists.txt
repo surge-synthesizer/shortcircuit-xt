@@ -5,6 +5,7 @@ add_executable(scxt-test
 		sfz_parse.cpp
         streaming.cpp
 		sample_analytics.cpp
+		sample_load.cpp
 		processors_and_fx.cpp
 
 		ui_basics.cpp

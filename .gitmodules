@@ -72,3 +72,12 @@
 [submodule "libs/sst/sst-cmake"]
 	path = libs/sst/sst-cmake
 	url = https://github.com/surge-synthesizer/sst-cmake.git
+[submodule "libs/xiph/ogg"]
+	path = libs/xiph/ogg
+	url = https://github.com/xiph/ogg.git
+[submodule "libs/xiph/opus"]
+	path = libs/xiph/opus
+	url = https://github.com/xiph/opus.git
+[submodule "libs/xiph/opusfile"]
+	path = libs/xiph/opusfile
+	url = https://github.com/xiph/opusfile.git

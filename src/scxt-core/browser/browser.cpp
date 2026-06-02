@@ -75,8 +75,8 @@ std::vector<Browser::indexedRootPath_t> Browser::getRootPathsForDeviceView() con
     return res;
 }
 
-const std::vector<std::string> Browser::LoadableFile::singleSample{".wav", ".flac", ".mp3", ".aif",
-                                                                   ".aiff"};
+const std::vector<std::string> Browser::LoadableFile::singleSample{".wav",  ".flac", ".mp3",
+                                                                   ".opus", ".aif",  ".aiff"};
 
 const std::vector<std::string> Browser::LoadableFile::multiSample{".sf2", ".sfz", ".multisample",
                                                                   ".exs", ".gig", ".akp"};
