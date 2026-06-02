@@ -517,6 +517,12 @@ void SCXTEditorReceiver::onOtherTabSelection(
         auto v = std::atoi(bs.c_str());
         editor.editScreen->browser->selectPane(v);
     }
+
+    auto bp = editor.queryTabSelection(browser_ui::BrowserPane::browserPathKey);
+    if (!bp.empty() && editor.editScreen && editor.editScreen->browser)
+    {
+        editor.editScreen->browser->restoreSelectedPath(bp);
+    }
 }
 
 void SCXTEditorReceiver::onPartConfiguration(

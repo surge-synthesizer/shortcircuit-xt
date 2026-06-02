@@ -67,6 +67,11 @@ struct BrowserPane : public app::HasEditor, sst::jucegui::components::NamedPanel
     void selectPane(int, bool updatePrefs = false);
     int selectedPane{0};
 
+    // Tab-selection key under which the browser's current directory is persisted
+    static constexpr const char *browserPathKey{"browser.path"};
+    // Restore the current directory from a persisted utf8 path (no-op if it doesn't exist)
+    void restoreSelectedPath(const std::string &u8path);
+
     int lastClickedPotentialSample{-1};
     float previewAmplitude{1.f};
     bool autoPreviewEnabled{true};
