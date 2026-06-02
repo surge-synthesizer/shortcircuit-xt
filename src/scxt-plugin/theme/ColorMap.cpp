@@ -238,6 +238,7 @@ std::unique_ptr<ColorMap> ColorMap::createColorMap(scxt::ui::theme::ColorMap::Bu
     jsonMap[GRAYLOW] = "themes/Grayllow.json";
     jsonMap[LUX2] = "themes/Lux2.json";
     jsonMap[OCEANOR] = "themes/Oceanor.json";
+    jsonMap[SC1] = "themes/SC1.json";
 
     auto jf = jsonMap.find(cm);
     if (jf != jsonMap.end())

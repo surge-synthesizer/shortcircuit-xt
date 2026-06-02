@@ -1,0 +1,39 @@
+[
+   {
+      "hoverfactor": "0.100000",
+      "version": "2"
+   },
+   {
+      "accent_1a": "#ff153c50",
+      "accent_1b": "#ff19569b",
+      "accent_1b_alpha_a": "#1419569b",
+      "accent_1b_alpha_b": "#5219569b",
+      "accent_1b_alpha_c": "#8019569b",
+      "accent_2a": "#ff45779e",
+      "accent_2a_alpha_a": "#1445779e",
+      "accent_2a_alpha_b": "#5245779e",
+      "accent_2a_alpha_c": "#8045779e",
+      "accent_2b": "#ffb0ada0",
+      "accent_2b_alpha_a": "#14b0ada0",
+      "accent_2b_alpha_b": "#52b0ada0",
+      "accent_2b_alpha_c": "#80b0ada0",
+      "bg_1": "#ffe2e2e2",
+      "bg_2": "#d1c9c9c5",
+      "bg_3": "#dcbec5c8",
+      "bg_main": "#ff7c8080",
+      "generic_content_high": "#ff3b3d4b",
+      "generic_content_highest": "#ffe9e9e9",
+      "generic_content_low": "#ff000000",
+      "generic_content_lowest": "#ff000000",
+      "generic_content_medium": "#ff000000",
+      "grid_primary": "#ffbfbfbf",
+      "grid_secondary": "#ff393939",
+      "gutter_2": "#ff96a1a5",
+      "gutter_3": "#ff9aa0a3",
+      "knob_fill": "#ffa0a1a1",
+      "panel_outline_2": "#ffa2a3a4",
+      "panel_outline_3": "#ff000000",
+      "warning_1a": "#ffd67272",
+      "warning_1b": "#ff8a0000"
+   }
+]

@@ -459,6 +459,7 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
     p.addSectionHeader("Themes");
     std::vector<std::pair<theme::ColorMap::BuiltInColorMaps, std::string>> maps = {
         {theme::ColorMap::WIREFRAME, "Default Colors"},
+        {theme::ColorMap::SC1, "SC1 Colors"},
 
         {theme::ColorMap::CELTIC, "Celtic"},
         {theme::ColorMap::GRAYLOW, "GrayLow"},

@@ -41,7 +41,8 @@ struct ColorMap
         CELTIC = 'cltc',
         LUX2 = 'lux2',
         GRAYLOW = 'grlw',
-        OCEANOR = 'ocen'
+        OCEANOR = 'ocen',
+        SC1 = 'sc1 '
 
     } myId{WIREFRAME};
     static constexpr uint32_t FILE_COLORMAP_ID{'fcmp'};
