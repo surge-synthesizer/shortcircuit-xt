@@ -222,7 +222,7 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
         auto at = std::make_unique<boolAttachment_t>("Temposync", onGuiChange,
                                                      getPartFXStorage().second.isTemposync);
         res->setSource(at.get());
-        setupWidgetForValueTooltip(res.get(), at);
+        setupFloatWidget(res.get(), at);
         addAndMakeVisible(*res);
 
         boolAttachments.insert(std::move(at));
@@ -253,7 +253,7 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
             std::make_unique<boolAttachment_t>(effectDisplayName(t, true) + " Active", onGuiChange,
                                                getPartFXStorage().second.isActive);
         setToggleDataSource(at.get());
-        setupWidgetForValueTooltip(toggleButton.get(), at);
+        setupFloatWidget(toggleButton.get(), at);
         boolAttachments.insert(std::move(at));
         addAndMakeVisible(*toggleButton);
     }
@@ -295,7 +295,7 @@ T *PartEffectsPane<forBus>::attachWidgetToFloat(int pidx)
         w->setEnabled(true);
     }
 
-    setupWidgetForValueTooltip(w.get(), at);
+    setupFloatWidget(w.get(), at);
     addAndMakeVisible(*w);
 
     if constexpr (std::is_same_v<T, jcmp::Knob>)

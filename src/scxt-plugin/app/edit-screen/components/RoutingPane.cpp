@@ -553,7 +553,7 @@ RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e)
         oversampleButton->setLabel("2xOS");
         oversampleButton->setLabelDrawsBackground(false);
 
-        setupWidgetForValueTooltip(oversampleButton.get(), oversampleAttachment);
+        setupFloatWidget(oversampleButton.get(), oversampleAttachment);
         addAdditionalHamburgerComponent(std::move(oversampleButton), 28);
     }
 

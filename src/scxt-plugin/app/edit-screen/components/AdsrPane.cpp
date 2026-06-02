@@ -180,7 +180,7 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
         gateToggle->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::LABELED);
         gateToggle->setLabel(u8"\xE2\x88\x80");
         gateToggle->setSource(gateToggleA.get());
-        setupWidgetForValueTooltip(gateToggle.get(), gateToggleA.get());
+        setupFloatWidget(gateToggle.get(), gateToggleA.get());
         getContentAreaComponent()->addAndMakeVisible(*gateToggle);
     }
 
