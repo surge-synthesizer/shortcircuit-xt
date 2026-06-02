@@ -954,6 +954,80 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
     }
 }
 
+void Engine::loadSamplesIntoNewZoneAsVariants(const std::vector<fs::path> &paths, int16_t rootKey,
+                                              KeyboardRange krange, VelocityRange vrange)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+
+    // The UI guards this too, but don't trust the caller — a zone can't hold more than
+    // maxVariantsPerZone variants.
+    if (paths.size() > maxVariantsPerZone)
+    {
+        RAISE_ERROR_CONT(*messageController, "Too many samples",
+                         "Cannot stack " + std::to_string(paths.size()) +
+                             " samples as variants; a zone holds at most " +
+                             std::to_string(maxVariantsPerZone) + ".");
+        return;
+    }
+
+    // Load each plain sample on this thread, collecting the ones that succeed
+    std::vector<SampleID> sids;
+    for (const auto &p : paths)
+    {
+        if (sids.size() >= maxVariantsPerZone)
+            break;
+        auto sid = sampleManager->loadSampleByPath(p);
+        if (!sid.has_value())
+        {
+            RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
+                             "Sample load failed:\n\n" + p.u8string() + "\n\n" +
+                                 "It is either an unsupported format or invalid file. "
+                                 "More information may be available in the log file (menu/log)");
+            continue;
+        }
+        sids.push_back(*sid);
+    }
+
+    if (sids.empty())
+        return;
+
+    // Per-variant we only read loop/endpoint info so each sample's metadata doesn't
+    // clobber the zone's keyboard/velocity mapping.
+    auto sir = (int)Zone::SampleInformationRead::LOOP | (int)Zone::SampleInformationRead::ENDPOINTS;
+
+    auto zptr = std::make_unique<Zone>(sids[0]);
+    zptr->mapping.keyboardRange = krange;
+    zptr->mapping.velocityRange = vrange;
+    zptr->mapping.rootKey = rootKey;
+    zptr->attachToSample(*sampleManager, 0, sir);
+    for (size_t i = 1; i < sids.size(); ++i)
+        zptr->attachToSampleAtVariation(*sampleManager, sids[i], (int16_t)i, sir);
+
+    auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
+
+    // Push an undo step for the group before modifying it
+    {
+        auto undoItem = std::make_unique<undo::GroupChangeItem>();
+        undoItem->store(*this, sp, sg);
+        undoManager.storeUndoStep(std::move(undoItem));
+    }
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
+            std::unique_ptr<Zone> zptr;
+            zptr.reset(zone);
+            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp = sp, sg = sg](auto &e) {
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            int32_t zi = g->getZones().size() - 1;
+            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
+        });
+}
+
 void Engine::loadSampleIntoGroup(const fs::path &p, int part, int group)
 {
     assert(messageController->threadingChecker.isSerialThread());

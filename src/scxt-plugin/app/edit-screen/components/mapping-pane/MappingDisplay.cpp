@@ -453,27 +453,58 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
         auto r = mappingZones->rootAndRangeForPosition(dragSourceDetails.localPosition,
                                                        dropElementCount, false);
         assert(r.size() > 0);
-        assert(r.size() == dropElementCount);
         if (wsi->encompassesMultipleSampleInfos())
         {
             auto els = wsi->getMultipleSampleInfos();
             auto nEls = els.size();
             assert(nEls == dropElementCount);
-            int idx{0};
-            for (auto e : els)
-            {
-                auto &loc = r[std::min(idx++, (int)nEls - 1)];
 
-                if (e->getCompoundElement().has_value())
+            // Alt held: rootAndRangeForPosition collapses to a single range, signalling
+            // "stack all dropped samples as variants of one zone" (plain files only).
+            bool altStack = (r.size() == 1 && dropElementCount > 1);
+            bool allPlainFiles = true;
+            for (auto e : els)
+                allPlainFiles &=
+                    (!e->getCompoundElement().has_value() && e->getDirEnt().has_value());
+
+            if (altStack && allPlainFiles)
+            {
+                if (nEls > engine::Zone::maxVariantsPerZone)
                 {
-                    sendToSerialization(cmsg::AddCompoundElementWithRange(
-                        {*e->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                    editor->displayError("Too many samples",
+                                         "You tried to stack " + std::to_string(nEls) +
+                                             " samples as variants, but a zone can hold at most " +
+                                             std::to_string(engine::Zone::maxVariantsPerZone) +
+                                             ".");
+                    return;
                 }
-                else if (e->getDirEnt().has_value())
+                std::vector<std::string> paths;
+                for (auto e : els)
+                    paths.push_back(e->getDirEnt()->path().u8string());
+                auto &loc = r[0];
+                sendToSerialization(cmsg::AddSamplesAsVariantsWithRange(
+                    {paths, loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+            }
+            else
+            {
+                assert(r.size() == dropElementCount);
+                int idx{0};
+                for (auto e : els)
                 {
-                    sendToSerialization(
-                        cmsg::AddSampleWithRange({e->getDirEnt()->path().u8string(), loc.root,
-                                                  loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                    auto &loc = r[std::min(idx++, (int)nEls - 1)];
+
+                    if (e->getCompoundElement().has_value())
+                    {
+                        sendToSerialization(
+                            cmsg::AddCompoundElementWithRange({*e->getCompoundElement(), loc.root,
+                                                               loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                    }
+                    else if (e->getDirEnt().has_value())
+                    {
+                        sendToSerialization(
+                            cmsg::AddSampleWithRange({e->getDirEnt()->path().u8string(), loc.root,
+                                                      loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                    }
                 }
             }
         }
@@ -692,10 +723,48 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
         sendToSerialization(cmsg::ClearPart(editor->selectedPart));
 
     auto regions = mappingZones->rootAndRangeForPosition({x, y}, files.size(), false);
+
+    // Alt held: a single region means "stack all dropped files as variants of one zone".
+    // Only plain audio files (not instrument containers) are stacked.
+    if (regions.size() == 1 && files.size() > 1)
+    {
+        bool allPlain = true;
+        std::vector<std::string> paths;
+        for (auto f : files)
+        {
+            auto p = fs::path{(const char *)(f.toUTF8())};
+            if (!browser::Browser::getMultiInstrumentElements(p).empty())
+            {
+                allPlain = false;
+                break;
+            }
+            paths.push_back(f.toStdString());
+        }
+        if (allPlain)
+        {
+            if ((int)paths.size() > engine::Zone::maxVariantsPerZone)
+            {
+                editor->displayError("Too many samples",
+                                     "You tried to stack " + std::to_string(paths.size()) +
+                                         " samples as variants, but a zone can hold at most " +
+                                         std::to_string(engine::Zone::maxVariantsPerZone) + ".");
+                repaint();
+                return;
+            }
+            auto &loc = regions[0];
+            sendToSerialization(cmsg::AddSamplesAsVariantsWithRange(
+                {paths, loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+            if (editor->editScreen->partSidebar)
+                editor->editScreen->partSidebar->setSelectedTab(2);
+            repaint();
+            return;
+        }
+    }
+
     int lidx{0};
     for (auto f : files)
     {
-        auto &loc = regions[lidx++];
+        auto &loc = regions[std::min(lidx++, (int)regions.size() - 1)];
         auto p = fs::path{(const char *)(f.toUTF8())};
         auto inst = browser::Browser::getMultiInstrumentElements(p);
         if (inst.empty())

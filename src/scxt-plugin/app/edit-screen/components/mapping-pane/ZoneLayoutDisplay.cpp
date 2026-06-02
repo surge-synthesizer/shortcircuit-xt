@@ -927,6 +927,16 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             }
             first = false;
         }
+
+        // Alt-stack: a single range covering multiple dropped samples becomes one zone
+        // whose variants are those samples. Label it so the user knows what they'll get.
+        if (display->dropElementCount > 1 && ranges.size() == 1)
+        {
+            auto &rr = ranges[0];
+            auto rb = rectangleForRange(rr.lo, rr.hi, rr.vlo, rr.vhi);
+            labelZoneRectangle(g, rb, std::to_string(display->dropElementCount) + " variants",
+                               editor->themeColor(theme::ColorMap::accent_1a));
+        }
     }
 
     if (mouseState == MULTI_SELECT || mouseState == CREATE_EMPTY_ZONE)

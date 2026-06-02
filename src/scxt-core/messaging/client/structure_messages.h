@@ -91,6 +91,25 @@ inline void addSampleWithRange(const addSampleWithRange_t &payload, engine::Engi
 CLIENT_TO_SERIAL(AddSampleWithRange, c2s_add_sample_with_range, addSampleWithRange_t,
                  addSampleWithRange(payload, engine, cont);)
 
+// samples, root, midi start end, vel start end — stack all samples as variants of one zone
+using addSamplesAsVariantsWithRange_t =
+    std::tuple<std::vector<std::string>, int, int, int, int, int>;
+inline void addSamplesAsVariantsWithRange(const addSamplesAsVariantsWithRange_t &payload,
+                                          engine::Engine &engine, MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    std::vector<fs::path> paths;
+    for (const auto &s : std::get<0>(payload))
+        paths.push_back(fs::path(fs::u8path(s)));
+    auto rk = std::get<1>(payload);
+    auto kr = engine::KeyboardRange(std::get<2>(payload), std::get<3>(payload));
+    auto vr = engine::VelocityRange(std::get<4>(payload), std::get<5>(payload));
+    engine.loadSamplesIntoNewZoneAsVariants(paths, rk, kr, vr);
+}
+CLIENT_TO_SERIAL(AddSamplesAsVariantsWithRange, c2s_add_samples_as_variants_with_range,
+                 addSamplesAsVariantsWithRange_t,
+                 addSamplesAsVariantsWithRange(payload, engine, cont);)
+
 // path, part, group — drops the sample into an explicit group bypassing selection
 using addSampleToGroupPayload_t = std::tuple<std::string, int, int>;
 inline void addSampleToGroupFn(const addSampleToGroupPayload_t &payload, engine::Engine &engine,
