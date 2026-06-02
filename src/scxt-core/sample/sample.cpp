@@ -122,6 +122,25 @@ bool Sample::load(const fs::path &path)
             addError("Unable to parse FLAC");
         }
     }
+    else if (extensionMatches(path, ".opus"))
+    {
+        if (parseOpus(path))
+        {
+            sample_loaded = true;
+            type = OPUS_FILE;
+            mFileName = path;
+            displayName = fmt::format("{}", path.filename().u8string());
+            compoundSourceDetails = "";
+
+            id.setAsMD5(md5Sum);
+
+            return true;
+        }
+        else
+        {
+            addError("Unable to parse Opus");
+        }
+    }
     else if (extensionMatches(path, ".aif") || extensionMatches(path, ".aiff"))
     {
         auto fmv = std::make_unique<infrastructure::FileMapView>(path);
@@ -338,6 +357,20 @@ bool Sample::loadFromSCXTMonolith(const fs::path &path, RIFF::File *f, int sampl
         auto res = parseMP3(dat.data.data(), dat.data.size());
         if (!res)
             addError("Unable to parse embedded MP3");
+
+        mFileName = path;
+        preset = -1;
+        instrument = -1;
+        region = sampleIndex;
+        type = SCXT_FILE;
+
+        return res;
+    }
+    else if (extensionMatches(fnP, ".opus"))
+    {
+        auto res = parseOpus(dat.data.data(), dat.data.size());
+        if (!res)
+            addError("Unable to parse embedded Opus");
 
         mFileName = path;
         preset = -1;
@@ -571,6 +604,9 @@ void Sample::dumpInformationToLog()
     case MP3_FILE:
         SCLOG_IF(sampleLoadAndPurge, "MP3 File : " << getPath().u8string());
         break;
+    case OPUS_FILE:
+        SCLOG_IF(sampleLoadAndPurge, "Opus File : " << getPath().u8string());
+        break;
     case AIFF_FILE:
         SCLOG_IF(sampleLoadAndPurge, "AIFF File : " << getPath().u8string());
         break;
@@ -662,6 +698,8 @@ Sample::SourceType Sample::sourceTypeFromPath(const fs::path &path)
         return SourceType::FLAC_FILE;
     if (extensionMatches(path, ".mp3"))
         return SourceType::MP3_FILE;
+    if (extensionMatches(path, ".opus"))
+        return SourceType::OPUS_FILE;
     if (extensionMatches(path, ".aif") || extensionMatches(path, ".aiff"))
         return SourceType::AIFF_FILE;
     if (extensionMatches(path, ".multisample"))

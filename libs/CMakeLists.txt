@@ -36,6 +36,9 @@ add_subdirectory(sqlite3-3.42.0)
 add_subdirectory(xiph)
 set_target_properties(FLAC PROPERTIES UNITY_BUILD FALSE)
 set_target_properties(FLAC++ PROPERTIES UNITY_BUILD FALSE)
+if (${SCXT_USE_OPUS})
+    set_target_properties(ogg opus opusfile PROPERTIES UNITY_BUILD FALSE)
+endif()
 
 
 add_subdirectory(eurorack)

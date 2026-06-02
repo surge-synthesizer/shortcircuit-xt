@@ -55,6 +55,9 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                  case sample::Sample::MP3_FILE:
                      v = "mp3";
                      break;
+                 case sample::Sample::OPUS_FILE:
+                     v = "opus";
+                     break;
                  case sample::Sample::SF2_FILE:
                      v = "sf2";
                      break;
@@ -113,6 +116,8 @@ SC_STREAMDEF(scxt::sample::Sample::SourceType, SC_FROM({
                          to = sample::Sample::FLAC_FILE;
                      if (k == "mp3")
                          to = sample::Sample::MP3_FILE;
+                     if (k == "opus")
+                         to = sample::Sample::OPUS_FILE;
                      if (k == "aiff")
                          to = sample::Sample::AIFF_FILE;
                      if (k == "multisample")

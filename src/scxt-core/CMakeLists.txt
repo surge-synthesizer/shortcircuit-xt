@@ -31,6 +31,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/loaders/load_aiff.cpp
         sample/loaders/load_flac.cpp
         sample/loaders/load_mp3.cpp
+        sample/loaders/load_opus.cpp
 
         sample/import_support/import_harness.cpp
         sample/import_support/import_mapping.cpp
@@ -118,6 +119,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 
         FLAC++
         minimp3
+        opusfile
         md5sum::md5
 
         scxt-resources-core

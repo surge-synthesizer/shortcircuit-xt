@@ -46,6 +46,7 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         SFZ_FILE,
         FLAC_FILE,
         MP3_FILE,
+        OPUS_FILE,
         AIFF_FILE,
         MULTISAMPLE_FILE,
         GIG_FILE,
@@ -126,6 +127,8 @@ struct alignas(16) Sample : MoveableOnly<Sample>
     bool parseFlac(const uint8_t *data, size_t size);
     bool parseMP3(const fs::path &p);
     bool parseMP3(const uint8_t *data, size_t size);
+    bool parseOpus(const fs::path &p);
+    bool parseOpus(const uint8_t *data, size_t size);
 
     void *__restrict sampleData[2]{nullptr, nullptr};
 

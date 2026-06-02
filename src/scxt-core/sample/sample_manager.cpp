@@ -100,6 +100,7 @@ SampleManager::loadSampleByFileAddress(const Sample::SampleFileAddress &addr, co
     case Sample::WAV_FILE:
     case Sample::FLAC_FILE:
     case Sample::MP3_FILE:
+    case Sample::OPUS_FILE:
     case Sample::AIFF_FILE:
     {
         nid = loadSampleByPath(addr.path);
