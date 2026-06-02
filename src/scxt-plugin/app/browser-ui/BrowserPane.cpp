@@ -384,6 +384,40 @@ struct DriveFSArea : juce::Component, HasEditor
         for (auto &c : lcontents)
             contents.emplace_back(c);
         listView->refresh();
+
+        // Persist the directory so it survives editor recreation (see GH #2070)
+        editor->setTabSelection(BrowserPane::browserPathKey, currentPath.u8string());
+    }
+
+    // Restore a previously persisted directory, recovering the device root so
+    // ".." navigation stops at the right place.
+    void restoreFromSavedPath(const fs::path &p)
+    {
+        auto isAncestorOrEqual = [](const fs::path &anc, const fs::path &desc) {
+            auto a = anc.begin();
+            auto d = desc.begin();
+            for (; a != anc.end() && d != desc.end(); ++a, ++d)
+            {
+                if (*a != *d)
+                    return false;
+            }
+            return a == anc.end();
+        };
+
+        fs::path bestRoot;
+        for (const auto &r : browserPane->roots)
+        {
+            const auto &rp = std::get<0>(r);
+            if (isAncestorOrEqual(rp, p) && std::distance(rp.begin(), rp.end()) >=
+                                                std::distance(bestRoot.begin(), bestRoot.end()))
+                bestRoot = rp;
+        }
+        if (!bestRoot.empty())
+        {
+            rootPath = bestRoot;
+            currentPath = p;
+            recalcContents();
+        }
     }
 
     void resized() override
@@ -1150,6 +1184,17 @@ void BrowserPane::selectPane(int i, bool updatePrefs)
     {
         editor->setTabSelection("browser.source", std::to_string(i));
     }
+    repaint();
+}
+
+void BrowserPane::restoreSelectedPath(const std::string &u8path)
+{
+    if (u8path.empty() || !devicesPane || !devicesPane->driveFSArea)
+        return;
+    auto p = fs::path(fs::u8path(u8path));
+    if (!fs::exists(p) || !fs::is_directory(p))
+        return;
+    devicesPane->driveFSArea->restoreFromSavedPath(p);
     repaint();
 }
 
