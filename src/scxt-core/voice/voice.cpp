@@ -338,7 +338,9 @@ template <bool OS> bool Voice::processWithOS()
         }
         // we need the aegOS for the curve in oversample space
         aegOS.processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP,
-                                    *aegp.asP, *aegp.dsP, *aegp.rsP, aegGate, true);
+                                    *aegp.asP, *aegp.dsP, *aegp.rsP, aegGate, true,
+                                    zone->egStorage[0].isTemposync,
+                                    engine->transport.tempo / 120.f);
     }
 
     // But We need to run the undersample AEG no matter what since it is a modulation source
@@ -348,7 +350,8 @@ template <bool OS> bool Voice::processWithOS()
         aegGate = getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage, isAnyGeneratorRunning);
     }
     aeg.processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP,
-                              *aegp.asP, *aegp.dsP, *aegp.rsP, aegGate, true);
+                              *aegp.asP, *aegp.dsP, *aegp.rsP, aegGate, true,
+                              zone->egStorage[0].isTemposync, engine->transport.tempo / 120.f);
     // TODO: And output is non zero once we are past attack
     isAEGRunning = (aeg.stage != ahdsrenv_t ::s_complete);
 
@@ -370,7 +373,9 @@ template <bool OS> bool Voice::processWithOS()
             }
 
             eg[i].processBlockWithDelay(*eg2p.dlyP, *eg2p.aP, *eg2p.hP, *eg2p.dP, *eg2p.sP,
-                                        *eg2p.rP, *eg2p.asP, *eg2p.dsP, *eg2p.rsP, egiGate, false);
+                                        *eg2p.rP, *eg2p.asP, *eg2p.dsP, *eg2p.rsP, egiGate, false,
+                                        zone->egStorage[i].isTemposync,
+                                        engine->transport.tempo / 120.f);
         }
     }
     updateTransportPhasors();

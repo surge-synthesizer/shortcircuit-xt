@@ -65,6 +65,17 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     std::unique_ptr<sst::jucegui::components::ToggleButton> gateToggle;
     std::unique_ptr<boolAttachment_t> gateToggleA;
 
+    // blanket temposync toggle (all-or-none) shown in the panel header
+    std::unique_ptr<boolAttachment_t> tempoSyncA;
+    template <typename T> void setAttachmentAsTemposync(T &t)
+    {
+        t.setTemposyncFunction([w = juce::Component::SafePointer(this)](const auto &) {
+            if (w)
+                return w->adsrView.isTemposync;
+            return false;
+        });
+    }
+
     modulation::modulators::AdsrStorage adsrView;
     std::array<modulation::modulators::AdsrStorage, scxt::egsPerZone - 1> zoneAdsrCache;
     size_t displayedTabIndex{0};

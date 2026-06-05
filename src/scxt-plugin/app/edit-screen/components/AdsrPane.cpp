@@ -146,6 +146,8 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
     // c++ partial application is a bummer
     auto attc = [&](auto &t, auto &a, auto &w) {
         fac::attach(adsrView, t, this, a, w, forZone, useIdx);
+        if (a->description.canTemposync)
+            setAttachmentAsTemposync(*a);
         getContentAreaComponent()->addAndMakeVisible(*w);
     };
     attc(adsrView.dly, attachments.dly, sliders.dly);
@@ -184,6 +186,19 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
         getContentAreaComponent()->addAndMakeVisible(*gateToggle);
     }
 
+    {
+        // blanket temposync toggle in the panel header (mirrors the LFO metronome)
+        using tsfac = connectors::BooleanSingleValueFactory<boolAttachment_t,
+                                                            cmsg::UpdateZoneOrGroupEGBoolValue>;
+        std::unique_ptr<comp::ToggleButton> tsb;
+        tsfac::attach(adsrView, adsrView.isTemposync, this, tempoSyncA, tsb, forZone, useIdx);
+        tsb->setDrawMode(comp::ToggleButton::DrawMode::GLYPH);
+        tsb->setGlyph(comp::GlyphPainter::METRONOME);
+        setupFloatWidget(tsb.get(), tempoSyncA);
+        clearAdditionalHamburgerComponents();
+        addAdditionalHamburgerComponent(std::move(tsb));
+    }
+
     if (forZone)
     {
         editor->themeApplier.applyZoneMultiScreenModulationTheme(this);
@@ -216,6 +231,7 @@ void AdsrPane::updateSustainBreakpoint()
 
 void AdsrPane::resized()
 {
+    NamedPanel::resized();
     auto r = getContentArea();
     getContentAreaComponent()->setBounds(r);
 

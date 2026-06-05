@@ -277,7 +277,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
                 egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage, false);
             }
             eg[i].processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP,
-                                        *aegp.rP, *aegp.asP, *aegp.dsP, *aegp.rsP, egiGate, false);
+                                        *aegp.rP, *aegp.asP, *aegp.dsP, *aegp.rsP, egiGate, false,
+                                        gegStorage[i].isTemposync, e.transport.tempo / 120.f);
         }
     }
 
