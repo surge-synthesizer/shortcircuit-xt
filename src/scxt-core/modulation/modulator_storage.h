@@ -71,6 +71,11 @@ struct AdsrStorage
      * Gate mode (only used by group)
      */
     bool gateGroupEGOnAnyPlaying{false};
+
+    /*
+     * Blanket temposync for the envelope times. All-or-none.
+     */
+    bool isTemposync{false};
 };
 
 using StepLFOStorage = sst::basic_blocks::modulators::StepLFO<scxt::blockSize>::Storage;
@@ -277,7 +282,10 @@ inline scxt::datamodel::pmd envelopeThirtyTwo()
 }
 
 // New way
-inline scxt::datamodel::pmd envTime() { return scxt::datamodel::pmd().as25SecondExpTime(); }
+inline scxt::datamodel::pmd envTime()
+{
+    return scxt::datamodel::pmd().as25SecondTemposyncableEnvTime();
+}
 
 SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
     SC_FIELD(dly, envTime().withDefault(0.f).withName("Delay"));
@@ -291,6 +299,7 @@ SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
     SC_FIELD(rShape, pmd().asPercentBipolar().withName("Release Shape"));
     SC_FIELD(gateGroupEGOnAnyPlaying,
              pmd().asOnOffBool().withName("Gated if ungated voices sounding"));
+    SC_FIELD(isTemposync, pmd().asOnOffBool().withName("Temposync"));
 })
 
 // We describe modulator storage as a compound since we address
