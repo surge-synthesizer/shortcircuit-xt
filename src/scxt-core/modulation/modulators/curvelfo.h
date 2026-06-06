@@ -121,10 +121,12 @@ struct CurveLFO : SampleRateSupport
     {
         float tsRatio{1.0};
         float rt = rate;
+        bool isTemposync{false};
         if (settings && td && settings->temposync)
         {
             rt = -tsConverter.snapToTemposync(-rt);
             tsRatio = td->tempo / 120.0;
+            isTemposync = true;
         }
         simpleLfo.process_block(rt, deform, curveShape, false, tsRatio, angle);
         auto lfov = simpleLfo.lastTarget;
@@ -133,7 +135,7 @@ struct CurveLFO : SampleRateSupport
         auto ev = 1.f;
         if (useEnv)
         {
-            simpleEnv.processBlock01AD(delay, attack, release, isGated);
+            simpleEnv.processBlock01AD(delay, attack, release, isGated, isTemposync, tsRatio);
             ev = simpleEnv.outBlock0;
         }
         output = lfov * ev;
