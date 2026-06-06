@@ -250,7 +250,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
                                *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
-                               useGate);
+                               useGate, modulatorStorage[i].temposync, e.transport.tempo / 120.f);
             envLfos[i].output *= *(endpoints.lfo[i].amplitudeP);
         }
         else

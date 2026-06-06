@@ -295,7 +295,8 @@ template <bool OS> bool Voice::processWithOS()
 
             envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
                                *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
-                               useGate);
+                               useGate, zone->modulatorStorage[i].temposync,
+                               engine->transport.tempo / 120.f);
             envLfos[i].output *= *(endpoints->lfo[i].amplitudeP);
         }
         else

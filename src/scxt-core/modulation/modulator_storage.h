@@ -284,7 +284,7 @@ inline scxt::datamodel::pmd envelopeThirtyTwo()
 // New way
 inline scxt::datamodel::pmd envTime()
 {
-    return scxt::datamodel::pmd().as25SecondTemposyncableEnvTime();
+    return scxt::datamodel::pmd().as25SecondTemposyncableExpTime();
 }
 
 SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {

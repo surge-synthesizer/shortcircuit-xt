@@ -53,11 +53,13 @@ struct EnvLFO : SampleRateSupport
     }
 
     void process(float delay, float attack, float hold, float decay, float sustain, float release,
-                 float aShape, float dShape, float rShape, float rateMul, bool isGated)
+                 float aShape, float dShape, float rShape, float rateMul, bool isGated,
+                 bool isTemposync = false, float temposyncRatio = 1.f)
     {
         auto rm = scxt::dsp::twoToTheXTable.twoToThe(rateMul);
         envelope.processBlockWithDelayAndRateMul(delay, attack, hold, decay, sustain, release,
-                                                 aShape, dShape, rShape, rm, isGated, false);
+                                                 aShape, dShape, rShape, rm, isGated, false,
+                                                 isTemposync, temposyncRatio);
         output = envelope.outBlock0;
     }
 

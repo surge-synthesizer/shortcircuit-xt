@@ -756,6 +756,11 @@ struct ENVLFOPane : juce::Component, HasEditor
         auto makeO = [&, this](auto &mem, auto &A, auto &S, auto &L, const std::string &ln = "") {
             fac::attachAndAdd(ms, mem, this, A, S, parent->forZone, parent->selectedTab);
 
+            if (A->description.canTemposync)
+            {
+                parent->setAttachmentAsTemposync(*A);
+            }
+
             if (ln.empty())
                 makeLabel(L, A->getLabel());
             else
