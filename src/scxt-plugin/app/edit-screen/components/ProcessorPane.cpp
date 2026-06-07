@@ -48,8 +48,6 @@
 #include "sst/filters/FilterConfigurationLabels.h"
 #include <sst/jucegui/components/MenuButton.h>
 
-#include "theme/Layout.h"
-
 #include "sst/voice-effects/VoiceEffectsPresetSupport.h"
 
 #include "EQDisplay.h"
@@ -494,8 +492,12 @@ void ProcessorPane::resetControls()
     // we assume the controls clear before attachments so make sure of that
     for (auto &k : floatEditors)
         k.reset(nullptr);
+    for (auto &l : floatLabels)
+        l.reset(nullptr);
     for (auto &i : intEditors)
         i.reset(nullptr);
+    for (auto &l : intLabels)
+        l.reset(nullptr);
     mixEditor.reset(nullptr);
     otherEditors.clear();
 
@@ -679,8 +681,8 @@ void ProcessorPane::rebuildControlsFromDescription()
     mixAttachment = std::move(at);
 
     clearAdditionalHamburgerComponents();
-    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment, "Mix");
-    addAdditionalHamburgerComponent(std::move(mixEditor->item));
+    mixEditor = createWidgetAttachedTo<jcmp::Knob>(mixAttachment);
+    addAdditionalHamburgerComponent(std::move(mixEditor));
 
     auto jit = jsonDefinitions.find(processorControlDescription.type);
     if (jit != jsonDefinitions.end())
@@ -776,14 +778,10 @@ void ProcessorPane::layoutControls()
 
     for (int i = 0; i < processorControlDescription.numFloatParams; ++i)
     {
-        floatEditors[i] = createWidgetAttachedTo(
-            floatAttachments[i], processorControlDescription.floatControlDescriptions[i].name);
-        floatEditors[i]->item->setBounds(kb.reduced(3));
-        floatEditors[i]->label->setBounds(lb);
-
-        auto label = std::make_unique<sst::jucegui::components::Label>();
-        label->setText(processorControlDescription.floatControlDescriptions[i].name);
-        getContentAreaComponent()->addAndMakeVisible(*label);
+        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i]);
+        floatLabels[i] = createLabel(processorControlDescription.floatControlDescriptions[i].name);
+        floatEditors[i]->setBounds(kb.reduced(3));
+        floatLabels[i]->setBounds(lb);
 
         kb = kb.translated(kw, 0);
         lb = lb.translated(kw, 0);
@@ -800,16 +798,10 @@ void ProcessorPane::layoutControls()
         kn->setSource(intAttachments[i].get());
         kn->setBounds(kb);
         getContentAreaComponent()->addAndMakeVisible(*kn);
+        intEditors[i] = std::move(kn);
 
-        auto label = std::make_unique<sst::jucegui::components::Label>();
-        label->setText(processorControlDescription.intControlDescriptions[i].name);
-        label->setBounds(lb);
-        getContentAreaComponent()->addAndMakeVisible(*label);
-
-        intEditors[i] = std::make_unique<
-            theme::layout::Labeled<sst::jucegui::components::DiscreteParamEditor>>();
-        intEditors[i]->item = std::move(kn);
-        intEditors[i]->label = std::move(label);
+        intLabels[i] = createLabel(processorControlDescription.intControlDescriptions[i].name);
+        intLabels[i]->setBounds(lb);
 
         kb = kb.translated(kw, 0);
         lb = lb.translated(kw, 0);
@@ -833,9 +825,7 @@ void ProcessorPane::layoutControlsEBWaveforms()
 
     auto bounds = getContentArea();
 
-    auto lok = [bounds](auto &e, auto &row) {
-        auto &item = e->item;
-        auto &lab = e->label;
+    auto lok = [bounds](auto &item, auto &lab, auto &row) {
         auto kn = dynamic_cast<jcmp::Knob *>(item.get());
         if (kn)
         {
@@ -854,79 +844,75 @@ void ProcessorPane::layoutControlsEBWaveforms()
     auto res = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
     res->direction = jcmp::MultiSwitch::VERTICAL;
     row1.add(jlo::Component(*res).withWidth(bounds.getWidth() / 4));
-    intEditors[0] = std::make_unique<intEditor_t>(std::move(res));
+    intEditors[0] = std::move(res);
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Tune");
-    lok(floatEditors[0], row1);
-    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1], "Sync");
-    lok(floatEditors[1], row1);
-    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2], "PWM");
-    lok(floatEditors[2], row1);
+    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0]);
+    floatLabels[0] = createLabel("Tune");
+    lok(floatEditors[0], floatLabels[0], row1);
+    floatEditors[1] = createWidgetAttachedTo(floatAttachments[1]);
+    floatLabels[1] = createLabel("Sync");
+    lok(floatEditors[1], floatLabels[1], row1);
+    floatEditors[2] = createWidgetAttachedTo(floatAttachments[2]);
+    floatLabels[2] = createLabel("PWM");
+    lok(floatEditors[2], floatLabels[2], row1);
 
-    if (isPulse)
-    {
-        floatEditors[2]->item->setEnabled(true);
-        floatEditors[2]->label->setEnabled(true);
-    }
-    else
-    {
-        floatEditors[2]->item->setEnabled(false);
-        floatEditors[2]->label->setEnabled(false);
-    }
+    floatEditors[2]->setEnabled(isPulse);
+    floatLabels[2]->setEnabled(isPulse);
     main.add(row1);
 
     auto row2 = jlo::HList().withHeight(bounds.getHeight() / 2);
 
     auto vl1 = jlo::VList().withWidth(bounds.getWidth() / 4).withAutoGap(2);
-    auto ures = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
-    intEditors[1] = std::make_unique<intEditor_t>(std::move(ures));
-    intEditors[1]->label = std::make_unique<jcmp::Label>();
-    intEditors[1]->label->setText("Unison");
-    getContentAreaComponent()->addAndMakeVisible(*intEditors[1]->label);
-    vl1.add(jlo::Component(*(intEditors[1]->label)).withHeight(16));
-    vl1.add(jlo::Component(*(intEditors[1]->item)).withHeight(16));
+    intEditors[1] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
+    intLabels[1] = createLabel("Unison");
+    vl1.add(jlo::Component(*intLabels[1]).withHeight(16));
+    vl1.add(jlo::Component(*intEditors[1]).withHeight(16));
 
     auto tres = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[4]);
     tres->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
     tres->setLabel(std::string("Rand ") + u8"\U000003C6");
-    intEditors[4] = std::make_unique<intEditor_t>(std::move(tres));
-    vl1.add(jlo::Component(*(intEditors[4]->item)).withHeight(16));
+    intEditors[4] = std::move(tres);
+    vl1.add(jlo::Component(*intEditors[4]).withHeight(16));
 
-    floatEditors[4] = createWidgetAttachedTo<jcmp::HSliderFilled>(floatAttachments[4], "W");
+    floatEditors[4] = createWidgetAttachedTo<jcmp::HSliderFilled>(floatAttachments[4]);
+    floatLabels[4] = createLabel("W");
 
     auto wsl = jlo::HList().withHeight(16);
-    wsl.add(jlo::Component(*(floatEditors[4]->label)).withWidth(16));
-    wsl.add(jlo::Component(*(floatEditors[4]->item)).expandToFill().insetBy(0, 3));
+    wsl.add(jlo::Component(*floatLabels[4]).withWidth(16));
+    wsl.add(jlo::Component(*floatEditors[4]).expandToFill().insetBy(0, 3));
     vl1.add(wsl);
 
-    floatEditors[4]->item->setEnabled(isStereo && isUnison);
-    floatEditors[4]->label->setEnabled(isStereo && isUnison);
+    floatEditors[4]->setEnabled(isStereo && isUnison);
+    floatLabels[4]->setEnabled(isStereo && isUnison);
 
     row2.add(vl1);
 
-    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3], "Detune");
-    lok(floatEditors[3], row2);
-    floatEditors[3]->item->setEnabled(isUnison);
-    floatEditors[3]->label->setEnabled(isUnison);
+    floatEditors[3] = createWidgetAttachedTo(floatAttachments[3]);
+    floatLabels[3] = createLabel("Detune");
+    lok(floatEditors[3], floatLabels[3], row2);
+    floatEditors[3]->setEnabled(isUnison);
+    floatLabels[3]->setEnabled(isUnison);
 
     auto xtnd = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[2]);
     xtnd->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH);
     xtnd->setGlyph(jcmp::GlyphPainter::PLUS);
-    intEditors[2] = std::make_unique<intEditor_t>(std::move(xtnd));
-    intEditors[2]->item->setEnabled(isUnison);
+    intEditors[2] = std::move(xtnd);
+    intEditors[2]->setEnabled(isUnison);
 
-    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5], "Drift");
-    lok(floatEditors[5], row2);
-    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6], "Level");
-    lok(floatEditors[6], row2);
+    floatEditors[5] = createWidgetAttachedTo(floatAttachments[5]);
+    floatLabels[5] = createLabel("Drift");
+    lok(floatEditors[5], floatLabels[5], row2);
+    floatEditors[6] = createWidgetAttachedTo(floatAttachments[6]);
+    floatLabels[6] = createLabel("Level");
+    lok(floatEditors[6], floatLabels[6], row2);
 
     main.add(row2);
 
     main.doLayout();
 
-    auto detuneLoc = floatEditors[3]->item->getBounds();
+    auto detuneLoc = floatEditors[3]->getBounds();
     auto xtloc = juce::Rectangle<int>(detuneLoc.getRight() - 10, detuneLoc.getY() - 4, 14, 14);
-    intEditors[2]->item->setBounds(xtloc);
+    intEditors[2]->setBounds(xtloc);
 }
 
 void ProcessorPane::createHamburgerStereo(int attachmentId)
@@ -1072,16 +1058,14 @@ void ProcessorPane::layoutControlsWithJsonEngine(const std::string &jsonpath)
 
 void ProcessorPane::layoutControlsEQMorph()
 {
-    namespace lo = theme::layout;
-    namespace locon = lo::constants;
+    namespace jlo = sst::jucegui::layouts;
+    static constexpr int knobSize{32}, labelHeight{14}, presetHeight{16};
 
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::MorphEQ<EqDisplayBase::fxAdapter>, 2, false>>(*this);
     auto eq = getContentAreaComponent()->getLocalBounds();
 
     eqdisp->mPrepareBand = [](auto &proc, int band) { proc.calc_coeffs(true); };
-
-    auto presets = eq.withHeight(16);
 
     auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
         if (w)
@@ -1090,32 +1074,40 @@ void ProcessorPane::layoutControlsEQMorph()
         }
     };
 
-    intEditors[0] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0], "S0");
-    getContentAreaComponent()->addAndMakeVisible(*intEditors[0]->item);
-    intEditors[0]->item->setBounds(presets.withWidth(presets.getWidth() / 2).reduced(0, 2));
+    intEditors[0] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[0]);
     intAttachments[0]->andThenOnGui(thenRecalc);
 
-    intEditors[1] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1], "S0");
-    getContentAreaComponent()->addAndMakeVisible(*intEditors[1]->item);
-
-    intEditors[1]->item->setBounds(presets.withWidth(presets.getWidth() / 2)
-                                       .translated(presets.getWidth() / 2, 0)
-                                       .reduced(0, 2));
+    intEditors[1] = createWidgetAttachedTo<jcmp::JogUpDownButton>(intAttachments[1]);
     intAttachments[1]->andThenOnGui(thenRecalc);
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
-
     auto lab = std::array{"Morph", "Freq1", "Freq2", "Gain", "BW"};
-    auto cols = lo::columns(presets.translated(0, 18).withHeight(38), 5);
-
     static_assert(lab.size() < maxProcessorFloatParams);
+
+    auto main = jlo::VList().withWidth(eq.getWidth()).at(eq.getX(), eq.getY());
+
+    auto presetRow = jlo::HList().withHeight(presetHeight);
+    presetRow.add(jlo::Component(*intEditors[0]).expandToFill().insetBy(0, 2));
+    presetRow.add(jlo::Component(*intEditors[1]).expandToFill().insetBy(0, 2));
+    main.add(presetRow);
+    main.addGap(2);
+
+    auto knobRow = jlo::HList().withHeight(knobSize + labelHeight);
     for (int i = 0; i < lab.size(); ++i)
     {
-        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i], lab[i]);
+        floatEditors[i] = createWidgetAttachedTo(floatAttachments[i]);
+        floatLabels[i] = createLabel(lab[i]);
         floatAttachments[i]->andThenOnGui(thenRecalc);
 
-        lo::knobCX<locon::mediumSmallKnob>(*floatEditors[i], cols[i].getCentreX(), cols[i].getY());
+        auto col = jlo::VList().withWidth(eq.getWidth() / lab.size());
+        col.add(jlo::Component(*floatEditors[i])
+                    .withHeight(knobSize)
+                    .withWidth(knobSize)
+                    .centerInParent());
+        col.add(jlo::Component(*floatLabels[i]).expandToFill());
+        knobRow.add(col);
     }
+    main.add(knobRow);
+    main.doLayout();
 
     eqdisp->setBounds(eq.withTrimmedTop(65));
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
@@ -1125,12 +1117,12 @@ void ProcessorPane::layoutControlsEQMorph()
 
 void ProcessorPane::layoutControlsEQGraphic()
 {
-    namespace lo = theme::layout;
+    namespace jlo = sst::jucegui::layouts;
 
     auto eqdisp = std::make_unique<
         EqNBandDisplay<sst::voice_effects::eq::EqGraphic6Band<EqDisplayBase::fxAdapter>, 0>>(*this);
     auto eq = getContentAreaComponent()->getLocalBounds();
-    auto sliderHeight = 65;
+    constexpr int sliderHeight{65};
 
     auto thenRecalc = [w = juce::Component::SafePointer(eqdisp.get())](const auto &a) {
         if (w)
@@ -1139,18 +1131,17 @@ void ProcessorPane::layoutControlsEQGraphic()
         }
     };
 
-    floatEditors[0] = createWidgetAttachedTo(floatAttachments[0], "Morph");
-
-    auto cols = lo::columns(eq.withHeight(sliderHeight), 6);
+    auto sliderRow =
+        jlo::HList().withWidth(eq.getWidth()).withHeight(sliderHeight).at(eq.getX(), eq.getY());
 
     for (int i = 0; i < 6; ++i)
     {
-        floatEditors[i] = createWidgetAttachedTo<jcmp::VSlider>(floatAttachments[i],
-                                                                floatAttachments[i]->getLabel());
+        floatEditors[i] = createWidgetAttachedTo<jcmp::VSlider>(floatAttachments[i]);
         floatAttachments[i]->andThenOnGui(thenRecalc);
 
-        floatEditors[i]->item->setBounds(cols[i].reduced(3, 0));
+        sliderRow.add(jlo::Component(*floatEditors[i]).expandToFill().insetBy(3, 0));
     }
+    sliderRow.doLayout();
 
     eqdisp->setBounds(eq.withTrimmedTop(sliderHeight));
     getContentAreaComponent()->addAndMakeVisible(*eqdisp);
