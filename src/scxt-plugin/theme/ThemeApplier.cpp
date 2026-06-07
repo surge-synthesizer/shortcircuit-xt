@@ -426,9 +426,9 @@ void applyColors(const sheet_t::ptr_t &base, const ColorMap &cols)
     base->setColour(jcmp::Knob::Styles::styleClass, jcmp::Knob::Styles::knobbase,
                     cols.get(ColorMap::knob_fill));
     base->setColour(jcmp::Knob::Styles::styleClass, jcmp::Knob::Styles::handle,
-                    cols.get(ColorMap::generic_content_medium));
+                    cols.get(ColorMap::generic_content_high));
     base->setColour(jcmp::Knob::Styles::styleClass, jcmp::Knob::Styles::handle_hover,
-                    cols.getHover(ColorMap::generic_content_medium));
+                    cols.getHover(ColorMap::generic_content_high));
 
     base->setColour(jcmp::ScrollBar::Styles::styleClass, jcmp::ScrollBar::Styles::outline,
                     cols.get(ColorMap::generic_content_low));
