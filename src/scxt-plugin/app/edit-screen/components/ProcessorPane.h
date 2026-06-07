@@ -43,7 +43,6 @@
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/zone.h"
-#include "theme/Layout.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -109,27 +108,15 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
 
     // massive swaths of this can go in the near future
     template <typename T = sst::jucegui::components::Knob>
-    std::unique_ptr<theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>>
-    createWidgetAttachedTo(const std::unique_ptr<attachment_t> &at, const std::string &label)
+    std::unique_ptr<T> createWidgetAttachedTo(const std::unique_ptr<attachment_t> &at)
     {
-        auto res = std::make_unique<
-            theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>>();
         auto kn = std::make_unique<T>();
         kn->setSource(at.get());
         setupFloatWidget(kn.get(), at);
         kn->setTitle(at->getLabel());
         kn->setDescription(at->getLabel());
         getContentAreaComponent()->addAndMakeVisible(*kn);
-        auto lb = std::make_unique<sst::jucegui::components::Label>();
-        lb->setText(label);
-        lb->setTitle(label);
-        lb->setDescription(label);
-        lb->setAccessible(false);
-        getContentAreaComponent()->addAndMakeVisible(*lb);
-        res->item = std::move(kn);
-        res->label = std::move(lb);
-
-        return std::move(res);
+        return std::move(kn);
     }
 
     template <typename T = sst::jucegui::components::Knob>
@@ -158,26 +145,14 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
         return std::move(kn);
     }
 
-    template <typename T = sst::jucegui::components::Knob>
-    std::unique_ptr<theme::layout::Labeled<sst::jucegui::components::DiscreteParamEditor>>
-    createWidgetAttachedTo(const std::unique_ptr<int_attachment_t> &at, const std::string &label)
-    {
-        auto res = std::make_unique<
-            theme::layout::Labeled<sst::jucegui::components::DiscreteParamEditor>>();
-        res->item = createWidgetAttachedTo<T>(at);
-        auto lb = std::make_unique<sst::jucegui::components::Label>();
-        lb->setText(label);
-        getContentAreaComponent()->addAndMakeVisible(*lb);
-        res->label = std::move(lb);
-
-        return std::move(res);
-    }
-
     template <typename T = sst::jucegui::components::Label>
     std::unique_ptr<T> createLabel(const std::string &txt)
     {
         auto res = std::make_unique<T>();
         res->setText(txt);
+        res->setTitle(txt);
+        res->setDescription(txt);
+        res->setAccessible(false);
         getContentAreaComponent()->addAndMakeVisible(*res);
         return std::move(res);
     }
@@ -208,17 +183,23 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
 
     bool multiZone{false};
 
-    using floatEditor_t = theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>;
-    using intEditor_t = theme::layout::Labeled<sst::jucegui::components::DiscreteParamEditor>;
-
-    std::array<std::unique_ptr<floatEditor_t>, dsp::processor::maxProcessorFloatParams>
+    // Widgets and their (optional) labels are held in parallel arrays; a null
+    // label slot just means that widget has no separate label.
+    std::array<std::unique_ptr<sst::jucegui::components::ContinuousParamEditor>,
+               dsp::processor::maxProcessorFloatParams>
         floatEditors;
-    std::array<std::unique_ptr<intEditor_t>, dsp::processor::maxProcessorFloatParams>
-        floatDeactivateEditors;
+    std::array<std::unique_ptr<sst::jucegui::components::Label>,
+               dsp::processor::maxProcessorFloatParams>
+        floatLabels;
     std::array<std::unique_ptr<attachment_t>, dsp::processor::maxProcessorFloatParams>
         floatAttachments;
 
-    std::array<std::unique_ptr<intEditor_t>, dsp::processor::maxProcessorIntParams> intEditors;
+    std::array<std::unique_ptr<sst::jucegui::components::DiscreteParamEditor>,
+               dsp::processor::maxProcessorIntParams>
+        intEditors;
+    std::array<std::unique_ptr<sst::jucegui::components::Label>,
+               dsp::processor::maxProcessorIntParams>
+        intLabels;
     std::array<std::unique_ptr<int_attachment_t>, dsp::processor::maxProcessorFloatParams>
         intAttachments;
     std::array<std::unique_ptr<bool_attachment_t>, dsp::processor::maxProcessorFloatParams>
@@ -228,8 +209,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
 
     std::vector<std::unique_ptr<juce::Component>> otherEditors;
 
-    std::unique_ptr<theme::layout::Labeled<sst::jucegui::components::ContinuousParamEditor>>
-        mixEditor;
+    std::unique_ptr<sst::jucegui::components::ContinuousParamEditor> mixEditor;
     std::unique_ptr<attachment_t> mixAttachment;
 
     std::unique_ptr<sst::jucegui::components::Label> multiLabel;
