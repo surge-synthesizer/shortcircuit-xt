@@ -271,12 +271,14 @@ SC_STREAMDEF(scxt::modulation::shared::SourceIdentifier,
 SC_STREAMDEF(scxt::modulation::shared::RoutingExtraPayload, SC_FROM({
                  v = {{"selC", t.selConsistent},
                       {"targetMetadata", t.targetMetadata},
-                      {"targetBaseValue", t.targetBaseValue}};
+                      {"targetBaseValue", t.targetBaseValue},
+                      {"targetFS", t.targetFeatureState}};
              }),
              SC_TO({
                  findIf(v, "selC", result.selConsistent);
                  findIf(v, "targetMetadata", result.targetMetadata);
                  findIf(v, "targetBaseValue", result.targetBaseValue);
+                 findIf(v, "targetFS", result.targetFeatureState);
              }));
 
 // Its a mild bummer we have to dup this for group and zone but they differ by trait so have

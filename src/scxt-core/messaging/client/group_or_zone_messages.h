@@ -46,12 +46,19 @@ CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupEGFloatValue, c2s_update_zone_or_g
                              detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
                                                                          &engine::Group::gegStorage,
                                                                          payload, engine, cont));
-CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupEGBoolValue, c2s_update_zone_or_group_eg_bool_value,
-                             detail::indexedZoneOrGroupDiffMsg_t<bool>,
-                             modulation::modulators::AdsrStorage,
-                             detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
-                                                                         &engine::Group::gegStorage,
-                                                                         payload, engine, cont));
+// Toggling temposync (a blanket bool on EG/modulator storage) changes how the affected time
+// targets display and modulate, so we restate the mod matrix metadata. The changed member's byte
+// offset rides in the diff payload (get<2>), so we only re-send on a temposync toggle.
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOrGroupEGBoolValue, c2s_update_zone_or_group_eg_bool_value,
+    detail::indexedZoneOrGroupDiffMsg_t<bool>, modulation::modulators::AdsrStorage,
+    detail::updateZoneOrGroupIndexedMemberValue(
+        &engine::Zone::egStorage, &engine::Group::gegStorage, payload, engine, cont,
+        [payload](const engine::Engine &eng) {
+            if (std::get<2>(payload) ==
+                (ptrdiff_t)offsetof(modulation::modulators::AdsrStorage, isTemposync))
+                eng.getSelectionManager()->sendDisplayDataForLeadSelection(std::get<0>(payload));
+        }));
 
 using fullAdsrStoragePayload_t = std::tuple<bool, int, modulation::modulators::AdsrStorage>;
 inline void doFullAdsrStorageUpdateForGroupsOrZones(const fullAdsrStoragePayload_t &payload,
@@ -123,9 +130,13 @@ CLIENT_TO_SERIAL_CONSTRAINED(
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupModStorageBoolValue, c2s_update_zone_or_group_modstorage_bool_value,
     detail::indexedZoneOrGroupDiffMsg_t<bool>, modulation::ModulatorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
-                                                &engine::Group::modulatorStorage, payload, engine,
-                                                cont));
+    detail::updateZoneOrGroupIndexedMemberValue(
+        &engine::Zone::modulatorStorage, &engine::Group::modulatorStorage, payload, engine, cont,
+        [payload](const engine::Engine &eng) {
+            if (std::get<2>(payload) ==
+                (ptrdiff_t)offsetof(modulation::ModulatorStorage, temposync))
+                eng.getSelectionManager()->sendDisplayDataForLeadSelection(std::get<0>(payload));
+        }));
 
 // int updates can change shape. For now lets just always assume they do
 CLIENT_TO_SERIAL_CONSTRAINED(

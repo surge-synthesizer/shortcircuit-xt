@@ -774,6 +774,22 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
                               *(engine.getMessageController()));
 }
 
+void SelectionManager::sendDisplayDataForLeadSelection(bool forZone)
+{
+    if (forZone)
+    {
+        auto lz = currentLeadZone(engine);
+        if (lz.has_value())
+            sendDisplayDataForZonesBasedOnLead(lz->part, lz->group, lz->zone);
+    }
+    else
+    {
+        auto lg = currentLeadGroup(engine);
+        if (lg.has_value())
+            sendDisplayDataForGroupsBasedOnLead(lg->part, lg->group);
+    }
+}
+
 void SelectionManager::sendDisplayDataForNoGroupSelected()
 {
     SCLOG_WFUNC_IF(selection, "");
@@ -883,6 +899,7 @@ void SelectionManager::configureMatrixInternal(bool forZone, Mat &mat, RT &rt)
             {
                 r.extraPayload->targetMetadata = mat.activeTargetsToPMD.at(*r.target);
                 r.extraPayload->targetBaseValue = mat.activeTargetsToBaseValue.at(*r.target);
+                r.extraPayload->targetFeatureState = mat.activeTargetsToFeatureState.at(*r.target);
             }
         }
         else

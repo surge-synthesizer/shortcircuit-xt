@@ -97,6 +97,8 @@ struct GroupMatrix : sst::basic_blocks::mod_matrix::FixedMatrix<GroupMatrixConfi
     bool forUIMode{false};
     std::unordered_map<GroupMatrixConfig::TargetIdentifier, datamodel::pmd> activeTargetsToPMD;
     std::unordered_map<GroupMatrixConfig::TargetIdentifier, float> activeTargetsToBaseValue;
+    std::unordered_map<GroupMatrixConfig::TargetIdentifier, datamodel::pmd::FeatureState>
+        activeTargetsToFeatureState;
 };
 
 struct GroupMatrixEndpoints

@@ -104,6 +104,8 @@ struct Matrix : sst::basic_blocks::mod_matrix::FixedMatrix<MatrixConfig>
     bool forUIMode{false};
     std::unordered_map<MatrixConfig::TargetIdentifier, datamodel::pmd> activeTargetsToPMD;
     std::unordered_map<MatrixConfig::TargetIdentifier, float> activeTargetsToBaseValue;
+    std::unordered_map<MatrixConfig::TargetIdentifier, datamodel::pmd::FeatureState>
+        activeTargetsToFeatureState;
 };
 
 struct MatrixEndpoints
