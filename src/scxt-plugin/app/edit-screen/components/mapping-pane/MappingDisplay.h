@@ -37,7 +37,9 @@
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/TickSeparatorLabel.h"
+#include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/ZoomContainer.h"
+#include "sst/jucegui/component-adapters/DiscreteToReference.h"
 #include "engine/part.h"
 #include "engine/engine.h"
 #include "selection/selection_manager.h"
@@ -51,17 +53,20 @@ namespace scxt::ui::app::edit_screen
 
 struct ZoneLayoutDisplay;
 struct ZoneLayoutKeyboard;
+struct MappingDisplay;
 
 struct MappingZoneHeader : HasEditor, juce::Component
 {
     std::unique_ptr<sst::jucegui::components::TextPushButton> autoMap, fixOverlap, fadeOverlap,
         zoneSolo;
-    std::unique_ptr<sst::jucegui::components::GlyphButton> midiButton, midiLRButton, midiUDButton,
+    std::unique_ptr<sst::jucegui::components::GlyphButton> midiButton, midiLRButton, midiUDButton;
+    std::unique_ptr<sst::jucegui::component_adapters::DiscreteToValueReference<
+        sst::jucegui::components::ToggleButton, bool>>
         lockButton;
     std::unique_ptr<sst::jucegui::components::Label> fileLabel;
     std::unique_ptr<sst::jucegui::components::MenuButton> fileMenu;
 
-    MappingZoneHeader(SCXTEditor *ed);
+    MappingZoneHeader(MappingDisplay *d);
 
     void initiateMidiZoneAction(engine::Engine::MidiZoneAction);
 
@@ -78,8 +83,8 @@ struct MappingZoneHeader : HasEditor, juce::Component
             fixOverlap->setBounds(b.withTrimmedLeft(181).withWidth(85));
             fadeOverlap->setBounds(b.withTrimmedLeft(181 + 87).withWidth(85));
             zoneSolo->setBounds(b.withTrimmedLeft(181 + 2 * 87).withWidth(85));
-            lockButton->setBounds(b.withTrimmedLeft(181 + 3 * 87).withWidth(16));
         }
+        lockButton->widget->setBounds(b.withTrimmedLeft(181 + 3 * 87).withWidth(16));
         fileLabel->setBounds(b.withTrimmedLeft(181 + 3 * 87 + 20).withWidth(40));
         fileMenu->setBounds(b.withTrimmedLeft(500));
     }
@@ -122,6 +127,9 @@ struct MappingDisplay : juce::Component,
     bool isResizingZones{false};
 
     bool mayBeAboutToMutate{false};
+
+    // When set, drags in the zone grid select only; they don't move or resize zones
+    bool mappingLocked{false};
 
     std::unique_ptr<MappingZoneHeader> zoneHeader;
 

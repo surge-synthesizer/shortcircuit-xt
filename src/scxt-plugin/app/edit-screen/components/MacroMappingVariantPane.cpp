@@ -163,6 +163,11 @@ void MacroMappingVariantPane::setGroupZoneMappingSummary(
     mappingDisplay->setGroupZoneMappingSummary(d);
 }
 
+void MacroMappingVariantPane::setMappingLockFromModel(bool b)
+{
+    mappingDisplay->zoneHeader->lockButton->setValueFromModel(b);
+}
+
 void MacroMappingVariantPane::editorSelectionChanged()
 {
     if (editor->currentLeadZoneSelection.has_value())
@@ -202,7 +207,7 @@ void MacroMappingVariantPane::macroDataChanged(int part, int index)
     macroDisplay->macroDataChanged(part, index);
 }
 
-MappingZoneHeader::MappingZoneHeader(scxt::ui::app::SCXTEditor *ed) : HasEditor(ed)
+MappingZoneHeader::MappingZoneHeader(MappingDisplay *d) : HasEditor(d->editor)
 {
     autoMap = std::make_unique<sst::jucegui::components::TextPushButton>();
     autoMap->setLabel("AUTO-MAP");
@@ -245,12 +250,18 @@ MappingZoneHeader::MappingZoneHeader(scxt::ui::app::SCXTEditor *ed) : HasEditor(
         zoneSolo->setLabel("ZONE SOLO");
         zoneSolo->setOnCallback(editor->makeComingSoon());
         addAndMakeVisible(*zoneSolo);
-
-        lockButton = std::make_unique<sst::jucegui::components::GlyphButton>(
-            sst::jucegui::components::GlyphPainter::GlyphType::LOCK);
-        lockButton->setOnCallback(editor->makeComingSoon());
-        addAndMakeVisible(*lockButton);
     }
+
+    lockButton = std::make_unique<sst::jucegui::component_adapters::DiscreteToValueReference<
+        sst::jucegui::components::ToggleButton, bool>>(d->mappingLocked);
+    lockButton->widget->setGlyph(sst::jucegui::components::GlyphPainter::GlyphType::LOCK);
+    lockButton->widget->setDrawMode(
+        sst::jucegui::components::ToggleButton::DrawMode::GLYPH_WITH_BG);
+    lockButton->onValueChanged = [w = juce::Component::SafePointer(this)](bool v) {
+        if (w)
+            w->editor->setTabSelection("mapping.lock", v ? "1" : "0");
+    };
+    addAndMakeVisible(*(lockButton->widget));
 
     fileLabel = std::make_unique<sst::jucegui::components::Label>();
     fileLabel->setText("FILE");
