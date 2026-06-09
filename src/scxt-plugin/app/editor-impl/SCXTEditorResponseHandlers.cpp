@@ -523,6 +523,12 @@ void SCXTEditorReceiver::onOtherTabSelection(
     {
         editor.editScreen->browser->restoreSelectedPath(bp);
     }
+
+    auto ml = editor.queryTabSelection("mapping.lock");
+    if (!ml.empty() && editor.editScreen && editor.editScreen->mappingPane)
+    {
+        editor.editScreen->mappingPane->setMappingLockFromModel(std::atoi(ml.c_str()) != 0);
+    }
 }
 
 void SCXTEditorReceiver::onPartConfiguration(

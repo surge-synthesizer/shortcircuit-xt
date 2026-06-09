@@ -67,51 +67,7 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
-    void mouseMove(const juce::MouseEvent &e) override
-    {
-        for (const auto &h : keyboardHotZones)
-        {
-            if (h.contains(e.position))
-            {
-                setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
-                return;
-            }
-        }
-        for (const auto &h : velocityHotZones)
-        {
-            if (h.contains(e.position))
-            {
-                setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
-                return;
-            }
-        }
-        auto hzCOrder = std::vector({juce::MouseCursor::TopLeftCornerResizeCursor,
-                                     juce::MouseCursor::TopRightCornerResizeCursor,
-                                     juce::MouseCursor::BottomRightCornerResizeCursor,
-                                     juce::MouseCursor::BottomLeftCornerResizeCursor});
-
-        int idx{0};
-        for (const auto &h : bothHotZones)
-        {
-            if (h.contains(e.position))
-            {
-                setMouseCursor(hzCOrder[idx]);
-                return;
-            }
-            idx++;
-        }
-
-        if (cacheLastZone.has_value())
-        {
-            auto r = rectangleForZone(*cacheLastZone);
-            if (r.contains(e.position))
-            {
-                setMouseCursor(juce::MouseCursor::DraggingHandCursor);
-                return;
-            }
-        }
-        setMouseCursor(juce::MouseCursor::NormalCursor);
-    }
+    void mouseMove(const juce::MouseEvent &e) override;
     void mouseDoubleClick(const juce::MouseEvent &e) override;
     void createEmptyZoneAt(const juce::Point<int> &);
 

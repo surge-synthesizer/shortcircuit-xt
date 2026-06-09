@@ -52,7 +52,7 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     zoneLayoutViewport->setVZoomFloor(32.f / 128.f);
     addAndMakeVisible(*zoneLayoutViewport);
 
-    zoneHeader = std::make_unique<MappingZoneHeader>(editor);
+    zoneHeader = std::make_unique<MappingZoneHeader>(this);
     addAndMakeVisible(*zoneHeader);
 
     using ffac =

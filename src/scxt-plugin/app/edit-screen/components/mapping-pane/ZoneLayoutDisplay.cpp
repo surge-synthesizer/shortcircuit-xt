@@ -486,6 +486,59 @@ template <typename MAP> void constrainMappingFade(MAP &kr, bool startChanged)
     }
 }
 
+void ZoneLayoutDisplay::mouseMove(const juce::MouseEvent &e)
+{
+    // When locked we don't drag-edit zones, so don't advertise the resize/move cursors
+    if (display->mappingLocked)
+    {
+        setMouseCursor(juce::MouseCursor::NormalCursor);
+        return;
+    }
+
+    for (const auto &h : keyboardHotZones)
+    {
+        if (h.contains(e.position))
+        {
+            setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
+            return;
+        }
+    }
+    for (const auto &h : velocityHotZones)
+    {
+        if (h.contains(e.position))
+        {
+            setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
+            return;
+        }
+    }
+    auto hzCOrder = std::vector({juce::MouseCursor::TopLeftCornerResizeCursor,
+                                 juce::MouseCursor::TopRightCornerResizeCursor,
+                                 juce::MouseCursor::BottomRightCornerResizeCursor,
+                                 juce::MouseCursor::BottomLeftCornerResizeCursor});
+
+    int idx{0};
+    for (const auto &h : bothHotZones)
+    {
+        if (h.contains(e.position))
+        {
+            setMouseCursor(hzCOrder[idx]);
+            return;
+        }
+        idx++;
+    }
+
+    if (cacheLastZone.has_value())
+    {
+        auto r = rectangleForZone(*cacheLastZone);
+        if (r.contains(e.position))
+        {
+            setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+            return;
+        }
+    }
+    setMouseCursor(juce::MouseCursor::NormalCursor);
+}
+
 void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
 {
     if (e.getDistanceFromDragStart() <= 1)
@@ -504,7 +557,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
     auto deltaX = (int)(dx / kw);
     auto deltaY = (int)(dy / vh);
 
-    if (mouseState == DRAG_SELECTED_ZONE)
+    if (mouseState == DRAG_SELECTED_ZONE && !display->mappingLocked)
     {
         if (e.getDistanceFromDragStart() <= 2)
         {
@@ -524,7 +577,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
         }
     }
 
-    if (mouseState == DRAG_VELOCITY)
+    if (mouseState == DRAG_VELOCITY && !display->mappingLocked)
     {
         auto dd = engine::Zone::ChangeDimension::VEL_RANGE_END;
         if (dragFrom[1] == FROM_START)
@@ -542,7 +595,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
         }
     }
 
-    if (mouseState == DRAG_KEY)
+    if (mouseState == DRAG_KEY && !display->mappingLocked)
     {
         auto dd = engine::Zone::ChangeDimension::KEY_RANGE_END;
         if (dragFrom[0] == FROM_START)
@@ -560,7 +613,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
         }
     }
 
-    if (mouseState == DRAG_KEY_AND_VEL)
+    if (mouseState == DRAG_KEY_AND_VEL && !display->mappingLocked)
     {
         int dd = engine::Zone::ChangeDimension::VEL_RANGE_END;
         if (dragFrom[1] == FROM_START)
