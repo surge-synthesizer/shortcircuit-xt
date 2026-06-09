@@ -410,8 +410,9 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
         datamodel::pmd &md = ep.targetMetadata;
 
         bool isSourceBipolar{false}; // fixme - we shoudl determine this one day
-        auto v = md.modulationNaturalToString(ep.targetBaseValue,
-                                              at.value * (md.maxVal - md.minVal), isSourceBipolar);
+        auto v =
+            md.modulationNaturalToString(ep.targetBaseValue, at.value * (md.maxVal - md.minVal),
+                                         isSourceBipolar, ep.targetFeatureState);
 
         auto rDepth = jcmp::ToolTip::Row();
         auto rDelta = jcmp::ToolTip::Row();
@@ -830,7 +831,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
             auto md = ep->targetMetadata;
 
             auto v = md.modulationNaturalToString(
-                ep->targetBaseValue, row->depthAttachment->value * (md.maxVal - md.minVal), false);
+                ep->targetBaseValue, row->depthAttachment->value * (md.maxVal - md.minVal), false,
+                ep->targetFeatureState);
 
             return v->value;
         }
@@ -843,7 +845,8 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
             auto md = ep->targetMetadata;
 
             std::string emsg;
-            auto v = md.modulationNaturalFromString(s, ep->targetBaseValue, emsg);
+            auto v = md.modulationNaturalFromString(s, ep->targetBaseValue, emsg,
+                                                    ep->targetFeatureState);
 
             if (!v.has_value())
             {

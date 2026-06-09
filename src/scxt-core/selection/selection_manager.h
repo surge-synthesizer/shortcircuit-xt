@@ -213,6 +213,8 @@ struct SelectionManager
     void sendDisplayDataForNoZoneSelected();
     void sendDisplayDataForGroupsBasedOnLead(int part, int group);
     void sendDisplayDataForNoGroupSelected();
+    // Re-send display data (and so reconfigure mod matrix metadata) for the lead zone or group.
+    void sendDisplayDataForLeadSelection(bool forZone);
     void sendSelectedPartMacrosToClient();
     void sendOtherTabsSelectionToClient();
     void configureAndSendZoneOrGroupModMatrixMetadata(int p, int g, int z);

@@ -54,6 +54,8 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                       {"ab", t.canAbsolute},
                       {"enb", t.enabled},
                       {"tsm", t.temposyncMultiplier},
+                      {"tsf", (int)t.temposyncFlavor},
+                      {"tsz", t.temposyncZeroStage},
                       {"ssc", t.supportsStringConversion},
                       {"dsc", (int)t.displayScale},
                       {"unit", t.unit},
@@ -90,6 +92,8 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                  findIf(v, "ftr", to.features);
                  findOrSet(v, "enb", true, to.enabled);
                  findIf(v, "tsm", to.temposyncMultiplier);
+                 findEnumIf(v, "tsf", to.temposyncFlavor);
+                 findIf(v, "tsz", to.temposyncZeroStage);
                  findIf(v, "ssc", to.supportsStringConversion);
                  findEnumIf(v, "dsc", to.displayScale);
                  findEnumIf(v, "qt", to.quantization);
@@ -116,6 +120,19 @@ SC_STREAMDEF(datamodel::pmd, SC_FROM({
                  findIf(v, "asu", to.alternateScaleUnits);
                  findIf(v, "asd", to.alternateScaleIsDefaultFromString);
                  findIf(v, "asdp", to.alternateScaleDecimalPlaces);
+             }));
+
+SC_STREAMDEF(datamodel::pmd::FeatureState, SC_FROM({
+                 v = {{"hp", t.isHighPrecision}, {"ex", t.isExtended}, {"ab", t.isAbsolute},
+                      {"ts", t.isTemposynced},   {"nu", t.isNoUnits},  {"mc", t.modulationClamped}};
+             }),
+             SC_TO({
+                 findIf(v, "hp", to.isHighPrecision);
+                 findIf(v, "ex", to.isExtended);
+                 findIf(v, "ab", to.isAbsolute);
+                 findIf(v, "ts", to.isTemposynced);
+                 findIf(v, "nu", to.isNoUnits);
+                 findIf(v, "mc", to.modulationClamped);
              }));
 } // namespace scxt::json
 #endif // SHORTCIRCUIT_DATAMODEL_TRAITS_H
