@@ -218,6 +218,9 @@ struct Group : MoveableOnly<Group>,
     void onSampleRateChanged() override;
 
     void resetPolyAndPlaymode(engine::Engine &);
+    // Bind this group's polyphony group under the part's (so per-group voices also count
+    // against the part limit), or detach it to root when the part is unlimited.
+    void updatePolyphonyGroupParent(engine::Engine &);
 
     /*
      * Only call this if you have *already* checked the part containing

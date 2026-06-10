@@ -260,9 +260,11 @@ void SCXTEditor::idle()
     if (sharedUiMemoryState.voiceDisplayStateWriteCounter != lastVoiceDisplayWriteCounter)
     {
         lastVoiceDisplayWriteCounter = sharedUiMemoryState.voiceDisplayStateWriteCounter;
-        if (headerRegion->voiceCount != sharedUiMemoryState.voiceCount)
+        if ((headerRegion->voiceCount != sharedUiMemoryState.voiceCount) ||
+            (sharedUiMemoryState.forceCount != headerRegion->forceCount))
         {
             headerRegion->setVoiceCount(sharedUiMemoryState.voiceCount);
+            headerRegion->forceCount = sharedUiMemoryState.forceCount;
 
             if (editScreen->isVisible())
             {

@@ -503,6 +503,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         };
         std::atomic<int32_t> voiceCount;
         std::array<VoiceDisplayStateItem, maxVoices> voiceDisplayItems;
+        std::atomic<uint32_t> forceCount{0};
 
         struct TransportDisplayState
         {
@@ -566,6 +567,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     int32_t updateVoiceDisplayStateEvery{10000000};
     int32_t lastUpdateVoiceDisplayState{0};
     int64_t midiNoteStateCounter{0}, lastMidiNoteStateCounter{0};
+    // A steal terminates one voice and creates another, so activeVoices can be unchanged
+    // across a block while the per-zone distribution shifts. Track the creation counter so
+    // the display refreshes whenever a voice was created since the last write.
+    uint64_t lastVoiceDisplayCreationId{0};
     bool forceVoiceUpdate{false};
     bool sendSamplePosition{true};
 

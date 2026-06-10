@@ -428,12 +428,15 @@ bool Engine::processAudio()
                      ((pav != 0) && sendSamplePosition &&
                       (lastUpdateVoiceDisplayState >= updateVoiceDisplayStateEvery)) ||
                      // Midi has arrived
-                     (midiNoteStateCounter != lastMidiNoteStateCounter));
+                     (midiNoteStateCounter != lastMidiNoteStateCounter) ||
+                     // a voice was created since the last write (e.g. a steal that left the
+                     // total unchanged but moved a voice between zones)
+                     (nextVoiceCreationId != lastVoiceDisplayCreationId));
     if (doUpdate)
     {
-        forceVoiceUpdate = false;
         lastUpdateVoiceDisplayState = 0;
         lastMidiNoteStateCounter = midiNoteStateCounter;
+        lastVoiceDisplayCreationId = nextVoiceCreationId;
 
         int i{0};
         for (const auto *v : voices)
@@ -460,6 +463,8 @@ bool Engine::processAudio()
         }
         sharedUIMemoryState.voiceCount = pav;
         sharedUIMemoryState.voiceDisplayStateWriteCounter++;
+        sharedUIMemoryState.forceCount += forceVoiceUpdate;
+        forceVoiceUpdate = false;
     }
     lastUpdateVoiceDisplayState++;
 
@@ -1648,6 +1653,11 @@ void Engine::onPartConfigurationUpdated()
 
         voiceManager.setPolyphonyGroupVoiceLimit((uint64_t)p.get(),
                                                  p->configuration.polyLimitVoices);
+
+        // The part limit changing (gained or lost) flips whether its groups parent under
+        // it, so re-bind each group's polyphony group to the part (or detach to root).
+        for (auto &g : *p)
+            g->updatePolyphonyGroupParent(*this);
     }
 
     voiceManager.dialect = midiM;

@@ -940,7 +940,7 @@ template <bool OS> bool Voice::processWithOS()
     if (terminationSequence == 0)
     {
         SCLOG_IF(voiceLifecycle, "Voice terminating due to termiantion sequence " << SCD(key));
-
+        engine->forceVoiceUpdate = true;
         isVoicePlaying = false;
     }
 
