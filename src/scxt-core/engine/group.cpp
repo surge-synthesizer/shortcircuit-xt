@@ -942,6 +942,20 @@ void Group::resetPolyAndPlaymode(engine::Engine &e)
         e.voiceManager.setPlaymode(pgrp, Engine::voiceManager_t::PlayMode::MONO_NOTES, features);
         e.voiceManager.setMonoPriorityMode(pgrp, mpm);
     }
+
+    updatePolyphonyGroupParent(e);
+}
+
+void Group::updatePolyphonyGroupParent(engine::Engine &e)
+{
+    if (!parentPart)
+        return;
+
+    auto pgrp = (uint64_t)this;
+    auto parentPoly = parentPart->configuration.polyLimitVoices
+                          ? (uint64_t)parentPart
+                          : Engine::voiceManager_t::noPolyphonyGroupParent;
+    e.voiceManager.setPolyphonyGroupParent(pgrp, parentPoly);
 }
 
 std::string Group::toStringGlideRateMode(const GlideRateMode &m)

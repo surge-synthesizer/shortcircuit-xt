@@ -252,6 +252,9 @@ size_t Part::addGroup()
 
     g->name = cn;
 
+    // A fresh group inherits whether the part has a limit, so parent its polyphony group now.
+    g->updatePolyphonyGroupParent(*parentPatch->parentEngine);
+
     groups.push_back(std::move(g));
     return groups.size();
 }
