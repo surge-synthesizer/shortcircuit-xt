@@ -530,11 +530,8 @@ void Zone::deleteVariant(int idx)
         variantData.variants[nv - 1] = variantData.variants[nv];
         samplePointers[nv - 1] = samplePointers[nv];
     }
-    if (idx < maxVariantsPerZone - 1)
-    {
-        variantData.variants[maxVariantsPerZone - 1] = {};
-        samplePointers[maxVariantsPerZone - 1] = {};
-    }
+    variantData.variants[maxVariantsPerZone - 1] = {};
+    samplePointers[maxVariantsPerZone - 1] = {};
 }
 
 void Zone::onProcessorTypeChanged(int idx, dsp::processor::ProcessorType)

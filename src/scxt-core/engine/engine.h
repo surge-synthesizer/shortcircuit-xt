@@ -116,7 +116,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     sst::basic_blocks::modulators::Transport transport;
     void onTransportUpdated();
-    void updateTransportPhasors();
 
     /**
      * Midi-style events. Each event is assumed to be at the top of the
@@ -128,8 +127,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
                              double velocity);
 
-    // TODO: This is obviusly a pretty inefficient search method. We can definitel
-    // pre-cache some of this lookup when the patch mutates
     struct pathToZone_t
     {
         pathToZone_t() {}
@@ -412,7 +409,6 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     // engine on an unstream. No fade, no nothing.
     void immediatelyTerminateAllVoices();
 
-    // TODO: All this gets ripped out when voice management is fixed
     void assertActiveVoiceCount();
     std::atomic<uint32_t> activeVoices{0};
     uint64_t nextVoiceCreationId{1};

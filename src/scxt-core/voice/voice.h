@@ -171,8 +171,6 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float retuningForKeyAtAttack{0.f};
     bool retuneContinuous{true};
 
-    float normalizationAmplitudeLinear; // in multiples not db
-
     static constexpr size_t noteExpressionCount{7};
     float noteExpressions[noteExpressionCount]{};
     sst::basic_blocks::dsp::LagCollection<noteExpressionCount> noteExpressionLags;

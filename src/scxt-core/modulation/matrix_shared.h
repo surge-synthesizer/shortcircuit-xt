@@ -235,7 +235,7 @@ template <typename TG, uint32_t gn> struct ProcessorTargetEndpointData
     TG mixT, outputLevelDbT, fpT[scxt::maxProcessorFloatParams];
     const float *mixP{nullptr};
     const float *outputLevelDbP{nullptr};
-    const float *floatP[scxt::maxProcessorFloatParams]; // FIX CONSTANT
+    const float *floatP[scxt::maxProcessorFloatParams]{};
     float fp[scxt::maxProcessorFloatParams]{};
 
     void snapValues()
@@ -323,7 +323,6 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
             {
                 r.depthScale = tmd.maxVal - tmd.minVal;
                 r.maxVal = tmd.maxVal;
-                r.minVal = tmd.minVal;
                 r.minVal = tmd.minVal;
                 if (!nonAdditive)
                 {

@@ -26,7 +26,6 @@
  */
 
 #include "voice.h"
-#include "voice.h"
 #include "tuning/equal.h"
 #include <cassert>
 #include <cmath>
@@ -63,7 +62,7 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
     envelopeFollowers[0].assign(&zone->audioSourceStorage.followers[0]);
     envelopeFollowers[1].assign(&zone->audioSourceStorage.followers[1]);
 
-    memset(output, 0, 2 * blockSize * sizeof(float));
+    memset(output, 0, sizeof(output));
     memset(processorIntParams, 0, sizeof(processorIntParams));
 }
 
@@ -369,7 +368,7 @@ template <bool OS> bool Voice::processWithOS()
             {
                 doEGRetrigger[i] = false;
                 eg[i].attackFromWithDelay(eg[i].outBlock0, *eg2p.dlyP, *eg2p.aP);
-                egiGate = getEnvSpecificGate(envGate, zone->egStorage[0], eg[i].stage,
+                egiGate = getEnvSpecificGate(envGate, zone->egStorage[i], eg[i].stage,
                                              isAnyGeneratorRunning);
             }
 
@@ -861,8 +860,8 @@ template <bool OS> bool Voice::processWithOS()
 
     if (terminationSequence > 0)
     {
+        pao *= (1.f * (terminationSequence - 1)) / blocksToTerminate;
         terminationSequence--;
-        pao *= terminationSequence / blocksToTerminate;
     }
     pao = std::max(pao, 0.f);
 
