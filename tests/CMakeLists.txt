@@ -18,6 +18,7 @@ add_executable(scxt-test
 		undo_tests.cpp
 		importer_tests.cpp
 		midi_channel_tests.cpp
+		macro_id_tests.cpp
 )
 
 target_compile_definitions(scxt-test PRIVATE

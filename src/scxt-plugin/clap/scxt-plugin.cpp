@@ -437,6 +437,7 @@ bool SCXTPlugin::handleEvent(const clap_event_header_t *nextEvent)
             engine->processNoteOffEvent(nevt->port_index, nevt->channel, nevt->key, nevt->note_id,
                                         nevt->velocity);
         }
+        break;
 
         case CLAP_EVENT_PARAM_VALUE:
         {

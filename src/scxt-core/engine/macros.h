@@ -128,8 +128,11 @@ struct Macro
                   "If you hit this you need to figure out what to do with those higher macros");
     static bool isMacroID(uint32_t id)
     {
-        return id >= firstMacroParam &&
-               id < firstMacroParam + macroParamPartStride * (scxt::numParts + 1);
+        if (id < firstMacroParam)
+            return false;
+        auto off = id - firstMacroParam;
+        return (off / macroParamPartStride) < scxt::numParts &&
+               (off % macroParamPartStride) < scxt::macrosPerPart;
     }
     static int macroIDToPart(uint32_t id) { return (id - firstMacroParam) / macroParamPartStride; }
     static int macroIDToIndex(uint32_t id) { return (id - firstMacroParam) % macroParamPartStride; }
