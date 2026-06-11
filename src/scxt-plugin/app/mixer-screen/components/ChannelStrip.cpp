@@ -29,6 +29,7 @@
 #include "ChannelStrip.h"
 #include "messaging/messaging.h"
 #include "messaging/client/mixer_messages.h"
+#include "messaging/client/selection_messages.h"
 #include <sst/jucegui/components/VUMeter.h>
 #include "app/SCXTEditor.h"
 #include "app/shared/PartEffectsPane.h"
@@ -144,6 +145,17 @@ struct DraggableMenuButton : jcmp::MenuButton, juce::DragAndDropTarget, shared::
 ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
     : HasEditor(e), jcmp::NamedPanel(""), mixer(m), busIndex(bi), type(t)
 {
+    // a drag on any send control is one undo entry. The begin payload
+    // carries the raw bus index; the handler derives the gesture tag
+    auto busSendBeginEdit = [this]() -> std::function<void()> {
+        return [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            w->sendToSerialization(
+                cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::bus_send, false, w->busIndex}));
+        };
+    };
+
     centeredHeader = true;
     std::string nm = "PART " + std::to_string(bi);
     if (t == BusType::MAIN)
@@ -220,6 +232,7 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
             auto ava = std::make_unique<attachment_t>(
                 datamodel::pmd().asPercent().withName("Aux " + std::to_string(idx + 1) + " Send"),
                 onChange, mixer->busSendData[busIndex].sendLevels[idx]);
+            ava->sendBeginEdit = busSendBeginEdit();
             axs = std::make_unique<jcmp::HSliderFilled>();
             axs->setSource(ava.get());
             addAndMakeVisible(*axs);
@@ -255,6 +268,7 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
     panAttachment =
         std::make_unique<attachment_t>(datamodel::pmd().asPercentBipolar().withName("Pan"),
                                        onChange, mixer->busSendData[busIndex].pan);
+    panAttachment->sendBeginEdit = busSendBeginEdit();
     panKnob = std::make_unique<jcmp::Knob>();
     panKnob->setSource(panAttachment.get());
     addAndMakeVisible(*panKnob);
@@ -263,6 +277,7 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
     vcaAttachment = std::make_unique<attachment_t>(
         datamodel::pmd().asCubicDecibelAttenuation().withName("Level").withDefault(1.0), onChange,
         mixer->busSendData[busIndex].level);
+    vcaAttachment->sendBeginEdit = busSendBeginEdit();
     vcaSlider = std::make_unique<jcmp::VSlider>();
     vcaSlider->setSource(vcaAttachment.get());
     setupFloatWidget(vcaSlider.get(), vcaAttachment);

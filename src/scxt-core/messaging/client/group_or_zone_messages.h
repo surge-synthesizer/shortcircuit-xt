@@ -32,6 +32,7 @@
 #include "messaging/client/detail/message_helpers.h"
 #include "messaging/client/client_macros.h"
 #include "undo_manager/undoable_items.h"
+#include "undo_manager/payload_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -40,32 +41,37 @@ typedef std::tuple<bool, int, bool, modulation::modulators::AdsrStorage> adsrVie
 SERIAL_TO_CLIENT(AdsrGroupOrZoneUpdate, s2c_update_group_or_zone_adsr_view,
                  adsrViewResponsePayload_t, onGroupOrZoneEnvelopeUpdated);
 
-CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupEGFloatValue, c2s_update_zone_or_group_eg_float_value,
-                             detail::indexedZoneOrGroupDiffMsg_t<float>,
-                             modulation::modulators::AdsrStorage,
-                             detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
-                                                                         &engine::Group::gegStorage,
-                                                                         payload, engine, cont));
+CLIENT_TO_SERIAL_CONSTRAINED(
+    UpdateZoneOrGroupEGFloatValue, c2s_update_zone_or_group_eg_float_value,
+    detail::indexedZoneOrGroupDiffMsg_t<float>, modulation::modulators::AdsrStorage,
+    (undo::pushZoneOrGroupPayloadUndo<undo::ZoneEgSpec, undo::GroupEgSpec>(
+         engine, std::get<0>(payload), (int32_t)std::get<1>(payload)),
+     detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::egStorage,
+                                                 &engine::Group::gegStorage, payload, engine,
+                                                 cont)));
 // Toggling temposync (a blanket bool on EG/modulator storage) changes how the affected time
 // targets display and modulate, so we restate the mod matrix metadata. The changed member's byte
 // offset rides in the diff payload (get<2>), so we only re-send on a temposync toggle.
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupEGBoolValue, c2s_update_zone_or_group_eg_bool_value,
     detail::indexedZoneOrGroupDiffMsg_t<bool>, modulation::modulators::AdsrStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(
-        &engine::Zone::egStorage, &engine::Group::gegStorage, payload, engine, cont,
-        [payload](const engine::Engine &eng) {
-            if (std::get<2>(payload) ==
-                (ptrdiff_t)offsetof(modulation::modulators::AdsrStorage, isTemposync))
-                eng.getSelectionManager()->sendDisplayDataForLeadSelection(std::get<0>(payload));
-        }));
+    (undo::pushZoneOrGroupPayloadUndo<undo::ZoneEgSpec, undo::GroupEgSpec>(
+         engine, std::get<0>(payload), (int32_t)std::get<1>(payload)),
+     detail::updateZoneOrGroupIndexedMemberValue(
+         &engine::Zone::egStorage, &engine::Group::gegStorage, payload, engine, cont,
+         [payload](const engine::Engine &eng) {
+             if (std::get<2>(payload) ==
+                 (ptrdiff_t)offsetof(modulation::modulators::AdsrStorage, isTemposync))
+                 eng.getSelectionManager()->sendDisplayDataForLeadSelection(std::get<0>(payload));
+         })));
 
 using fullAdsrStoragePayload_t = std::tuple<bool, int, modulation::modulators::AdsrStorage>;
 inline void doFullAdsrStorageUpdateForGroupsOrZones(const fullAdsrStoragePayload_t &payload,
-                                                    const engine::Engine &engine,
+                                                    engine::Engine &engine,
                                                     messaging::MessageController &cont)
 {
     auto [fz, eg, as] = payload;
+    undo::pushZoneOrGroupPayloadUndo<undo::ZoneEgSpec, undo::GroupEgSpec>(engine, fz, eg);
     if (fz)
     {
         auto zn = engine.getSelectionManager()->currentlySelectedZones();
@@ -123,66 +129,74 @@ CLIENT_TO_SERIAL(UpdateFullAdsrStorageForGroupsOrZones,
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupModStorageFloatValue, c2s_update_zone_or_group_modstorage_float_value,
     detail::indexedZoneOrGroupDiffMsg_t<float>, modulation::ModulatorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
-                                                &engine::Group::modulatorStorage, payload, engine,
-                                                cont));
+    (undo::pushZoneOrGroupPayloadUndo<undo::ZoneModStorageSpec, undo::GroupModStorageSpec>(
+         engine, std::get<0>(payload), (int32_t)std::get<1>(payload)),
+     detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::modulatorStorage,
+                                                 &engine::Group::modulatorStorage, payload, engine,
+                                                 cont)));
 
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupModStorageBoolValue, c2s_update_zone_or_group_modstorage_bool_value,
     detail::indexedZoneOrGroupDiffMsg_t<bool>, modulation::ModulatorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(
-        &engine::Zone::modulatorStorage, &engine::Group::modulatorStorage, payload, engine, cont,
-        [payload](const engine::Engine &eng) {
-            if (std::get<2>(payload) ==
-                (ptrdiff_t)offsetof(modulation::ModulatorStorage, temposync))
-                eng.getSelectionManager()->sendDisplayDataForLeadSelection(std::get<0>(payload));
-        }));
+    (undo::pushZoneOrGroupPayloadUndo<undo::ZoneModStorageSpec, undo::GroupModStorageSpec>(
+         engine, std::get<0>(payload), (int32_t)std::get<1>(payload)),
+     detail::updateZoneOrGroupIndexedMemberValue(
+         &engine::Zone::modulatorStorage, &engine::Group::modulatorStorage, payload, engine, cont,
+         [payload](const engine::Engine &eng) {
+             if (std::get<2>(payload) ==
+                 (ptrdiff_t)offsetof(modulation::ModulatorStorage, temposync))
+                 eng.getSelectionManager()->sendDisplayDataForLeadSelection(std::get<0>(payload));
+         })));
 
 // int updates can change shape. For now lets just always assume they do
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupModStorageInt16TValue, c2s_update_zone_or_group_modstorage_int16_t_value,
     detail::indexedZoneOrGroupDiffMsg_t<int16_t>, modulation::ModulatorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(
-        &engine::Zone::modulatorStorage, &engine::Group::modulatorStorage, payload, engine, cont,
-        [payload](auto &eng) {
-            auto forZone = std::get<0>(payload);
-            if (forZone)
-            {
-                auto lz = eng.getSelectionManager()->currentLeadZone(eng);
-                if (lz.has_value())
-                {
-                    eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(
-                        lz->part, lz->group, lz->zone);
-                }
-            }
-            else
-            {
-                auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
-                if (lg.has_value())
-                {
-                    eng.getSelectionManager()->sendDisplayDataForGroupsBasedOnLead(lg->part,
-                                                                                   lg->group);
-                }
-            }
-        },
-        nullptr, // no need to do a voice update
-        [payload](auto &engine, const auto &gs) {
-            auto idx = std::get<1>(payload);
-            assert(engine.getMessageController()->threadingChecker.isAudioThread());
-            for (auto [p, g, z] : gs)
-            {
-                auto &grp = engine.getPatch()->getPart(p)->getGroup(g);
-                grp->resetLFOs(idx);
-                grp->rePrepareAndBindGroupMatrix();
-            }
-        }))
+    (undo::pushZoneOrGroupPayloadUndo<undo::ZoneModStorageSpec, undo::GroupModStorageSpec>(
+         engine, std::get<0>(payload), (int32_t)std::get<1>(payload)),
+     detail::updateZoneOrGroupIndexedMemberValue(
+         &engine::Zone::modulatorStorage, &engine::Group::modulatorStorage, payload, engine, cont,
+         [payload](auto &eng) {
+             auto forZone = std::get<0>(payload);
+             if (forZone)
+             {
+                 auto lz = eng.getSelectionManager()->currentLeadZone(eng);
+                 if (lz.has_value())
+                 {
+                     eng.getSelectionManager()->sendDisplayDataForZonesBasedOnLead(
+                         lz->part, lz->group, lz->zone);
+                 }
+             }
+             else
+             {
+                 auto lg = eng.getSelectionManager()->currentLeadGroup(eng);
+                 if (lg.has_value())
+                 {
+                     eng.getSelectionManager()->sendDisplayDataForGroupsBasedOnLead(lg->part,
+                                                                                    lg->group);
+                 }
+             }
+         },
+         nullptr, // no need to do a voice update
+         [payload](auto &engine, const auto &gs) {
+             auto idx = std::get<1>(payload);
+             assert(engine.getMessageController()->threadingChecker.isAudioThread());
+             for (auto [p, g, z] : gs)
+             {
+                 auto &grp = engine.getPatch()->getPart(p)->getGroup(g);
+                 grp->resetLFOs(idx);
+                 grp->rePrepareAndBindGroupMatrix();
+             }
+         })))
 
 using fullModStoragePayload_t = std::tuple<bool, int, modulation::ModulatorStorage>;
 inline void doFullModStorageUpdateForGroupsOrZones(const fullModStoragePayload_t &payload,
-                                                   const engine::Engine &engine,
+                                                   engine::Engine &engine,
                                                    messaging::MessageController &cont)
 {
     auto [fz, mod, ms] = payload;
+    undo::pushZoneOrGroupPayloadUndo<undo::ZoneModStorageSpec, undo::GroupModStorageSpec>(engine,
+                                                                                          fz, mod);
     if (fz)
     {
         auto zn = engine.getSelectionManager()->currentlySelectedZones();
@@ -255,10 +269,15 @@ inline void doRenameGroup(const renameGroupZonePayload_t &payload, engine::Engin
 CLIENT_TO_SERIAL(RenameGroup, c2s_rename_group, renameGroupZonePayload_t,
                  doRenameGroup(payload, engine, cont));
 
-inline void doRenameZone(const renameGroupZonePayload_t &payload, const engine::Engine &engine,
+inline void doRenameZone(const renameGroupZonePayload_t &payload, engine::Engine &engine,
                          MessageController &cont)
 {
     const auto &[p, g, z] = std::get<0>(payload);
+
+    auto undoItem = std::make_unique<undo::ZoneRenameItem>();
+    undoItem->store(engine, p, g, z);
+    engine.undoManager.storeUndoStep(std::move(undoItem));
+
     engine.getPatch()->getPart(p)->getGroup(g)->getZone(z)->givenName = std::get<1>(payload);
     serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(), cont);
     serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,

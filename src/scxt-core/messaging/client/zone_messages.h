@@ -35,7 +35,7 @@
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
 #include "selection/selection_manager.h"
-#include "undo_manager/zone_undoable_items.h"
+#include "undo_manager/payload_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -51,13 +51,14 @@ SERIAL_TO_CLIENT(MappingSelectedZoneView, s2c_respond_zone_mapping,
  * bound metadata
  */
 inline void doUpdateLeadZoneMapping(const engine::Zone::ZoneMappingData &payload,
-                                    const engine::Engine &engine, MessageController &cont)
+                                    engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &mapping = payload;
     auto sz = engine.getSelectionManager()->currentLeadZone(engine);
     if (sz.has_value())
     {
+        undo::pushPayloadUndo<undo::ZoneMappingSpec>(engine);
         cont.scheduleAudioThreadCallback(
             [zs = *sz, mapv = mapping](auto &eng) {
                 auto [p, g, z] = zs;
@@ -76,7 +77,7 @@ CLIENT_TO_SERIAL(UpdateLeadZoneMapping, c2s_update_lead_zone_mapping, engine::Zo
 
 typedef std::tuple<bool, bool, int, int, int, int>
     applyZoneDeltaPayload_t; // absolute, lead-only, part, dim, dx, dy
-inline void doApplyZoneDelta(const applyZoneDeltaPayload_t &payload, const engine::Engine &engine,
+inline void doApplyZoneDelta(const applyZoneDeltaPayload_t &payload, engine::Engine &engine,
                              MessageController &cont)
 {
     auto part = std::get<2>(payload);
@@ -84,6 +85,7 @@ inline void doApplyZoneDelta(const applyZoneDeltaPayload_t &payload, const engin
     auto lz = engine.getSelectionManager()->currentLeadZone(engine);
     if (!sc.empty())
     {
+        undo::pushPayloadUndo<undo::ZoneMappingSpec>(engine);
         cont.scheduleAudioThreadCallback([lead = lz, pl = payload, zones = sc](auto &eng) {
             auto [abs, leadOnly, pt, dirI, dx, dy] = pl;
             auto dir = (engine::Zone::ChangeDimension)dirI;
@@ -171,11 +173,12 @@ CLIENT_TO_SERIAL(RequestZoneMapping, c2s_request_zone_mapping, int,
 // resend the resulting mapped zones with selection state back to the UI
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneMappingFloatValue, c2s_update_zone_mapping_float,
                              detail::diffMsg_t<float>, engine::Zone::ZoneMappingData,
-                             detail::updateZoneLeadMemberValue(&engine::Zone::mapping, payload,
-                                                               engine, cont));
+                             (undo::pushPayloadUndo<undo::ZoneMappingSpec>(engine),
+                              detail::updateZoneLeadMemberValue(&engine::Zone::mapping, payload,
+                                                                engine, cont)));
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneMappingInt16TValue, c2s_update_zone_mapping_int16_t, detail::diffMsg_t<int16_t>,
-    engine::Zone::ZoneMappingData,
+    engine::Zone::ZoneMappingData, undo::pushPayloadUndo<undo::ZoneMappingSpec>(engine);
     detail::updateZoneLeadMemberValue(
         &engine::Zone::mapping, payload, engine, cont, [](const auto &eng) {
             auto pt = eng.getSelectionManager()->currentlySelectedPart(eng);
@@ -191,13 +194,14 @@ SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelecte
 
 using updateLeadZoneSingleVariantPayload_t = std::tuple<size_t, engine::Zone::SingleVariant>;
 inline void doUpdateLeadZoneSingleVariant(const updateLeadZoneSingleVariantPayload_t &payload,
-                                          const engine::Engine &engine, MessageController &cont)
+                                          engine::Engine &engine, MessageController &cont)
 {
     // TODO Selected Zone State
     const auto &samples = payload;
     auto sz = engine.getSelectionManager()->currentLeadZone(engine);
     if (sz.has_value())
     {
+        undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
         auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
             auto &[idx, smp] = sampv;
@@ -211,12 +215,13 @@ CLIENT_TO_SERIAL(UpdateLeadZoneSingleVariant, c2s_update_lead_zone_single_varian
 
 using normalizeVariantAmplitudePayload_t = std::tuple<size_t, bool>;
 inline void doNormalizeVariantAmplitude(const normalizeVariantAmplitudePayload_t &payload,
-                                        const engine::Engine &engine, MessageController &cont)
+                                        engine::Engine &engine, MessageController &cont)
 {
     const auto &samples = payload;
     auto sz = engine.getSelectionManager()->currentLeadZone(engine);
     if (sz.has_value())
     {
+        undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
         auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback(
             [p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
@@ -238,12 +243,13 @@ CLIENT_TO_SERIAL(NormalizeVariantAmplitude, c2s_normalize_variant_amplitude,
 using clearVariantAmplitudeNormalizationPayload_t = size_t;
 inline void
 doClearVariantAmplitudeNormalization(const clearVariantAmplitudeNormalizationPayload_t &payload,
-                                     const engine::Engine &engine, MessageController &cont)
+                                     engine::Engine &engine, MessageController &cont)
 {
     const auto &samples = payload;
     auto sz = engine.getSelectionManager()->currentLeadZone(engine);
     if (sz.has_value())
     {
+        undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
         auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback(
             [p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
@@ -264,8 +270,9 @@ CLIENT_TO_SERIAL(ClearVariantAmplitudeNormalization, c2s_clear_variant_amplitude
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneVariantsInt16TValue, c2s_update_zone_variants_int16_t,
                              detail::diffMsg_t<int16_t>, engine::Zone::Variants,
-                             detail::updateZoneMemberValue(&engine::Zone::variantData, payload,
-                                                           engine, cont));
+                             (undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine),
+                              detail::updateZoneMemberValue(&engine::Zone::variantData, payload,
+                                                            engine, cont)));
 
 using zoneOutputInfoUpdate_t = std::pair<bool, engine::Zone::ZoneOutputInfo>;
 SERIAL_TO_CLIENT(ZoneOutputInfoUpdated, s2c_update_zone_output_info, zoneOutputInfoUpdate_t,
@@ -273,17 +280,20 @@ SERIAL_TO_CLIENT(ZoneOutputInfoUpdated, s2c_update_zone_output_info, zoneOutputI
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOutputFloatValue, c2s_update_zone_output_float_value,
                              detail::diffMsg_t<float>, engine::Zone::ZoneOutputInfo,
-                             detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload,
-                                                           engine, cont));
+                             (undo::pushPayloadUndo<undo::ZoneOutputInfoSpec>(engine),
+                              detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload,
+                                                            engine, cont)));
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOutputInt16TValue, c2s_update_zone_output_int16_t_value,
                              detail::diffMsg_t<int16_t>, engine::Zone::ZoneOutputInfo,
-                             detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload,
-                                                           engine, cont));
+                             (undo::pushPayloadUndo<undo::ZoneOutputInfoSpec>(engine),
+                              detail::updateZoneMemberValue(&engine::Zone::outputInfo, payload,
+                                                            engine, cont)));
 
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOutputInt16TValueThenRefresh, c2s_update_zone_output_int16_t_value_then_refresh,
     detail::diffMsg_t<int16_t>, engine::Zone::ZoneOutputInfo,
+    undo::pushPayloadUndo<undo::ZoneOutputInfoSpec>(engine);
     detail::updateZoneMemberValue(
         &engine::Zone::outputInfo, payload, engine, cont, [](auto const &eng) {
             auto lz = eng.getSelectionManager()->currentLeadZone(eng);
@@ -313,6 +323,8 @@ inline void doDeleteVariant(const deleteVariantPayload_t &payload, engine::Engin
     auto sz = engine.getSelectionManager()->currentLeadZone(engine);
     if (sz.has_value())
     {
+        undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
+
         auto [ps, gs, zs] = *sz;
         cont.scheduleAudioThreadCallback(
             [p = ps, g = gs, z = zs, var = payload](auto &eng) {
@@ -320,7 +332,8 @@ inline void doDeleteVariant(const deleteVariantPayload_t &payload, engine::Engin
                 zone->deleteVariant(var);
             },
             [p = ps, g = gs, z = zs](auto &e) {
-                e.getSampleManager()->purgeUnreferencedSamples();
+                // no unreferenced-sample purge here; undo of the delete
+                // needs the sample to stay resident
                 SCLOG_ONCE_IF(debug,
                               "Delete variant could be optimized to not sending so much back");
                 e.sendFullRefreshToClient();
@@ -339,16 +352,6 @@ inline void doInitiateMidiZoneAction(const initiateMidiZoneAction_t &payload,
 }
 CLIENT_TO_SERIAL(InitiateMidiZoneAction, c2s_initiate_midizone_action, initiateMidiZoneAction_t,
                  doInitiateMidiZoneAction(payload, engine, cont));
-
-inline void doBeginZoneMappingModification(const bool &payload, engine::Engine &engine,
-                                           MessageController &cont)
-{
-    auto undoItem = std::make_unique<undo::ZoneMappingDataUndoableItem>();
-    undoItem->store(engine);
-    engine.undoManager.storeUndoStep(std::move(undoItem));
-}
-CLIENT_TO_SERIAL(BeginZoneMappingModification, c2s_begin_zone_mapping_modification, bool,
-                 doBeginZoneMappingModification(payload, engine, cont));
 
 } // namespace scxt::messaging::client
 

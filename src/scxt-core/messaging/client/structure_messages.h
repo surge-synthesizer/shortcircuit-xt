@@ -34,6 +34,8 @@
 #include "selection/selection_manager.h"
 #include "engine/engine.h"
 #include "client_macros.h"
+#include "undo_manager/structure_undoable_items.h"
+#include "undo_manager/payload_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -177,6 +179,14 @@ inline void createGroupIn(int partNumber, engine::Engine &engine, MessageControl
     if (partNumber < 0 || partNumber > numParts)
         partNumber = 0;
     SCLOG_IF(groupZoneMutation, "Creating group in part " << partNumber);
+
+    {
+        auto gi = (int32_t)engine.getPatch()->getPart(partNumber)->getGroups().size();
+        auto undoItem = std::make_unique<undo::GroupsDeleteOnUndoItem>();
+        undoItem->store(engine, {{(int16_t)partNumber, gi}});
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+    }
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [p = partNumber](auto &e) { e.getPatch()->getPart(p)->addGroup(); },
         [p = partNumber](auto &engine) {
@@ -202,6 +212,12 @@ CLIENT_TO_SERIAL(CreateGroup, c2s_create_group, int, createGroupIn(payload, engi
 inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine::Engine &engine,
                        MessageController &cont)
 {
+    {
+        auto undoItem = std::make_unique<undo::ZonesRestoreItem>();
+        undoItem->store(engine, {a});
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+    }
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [s = a](auto &e) {
             auto &zoneO = e.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
@@ -214,7 +230,7 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
                 zoneToFree, audio::AudioToSerialization::ToBeDeleted::engine_Zone);
         },
         [t = a](auto &engine) {
-            engine.getSampleManager()->purgeUnreferencedSamples();
+            // no unreferenced-sample purge; undoing the delete needs them resident
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, true, t);
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
@@ -252,6 +268,12 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
     if (zs.empty())
         return;
 
+    {
+        auto undoItem = std::make_unique<undo::ZonesRestoreItem>();
+        undoItem->store(engine, {zs.begin(), zs.end()});
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+    }
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [sz = zs](auto &e) {
             // I know this allocates and deallocates on audio thread
@@ -275,7 +297,7 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
             }
         },
         [t = part](auto &engine) {
-            engine.getSampleManager()->purgeUnreferencedSamples();
+            // no unreferenced-sample purge; undoing the delete needs them resident
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, true,
                                                                            {t, -1, -1});
 
@@ -292,6 +314,27 @@ CLIENT_TO_SERIAL(DeleteAllSelectedZones, c2s_delete_selected_zones, bool,
 inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a,
                                bool deleteAllEmpty, engine::Engine &engine, MessageController &cont)
 {
+    {
+        std::vector<std::pair<int16_t, int32_t>> addrs;
+        auto &part = engine.getPatch()->getPart(a.part);
+        if (deleteAllEmpty)
+        {
+            for (int g = 0; g < (int)part->getGroups().size(); ++g)
+                if (part->getGroup(g)->getZones().empty())
+                    addrs.emplace_back((int16_t)a.part, g);
+        }
+        else if (a.group < (int32_t)part->getGroups().size())
+        {
+            addrs.emplace_back((int16_t)a.part, a.group);
+        }
+        if (!addrs.empty())
+        {
+            auto undoItem = std::make_unique<undo::GroupsRestoreItem>();
+            undoItem->store(engine, addrs);
+            engine.undoManager.storeUndoStep(std::move(undoItem));
+        }
+    }
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [s = a, all = deleteAllEmpty](auto &e) {
             auto deleteOneGroup = [&e, s](int groupIdx) {
@@ -321,7 +364,7 @@ inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a
             }
         },
         [t = a](auto &engine) {
-            engine.getSampleManager()->purgeUnreferencedSamples();
+            // no unreferenced-sample purge; undoing the delete needs them resident
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false, t);
 
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
@@ -338,6 +381,8 @@ CLIENT_TO_SERIAL(DeleteEmptyGroups, c2s_delete_empty_groups, int32_t,
 
 inline void clearPart(const int p, engine::Engine &engine, MessageController &cont)
 {
+    undo::pushPartStreamUndo(engine, p, "Clear Part");
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [pt = p](auto &e) {
             auto &part = e.getPatch()->getPart(pt);
@@ -355,7 +400,7 @@ inline void clearPart(const int p, engine::Engine &engine, MessageController &co
             }
         },
         [pt = p](auto &engine) {
-            engine.getSampleManager()->purgeUnreferencedSamples();
+            // no unreferenced-sample purge; undoing the clear needs them resident
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false,
                                                                            {pt, -1, -1});
 
@@ -383,6 +428,26 @@ inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &
         SCLOG_IF(groupZoneMutation, "Empty src so we populated it with " << src.size() << " zones");
     }
     assert(src.begin()->part == tgt.part);
+
+    {
+        std::vector<int32_t> affected;
+        for (const auto &sa : src)
+            affected.push_back(sa.group);
+        if (tgt.group >= 0)
+            affected.push_back(tgt.group);
+        std::sort(affected.begin(), affected.end());
+        affected.erase(std::unique(affected.begin(), affected.end()), affected.end());
+
+        auto undoItem = std::make_unique<undo::ZoneOrderRestoreItem>();
+        undoItem->store(engine, tgt.part, affected);
+        if (tgt.group < 0)
+        {
+            // the move will create a group at the end; undo deletes it
+            undoItem->deleteGroupsAtEnd.push_back(
+                (int32_t)engine.getPatch()->getPart(tgt.part)->getGroups().size());
+        }
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+    }
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [ss = src, t = tgt](auto &e) {
@@ -490,6 +555,12 @@ inline void moveGroupTo(const moveGroupAddress_t &payload, engine::Engine &engin
     if (src.group == tgt.group)
         return;
 
+    {
+        auto undoItem = std::make_unique<undo::GroupOrderRestoreItem>();
+        undoItem->store(engine, src.part);
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+    }
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [ss = src, tt = tgt](auto &e) {
             // This is a little hairy byt I know the zones will not be deleted during this function
@@ -522,8 +593,28 @@ inline void moveGroupTo(const moveGroupAddress_t &payload, engine::Engine &engin
 CLIENT_TO_SERIAL(MoveGroupTo, c2s_move_group, moveGroupAddress_t,
                  moveGroupTo(payload, engine, cont));
 
-inline void doActivateNextPart(messaging::MessageController &cont)
+inline void doActivateNextPart(engine::Engine &engine, messaging::MessageController &cont)
 {
+    {
+        std::vector<int16_t> affected;
+        int16_t pi{0};
+        for (auto &pt : *(engine.getPatch()))
+        {
+            if (!pt->configuration.active)
+            {
+                affected.push_back(pi);
+                break;
+            }
+            pi++;
+        }
+        if (!affected.empty())
+        {
+            auto undoItem = std::make_unique<undo::PartsStateItem>();
+            undoItem->store(engine, affected);
+            engine.undoManager.storeUndoStep(std::move(undoItem));
+        }
+    }
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [](auto &e) {
             // We should really do this on audio thread but test it here quickly
@@ -539,10 +630,27 @@ inline void doActivateNextPart(messaging::MessageController &cont)
         },
         [](const auto &e) { e.sendFullRefreshToClient(); });
 }
-CLIENT_TO_SERIAL(ActivateNextPart, c2s_activate_next_part, bool, doActivateNextPart(cont));
+CLIENT_TO_SERIAL(ActivateNextPart, c2s_activate_next_part, bool, doActivateNextPart(engine, cont));
 
-inline void doDeactivatePart(int part, messaging::MessageController &cont)
+inline void doDeactivatePart(int part, engine::Engine &engine, messaging::MessageController &cont)
 {
+    {
+        std::vector<int16_t> affected{(int16_t)part};
+        bool anyOther{false};
+        int16_t pi{0};
+        for (auto &pt : *(engine.getPatch()))
+        {
+            if (pi != part && pt->configuration.active)
+                anyOther = true;
+            pi++;
+        }
+        if (!anyOther && part != 0)
+            affected.push_back(0); // the fallback wipes part 0
+        auto undoItem = std::make_unique<undo::PartsStateItem>();
+        undoItem->store(engine, affected);
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+    }
+
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [part](auto &e) {
             e.getPatch()->getPart(part)->configuration.active = false;
@@ -576,7 +684,8 @@ inline void doDeactivatePart(int part, messaging::MessageController &cont)
             e.sendFullRefreshToClient();
         });
 }
-CLIENT_TO_SERIAL(DeactivatePart, c2s_deactivate_part, int32_t, doDeactivatePart(payload, cont));
+CLIENT_TO_SERIAL(DeactivatePart, c2s_deactivate_part, int32_t,
+                 doDeactivatePart(payload, engine, cont));
 
 inline void doRequestZoneDataRefresh(const engine::Engine &eng, messaging::MessageController &cont)
 {

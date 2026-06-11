@@ -53,6 +53,7 @@ inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
 {
     auto mc = messaging::MessageController::ClientActivityNotificationGuard(
         "Unstreaming Engine State", cont);
+    engine.undoManager.clear();
     if (cont.isAudioRunning)
     {
         cont.stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {

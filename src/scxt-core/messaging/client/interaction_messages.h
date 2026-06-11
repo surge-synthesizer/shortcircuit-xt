@@ -125,6 +125,7 @@ CLIENT_TO_SERIAL(RequestHostCallback, c2s_request_host_callback, uint64_t,
 
 inline void doResetEngine(const std::string &fl, engine::Engine &e, MessageController &cont)
 {
+    e.undoManager.clear();
     scxt::patch_io::initFromResourceBundle(e, fl);
     e.sendFullRefreshToClient();
 }

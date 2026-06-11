@@ -241,6 +241,15 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
                 return idx;
         return -1;
     }
+    size_t insertGroup(std::unique_ptr<Group> &g, size_t idx)
+    {
+        if (idx > groups.size())
+            idx = groups.size();
+        g->parentPart = this;
+        g->setSampleRate(getSampleRate());
+        groups.insert(groups.begin() + idx, std::move(g));
+        return groups.size();
+    }
     std::unique_ptr<Group> removeGroup(const GroupID &zid)
     {
         auto idx = getGroupIndex(zid);

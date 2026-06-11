@@ -30,22 +30,56 @@
 
 #include <memory>
 #include <deque>
+#include <optional>
+#include <string>
 #include "undoable_items.h"
 
 namespace scxt::undo
 {
 
+// Begin opens a gesture: while it is open, Discrete pushes with the same
+// tag are dropped — undo is per event, not per change
+enum struct UndoGesture
+{
+    Discrete,
+    Begin
+};
+
 struct UndoManager
 {
     void storeUndoStep(std::unique_ptr<UndoableItem> item);
+    // gesture-aware push: drops the item if a gesture with this tag is
+    // open; any other tag closes that gesture first. Begin opens the tag.
+    void storeUndoStepTagged(std::unique_ptr<UndoableItem> item, const std::string &tag,
+                             UndoGesture g);
     bool applyUndoStep(engine::Engine &e);
     bool applyRedoStep(engine::Engine &e);
+    // For whole-engine replacements (load multi, load part, unstream, reset)
+    // where prior items reference state which no longer exists
+    void clear();
     bool hasUndoSteps() const { return !undoStack.empty(); }
     bool hasRedoSteps() const { return !redoStack.empty(); }
+    size_t undoStackSize() const { return undoStack.size(); }
+    size_t redoStackSize() const { return redoStack.size(); }
+
+    /*
+     * Undo is per event, not per change. A continuous gesture (knob drag,
+     * zone drag) opens a tag at begin-edit; while it is open, handler-side
+     * pushes carrying the same tag are dropped since the begin snapshot
+     * already covers the whole gesture. End-edit (or any undo/redo/clear)
+     * closes it.
+     */
+    void openGesture(const std::string &tag) { openGestureTag = tag; }
+    void closeGesture() { openGestureTag = std::nullopt; }
+    bool gestureCovers(const std::string &tag) const
+    {
+        return openGestureTag.has_value() && *openGestureTag == tag;
+    }
 
   private:
     std::deque<std::unique_ptr<UndoableItem>> undoStack;
     std::deque<std::unique_ptr<UndoableItem>> redoStack;
+    std::optional<std::string> openGestureTag;
 };
 
 } // namespace scxt::undo
