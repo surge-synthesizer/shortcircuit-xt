@@ -129,7 +129,7 @@ Engine::Engine()
             SCLOG_IF(warnings, "Defaults Parse Error :" << em << " " << t << std::endl);
         });
 
-    browserDb = std::make_unique<browser::BrowserDB>(*tdp, *messageController);
+    browserDb = std::make_unique<browser::BrowserDB>(useTDP, *messageController);
     browser = std::make_unique<browser::Browser>(
         *browserDb, *defaults, useTDP,
         [this](const auto &a, const auto &b) { RAISE_ERROR_CONT(*messageController, a, b); });
@@ -378,8 +378,6 @@ bool Engine::processAudio()
     {
         return true;
     }
-
-    updateTransportPhasors();
 
     getPatch()->process(*this);
 
@@ -1423,21 +1421,6 @@ void Engine::onTransportUpdated()
     sharedUIMemoryState.transportDisplay.tsnum = transport.signature.numerator;
     sharedUIMemoryState.transportDisplay.hostpos = transport.hostTimeInBeats;
     sharedUIMemoryState.transportDisplay.timepos = transport.timeInBeats;
-
-    updateTransportPhasors();
-}
-
-void Engine::updateTransportPhasors()
-{
-#if 0
-    float mul = 1 << ((numTransportPhasors - 1) / 2);
-    for (int i = 0; i < numTransportPhasors; ++i)
-    {
-        float rawBeat;
-        transportPhasors[i] = std::modf((float)(transport.timeInBeats) * mul, &rawBeat);
-        mul = mul / 2;
-    }
-#endif
 }
 
 std::optional<fs::path> Engine::setupUserStorageDirectory()

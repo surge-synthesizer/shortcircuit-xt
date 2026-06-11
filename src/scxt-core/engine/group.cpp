@@ -435,7 +435,6 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     auto mlev = std::clamp(*endpoints.outputTarget.ampP, 0.f, 1.f);
     if (terminationSequence > 0)
     {
-        auto pml = mlev;
         mlev *= 1.f * (terminationSequence - 1) / blocksToTerminate;
         terminationSequence--;
     }
@@ -582,7 +581,7 @@ void Group::setupOnUnstream(engine::Engine &e)
     onGroupMidiChannelSubscriptionChanged();
     rePrepareAndBindGroupMatrix();
 
-    for (auto i = 0U; i < engine::lfosPerZone; ++i)
+    for (auto i = 0U; i < engine::lfosPerGroup; ++i)
     {
         stepLfos[i].setSampleRate(sampleRate, sampleRateInv);
 

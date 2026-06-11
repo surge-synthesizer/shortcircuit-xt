@@ -169,7 +169,6 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         bool procRoutingConsistent{true};
         BusAddress routeTo{DEFAULT_BUS};
         bool busRoutingConsistent{true};
-        float velocitySensitivity;
     } outputInfo;
     static_assert(std::is_standard_layout<ZoneOutputInfo>::value);
 
@@ -352,7 +351,7 @@ SC_DESCRIBE(scxt::engine::Zone::ZoneOutputInfo,
 SC_DESCRIBE(scxt::engine::Zone::SingleVariant,
             SC_FIELD(amplitude,
                      pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
-            SC_FIELD(pitchOffset, pmd().asSemitoneRange(-36, 36).withName("Pitch Offset}"));
+            SC_FIELD(pitchOffset, pmd().asSemitoneRange(-36, 36).withName("Pitch Offset"));
             SC_FIELD(pan, pmd().asPan().withName("Pan"));)
 
 SC_DESCRIBE(
@@ -378,7 +377,7 @@ SC_DESCRIBE(
                        .withRange(-1, 48)
                        .withLinearScaleFormatting("")
                        .withDefault(-1)
-                       .withName("Pitch Bend Down")
+                       .withName("Pitch Bend Up")
                        .withCustomMinDisplay("GRP"));
 
     SC_FIELD(amplitude, pmd().asDecibelWithRange(-36, 36).withName("Amplitude").withDefault(0.f));

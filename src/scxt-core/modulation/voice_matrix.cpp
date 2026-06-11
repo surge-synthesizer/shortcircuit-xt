@@ -42,7 +42,6 @@ namespace scxt::voice::modulation
 std::unordered_map<MatrixConfig::SourceIdentifier, int32_t> MatrixConfig::defaultLags;
 
 namespace shmo = scxt::modulation::shared;
-sst::basic_blocks::dsp::RNG rng;
 
 void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
