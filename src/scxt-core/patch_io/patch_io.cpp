@@ -543,6 +543,8 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
         else
         {
             RAISE_ERROR_ENGINE(e, "Unable to create collect dir", emsg);
+            e.getSampleManager()->remapIds.clear();
+            return false;
         }
     }
 
@@ -593,9 +595,17 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
         }
         e.getSampleManager()->remapIds.clear();
     }
-    catch (const RIFF::Exception &e)
+    catch (const RIFF::Exception &exc)
     {
-        SCLOG_IF(patchIO, e.Message);
+        SCLOG_IF(patchIO, exc.Message);
+        RAISE_ERROR_ENGINE(e, "Exception saving Multi",
+                           riffPath.u8string() + " threw " + exc.Message);
+        // A failed save must report failure and leave the SampleManager out of
+        // reparent mode, else subsequent saves corrupt their paths.
+        if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
+            e.getSampleManager()->clearReparenting();
+        e.getSampleManager()->remapIds.clear();
+        return false;
     }
     return true;
 }
@@ -627,6 +637,8 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
         else
         {
             RAISE_ERROR_ENGINE(e, "Unable to create collect dir", emsg);
+            e.getSampleManager()->remapIds.clear();
+            return false;
         }
     }
 
@@ -715,9 +727,17 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
         }
         e.getSampleManager()->remapIds.clear();
     }
-    catch (const RIFF::Exception &e)
+    catch (const RIFF::Exception &exc)
     {
-        SCLOG_IF(patchIO, e.Message);
+        SCLOG_IF(patchIO, exc.Message);
+        RAISE_ERROR_ENGINE(e, "Exception saving Part",
+                           riffPath.u8string() + " threw " + exc.Message);
+        // A failed save must report failure and leave the SampleManager out of
+        // reparent mode, else subsequent saves corrupt their paths.
+        if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
+            e.getSampleManager()->clearReparenting();
+        e.getSampleManager()->remapIds.clear();
+        return false;
     }
     return true;
 }
@@ -746,13 +766,13 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
             {
                 nonconste.immediatelyTerminateAllVoices();
                 scxt::json::unstreamEngineState(nonconste, payload, true);
-                auto &cont = *e.getMessageController();
-                cont.restartAudioThreadFromSerial();
             }
             catch (std::exception &err)
             {
                 SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
             }
+            // Always restart, else a failed load leaves audio permanently stopped.
+            e.getMessageController()->restartAudioThreadFromSerial();
         });
     }
     else
@@ -829,14 +849,16 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
                     nonconste.getSampleManager()->clearReparenting();
                     nonconste.getSampleManager()->clearMonolithBinaryIndex();
                     nonconste.getSampleManager()->purgeUnreferencedSamples();
-
-                    auto &cont = *e.getMessageController();
-                    cont.restartAudioThreadFromSerial();
                 }
                 catch (std::exception &err)
                 {
                     SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
+                    RAISE_ERROR_ENGINE(e, "Unable to load Multi", err.what());
+                    nonconste.getSampleManager()->clearReparenting();
+                    nonconste.getSampleManager()->clearMonolithBinaryIndex();
                 }
+                // Always restart, else a failed load leaves audio permanently stopped.
+                e.getMessageController()->restartAudioThreadFromSerial();
             });
     }
     else
@@ -910,13 +932,16 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
                 {
                     sm->applySelectActions({part, 0, -1});
                 }
-                auto &cont = *e.getMessageController();
-                cont.restartAudioThreadFromSerial();
             }
             catch (std::exception &err)
             {
                 SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
+                RAISE_ERROR_ENGINE(e, "Unable to load Part", err.what());
+                nonconste.getSampleManager()->clearReparenting();
+                nonconste.getSampleManager()->clearMonolithBinaryIndex();
             }
+            // Always restart, else a failed load leaves audio permanently stopped.
+            e.getMessageController()->restartAudioThreadFromSerial();
         });
     }
     else
