@@ -78,6 +78,7 @@
     "ob": {
       "class": "textedit40",
       "tooltip-position": "vcenter-left",
+      "label-source": "none",
       "binding": {
         "type": "float",
         "index": 1
@@ -90,6 +91,7 @@
     "oa": {
       "class": "textedit40",
       "tooltip-position": "vcenter-left",
+      "label-source": "none",
       "binding": {
         "type": "float",
         "index": 2
