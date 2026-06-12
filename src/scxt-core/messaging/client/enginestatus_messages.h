@@ -56,36 +56,38 @@ inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
     if (cont.isAudioRunning)
     {
         cont.stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
+            auto &cont = *e.getMessageController();
             try
             {
                 nonconste.immediatelyTerminateAllVoices();
                 scxt::json::unstreamEngineState(nonconste, payload);
-                auto &cont = *e.getMessageController();
-                cont.restartAudioThreadFromSerial();
-                cont.sendStreamCompleteNotification();
             }
             catch (std::exception &err)
             {
                 RAISE_ERROR_ENGINE(nonconste, "Unstreaming Error",
                                    std::string("Unable to unstream engine state ") + err.what());
             }
+            // Restart then notify on every path: a failed unstream must neither
+            // wedge audio nor hang a setState waiter.
+            cont.restartAudioThreadFromSerial();
+            cont.sendStreamCompleteNotification();
         });
     }
     else
     {
+        engine.stopEngineRequests++;
         try
         {
-            engine.stopEngineRequests++;
             engine.immediatelyTerminateAllVoices();
             scxt::json::unstreamEngineState(engine, payload);
-            engine.stopEngineRequests--;
-            cont.sendStreamCompleteNotification();
         }
         catch (std::exception &err)
         {
             RAISE_ERROR_ENGINE(engine, "Unstreaming Error",
                                std::string("Unable to unstream engine state ") + err.what());
         }
+        engine.stopEngineRequests--;
+        cont.sendStreamCompleteNotification();
     }
 }
 CLIENT_TO_SERIAL(UnstreamEngineState, c2s_unstream_engine_state, unstreamEngineStatePayload_t,
