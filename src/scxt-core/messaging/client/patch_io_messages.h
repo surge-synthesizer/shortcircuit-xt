@@ -30,7 +30,9 @@
 
 #include "messaging/client/detail/client_serial_impl.h"
 #include "messaging/client/client_macros.h"
+#include "engine/engine.h"
 #include "patch_io/patch_io.h"
+#include "undo_manager/structure_undoable_items.h"
 #include "sample/sfz_support/sfz_export.h"
 
 namespace scxt::messaging::client
@@ -51,8 +53,17 @@ inline void doSaveMulti(const saveMultiPayload_t &pl, engine::Engine &engine,
     // engine.getBrowser()->doSomething;
 }
 CLIENT_TO_SERIAL(SaveMulti, c2s_save_multi, saveMultiPayload_t, doSaveMulti(payload, engine, cont));
-CLIENT_TO_SERIAL(LoadMulti, c2s_load_multi, std::string,
-                 patch_io::loadMulti(fs::path(fs::u8path(payload)), engine));
+inline void doLoadMulti(const std::string &payload, engine::Engine &engine, MessageController &cont)
+{
+    // undoing a load restores the entire pre-load engine
+    {
+        auto undoItem = std::make_unique<undo::EngineStateRestoreItem>();
+        undoItem->store(engine);
+        engine.undoManager.storeUndoStep(std::move(undoItem));
+    }
+    patch_io::loadMulti(fs::path(fs::u8path(payload)), engine);
+}
+CLIENT_TO_SERIAL(LoadMulti, c2s_load_multi, std::string, doLoadMulti(payload, engine, cont));
 
 using savePartPayload_t = std::tuple<std::string, int, int>; // path, part (-1 for sel), style
 
@@ -80,6 +91,8 @@ using loadPartIntoPayload_t = std::tuple<std::string, int16_t>;
 inline void doLoadPartInto(const loadPartIntoPayload_t &payload, engine::Engine &engine,
                            MessageController &cont)
 {
+    // undoing a part load restores the entire pre-load part
+    undo::pushPartStreamUndo(engine, std::get<1>(payload), "Load Part");
     patch_io::loadPartInto(fs::path(fs::u8path(std::get<0>(payload))), engine,
                            std::get<1>(payload));
 }

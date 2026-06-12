@@ -246,7 +246,7 @@ void SCXTEditor::showMainMenu(bool alignWithHeaderButton)
 
     dp.addSeparator();
     {
-        auto showUR = defaultsProvider.getUserDefaultValue(infrastructure::showUndoRedo, 0) != 0;
+        auto showUR = defaultsProvider.getUserDefaultValue(infrastructure::showUndoRedo, 1) != 0;
         dp.addItem("Show Undo/Redo", true, showUR,
                    [w = juce::Component::SafePointer(this), showUR]() {
                        if (!w)

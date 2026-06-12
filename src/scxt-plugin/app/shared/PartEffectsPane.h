@@ -161,6 +161,8 @@ struct PartEffectsPane : public HasEditor,
     // This returns a pointer which is owned by the class; do not delete it or
     // move it.
     template <typename T> T *attachWidgetToFloat(int index);
+    // a drag on any fx float control is one undo entry
+    std::function<void()> makeBeginEditSender();
     juce::Component *attachMenuButtonToInt(int index);
     template <typename T> juce::Component *attachWidgetToInt(int index);
     juce::Component *attachToggleToDeactivated(int index);

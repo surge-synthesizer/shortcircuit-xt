@@ -37,6 +37,11 @@
 
 namespace scxt::messaging::client
 {
+inline std::string macroGestureTag(int16_t p, int16_t i)
+{
+    return "Macro/" + std::to_string(p) + "/" + std::to_string(i);
+}
+
 using macroFullState_t = std::tuple<int16_t, int16_t, engine::Macro>;
 SERIAL_TO_CLIENT(UpdateMacroFullState, s2c_update_macro_full_state, macroFullState_t,
                  onMacroFullState);
@@ -123,10 +128,15 @@ inline void updateMacroFullState(const macroFullState_t &t, engine::Engine &engi
 CLIENT_TO_SERIAL(SetMacroFullState, c2s_set_macro_full_state, macroFullState_t,
                  updateMacroFullState(payload, engine, cont));
 
-inline void updateMacroValue(const macroValue_t &t, const engine::Engine &engine,
-                             MessageController &cont)
+inline void updateMacroValue(const macroValue_t &t, engine::Engine &engine, MessageController &cont)
 {
     const auto &[p, i, f] = t;
+    {
+        auto undoItem = std::make_unique<undo::MacroFullStateItem>();
+        undoItem->store(engine, p, i);
+        engine.undoManager.storeUndoStepTagged(std::move(undoItem), macroGestureTag(p, i),
+                                               undo::UndoGesture::Discrete);
+    }
     cont.scheduleAudioThreadCallback(
         [part = p, index = i, value = f](auto &e) {
             // Set the value
@@ -161,7 +171,12 @@ inline void doMacroBeginEndEdit(const macroBeginEndEdit_t &payload, engine::Engi
     {
         auto undoItem = std::make_unique<undo::MacroFullStateItem>();
         undoItem->store(e, part, index);
-        e.undoManager.storeUndoStep(std::move(undoItem));
+        e.undoManager.storeUndoStepTagged(std::move(undoItem), macroGestureTag(part, index),
+                                          undo::UndoGesture::Begin);
+    }
+    else
+    {
+        e.undoManager.closeGesture();
     }
 
     messaging::audio::SerializationToAudio s2am;

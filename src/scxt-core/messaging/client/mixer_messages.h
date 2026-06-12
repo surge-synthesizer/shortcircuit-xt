@@ -31,6 +31,7 @@
 #include "client_macros.h"
 #include "engine/bus.h"
 #include "engine/part.h"
+#include "undo_manager/payload_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -49,9 +50,14 @@ using busSendData_t = std::tuple<int, int, engine::Bus::BusSendStorage>; // bus/
 SERIAL_TO_CLIENT(SendBusSendData, s2c_bus_send_data, busSendData_t, onBusOrPartSendData);
 
 using setBusEffectToType_t = std::tuple<int, int, int, int>; // bus or -1, part of -1, fx, type
-inline void setBusEffectToType(const setBusEffectToType_t &payload,
+inline void setBusEffectToType(const setBusEffectToType_t &payload, engine::Engine &engine,
                                messaging::MessageController &cont)
 {
+    {
+        auto [bus, part, fxslot, type] = payload;
+        undo::pushPayloadUndoFor<undo::BusEffectSpec>(engine, {{part, bus, fxslot}},
+                                                      undo::mixerUndoIndex(bus, part, fxslot));
+    }
     cont.scheduleAudioThreadCallbackUnderStructureLock(
         [p = payload](auto &e) {
             auto [bus, part, fxslot, type] = p;
@@ -82,13 +88,18 @@ inline void setBusEffectToType(const setBusEffectToType_t &payload,
         });
 }
 CLIENT_TO_SERIAL(SetBusEffectToType, c2s_set_mixer_effect, setBusEffectToType_t,
-                 setBusEffectToType(payload, cont));
+                 setBusEffectToType(payload, engine, cont));
 
 using setBusEffectStorage_t =
     std::tuple<int, int, int, engine::BusEffectStorage>; // bus/-1, part/-1, fx, type
-inline void setBusEffectStorage(const setBusEffectStorage_t &payload,
+inline void setBusEffectStorage(const setBusEffectStorage_t &payload, engine::Engine &engine,
                                 messaging::MessageController &cont)
 {
+    {
+        const auto &[bus, part, fxslot, bes] = payload;
+        undo::pushPayloadUndoFor<undo::BusEffectSpec>(engine, {{part, bus, fxslot}},
+                                                      undo::mixerUndoIndex(bus, part, fxslot));
+    }
     cont.scheduleAudioThreadCallback([p = payload](auto &e) {
         const auto &[bus, part, fxslot, bes] = p;
         if (bus >= 0)
@@ -99,12 +110,17 @@ inline void setBusEffectStorage(const setBusEffectStorage_t &payload,
     });
 }
 CLIENT_TO_SERIAL(SetBusEffectStorage, c2s_set_mixer_effect_storage, setBusEffectStorage_t,
-                 setBusEffectStorage(payload, cont));
+                 setBusEffectStorage(payload, engine, cont));
 
 using setBusSendStorage_t = std::tuple<int, engine::Bus::BusSendStorage>;
-inline void setBusSendStorage(const setBusSendStorage_t &payload,
+inline void setBusSendStorage(const setBusSendStorage_t &payload, engine::Engine &engine,
                               messaging::MessageController &cont)
 {
+    {
+        auto bus = std::get<0>(payload);
+        undo::pushPayloadUndoFor<undo::BusSendSpec>(engine, {{-1, bus, -1}},
+                                                    undo::mixerUndoIndex(bus, -1, -1));
+    }
     cont.scheduleAudioThreadCallback([p = payload](auto &e) {
         auto [bus, bss] = p;
         e.getPatch()->busses.busByAddress((engine::BusAddress)bus).busSendStorage = bss;
@@ -114,10 +130,10 @@ inline void setBusSendStorage(const setBusSendStorage_t &payload,
     });
 }
 CLIENT_TO_SERIAL(SetBusSendStorage, c2s_set_mixer_send_storage, setBusSendStorage_t,
-                 setBusSendStorage(payload, cont));
+                 setBusSendStorage(payload, engine, cont));
 
 using busFxSwap_t = std::tuple<int16_t, int16_t, int16_t, int16_t, int16_t>;
-inline void doBusSwapFX(const busFxSwap_t &payload, const engine::Engine &engine,
+inline void doBusSwapFX(const busFxSwap_t &payload, engine::Engine &engine,
                         messaging::MessageController &cont)
 {
 
@@ -128,6 +144,8 @@ inline void doBusSwapFX(const busFxSwap_t &payload, const engine::Engine &engine
                          "Bus Swap FX had same bus/slot location");
         return;
     }
+
+    undo::pushPayloadUndoFor<undo::BusEffectSpec>(engine, {{-1, bs1, sl1}, {-1, bs2, sl2}});
 
     cont.scheduleAudioThreadCallback(
         [bs1, bs2, sl1, sl2](auto &engine) {

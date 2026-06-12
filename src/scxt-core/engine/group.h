@@ -163,6 +163,17 @@ struct Group : MoveableOnly<Group>,
         return zones.size();
     }
 
+    size_t insertZone(std::unique_ptr<Zone> &z, size_t idx)
+    {
+        if (idx > zones.size())
+            idx = zones.size();
+        z->parentGroup = this;
+        z->engine = getEngine();
+        zones.insert(zones.begin() + idx, std::move(z));
+        activeZoneWeakRefs.push_back(nullptr);
+        return zones.size();
+    }
+
     void clearZones()
     {
         zones.clear();

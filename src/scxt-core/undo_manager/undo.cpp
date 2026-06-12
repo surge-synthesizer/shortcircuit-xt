@@ -38,15 +38,40 @@ void UndoManager::storeUndoStep(std::unique_ptr<UndoableItem> item)
 {
     SCLOG_IF(undoRedo, "|>> push '" << item->describe() << "' (stack size " << undoStack.size() + 1
                                     << "), clearing redo stack");
+    closeGesture();
     redoStack.clear();
     undoStack.push_back(std::move(item));
     while (undoStack.size() > maxUndoRedoStackSize)
         undoStack.pop_front();
 }
 
+void UndoManager::storeUndoStepTagged(std::unique_ptr<UndoableItem> item, const std::string &tag,
+                                      UndoGesture g)
+{
+    if (g == UndoGesture::Discrete && gestureCovers(tag))
+    {
+        SCLOG_IF(undoRedo,
+                 "|== drop '" << item->describe() << "' covered by open gesture '" << tag << "'");
+        return;
+    }
+    storeUndoStep(std::move(item));
+    if (g == UndoGesture::Begin)
+        openGesture(tag);
+}
+
+void UndoManager::clear()
+{
+    SCLOG_IF(undoRedo, "|xx clearing undo (" << undoStack.size() << ") and redo ("
+                                             << redoStack.size() << ") stacks");
+    undoStack.clear();
+    redoStack.clear();
+    closeGesture();
+}
+
 bool UndoManager::applyUndoStep(engine::Engine &e)
 {
     assert(e.getMessageController()->threadingChecker.isSerialThread());
+    closeGesture();
     if (undoStack.empty())
         return false;
 
@@ -72,6 +97,7 @@ bool UndoManager::applyUndoStep(engine::Engine &e)
 bool UndoManager::applyRedoStep(engine::Engine &e)
 {
     assert(e.getMessageController()->threadingChecker.isSerialThread());
+    closeGesture();
     if (redoStack.empty())
         return false;
 

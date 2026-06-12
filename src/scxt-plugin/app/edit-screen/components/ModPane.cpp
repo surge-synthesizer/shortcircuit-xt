@@ -28,6 +28,7 @@
 #include "ModPane.h"
 #include "app/SCXTEditor.h"
 #include "messaging/client/modulation_messages.h"
+#include "messaging/client/selection_messages.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/HSliderFilled.h"
@@ -135,19 +136,33 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
         depth->verticalReduction = 3;
 
         depth->setSource(depthRescaler.get());
-        depth->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
+        auto depthHover = [w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;
             w->editor->showTooltip(*(w->depth));
             w->updateTooltip(*(w->depthAttachment));
         };
-        depth->onEndEdit = [w = juce::Component::SafePointer(this)]() {
+        auto depthHoverEnd = [w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;
             w->editor->hideTooltip();
         };
-        depth->onIdleHover = depth->onBeginEdit;
-        depth->onIdleHoverEnd = depth->onEndEdit;
+        depth->onBeginEdit = [w = juce::Component::SafePointer(this), depthHover]() {
+            if (!w)
+                return;
+            // one undo entry per drag, not per change
+            w->sendToSerialization(
+                cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::mod_row, GZTrait::forZone, w->index}));
+            depthHover();
+        };
+        depth->onEndEdit = [w = juce::Component::SafePointer(this), depthHoverEnd]() {
+            if (!w)
+                return;
+            w->sendToSerialization(cmsg::EndEdit(true));
+            depthHoverEnd();
+        };
+        depth->onIdleHover = depthHover;
+        depth->onIdleHoverEnd = depthHoverEnd;
         depth->onWheelEditOccurred = [w = juce::Component::SafePointer(depth.get())]() {
             if (w)
                 w->immediatelyInitiateIdleAction(1000);
