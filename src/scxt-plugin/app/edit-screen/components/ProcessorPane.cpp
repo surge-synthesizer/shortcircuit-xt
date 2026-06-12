@@ -1219,11 +1219,12 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         ed->setEnabled(en);
 
         std::optional<std::string> labelOverride;
-        // Default policy: if the JSON specifies neither "label" nor "label-source", use
-        // pmd.shortName
+        // label-source policy: float controls default to the param short name when the JSON
+        // gives neither a label nor a label-source. "none" suppresses the label entirely.
         auto labelSource = ctrl.labelSource;
         if (!labelSource.has_value() && !ctrl.label.has_value())
             labelSource = "short";
+        bool suppressLabel{false};
         if (labelSource.has_value())
         {
             const auto &pmd = processorControlDescription.floatControlDescriptions[idx];
@@ -1231,12 +1232,17 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
                 labelOverride = pmd.shortName;
             else if (*labelSource == "name")
                 labelOverride = pmd.name;
+            else if (*labelSource == "none")
+                suppressLabel = true;
         }
-        if (auto lab =
-                connectors::jsonlayout::createControlLabel(ctrl, cls, *this, {0, 0}, labelOverride))
+        if (!suppressLabel)
         {
-            getContentAreaComponent()->addAndMakeVisible(*lab);
-            jsonLabels.push_back(std::move(lab));
+            if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this, {0, 0},
+                                                                      labelOverride))
+            {
+                getContentAreaComponent()->addAndMakeVisible(*lab);
+                jsonLabels.push_back(std::move(lab));
+            }
         }
 
         jsonFloatEditors[idx] = std::move(ed);
@@ -1299,11 +1305,10 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
         connectors::jsonlayout::attachAndPosition(this, ed, att, ctrl, cls);
 
         std::optional<std::string> labelOverride;
-        // Default policy: if the JSON specifies neither "label" nor "label-source", use
-        // pmd.shortName
+        // label-source policy: int controls default to no label; the pmd short/name is only
+        // used when the JSON asks via label-source. "none" suppresses the label explicitly.
         auto labelSource = ctrl.labelSource;
-        if (!labelSource.has_value() && !ctrl.label.has_value())
-            labelSource = "short";
+        bool suppressLabel{false};
         if (labelSource.has_value())
         {
             const auto &pmd = processorControlDescription.intControlDescriptions[idx];
@@ -1311,12 +1316,17 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
                 labelOverride = pmd.shortName;
             else if (*labelSource == "name")
                 labelOverride = pmd.name;
+            else if (*labelSource == "none")
+                suppressLabel = true;
         }
-        if (auto lab =
-                connectors::jsonlayout::createControlLabel(ctrl, cls, *this, {0, 0}, labelOverride))
+        if (!suppressLabel)
         {
-            getContentAreaComponent()->addAndMakeVisible(*lab);
-            jsonLabels.push_back(std::move(lab));
+            if (auto lab = connectors::jsonlayout::createControlLabel(ctrl, cls, *this, {0, 0},
+                                                                      labelOverride))
+            {
+                getContentAreaComponent()->addAndMakeVisible(*lab);
+                jsonLabels.push_back(std::move(lab));
+            }
         }
 
         jsonIntEditors[idx] = std::move(ed);
