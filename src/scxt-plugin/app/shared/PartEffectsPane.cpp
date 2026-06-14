@@ -275,6 +275,8 @@ T *PartEffectsPane<forBus>::attachWidgetToFloat(int pidx)
     auto at =
         std::make_unique<attachment_t>(pmd, onGuiChange, getPartFXStorage().second.params[pidx]);
 
+    at->sendBeginEdit = makeBeginEditSender();
+
     if (pmd.canTemposync)
     {
         at->setTemposyncFunction([w = juce::Component::SafePointer(this)](const auto &a) {
@@ -674,6 +676,18 @@ void PartEffectsPane<forBus>::busEffectStorageChangedFromGUI(const Att &at, int 
     busEffectStorageChangedFromGUI();
 }
 
+template <bool forBus> std::function<void()> PartEffectsPane<forBus>::makeBeginEditSender()
+{
+    return [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        auto bus = forBus ? w->busAddressOrPart : -1;
+        auto pt = forBus ? -1 : w->busAddressOrPart;
+        w->sendToSerialization(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::bus_effect, false,
+                                                scxt::undo::mixerUndoIndex(bus, pt, w->fxSlot)}));
+    };
+}
+
 template <bool forBus> void PartEffectsPane<forBus>::busEffectStorageChangedFromGUI()
 {
     auto &data = getPartFXStorage();
@@ -806,6 +820,7 @@ void PartEffectsPane<forBus>::createBindAndPosition(
 
         auto at = std::make_unique<attachment_t>(pmd, onGuiChange,
                                                  getPartFXStorage().second.params[pidx]);
+        at->sendBeginEdit = makeBeginEditSender();
 
         // auto viz = scxt::ui::connectors::jsonlayout::isVisible(ctrl, intAttI, onError);
         // if (!viz)

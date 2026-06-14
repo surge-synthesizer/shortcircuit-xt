@@ -58,6 +58,19 @@ struct GroupRenameItem : public UndoableItem
     std::string describe() const override;
 };
 
+struct ZoneRenameItem : public UndoableItem
+{
+    int16_t partIndex{-1};
+    int16_t groupIndex{-1};
+    int16_t zoneIndex{-1};
+    std::string oldName;
+
+    void store(engine::Engine &e, int16_t part, int16_t group, int16_t zone);
+    void restore(engine::Engine &e) override;
+    std::unique_ptr<UndoableItem> makeRedo(engine::Engine &e) override;
+    std::string describe() const override;
+};
+
 } // namespace scxt::undo
 
 #endif // SCXT_SRC_SCXT_CORE_UNDO_MANAGER_GROUP_UNDOABLE_ITEMS_H

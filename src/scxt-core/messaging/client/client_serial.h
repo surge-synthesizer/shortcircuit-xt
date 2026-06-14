@@ -76,8 +76,8 @@ enum ClientToSerializationMessagesIds
     c2s_apply_select_actions,
     c2s_select_part,
 
-    c2s_begin_edit, // not implemented yet
-    c2s_end_edit,   // implemented as a hammer
+    c2s_begin_edit, // pushes the tagged-subtree undo snapshot (EditSubtree)
+    c2s_end_edit,   // refreshes mod matrix metadata after a drag
 
     c2s_update_zone_or_group_eg_float_value,
     c2s_update_zone_or_group_eg_bool_value,
@@ -169,7 +169,6 @@ enum ClientToSerializationMessagesIds
 
     c2s_noteonoff,
 
-    c2s_initialize_mixer,
     c2s_set_mixer_effect,
     c2s_set_mixer_effect_storage,
     c2s_set_mixer_send_storage,
@@ -214,8 +213,6 @@ enum ClientToSerializationMessagesIds
 
     c2s_undo,
     c2s_redo,
-
-    c2s_begin_zone_mapping_modification,
 
     c2s_store_colormap,
 

@@ -149,7 +149,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
         });
         addAndMakeVisible(*redoButton);
 
-        auto showUR = editor->defaultsProvider.getUserDefaultValue(infrastructure::showUndoRedo, 0);
+        auto showUR = editor->defaultsProvider.getUserDefaultValue(infrastructure::showUndoRedo, 1);
         setShowUndoRedo(showUR != 0);
     }
 

@@ -112,6 +112,15 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
         att = std::make_unique<typename std::remove_reference_t<decltype(att)>::element_type>(
             pmd, oGVC, a);
 
+        // The attachment is built by hand (not via configureUpdater) so wire the
+        // begin-edit ourselves; without it a knob drag is one undo step per
+        // intermediate value instead of one entry for the whole gesture.
+        att->sendBeginEdit = [w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->sendToSerialization(
+                    cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::part_config, false, w->part}));
+        };
+
         wid = std::make_unique<typename std::remove_reference_t<decltype(wid)>::element_type>();
         wid->setSource(att.get());
         setupFloatWidget(wid.get(), att.get());

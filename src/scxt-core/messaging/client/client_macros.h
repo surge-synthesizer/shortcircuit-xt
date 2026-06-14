@@ -32,7 +32,12 @@
  * A set of macros useful for generating client messages more compactly
  */
 
-#define CLIENT_TO_SERIAL(className, id, payloadType, executeBody)                                  \
+// The execute body is variadic so it may contain top-level commas the
+// preprocessor would otherwise treat as argument separators - notably the
+// comma in a two-arg template id like push<ZSpec, GSpec>(...). __VA_ARGS__
+// re-emits the whole body verbatim, so bodies can be several ;-separated
+// statements with no wrapping parens or comma-operator tricks.
+#define CLIENT_TO_SERIAL(className, id, payloadType, ...)                                          \
     struct className                                                                               \
     {                                                                                              \
         static constexpr ClientToSerializationMessagesIds c2s_id{id};                              \
@@ -43,7 +48,7 @@
         static void executeOnSerialization(const c2s_payload_t &payload, engine::Engine &engine,   \
                                            MessageController &cont)                                \
         {                                                                                          \
-            executeBody;                                                                           \
+            __VA_ARGS__;                                                                           \
         }                                                                                          \
     };                                                                                             \
     template <> struct ClientToSerializationType<className::c2s_id>                                \
@@ -51,7 +56,8 @@
         typedef className T;                                                                       \
     };
 
-#define CLIENT_TO_SERIAL_CONSTRAINED(className, id, payloadType, boundPayload, executeBody)        \
+// Variadic execute body: see CLIENT_TO_SERIAL above.
+#define CLIENT_TO_SERIAL_CONSTRAINED(className, id, payloadType, boundPayload, ...)                \
     struct className                                                                               \
     {                                                                                              \
         static constexpr ClientToSerializationMessagesIds c2s_id{id};                              \
@@ -63,7 +69,7 @@
         static void executeOnSerialization(const c2s_payload_t &payload, engine::Engine &engine,   \
                                            MessageController &cont)                                \
         {                                                                                          \
-            executeBody;                                                                           \
+            __VA_ARGS__;                                                                           \
         }                                                                                          \
     };                                                                                             \
     template <> struct ClientToSerializationType<className::c2s_id>                                \

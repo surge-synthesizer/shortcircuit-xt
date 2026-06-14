@@ -70,24 +70,37 @@ void GroupChangeItem::restore(engine::Engine &e)
 {
     auto pi = partIndex;
     auto gi = groupIndex;
-    auto del = deleteGroupOnUndo;
-    auto data = std::move(cachedGroupData);
-    e.getMessageController()->stopAudioThreadThenRunOnSerial(
-        [pi, gi, del, data = std::move(data)](const auto &engine) {
-            auto &e = const_cast<engine::Engine &>(engine);
-            auto &pt = e.getPatch()->getPart(pi);
-
-            if (del)
-            {
+    if (deleteGroupOnUndo)
+    {
+        // matches the deleteGroupHandler dispatch mode (structure_messages.h).
+        // No sample purge: a redo of the inverse add needs the sample resident.
+        e.getMessageController()->scheduleAudioThreadCallbackUnderStructureLock(
+            [pi, gi](auto &e) {
+                auto &pt = e.getPatch()->getPart(pi);
                 if (gi < (int16_t)pt->getGroups().size())
                 {
                     auto &groupO = pt->getGroup(gi);
+                    e.terminateVoicesForGroup(*groupO);
                     auto gid = groupO->id;
-                    pt->removeGroup(gid);
+                    auto groupToFree = pt->removeGroup(gid).release();
+                    e.getMessageController()->sendItemForDeletion(
+                        groupToFree,
+                        messaging::audio::AudioToSerialization::ToBeDeleted::engine_Group);
                 }
-            }
-            else
-            {
+            },
+            [](const auto &engine) {
+                const_cast<engine::Engine &>(engine).sendFullRefreshToClient();
+            });
+    }
+    else
+    {
+        // unstream re-attaches samples and can raise errors, both serial-only
+        // activities, so this branch keeps the stop-audio dispatch
+        auto data = std::move(cachedGroupData);
+        e.getMessageController()->stopAudioThreadThenRunOnSerial(
+            [pi, gi, data = std::move(data)](const auto &engine) {
+                auto &e = const_cast<engine::Engine &>(engine);
+                auto &pt = e.getPatch()->getPart(pi);
                 auto &g = pt->getGroup(gi);
 
                 // Clear existing zones from the group
@@ -101,11 +114,11 @@ void GroupChangeItem::restore(engine::Engine &e)
                 jv.to(*g);
 
                 g->setupOnUnstream(e);
-            }
 
-            e.sendFullRefreshToClient();
-            e.getMessageController()->restartAudioThreadFromSerial();
-        });
+                e.sendFullRefreshToClient();
+                e.getMessageController()->restartAudioThreadFromSerial();
+            });
+    }
 }
 
 std::unique_ptr<UndoableItem> GroupChangeItem::makeRedo(engine::Engine &e)
@@ -135,6 +148,39 @@ std::unique_ptr<UndoableItem> GroupRenameItem::makeRedo(engine::Engine &e)
     auto redo = std::make_unique<GroupRenameItem>();
     redo->store(e, partIndex, groupIndex);
     return redo;
+}
+
+void ZoneRenameItem::store(engine::Engine &e, int16_t part, int16_t group, int16_t zone)
+{
+    partIndex = part;
+    groupIndex = group;
+    zoneIndex = zone;
+    oldName = e.getPatch()->getPart(part)->getGroup(group)->getZone(zone)->givenName;
+}
+
+void ZoneRenameItem::restore(engine::Engine &e)
+{
+    e.getPatch()->getPart(partIndex)->getGroup(groupIndex)->getZone(zoneIndex)->givenName = oldName;
+    messaging::client::serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                                 e.getPartGroupZoneStructure(),
+                                                 *(e.getMessageController()));
+    messaging::client::serializationSendToClient(
+        messaging::client::s2c_send_selected_group_zone_mapping_summary,
+        e.getPatch()->getPart(partIndex)->getZoneMappingSummary(), *(e.getMessageController()));
+}
+
+std::unique_ptr<UndoableItem> ZoneRenameItem::makeRedo(engine::Engine &e)
+{
+    auto redo = std::make_unique<ZoneRenameItem>();
+    redo->store(e, partIndex, groupIndex, zoneIndex);
+    return redo;
+}
+
+std::string ZoneRenameItem::describe() const
+{
+    return "Rename Zone [part=" + std::to_string(partIndex) +
+           ", group=" + std::to_string(groupIndex) + ", zone=" + std::to_string(zoneIndex) +
+           ", name=" + oldName + "]";
 }
 
 std::string GroupChangeItem::describe() const

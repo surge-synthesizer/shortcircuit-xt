@@ -44,6 +44,9 @@ enum KeyCommands : uint32_t
     FOCUS_MIXER,
     FOCUS_PLAY,
 
+    UNDO,
+    REDO,
+
     numKeyCommands
 };
 struct KeyBindings : HasEditor

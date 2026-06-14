@@ -746,6 +746,12 @@ bool SCXTEditor::keyPressed(const juce::KeyPress &key)
         case FOCUS_PLAY:
             setActiveScreen(ActiveScreen::PLAY);
             return true;
+        case UNDO:
+            sendToSerialization(scxt::messaging::client::Undo(true));
+            return true;
+        case REDO:
+            sendToSerialization(scxt::messaging::client::Redo(true));
+            return true;
 
         case numKeyCommands:
             break;

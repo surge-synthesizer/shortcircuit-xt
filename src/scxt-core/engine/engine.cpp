@@ -57,6 +57,9 @@
 #include "browser/browser.h"
 #include "browser/browser_db.h"
 
+#include "undo_manager/payload_undoable_items.h"
+#include "undo_manager/structure_undoable_items.h"
+
 #include "sst/basic-blocks/mechanics/block-ops.h"
 #include "sst/plugininfra/paths.h"
 
@@ -605,6 +608,8 @@ void Engine::loadCompoundElementIntoZone(const sample::compound::CompoundElement
         return;
     }
 
+    undo::pushPayloadUndoFor<undo::ZoneVariantsSpec>(*this, {{partID, groupID, zoneID}});
+
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [p = partID, g = groupID, z = zoneID, sID = variantID, sample = *sid](auto &e) {
             auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
@@ -659,6 +664,8 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
                              "More information may be available in the log file (menu/log)");
         return;
     }
+
+    undo::pushPayloadUndoFor<undo::ZoneVariantsSpec>(*this, {{partID, groupID, zoneID}});
 
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [p = partID, g = groupID, z = zoneID, sID = variantID, sample = *sid](auto &e) {
@@ -759,6 +766,8 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
 
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
+
+    undo::pushZoneAddUndo(*this, sp, sg);
 
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
@@ -920,12 +929,10 @@ void Engine::loadSampleIntoSelectedPartAndGroup(const fs::path &p, int16_t rootK
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
 
-    // Push an undo step for the group before modifying it
-    {
-        auto undoItem = std::make_unique<undo::GroupChangeItem>();
-        undoItem->store(*this, sp, sg);
-        undoManager.storeUndoStep(std::move(undoItem));
-    }
+    // Push an undo step for the group before modifying it. A multi-file drop
+    // (one add message per file) is coalesced to one entry by the UI bracketing
+    // the loop with begin/endCoalescing.
+    undo::pushUndo<undo::GroupChangeItem>(*this, sp, sg);
 
     if (forceSynchronous)
     {
@@ -1009,11 +1016,7 @@ void Engine::loadSamplesIntoNewZoneAsVariants(const std::vector<fs::path> &paths
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
 
     // Push an undo step for the group before modifying it
-    {
-        auto undoItem = std::make_unique<undo::GroupChangeItem>();
-        undoItem->store(*this, sp, sg);
-        undoManager.storeUndoStep(std::move(undoItem));
-    }
+    undo::pushUndo<undo::GroupChangeItem>(*this, sp, sg);
 
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
@@ -1053,11 +1056,7 @@ void Engine::loadSampleIntoGroup(const fs::path &p, int part, int group)
 
     auto sp = part, sg = group;
 
-    {
-        auto undoItem = std::make_unique<undo::GroupChangeItem>();
-        undoItem->store(*this, sp, sg);
-        undoManager.storeUndoStep(std::move(undoItem));
-    }
+    undo::pushUndo<undo::GroupChangeItem>(*this, sp, sg);
 
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
@@ -1114,6 +1113,8 @@ void Engine::createEmptyZone(int partN, int groupN, scxt::engine::KeyboardRange 
         }
         count++;
     }
+
+    undo::pushZoneAddUndo(*this, sp, sg);
 
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
@@ -1186,6 +1187,8 @@ void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &a)
     auto sp = a.part;
     auto sg = a.group;
 
+    undo::pushZoneAddUndo(*this, sp, sg);
+
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
@@ -1223,6 +1226,8 @@ void Engine::duplicateZone(const selection::SelectionManager::ZoneAddress &s)
     // Drop into selected group logic goes here
     auto sp = s.part;
     auto sg = s.group;
+
+    undo::pushZoneAddUndo(*this, sp, sg);
 
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
@@ -1292,6 +1297,12 @@ void Engine::pasteGroup(const selection::SelectionManager::ZoneAddress &a)
 
     auto sp = a.part;
 
+    {
+        auto gi = (int32_t)getPatch()->getPart(sp)->getGroups().size();
+        undo::pushUndo<undo::GroupsDeleteOnUndoItem>(
+            *this, std::vector<std::pair<int16_t, int32_t>>{{(int16_t)sp, gi}});
+    }
+
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [sp = sp, group = gptr.release()](auto &e) {
             std::unique_ptr<Group> gptr;
@@ -1321,6 +1332,12 @@ void Engine::duplicateGroup(const selection::SelectionManager::ZoneAddress &s)
     gptr->name = groupO->name + " (copy)";
 
     auto sp = s.part;
+
+    {
+        auto gi = (int32_t)getPatch()->getPart(sp)->getGroups().size();
+        undo::pushUndo<undo::GroupsDeleteOnUndoItem>(
+            *this, std::vector<std::pair<int16_t, int32_t>>{{(int16_t)sp, gi}});
+    }
 
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [sp = sp, group = gptr.release()](auto &e) {
