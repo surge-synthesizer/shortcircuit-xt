@@ -14,14 +14,14 @@ jobs:
       matrix:
         include:
           - name: "windows msvc"
-            os: windows-latest
+            os: windows-2022
             target: shortcircuit-products
             cmakeConfig: -G"Visual Studio 17 2022" -A x64 -DCMAKE_UNITY_BUILD=TRUE
             runTests: false
             clapValidate: false
 
             #- name: "windows clang VST3"
-            #  os: windows-latest
+            #  os: windows-2022
             #  target: scxt_clapfirst_vst3
             # LLVM
             # cmakeConfig: -GNinja -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
@@ -30,7 +30,7 @@ jobs:
           #  clapValidate: false
 
           - name: "windows arm64ec"
-            os: windows-latest
+            os: windows-2022
             target: shortcircuit-products
             cmakeConfig: -G"Visual Studio 17 2022" -A arm64ec -DCMAKE_SYSTEM_VERSION=10 -DCMAKE_UNITY_BUILD=TRUE
             runTests: false
@@ -60,7 +60,7 @@ jobs:
             clapValidate: false
 
           - name: "win unity"
-            os: windows-latest
+            os: windows-2022
             target: shortcircuit-products
             # LLVM
             # cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang
@@ -74,7 +74,7 @@ jobs:
 
 
           - name: "win unity Clang CL"
-            os: windows-latest
+            os: windows-2022
             target: shortcircuit-products
             # LLVM
             # cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang

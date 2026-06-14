@@ -156,8 +156,13 @@ GroupMatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
 {
     if (e)
     {
+        // Long path goes in the menu; short path in the matrix row
         auto ptFn = [](const engine::Group &g, const auto &t) -> std::string {
-            return "GLFO " + std::to_string(t.index + 1);
+            return "Group LFO " + std::to_string(t.index + 1);
+        };
+
+        auto ptShortFn = [](const engine::Group &g, const auto &t) -> std::string {
+            return "GLFO" + std::to_string(t.index + 1);
         };
 
         auto conditionLabel =
@@ -194,25 +199,30 @@ GroupMatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
         auto ms = scxt::modulation::ModulatorStorage();
         auto nm = [&ms](auto &v) { return datamodel::describeValue(ms, v).name; };
 
-        registerGroupModTarget(e, rateT, ptFn, notEnvLabel(nm(ms.rate)));
-        registerGroupModTarget(e, amplitudeT, ptFn, allLabel(nm(ms.amplitude)), true);
-        registerGroupModTarget(e, retriggerT, ptFn, allLabel("Retrigger"));
-        registerGroupModTarget(e, curve.deformT, ptFn, curveLabel(nm(ms.curveLfoStorage.deform)));
-        registerGroupModTarget(e, curve.angleT, ptFn, curveLabel(nm(ms.curveLfoStorage.angle)));
-        registerGroupModTarget(e, curve.delayT, ptFn, curveLabel(nm(ms.curveLfoStorage.delay)));
-        registerGroupModTarget(e, curve.attackT, ptFn, curveLabel(nm(ms.curveLfoStorage.attack)));
-        registerGroupModTarget(e, curve.releaseT, ptFn, curveLabel(nm(ms.curveLfoStorage.release)));
-        registerGroupModTarget(e, step.smoothT, ptFn, stepLabel(nm(ms.stepLfoStorage.smooth)));
-        registerGroupModTarget(e, env.delayT, ptFn, envLabel(nm(ms.envLfoStorage.delay)));
-        registerGroupModTarget(e, env.attackT, ptFn, envLabel(nm(ms.envLfoStorage.attack)));
-        registerGroupModTarget(e, env.holdT, ptFn, envLabel(nm(ms.envLfoStorage.hold)));
-        registerGroupModTarget(e, env.decayT, ptFn, envLabel(nm(ms.envLfoStorage.decay)));
-        registerGroupModTarget(e, env.sustainT, ptFn, envLabel(nm(ms.envLfoStorage.sustain)));
-        registerGroupModTarget(e, env.releaseT, ptFn, envLabel(nm(ms.envLfoStorage.release)));
-        registerGroupModTarget(e, env.aShapeT, ptFn, envLabel(nm(ms.envLfoStorage.aShape)));
-        registerGroupModTarget(e, env.dShapeT, ptFn, envLabel(nm(ms.envLfoStorage.dShape)));
-        registerGroupModTarget(e, env.rShapeT, ptFn, envLabel(nm(ms.envLfoStorage.rShape)));
-        registerGroupModTarget(e, env.rateMulT, ptFn, envLabel(nm(ms.envLfoStorage.rateMul)));
+        // Short name matches long name; only the path differs between menu and row
+        auto reg = [&](const auto &t, auto nameFn, bool mul = false) {
+            registerGroupModTarget(e, t, ptFn, nameFn, mul, ptShortFn, nameFn);
+        };
+
+        reg(rateT, notEnvLabel(nm(ms.rate)));
+        reg(amplitudeT, allLabel(nm(ms.amplitude)), true);
+        reg(retriggerT, allLabel("Retrigger"));
+        reg(curve.deformT, curveLabel(nm(ms.curveLfoStorage.deform)));
+        reg(curve.angleT, curveLabel(nm(ms.curveLfoStorage.angle)));
+        reg(curve.delayT, curveLabel(nm(ms.curveLfoStorage.delay)));
+        reg(curve.attackT, curveLabel(nm(ms.curveLfoStorage.attack)));
+        reg(curve.releaseT, curveLabel(nm(ms.curveLfoStorage.release)));
+        reg(step.smoothT, stepLabel(nm(ms.stepLfoStorage.smooth)));
+        reg(env.delayT, envLabel(nm(ms.envLfoStorage.delay)));
+        reg(env.attackT, envLabel(nm(ms.envLfoStorage.attack)));
+        reg(env.holdT, envLabel(nm(ms.envLfoStorage.hold)));
+        reg(env.decayT, envLabel(nm(ms.envLfoStorage.decay)));
+        reg(env.sustainT, envLabel(nm(ms.envLfoStorage.sustain)));
+        reg(env.releaseT, envLabel(nm(ms.envLfoStorage.release)));
+        reg(env.aShapeT, envLabel(nm(ms.envLfoStorage.aShape)));
+        reg(env.dShapeT, envLabel(nm(ms.envLfoStorage.dShape)));
+        reg(env.rShapeT, envLabel(nm(ms.envLfoStorage.rShape)));
+        reg(env.rateMulT, envLabel(nm(ms.envLfoStorage.rateMul)));
     }
 }
 
@@ -233,8 +243,8 @@ GroupMatrixEndpoints::Sources::Sources(engine::Engine *e)
       envFollowerSources(e), macroSources(e), subordinateVoiceSources(e), midiSources(e),
       keyAndPitchSources(e)
 {
-    registerGroupModSource(e, egSource[0], "EG", "EG1");
-    registerGroupModSource(e, egSource[1], "EG", "EG2");
+    registerGroupModSource(e, egSource[0], "Group EG", "GEG1");
+    registerGroupModSource(e, egSource[1], "Group EG", "GEG2");
 
     for (int i = 0; i < randomsPerGroupOrZone; ++i)
         registerGroupModSource(
