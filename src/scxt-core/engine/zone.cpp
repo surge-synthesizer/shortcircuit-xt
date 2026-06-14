@@ -428,6 +428,8 @@ void Zone::onRoutingChanged()
     std::fill(lfosActive.begin(), lfosActive.end(), false);
     auto pglfo = glfosActive;
     std::fill(glfosActive.begin(), glfosActive.end(), false);
+    auto pgeg = gegsActive;
+    std::fill(gegsActive.begin(), gegsActive.end(), false);
     std::fill(envFollowersActive.begin(), envFollowersActive.end(), false);
 
     for (int i = 0; i < egsPerZone; ++i)
@@ -448,6 +450,14 @@ void Zone::onRoutingChanged()
             if (src == usedForScanning.glfoSources.sources[i])
             {
                 glfosActive[i] = true;
+            }
+        }
+
+        for (int i = 0; i < egsPerGroup; ++i)
+        {
+            if (src == usedForScanning.gegSources[i])
+            {
+                gegsActive[i] = true;
             }
         }
 
@@ -493,7 +503,7 @@ void Zone::onRoutingChanged()
             doCheck(*r.sourceVia);
     }
 
-    if (pglfo != glfosActive)
+    if (pglfo != glfosActive || pgeg != gegsActive)
     {
         if (parentGroup)
             parentGroup->rePrepareAndBindGroupMatrix();

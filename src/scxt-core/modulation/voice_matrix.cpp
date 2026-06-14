@@ -122,6 +122,9 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     for (int i = 0; i < egsPerZone; ++i)
         m.bindSourceValue(egSources[i], v.eg[i].outBlock0);
 
+    for (int i = 0; i < egsPerGroup; ++i)
+        m.bindSourceValue(gegSources[i], z.parentGroup->eg[i].outBlock0);
+
     m.bindSourceValue(midiSources.modWheelSource, z.parentGroup->parentPart->midiCCValues[1]);
     m.bindSourceValue(midiSources.chanATSource, z.parentGroup->parentPart->channelAT);
     m.bindSourceValue(midiSources.pbpm1Source, z.parentGroup->parentPart->pitchBendValue);
@@ -449,7 +452,7 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
 }
 
 MatrixEndpoints::Sources::Sources(engine::Engine *e)
-    : lfoSources(e), glfoSources(e, "LFO (Group)", "GLFO"), midiCCSources(e), midiSources(e),
+    : lfoSources(e), glfoSources(e, "Group", "GLFO"), midiCCSources(e), midiSources(e),
       noteExpressions(e), egSources{{eg1A, eg2A, eg3A, eg4A, eg5A}}, transportSources(e),
       rngSources(e), envFollowerSources(e), macroSources(e), mpeSources(e), voiceSources(e),
       keyAndPitchSources(e)
@@ -457,6 +460,12 @@ MatrixEndpoints::Sources::Sources(engine::Engine *e)
     registerVoiceModSource(e, egSources[0], "EG", "AEG");
     for (int i = 1; i < egsPerZone; ++i)
         registerVoiceModSource(e, egSources[i], "EG", "EG" + std::to_string(i + 1));
+
+    for (int i = 0; i < egsPerGroup; ++i)
+    {
+        gegSources[i] = SR{'zgeg', 'outp', (uint32_t)i};
+        registerVoiceModSource(e, gegSources[i], "Group", "GEG " + std::to_string(i + 1));
+    }
 
     for (int i = 0; i < randomsPerGroupOrZone; ++i)
         registerVoiceModSource(

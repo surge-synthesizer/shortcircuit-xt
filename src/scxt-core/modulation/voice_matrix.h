@@ -421,6 +421,7 @@ struct MatrixEndpoints
         } macroSources;
 
         std::array<SR, egsPerZone> egSources;
+        std::array<SR, egsPerGroup> gegSources;
 
         void bind(Matrix &m, engine::Zone &z, voice::Voice &v);
 
