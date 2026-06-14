@@ -113,6 +113,10 @@ void Group::rePrepareAndBindGroupMatrix()
         {
             lfosActive[i] = lfosActive[i] || z->glfosActive[i];
         }
+        for (int i = 0; i < egsPerGroup; ++i)
+        {
+            egsActive[i] = egsActive[i] || z->gegsActive[i];
+        }
     }
 }
 
