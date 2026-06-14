@@ -905,19 +905,23 @@ bool VariantDisplay::MyTabbedComponent::isInterestedInFileDrag(const juce::Strin
 void VariantDisplay::MyTabbedComponent::filesDropped(const juce::StringArray &files, int x, int y)
 {
     auto processFilesDropped = [this](const juce::StringArray &files, auto tabIndex) {
+        namespace cmsg = scxt::messaging::client;
+        // one add per file; coalesce the batch into a single undo entry
+        sendToSerialization(
+            cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
         for (const auto &fl : files)
         {
             if (tabIndex == maxVariantsPerZone)
             {
                 break;
             }
-            namespace cmsg = scxt::messaging::client;
             auto za{editor->currentLeadZoneSelection};
             auto sampleID{tabIndex};
             sendToSerialization(cmsg::AddSampleInZone({std::string{(const char *)(fl.toUTF8())},
                                                        za->part, za->group, za->zone, sampleID}));
             tabIndex++;
         }
+        sendToSerialization(cmsg::EndEdit(false));
     };
 
     auto tabIndex{getTabIndexFromPosition(x, y)};
@@ -969,6 +973,9 @@ void VariantDisplay::MyTabbedComponent::itemDropped(
                 }
             }
             auto addAt = nts;
+            // one add per dropped sample; coalesce the batch into one undo entry
+            sendToSerialization(
+                cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
             for (auto e : els)
             {
                 if (e->getCompoundElement().has_value())
@@ -984,6 +991,7 @@ void VariantDisplay::MyTabbedComponent::itemDropped(
                 }
                 addAt++;
             }
+            sendToSerialization(cmsg::EndEdit(false));
         }
         else if (wsi->getCompoundElement().has_value())
         {

@@ -31,6 +31,7 @@
 #include "client_macros.h"
 #include "engine/part.h"
 #include "selection/selection_manager.h"
+#include "undo_manager/payload_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -42,10 +43,11 @@ using partConfigurationPayload_t = std::pair<int16_t, scxt::engine::Part::PartCo
 SERIAL_TO_CLIENT(SendPartConfiguration, s2c_send_part_configuration, partConfigurationPayload_t,
                  onPartConfiguration);
 
-inline void updatePartFullConfig(const partConfigurationPayload_t &p, const engine::Engine &e,
+inline void updatePartFullConfig(const partConfigurationPayload_t &p, engine::Engine &e,
                                  messaging::MessageController &cont)
 {
     auto [pt, conf] = p;
+    undo::pushPayloadUndoFor<undo::PartConfigSpec>(e, {{pt, -1, -1}}, pt);
     cont.scheduleAudioThreadCallback([part = pt, configuration = conf](auto &eng) {
         eng.getPatch()->getPart(part)->configuration = configuration;
         eng.onPartConfigurationUpdated();
@@ -56,7 +58,7 @@ CLIENT_TO_SERIAL(UpdatePartFullConfig, c2s_send_full_part_config, partConfigurat
 
 // part, b1, part2 b2, swap (0), move (1) or copy (2)
 using partFxSwap_t = std::tuple<int16_t, int16_t, int16_t, int16_t, int16_t>;
-inline void doPartSwapFX(const partFxSwap_t &payload, const engine::Engine &engine,
+inline void doPartSwapFX(const partFxSwap_t &payload, engine::Engine &engine,
                          messaging::MessageController &cont)
 {
     auto [p1, b1, p2, b2, smc] = payload;
@@ -71,6 +73,8 @@ inline void doPartSwapFX(const partFxSwap_t &payload, const engine::Engine &engi
         RAISE_ERROR_CONT(cont, "Cant move part onto itself", "Part Swap FX had same bus location");
         return;
     }
+
+    undo::pushPayloadUndoFor<undo::BusEffectSpec>(engine, {{p1, -1, b1}, {p1, -1, b2}});
 
     cont.scheduleAudioThreadCallback(
         [pti = p1, b1, b2](auto &engine) {

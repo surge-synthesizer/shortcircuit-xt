@@ -488,6 +488,9 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
             else
             {
                 assert(r.size() == dropElementCount);
+                // one add message per dropped element; coalesce to one undo entry
+                sendToSerialization(
+                    cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
                 int idx{0};
                 for (auto e : els)
                 {
@@ -506,6 +509,7 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                                                       loc.lo, loc.hi, loc.vlo, loc.vhi}));
                     }
                 }
+                sendToSerialization(cmsg::EndEdit(false));
             }
         }
         else if (wsi->getCompoundElement().has_value())
@@ -514,7 +518,12 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
             assert(r.size() == 1);
             auto src = shared::SampleDropSource::fromBrowserItem(wsi);
             if (src.isInstrumentWhichCanReplace() && savedReplace)
+            {
+                // snapshot + clear + import coalesce to one undo entry
+                sendToSerialization(cmsg::BeginEdit(
+                    {(int32_t)cmsg::EditSubtree::part_stream, false, editor->selectedPart}));
                 sendToSerialization(cmsg::ClearPart(editor->selectedPart));
+            }
             sendToSerialization(cmsg::AddCompoundElementWithRange(
                 {*wsi->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
         }
@@ -536,7 +545,11 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
             else if (src.isInstrumentWhichCanReplace())
             {
                 if (savedReplace)
+                {
+                    sendToSerialization(cmsg::BeginEdit(
+                        {(int32_t)cmsg::EditSubtree::part_stream, false, editor->selectedPart}));
                     sendToSerialization(cmsg::ClearPart(editor->selectedPart));
+                }
                 auto inst = browser::Browser::getMultiInstrumentElements(wsi->getDirEnt()->path());
                 if (inst.empty())
                     sendToSerialization(cmsg::AddSampleWithRange(
@@ -720,7 +733,12 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
         }
     }
     if (allInstrument && isReplace)
+    {
+        // snapshot + clear + import(s) coalesce to one undo entry
+        sendToSerialization(cmsg::BeginEdit(
+            {(int32_t)cmsg::EditSubtree::part_stream, false, editor->selectedPart}));
         sendToSerialization(cmsg::ClearPart(editor->selectedPart));
+    }
 
     auto regions = mappingZones->rootAndRangeForPosition({x, y}, files.size(), false);
 
@@ -762,6 +780,10 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
     }
 
     int lidx{0};
+    // Dropping several plain samples fires one add message per file. Bracket
+    // them so the whole drop coalesces to a single undo entry. Opened lazily
+    // before the first plain sample so an all-instrument drop adds nothing.
+    bool openedBatch{false};
     for (auto f : files)
     {
         auto &loc = regions[std::min(lidx++, (int)regions.size() - 1)];
@@ -769,6 +791,12 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
         auto inst = browser::Browser::getMultiInstrumentElements(p);
         if (inst.empty())
         {
+            if (!openedBatch)
+            {
+                sendToSerialization(
+                    cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
+                openedBatch = true;
+            }
             sendToSerialization(cmsg::AddSampleWithRange(
                 {f.toStdString(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
         }
@@ -777,6 +805,8 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
             promptForMultiInstrument(inst);
         }
     }
+    if (openedBatch)
+        sendToSerialization(cmsg::EndEdit(false));
     if (editor->editScreen->partSidebar)
         editor->editScreen->partSidebar->setSelectedTab(2);
     repaint();
@@ -942,7 +972,7 @@ MappingDisplay::applyDeltaToSelectedZones(engine::Zone::ChangeDimension dim, int
 
     if (mayBeAboutToMutate)
     {
-        sendToSerialization(cmsg::BeginZoneMappingModification(true));
+        sendToSerialization(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::zone_mapping, true, -1}));
         mayBeAboutToMutate = false;
     }
 
@@ -1002,7 +1032,7 @@ bool MappingDisplay::applyAbsoluteToSelectedZones(engine::Zone::ChangeDimension 
 
     if (mayBeAboutToMutate)
     {
-        sendToSerialization(cmsg::BeginZoneMappingModification(true));
+        sendToSerialization(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::zone_mapping, true, -1}));
         mayBeAboutToMutate = false;
     }
 

@@ -33,7 +33,7 @@
 #include "messaging/client/detail/message_helpers.h"
 #include "client_macros.h"
 #include "selection/selection_manager.h"
-#include "undo_manager/processor_undoable_items.h"
+#include "undo_manager/payload_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -60,9 +60,7 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, engine::E
         assert(sg.empty() || lg.has_value());
         if (!sg.empty() && lg.has_value())
         {
-            auto undoItem = std::make_unique<undo::GroupProcessorTypeChangeItem>();
-            undoItem->store(engine, w, {sg.begin(), sg.end()});
-            engine.undoManager.storeUndoStep(std::move(undoItem));
+            undo::pushPayloadUndo<undo::GroupProcessorSpec>(engine, w);
 
             cont.scheduleAudioThreadCallback(
                 [gs = sg, which = w, type = id](auto &e) {
@@ -96,9 +94,7 @@ inline void setProcessorType(const setProcessorPayload_t &whichToType, engine::E
 
         if (!sz.empty() && lz.has_value())
         {
-            auto undoItem = std::make_unique<undo::ZoneProcessorTypeChangeItem>();
-            undoItem->store(engine, w, {sz.begin(), sz.end()});
-            engine.undoManager.storeUndoStep(std::move(undoItem));
+            undo::pushPayloadUndo<undo::ZoneProcessorSpec>(engine, w);
 
             cont.scheduleAudioThreadCallback(
                 [zs = sz, which = w, type = id](auto &e) {
@@ -140,6 +136,8 @@ inline void setFullProcessorStorage(sendFullProcessorStorage_t payload, engine::
         assert(sg.empty() || lg.has_value());
         if (!sg.empty() && lg.has_value())
         {
+            undo::pushPayloadUndo<undo::GroupProcessorSpec>(engine, w);
+
             cont.scheduleAudioThreadCallback(
                 [gs = sg, which = w, st = storage](auto &e) {
                     for (const auto &a : gs)
@@ -176,6 +174,8 @@ inline void setFullProcessorStorage(sendFullProcessorStorage_t payload, engine::
 
         if (!sz.empty() && lz.has_value())
         {
+            undo::pushPayloadUndo<undo::ZoneProcessorSpec>(engine, w);
+
             cont.scheduleAudioThreadCallback(
                 [zs = sz, which = w, st = storage](auto &e) {
                     for (const auto &a : zs)
@@ -213,8 +213,10 @@ CLIENT_TO_SERIAL(SendFullProcessorStorage, c2s_send_full_processor_storage,
 // Fix make this group or zone
 using copyProcessorLeadPayload_t = std::pair<bool, int>;
 inline void copyProcessorLeadToAll(const copyProcessorLeadPayload_t &payload,
-                                   const engine::Engine &engine)
+                                   engine::Engine &engine)
 {
+    undo::pushZoneOrGroupPayloadUndo<undo::ZoneProcessorSpec, undo::GroupProcessorSpec>(
+        engine, payload.first, payload.second);
     engine.getSelectionManager()->copyZoneOrGroupProcessorLeadToAll(payload.first, payload.second);
 }
 CLIENT_TO_SERIAL(CopyProcessorLeadToAll, c2s_copy_processor_lead_to_all, copyProcessorLeadPayload_t,
@@ -223,14 +225,13 @@ CLIENT_TO_SERIAL(CopyProcessorLeadToAll, c2s_copy_processor_lead_to_all, copyPro
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupProcessorFloatValue, c2s_update_single_processor_float_value,
     detail::indexedZoneOrGroupDiffMsg_t<float>, dsp::processor::ProcessorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(&engine::Zone::processorStorage,
-                                                &engine::Group::processorStorage, payload, engine,
-                                                cont));
+    detail::updateZoneOrGroupIndexedMemberValue<undo::ZoneProcessorSpec, undo::GroupProcessorSpec>(
+        &engine::Zone::processorStorage, &engine::Group::processorStorage, payload, engine, cont));
 
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupProcessorInt32TValue, c2s_update_single_processor_int32_t_value,
     detail::indexedZoneOrGroupDiffMsg_t<int32_t>, dsp::processor::ProcessorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(
+    detail::updateZoneOrGroupIndexedMemberValue<undo::ZoneProcessorSpec, undo::GroupProcessorSpec>(
         &engine::Zone::processorStorage, &engine::Group::processorStorage, payload, engine, cont,
         nullptr,
         [payload](auto &e, auto &sz) {
@@ -256,7 +257,7 @@ CLIENT_TO_SERIAL_CONSTRAINED(
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupProcessorBoolValue, c2s_update_single_processor_bool_value,
     detail::indexedZoneOrGroupDiffMsg_t<bool>, dsp::processor::ProcessorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue(
+    detail::updateZoneOrGroupIndexedMemberValue<undo::ZoneProcessorSpec, undo::GroupProcessorSpec>(
         &engine::Zone::processorStorage, &engine::Group::processorStorage, payload, engine, cont,
         nullptr,
         [payload](auto &e, auto &sz) {
@@ -282,7 +283,7 @@ CLIENT_TO_SERIAL_CONSTRAINED(
 // tuple is {to, from, copy}. When copy is true the source processor is left
 // intact and the target becomes a copy of it rather than the two swapping.
 typedef std::tuple<int32_t, int32_t, bool> processorPair_t;
-inline void swapZoneProcessors(const processorPair_t &whichToType, const engine::Engine &engine,
+inline void swapZoneProcessors(const processorPair_t &whichToType, engine::Engine &engine,
                                messaging::MessageController &cont)
 {
     const auto &[to, from, copy] = whichToType;
@@ -291,6 +292,9 @@ inline void swapZoneProcessors(const processorPair_t &whichToType, const engine:
 
     if (!sz.empty() && lz.has_value())
     {
+        undo::pushPayloadUndo<undo::ZoneProcessorSwapSpec>(engine,
+                                                           undo::encodeProcessorPair(to, from));
+
         cont.scheduleAudioThreadCallback(
             [q = sz, t = to, f = from, cp = copy](auto &engine) {
                 for (const auto &a : q)
@@ -340,7 +344,7 @@ inline void swapZoneProcessors(const processorPair_t &whichToType, const engine:
 CLIENT_TO_SERIAL(SwapZoneProcessors, c2s_swap_zone_processors, processorPair_t,
                  swapZoneProcessors(payload, engine, cont));
 
-inline void swapGroupProcessors(const processorPair_t &whichToType, const engine::Engine &engine,
+inline void swapGroupProcessors(const processorPair_t &whichToType, engine::Engine &engine,
                                 messaging::MessageController &cont)
 {
     const auto &[to, from, copy] = whichToType;
@@ -349,6 +353,9 @@ inline void swapGroupProcessors(const processorPair_t &whichToType, const engine
 
     if (!sg.empty() && lg.has_value())
     {
+        undo::pushPayloadUndo<undo::GroupProcessorSwapSpec>(engine,
+                                                            undo::encodeProcessorPair(to, from));
+
         cont.scheduleAudioThreadCallback(
             [q = sg, t = to, f = from, cp = copy](auto &engine) {
                 for (const auto &a : q)

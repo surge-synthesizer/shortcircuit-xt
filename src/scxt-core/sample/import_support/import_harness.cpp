@@ -30,6 +30,7 @@
 #include "configuration.h"
 #include "utils.h"
 #include "messaging/client/client_messages.h"
+#include "undo_manager/structure_undoable_items.h"
 
 #include <cassert>
 #include <sstream>
@@ -43,6 +44,10 @@ ImporterContext::ImporterContext(engine::Engine &eng, const std::string &activit
     ptIdx =
         std::clamp(eng.getSelectionManager()->selectedPart, (int16_t)0, (int16_t)(numParts - 1));
     partPtr = eng.getPatch()->getPart(ptIdx).get();
+
+    // undoing a compound import restores the entire pre-import part. The
+    // tagged push folds into an open replace-part gesture
+    undo::pushPartStreamUndo(eng, ptIdx, "Import");
 }
 
 void ImporterContext::raise(const std::string &title, const std::string &msg)

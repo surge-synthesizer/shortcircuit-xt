@@ -374,7 +374,16 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     template <typename A> void beginEditNotifyEngine(const A &a)
     {
-        sendToSerialization(scxt::messaging::client::BeginEdit{true});
+        namespace cmsg = scxt::messaging::client;
+        if constexpr (requires { a.sendBeginEdit; })
+        {
+            if (a.sendBeginEdit)
+            {
+                a.sendBeginEdit();
+                return;
+            }
+        }
+        sendToSerialization(cmsg::BeginEdit{{(int32_t)cmsg::EditSubtree::none, true, -1}});
     }
     template <typename A> void endEditNotifyEngine(const A &a)
     {

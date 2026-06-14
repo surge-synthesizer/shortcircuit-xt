@@ -39,6 +39,7 @@
 #include "datamodel/metadata.h"
 #include "sample/sample.h"
 #include "app/HasEditor.h"
+#include "connectors/BeginEditTraits.h"
 
 namespace scxt::ui::connectors
 {
@@ -97,11 +98,42 @@ inline std::function<void(const ABase &)> makeUpdater(A &att, const typename A::
     };
 }
 
+/*
+ * When the message has a begin-edit subtree mapping, give the attachment a
+ * sendBeginEdit so onBeginEdit snapshots once and the drag is one undo
+ * entry. forZone (and index) ride in args for the zone-or-group messages.
+ */
+template <typename M, typename A, typename... Args>
+inline void configureBeginEdit(A &att, app::HasEditor *e, Args... args)
+{
+    if constexpr (BeginEditTraits<M>::hasSubtree && requires { att.sendBeginEdit; })
+    {
+        bool forZone{true};
+        int32_t index{-1};
+        if constexpr (sizeof...(Args) >= 1)
+        {
+            auto t = std::make_tuple(args...);
+            forZone = (bool)std::get<0>(t);
+            if constexpr (sizeof...(Args) >= 2)
+                index = (int32_t)std::get<1>(t);
+        }
+        else
+        {
+            forZone = BeginEditTraits<M>::fixedForZone;
+        }
+        att.sendBeginEdit = [e, forZone, index]() {
+            e->sendToSerialization(messaging::client::BeginEdit(
+                {(int32_t)BeginEditTraits<M>::subtree, forZone, index}));
+        };
+    }
+}
+
 template <typename M, typename A, typename ABase = A, typename... Args>
 inline void configureUpdater(A &att, const typename A::payload_t &p, app::HasEditor *e,
                              Args... args)
 {
     att.onGuiValueChanged = makeUpdater<M, A, ABase>(att, p, e, std::forward<Args>(args)...);
+    configureBeginEdit<M>(att, e, std::forward<Args>(args)...);
     e->wireErrorReporter(att);
 }
 
@@ -133,6 +165,8 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     std::string label;
     std::function<void(const PayloadDataAttachment &at)> onGuiValueChanged{nullptr};
     std::function<bool(const PayloadDataAttachment &at)> isTemposynced{nullptr};
+    // when set, widget begin-edit sends the tagged undo snapshot message
+    std::function<void()> sendBeginEdit{nullptr};
     // reports a user-visible error (title, message); set by configureUpdater
     std::function<void(const std::string &, const std::string &)> onError{nullptr};
 
@@ -574,6 +608,13 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
 
         if constexpr (isText)
         {
+            // A draggable text value still drags like a continuous control, so
+            // wire its begin/end-edit (which drives the undo gesture) and
+            // tooltips, then override the popup to open the inline editor.
+            if (showTT)
+                e->setupFloatWidget(wid.get(), att.get());
+            else
+                e->setupIntWidget(wid.get(), att.get());
             wid->onPopupMenu = [sw = juce::Component::SafePointer(wid.get())](auto &m) {
                 if (sw)
                     sw->activateEditor();

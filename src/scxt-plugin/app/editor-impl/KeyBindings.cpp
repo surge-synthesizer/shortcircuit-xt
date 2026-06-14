@@ -52,6 +52,14 @@ void KeyBindings::setupKeyBindings()
     manager->addBinding(FOCUS_PARTS, {(uint32_t)manager_t::Modifiers::COMMAND, (int)'3'});
     manager->addBinding(FOCUS_MIXER, {(uint32_t)manager_t::Modifiers::COMMAND, (int)'4'});
     manager->addBinding(FOCUS_PLAY, {(uint32_t)manager_t::Modifiers::COMMAND, (int)'5'});
+
+    manager->addBinding(UNDO, {(uint32_t)manager_t::Modifiers::COMMAND, (int)'Z'});
+#if MAC
+    manager->addBinding(
+        REDO, {(uint32_t)(manager_t::Modifiers::COMMAND | manager_t::Modifiers::SHIFT), (int)'Z'});
+#else
+    manager->addBinding(REDO, {(uint32_t)manager_t::Modifiers::COMMAND, (int)'Y'});
+#endif
 }
 
 std::string KeyBindings::commandToString(KeyCommands c)
@@ -70,6 +78,10 @@ std::string KeyBindings::commandToString(KeyCommands c)
         return "focusPlay";
     case FOCUS_MIXER:
         return "focusMixer";
+    case UNDO:
+        return "undo";
+    case REDO:
+        return "redo";
     case numKeyCommands:
         SCLOG_IF(warnings, "LOGIC ERROR Unstreaming Key Command");
     }

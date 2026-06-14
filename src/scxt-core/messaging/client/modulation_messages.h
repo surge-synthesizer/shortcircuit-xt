@@ -37,7 +37,7 @@
 #include "selection/selection_manager.h"
 #include "voice/voice.h"
 #include "detail/message_helpers.h"
-#include "undo_manager/modulation_undoable_items.h"
+#include "undo_manager/payload_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -64,9 +64,7 @@ inline void doUpdateZoneRoutingRow(const zoneRoutingRowPayload_t &payload, engin
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     if (!sz.empty())
     {
-        auto undoItem = std::make_unique<undo::ZoneModRowChangeItem>();
-        undoItem->store(engine, i, {sz.begin(), sz.end()});
-        engine.undoManager.storeUndoStep(std::move(undoItem));
+        undo::pushPayloadUndo<undo::ZoneModRowSpec>(engine, i);
 
         cont.scheduleAudioThreadCallback(
             [index = i, row = r, zs = sz](auto &eng) {
@@ -109,9 +107,7 @@ inline void doUpdateGroupRoutingRow(const updateGroupRoutingRowPayload_t &payloa
     auto sg = engine.getSelectionManager()->currentlySelectedGroups();
     if (!sg.empty())
     {
-        auto undoItem = std::make_unique<undo::GroupModRowChangeItem>();
-        undoItem->store(engine, i, {sg.begin(), sg.end()});
-        engine.undoManager.storeUndoStep(std::move(undoItem));
+        undo::pushPayloadUndo<undo::GroupModRowSpec>(engine, i);
 
         cont.scheduleAudioThreadCallback(
             [index = i, row = r, gs = sg](auto &eng) {
@@ -152,10 +148,11 @@ typedef std::tuple<bool, modulation::MiscSourceStorage> gzMiscStorageUpdate_t;
 SERIAL_TO_CLIENT(UpdateMiscModStorage, s2c_update_group_or_zone_miscmod_storage,
                  gzMiscStorageUpdate_t, onGroupOrZoneMiscModStorageUpdated);
 
-inline void doMiscmodUpdate(const gzMiscStorageUpdate_t &payload, const engine::Engine &e,
+inline void doMiscmodUpdate(const gzMiscStorageUpdate_t &payload, engine::Engine &e,
                             messaging::MessageController &cont)
 {
     auto [forzone, storage] = payload;
+    undo::pushZoneOrGroupPayloadUndo<undo::ZoneMiscModSpec, undo::GroupMiscModSpec>(e, forzone);
     if (forzone)
     {
         auto sz = e.getSelectionManager()->currentlySelectedZones();
@@ -222,10 +219,11 @@ typedef std::tuple<bool, modulation::AudioSourceStorage> gzAudioModStorageUpdate
 SERIAL_TO_CLIENT(UpdateAudioModStorage, s2c_update_group_or_zone_audiomod_storage,
                  gzAudioModStorageUpdate_t, onGroupOrZoneAudioModStorageUpdated);
 
-inline void doAudioModUpdate(const gzAudioModStorageUpdate_t &payload, const engine::Engine &e,
+inline void doAudioModUpdate(const gzAudioModStorageUpdate_t &payload, engine::Engine &e,
                              messaging::MessageController &cont)
 {
     auto [forzone, storage] = payload;
+    undo::pushZoneOrGroupPayloadUndo<undo::ZoneAudioModSpec, undo::GroupAudioModSpec>(e, forzone);
     if (forzone)
     {
         auto sz = e.getSelectionManager()->currentlySelectedZones();
@@ -264,9 +262,9 @@ CLIENT_TO_SERIAL(UpdateAudiomodStorageForSelectedGroupOrZone,
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateAudiomodStorageElement, c2s_update_audiomod_storage_element_for_groups_or_zones,
     detail::zoneOrGroupDiffMsg_t<float>, modulation::AudioSourceStorage,
-    detail::updateZoneOrGroupMemberValue(&engine::Zone::audioSourceStorage,
-                                         &engine::Group::audioSourceStorage, payload, engine,
-                                         cont));
+    detail::updateZoneOrGroupMemberValue<undo::ZoneAudioModSpec, undo::GroupAudioModSpec>(
+        &engine::Zone::audioSourceStorage, &engine::Group::audioSourceStorage, payload, engine,
+        cont));
 
 // forZone, fromRow, toRow, isMove
 // isMove=false: swap rows fromRow and toRow
@@ -284,9 +282,7 @@ inline void doReorderModRow(const modRowReorderPayload_t &payload, engine::Engin
         if (sz.empty())
             return;
 
-        auto undoItem = std::make_unique<undo::ZoneModTableSnapshotItem>();
-        undoItem->store(engine, {sz.begin(), sz.end()});
-        engine.undoManager.storeUndoStep(std::move(undoItem));
+        undo::pushPayloadUndo<undo::ZoneModTableSpec>(engine);
 
         cont.scheduleAudioThreadCallback(
             [from = fromRow, to = toRow, move = isMove, zs = sz](auto &eng) {
@@ -324,9 +320,7 @@ inline void doReorderModRow(const modRowReorderPayload_t &payload, engine::Engin
         if (sg.empty())
             return;
 
-        auto undoItem = std::make_unique<undo::GroupModTableSnapshotItem>();
-        undoItem->store(engine, {sg.begin(), sg.end()});
-        engine.undoManager.storeUndoStep(std::move(undoItem));
+        undo::pushPayloadUndo<undo::GroupModTableSpec>(engine);
 
         cont.scheduleAudioThreadCallback(
             [from = fromRow, to = toRow, move = isMove, gs = sg](auto &eng) {

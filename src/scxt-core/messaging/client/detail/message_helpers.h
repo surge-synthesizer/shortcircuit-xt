@@ -30,17 +30,24 @@
 
 #include <tuple>
 
+#include "undo_manager/payload_undoable_items.h"
+
 namespace scxt::messaging::client::detail
 {
 
 template <typename VT> using diffMsg_t = std::tuple<ptrdiff_t, VT>;
 
-template <typename VT, typename M>
+// These helpers each record the matching undo step before scheduling the
+// value write. The undo Spec is the leading template argument - the leaf
+// helpers push it; the zone-or-group wrappers just forward the right spec to
+// the leaf so every value edit records exactly one undo entry.
+template <typename Spec, typename VT, typename M>
 inline void
-updateZoneLeadMemberValue(M m, const diffMsg_t<VT> &payload, const engine::Engine &engine,
+updateZoneLeadMemberValue(M m, const diffMsg_t<VT> &payload, engine::Engine &engine,
                           MessageController &cont,
                           std::function<void(const engine::Engine &)> responseCB = nullptr)
 {
+    undo::pushPayloadUndo<Spec>(engine);
     auto sz = engine.getSelectionManager()->currentLeadZone(engine);
     if (sz.has_value())
     {
@@ -73,11 +80,12 @@ updateZoneLeadMemberValue(M m, const diffMsg_t<VT> &payload, const engine::Engin
     }
 }
 
-template <typename VT, typename M>
-inline void updateZoneMemberValue(M m, const diffMsg_t<VT> &payload, const engine::Engine &engine,
+template <typename Spec, typename VT, typename M>
+inline void updateZoneMemberValue(M m, const diffMsg_t<VT> &payload, engine::Engine &engine,
                                   MessageController &cont,
                                   std::function<void(const engine::Engine &)> responseCB = nullptr)
 {
+    undo::pushPayloadUndo<Spec>(engine);
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     if (!sz.empty())
     {
@@ -113,11 +121,12 @@ inline void updateZoneMemberValue(M m, const diffMsg_t<VT> &payload, const engin
     }
 }
 
-template <typename VT, typename M>
-inline void updateGroupMemberValue(M m, const diffMsg_t<VT> &payload, const engine::Engine &engine,
+template <typename Spec, typename VT, typename M>
+inline void updateGroupMemberValue(M m, const diffMsg_t<VT> &payload, engine::Engine &engine,
                                    MessageController &cont,
                                    std::function<void(const engine::Engine &)> responseCB = nullptr)
 {
+    undo::pushPayloadUndo<Spec>(engine);
     auto sg = engine.getSelectionManager()->currentlySelectedGroups();
     if (!sg.empty())
     {
@@ -155,9 +164,9 @@ inline void updateGroupMemberValue(M m, const diffMsg_t<VT> &payload, const engi
 
 template <typename VT> using zoneOrGroupDiffMsg_t = std::tuple<bool, ptrdiff_t, VT>;
 
-template <typename VT, typename MZ, typename MG>
+template <typename ZSpec, typename GSpec, typename VT, typename MZ, typename MG>
 inline void updateZoneOrGroupMemberValue(
-    MZ mz, MG mg, const zoneOrGroupDiffMsg_t<VT> &payload, const engine::Engine &engine,
+    MZ mz, MG mg, const zoneOrGroupDiffMsg_t<VT> &payload, engine::Engine &engine,
     MessageController &cont, std::function<void(const engine::Engine &)> responseCB = nullptr,
     std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
         onZoneEngineExtra = nullptr,
@@ -168,23 +177,24 @@ inline void updateZoneOrGroupMemberValue(
     auto underT = diffMsg_t<VT>{std::get<1>(payload), std::get<2>(payload)};
     if (isZone)
     {
-        updateZoneMemberValue(mz, underT, engine, cont, responseCB);
+        updateZoneMemberValue<ZSpec>(mz, underT, engine, cont, responseCB);
     }
     else
     {
-        updateGroupMemberValue(mg, underT, engine, cont, responseCB);
+        updateGroupMemberValue<GSpec>(mg, underT, engine, cont, responseCB);
     }
 }
 
 template <typename VT> using indexedDiffMsg_t = std::tuple<size_t, ptrdiff_t, VT>;
 
-template <typename VT, typename M>
+template <typename Spec, typename VT, typename M>
 inline void updateZoneIndexedMemberValue(
-    M m, const indexedDiffMsg_t<VT> &payload, const engine::Engine &engine, MessageController &cont,
+    M m, const indexedDiffMsg_t<VT> &payload, engine::Engine &engine, MessageController &cont,
     std::function<void(const engine::Engine &)> responseCB = nullptr,
     std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
         onEngineExtra = nullptr)
 {
+    undo::pushPayloadUndo<Spec>(engine, (int32_t)std::get<0>(payload));
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     if (!sz.empty())
     {
@@ -222,13 +232,14 @@ inline void updateZoneIndexedMemberValue(
     }
 }
 
-template <typename VT, typename M>
+template <typename Spec, typename VT, typename M>
 inline void updateGroupIndexedMemberValue(
-    M m, const indexedDiffMsg_t<VT> &payload, const engine::Engine &engine, MessageController &cont,
+    M m, const indexedDiffMsg_t<VT> &payload, engine::Engine &engine, MessageController &cont,
     std::function<void(const engine::Engine &)> responseCB = nullptr,
     std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
         onEngineExtra = nullptr)
 {
+    undo::pushPayloadUndo<Spec>(engine, (int32_t)std::get<0>(payload));
     auto sg = engine.getSelectionManager()->currentlySelectedGroups();
     if (!sg.empty())
     {
@@ -262,9 +273,9 @@ inline void updateGroupIndexedMemberValue(
 
 template <typename VT> using indexedZoneOrGroupDiffMsg_t = std::tuple<bool, size_t, ptrdiff_t, VT>;
 
-template <typename VT, typename MZ, typename MG>
+template <typename ZSpec, typename GSpec, typename VT, typename MZ, typename MG>
 inline void updateZoneOrGroupIndexedMemberValue(
-    MZ mz, MG mg, const indexedZoneOrGroupDiffMsg_t<VT> &payload, const engine::Engine &engine,
+    MZ mz, MG mg, const indexedZoneOrGroupDiffMsg_t<VT> &payload, engine::Engine &engine,
     MessageController &cont, std::function<void(const engine::Engine &)> responseCB = nullptr,
     std::function<void(engine::Engine &, const selection::SelectionManager::selectedZones_t &)>
         onZoneEngineExtra = nullptr,
@@ -276,11 +287,13 @@ inline void updateZoneOrGroupIndexedMemberValue(
         indexedDiffMsg_t<VT>{std::get<1>(payload), std::get<2>(payload), std::get<3>(payload)};
     if (isZone)
     {
-        updateZoneIndexedMemberValue(mz, underT, engine, cont, responseCB, onZoneEngineExtra);
+        updateZoneIndexedMemberValue<ZSpec>(mz, underT, engine, cont, responseCB,
+                                            onZoneEngineExtra);
     }
     else
     {
-        updateGroupIndexedMemberValue(mg, underT, engine, cont, responseCB, onGroupEngineExtra);
+        updateGroupIndexedMemberValue<GSpec>(mg, underT, engine, cont, responseCB,
+                                             onGroupEngineExtra);
     }
 }
 } // namespace scxt::messaging::client::detail

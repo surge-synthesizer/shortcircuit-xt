@@ -33,6 +33,7 @@
 #include "engine/group.h"
 #include "selection/selection_manager.h"
 #include "messaging/client/detail/message_helpers.h"
+#include "undo_manager/payload_undoable_items.h"
 
 namespace scxt::messaging::client
 {
@@ -46,25 +47,26 @@ SERIAL_TO_CLIENT(SendGroupTriggerConditions, s2c_send_group_trigger_conditions,
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputFloatValue, c2s_update_group_output_float_value,
                              detail::diffMsg_t<float>, engine::Group::GroupOutputInfo,
-                             detail::updateGroupMemberValue(&engine::Group::outputInfo, payload,
-                                                            engine, cont));
+                             detail::updateGroupMemberValue<undo::GroupOutputInfoSpec>(
+                                 &engine::Group::outputInfo, payload, engine, cont));
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputInt16TValue, c2s_update_group_output_int16_t_value,
                              detail::diffMsg_t<int16_t>, engine::Group::GroupOutputInfo,
-                             detail::updateGroupMemberValue(&engine::Group::outputInfo, payload,
-                                                            engine, cont));
+                             detail::updateGroupMemberValue<undo::GroupOutputInfoSpec>(
+                                 &engine::Group::outputInfo, payload, engine, cont));
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputBoolValue, c2s_update_group_output_bool_value,
                              detail::diffMsg_t<bool>, engine::Group::GroupOutputInfo,
-                             detail::updateGroupMemberValue(&engine::Group::outputInfo, payload,
-                                                            engine, cont));
+                             detail::updateGroupMemberValue<undo::GroupOutputInfoSpec>(
+                                 &engine::Group::outputInfo, payload, engine, cont));
 
 inline void doUpdateGroupTriggerConditions(const engine::GroupTriggerConditions &payload,
-                                           const engine::Engine &engine, MessageController &cont)
+                                           engine::Engine &engine, MessageController &cont)
 {
     auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
     if (ga.has_value())
     {
+        undo::pushPayloadUndoFor<undo::GroupTriggerConditionsSpec>(engine, {*ga});
         cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
             auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
             grp->triggerConditions = p;
@@ -80,12 +82,13 @@ CLIENT_TO_SERIAL(UpdateGroupTriggerConditions, c2s_update_group_trigger_conditio
                  doUpdateGroupTriggerConditions(payload, engine, cont));
 
 inline void doUpdateGroupOutputInfoPolyphony(const scxt::engine::Group::GroupOutputInfo payload,
-                                             const engine::Engine &engine,
+                                             engine::Engine &engine,
                                              messaging::MessageController &cont)
 {
     auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
     if (ga.has_value())
     {
+        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, {*ga});
         cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
             auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
             grp->outputInfo = p;
@@ -98,12 +101,13 @@ CLIENT_TO_SERIAL(UpdateGroupOutputInfoPolyphony, c2s_update_group_output_info_po
                  doUpdateGroupOutputInfoPolyphony(payload, engine, cont));
 
 inline void doUpdateGroupOutputInfoMidiChannel(const scxt::engine::Group::GroupOutputInfo payload,
-                                               const engine::Engine &engine,
+                                               engine::Engine &engine,
                                                messaging::MessageController &cont)
 {
     auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
     if (ga.has_value())
     {
+        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, {*ga});
         cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
             auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
             grp->outputInfo = p;
@@ -117,12 +121,12 @@ CLIENT_TO_SERIAL(UpdateGroupOutputInfoMidiChannel, c2s_update_group_output_info_
 
 inline void
 doUpdateGroupOutputInfoExclusiveGroup(const scxt::engine::Group::GroupOutputInfo payload,
-                                      const engine::Engine &engine,
-                                      messaging::MessageController &cont)
+                                      engine::Engine &engine, messaging::MessageController &cont)
 {
     auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
     if (ga.has_value())
     {
+        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, {*ga});
         cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
             auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
             grp->outputInfo = p;
@@ -134,7 +138,7 @@ CLIENT_TO_SERIAL(UpdateGroupOutputInfoExclusiveGroup, c2s_update_group_output_in
                  doUpdateGroupOutputInfoExclusiveGroup(payload, engine, cont));
 
 using muteOrSoloGroup_t = std::tuple<int32_t, int32_t, bool, bool, bool>; // p, g, m, s, selected
-inline void doMuteOrSoloGroup(const muteOrSoloGroup_t &payload, const engine::Engine &engine,
+inline void doMuteOrSoloGroup(const muteOrSoloGroup_t &payload, engine::Engine &engine,
                               messaging::MessageController &cont)
 {
     auto &[p, g, m, s, sel] = payload;
@@ -151,6 +155,12 @@ inline void doMuteOrSoloGroup(const muteOrSoloGroup_t &payload, const engine::En
             }
         }
     }
+
+    if (muteSelected)
+        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, {gs.begin(), gs.end()});
+    else
+        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(
+            engine, {selection::SelectionManager::ZoneAddress(p, g, -1)});
 
     cont.scheduleAudioThreadCallback(
         [p, g, m, gs, muteSelected](auto &eng) {
