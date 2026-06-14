@@ -270,7 +270,8 @@ struct EXSObject
     {
         // Sloppy
         char buf[512];
-        assert(chars < 512);
+        if (chars >= 512 || position + chars > within.content.size())
+            return std::string();
         memset(buf, 0, sizeof(buf));
         memcpy(buf, within.content.data() + position, chars);
         position += chars;
