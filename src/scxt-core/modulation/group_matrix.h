@@ -124,17 +124,22 @@ struct GroupMatrixEndpoints
         {
             if (e)
             {
-                std::string envnm = (p == 0 ? "EG1" : "EG2");
-                registerGroupModTarget(e, dlyT, envnm, "Delay");
-                registerGroupModTarget(e, aT, envnm, "Attack");
-                registerGroupModTarget(e, hT, envnm, "Hold");
-                registerGroupModTarget(e, dT, envnm, "Decay");
-                registerGroupModTarget(e, sT, envnm, "Sustain");
-                registerGroupModTarget(e, rT, envnm, "Release");
-                registerGroupModTarget(e, asT, envnm, "Attack Shape");
-                registerGroupModTarget(e, dsT, envnm, "Decay Shape");
-                registerGroupModTarget(e, rsT, envnm, "Release Shape");
-                registerGroupModTarget(e, retriggerT, envnm, "Retrigger");
+                // Long path/name go in the menu; short path/name in the matrix row
+                std::string longPath = "Group EG " + std::to_string(p + 1);
+                std::string shortPath = "GEG" + std::to_string(p + 1);
+                auto reg = [&](const auto &t, const std::string &nm) {
+                    registerGroupModTarget(e, t, longPath, nm, false, shortPath, nm);
+                };
+                reg(dlyT, "Delay");
+                reg(aT, "Attack");
+                reg(hT, "Hold");
+                reg(dT, "Decay");
+                reg(sT, "Sustain");
+                reg(rT, "Release");
+                reg(asT, "Attack Shape");
+                reg(dsT, "Decay Shape");
+                reg(rsT, "Release Shape");
+                reg(retriggerT, "Retrigger");
             }
         }
         void bind(GroupMatrix &m, engine::Group &g);
