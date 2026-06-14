@@ -121,6 +121,7 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  addUnlessDefault<val_t>(v, "rShape", 0.f, from.rShape);
                  addUnlessDefault<val_t>(v, "groupGate", false, from.gateGroupEGOnAnyPlaying);
                  addUnlessDefault<val_t>(v, "tsync", false, from.isTemposync);
+                 addUnlessDefault<val_t>(v, "rateMul", 0.f, from.rateMul);
                  addUnlessDefault<val_t>(v, "gateMode",
                                          modulation::modulators::AdsrStorage::GateMode::GATED,
                                          from.gateMode);
@@ -137,6 +138,7 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  findOrSet(v, "rShape", 0.f, result.rShape);
                  findOrSet(v, "groupGate", false, result.gateGroupEGOnAnyPlaying);
                  findOrSet(v, "tsync", false, result.isTemposync);
+                 findOrSet(v, "rateMul", 0.f, result.rateMul);
                  findOrSet(v, "gateMode", modulation::modulators::AdsrStorage::GateMode::GATED,
                            result.gateMode);
              }))

@@ -140,6 +140,7 @@ struct GroupMatrixEndpoints
                 reg(dsT, "Decay Shape");
                 reg(rsT, "Release Shape");
                 reg(retriggerT, "Retrigger");
+                reg(rateMulT, "Rate Multiplier");
             }
         }
         void bind(GroupMatrix &m, engine::Group &g);
