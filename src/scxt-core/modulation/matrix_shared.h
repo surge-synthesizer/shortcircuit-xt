@@ -145,20 +145,22 @@ template <typename TG, uint32_t gn> struct EGTargetEndpointData
     static constexpr TG decayShapeA(uint32_t slot) { return TG{gn, 'dcSH', slot}; }
     static constexpr TG releaseShapeA(uint32_t slot) { return TG{gn, 'rlSH', slot}; }
     static constexpr TG retriggerA(uint32_t slot) { return TG{gn, 'rtrg', slot}; }
+    static constexpr TG rateMulA(uint32_t slot) { return TG{gn, 'erml', slot}; }
 
     uint32_t index{0};
     EGTargetEndpointData(uint32_t p)
         : index(p), dlyT(delayA(p)), aT(attackA(p)), hT(holdA(p)), dT(decayA(p)), sT(sustainA(p)),
           rT(releaseA(p)), asT(attackShapeA(p)), dsT(decayShapeA(p)), rsT(releaseShapeA(p)),
-          retriggerT(retriggerA(p))
+          retriggerT(retriggerA(p)), rateMulT(rateMulA(p))
     {
     }
 
-    TG dlyT, aT, hT, dT, sT, rT, asT, dsT, rsT, retriggerT;
+    TG dlyT, aT, hT, dT, sT, rT, asT, dsT, rsT, retriggerT, rateMulT;
     const float *dlyP{nullptr}, *aP{nullptr}, *hP{nullptr}, *dP{nullptr}, *sP{nullptr},
         *rP{nullptr};
     const float *asP{nullptr}, *dsP{nullptr}, *rsP{nullptr};
     const float *retriggerP{nullptr};
+    const float *rateMulP{nullptr};
 
     float zeroBase{0.f};
 
@@ -360,6 +362,7 @@ inline void EGTargetEndpointData<TG, gn>::baseBind(M &m, EG &eg)
     bindEl(m, eg, rsT, eg.rShape, rsP);
     bindEl(m, eg, retriggerT, zeroBase, retriggerP,
            datamodel::pmd().withName("Retrigger").asPercent());
+    bindEl(m, eg, rateMulT, eg.rateMul, rateMulP);
 }
 
 template <typename TG, uint32_t gn>

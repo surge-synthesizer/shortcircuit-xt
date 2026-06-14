@@ -280,9 +280,11 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
                 eg[i].attackFromWithDelay(eg[i].outBlock0, *aegp.dlyP, *aegp.aP);
                 egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage, false);
             }
-            eg[i].processBlockWithDelay(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP,
-                                        *aegp.rP, *aegp.asP, *aegp.dsP, *aegp.rsP, egiGate, false,
-                                        gegStorage[i].isTemposync, e.transport.tempo / 120.f);
+            auto egiRM = dsp::twoToTheXTable.twoToThe(*aegp.rateMulP);
+            eg[i].processBlockWithDelayAndRateMul(
+                *aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP, *aegp.rP, *aegp.asP, *aegp.dsP,
+                *aegp.rsP, egiRM, egiGate, false, gegStorage[i].isTemposync,
+                e.transport.tempo / 120.f);
         }
     }
 

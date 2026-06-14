@@ -76,6 +76,12 @@ struct AdsrStorage
      * Blanket temposync for the envelope times. All-or-none.
      */
     bool isTemposync{false};
+
+    /*
+     * Modulation-only rate multiplier. -3..3 maps to 1/8..8x via 2^x. No UI control;
+     * exposed purely as a modulation target.
+     */
+    float rateMul{0.f};
 };
 
 using StepLFOStorage = sst::basic_blocks::modulators::StepLFO<scxt::blockSize>::Storage;
@@ -300,6 +306,15 @@ SC_DESCRIBE(scxt::modulation::modulators::AdsrStorage, {
     SC_FIELD(gateGroupEGOnAnyPlaying,
              pmd().asOnOffBool().withName("Gated if ungated voices sounding"));
     SC_FIELD(isTemposync, pmd().asOnOffBool().withName("Temposync"));
+    SC_FIELD(rateMul, pmd()
+                          .asFloat()
+                          .withRange(-3, 3)
+                          .withATwoToTheBFormatting(1, 1, "x")
+                          .withDecimalPlaces(4)
+                          .withDefault(0.0)
+                          .withFeature(pmd::Features::BELOW_ONE_IS_INVERSE_FRACTION)
+                          .withFeature(pmd::Features::ALLOW_FRACTIONAL_TYPEINS)
+                          .withName("Rate Multiplier"));
 })
 
 // We describe modulator storage as a compound since we address

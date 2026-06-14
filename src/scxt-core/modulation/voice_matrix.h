@@ -157,6 +157,7 @@ struct MatrixEndpoints
             registerVoiceModTarget(e, dsT, group, "Decay Shape");
             registerVoiceModTarget(e, rsT, group, "Release Shape");
             registerVoiceModTarget(e, retriggerT, group, "Retrigger");
+            registerVoiceModTarget(e, rateMulT, group, "Rate Multiplier");
         }
 
         void bind(Matrix &m, engine::Zone &z);
