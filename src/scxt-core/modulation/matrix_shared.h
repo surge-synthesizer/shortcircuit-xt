@@ -40,6 +40,27 @@ struct Engine;
 
 namespace scxt::modulation::shared
 {
+/*
+ * RAII guard: while in scope, mod targets/sources registered with the engine get an incrementing
+ * explicit menu order (instead of the default -1, which sorts alphabetically). Call separator()
+ * to mark that the next registered item should have a menu separator before it.
+ *
+ *     auto orderGuard = scxt::modulation::shared::ExplicitMenuOrder(e);
+ *     registerTarget(...); registerTarget(...);
+ *     orderGuard.separator();
+ *     registerTarget(...);
+ */
+struct ExplicitMenuOrder
+{
+    scxt::engine::Engine *engine{nullptr};
+    explicit ExplicitMenuOrder(scxt::engine::Engine *e);
+    ~ExplicitMenuOrder();
+    void separator();
+
+    ExplicitMenuOrder(const ExplicitMenuOrder &) = delete;
+    ExplicitMenuOrder &operator=(const ExplicitMenuOrder &) = delete;
+};
+
 struct SourceIdentifier
 {
     uint32_t gid{0};
