@@ -135,9 +135,10 @@ struct EXSBlock
 
         type = tp & 0x0F;
 
-        if (v1 != 1 && v2 != 0)
+        // Known/supported header version is 1.0; anything else is unknown.
+        if (!(v1 == 1 && v2 == 0))
         {
-            SCLOG_IF(sampleCompoundParsers, "Unknown EXS Version: " << v1 << " " << v2);
+            SCLOG_IF(sampleCompoundParsers, "Unknown EXS Version: " << (int)v1 << " " << (int)v2);
             return false;
         }
 
@@ -166,31 +167,54 @@ struct EXSObject
     EXSObject(EXSBlock in) : within(in) {}
 
     size_t position{0};
+    // Set once any read would have run past the end of the block. Truncated
+    // EXS files (or hostile ones) hit this; callers check it to drop the block
+    // rather than acting on half-parsed garbage.
+    bool overran{false};
     void resetPosition() { position = 0; }
+
+    // Guard every indexed read: returns false (and latches overran) when fewer
+    // than `n` bytes remain. In release builds the old trailing asserts were
+    // no-ops, so a truncated block was a straight heap OOB read.
+    bool ensure(size_t n)
+    {
+        if (position + n > within.content.size())
+        {
+            overran = true;
+            return false;
+        }
+        return true;
+    }
+
     void skip(int S)
     {
         position += S;
-        assert(position <= within.size);
+        if (position > within.content.size())
+            overran = true;
     }
 
     int32_t readByteToInt()
     {
+        if (!ensure(1))
+            return 0;
         char c = within.content[position];
         position++;
-        assert(position <= within.size);
         return (int32_t)c;
     }
 
     uint8_t readByte()
     {
-        char c = within.content[position];
+        if (!ensure(1))
+            return 0;
+        uint8_t c = within.content[position];
         position++;
-        assert(position <= within.size);
-        return (uint8_t)c;
+        return c;
     }
 
     int16_t readS16()
     {
+        if (!ensure(2))
+            return 0;
         int16_t res = 0;
         if (within.isBigEndian)
         {
@@ -209,12 +233,13 @@ struct EXSObject
             }
         }
         position += 2;
-        assert(position <= within.size);
         return res;
     }
 
     uint16_t readU16()
     {
+        if (!ensure(2))
+            return 0;
         uint32_t res = 0;
         if (within.isBigEndian)
         {
@@ -233,11 +258,12 @@ struct EXSObject
             }
         }
         position += 2;
-        assert(position <= within.size);
         return res;
     }
     uint32_t readU32()
     {
+        if (!ensure(4))
+            return 0;
         uint32_t res = 0;
         if (within.isBigEndian)
         {
@@ -257,12 +283,17 @@ struct EXSObject
             }
         }
         position += 4;
-        assert(position <= within.size);
         return res;
     }
     std::string readStringNoTerm(size_t chars)
     {
-        auto res = std::string(within.content[position], chars);
+        if (!ensure(chars))
+            return {};
+        // Read `chars` bytes at the current position. (The previous
+        // std::string(content[position], chars) hit the (count, char) ctor:
+        // content[position] copies of char (char)chars — never the field.)
+        auto res =
+            std::string(reinterpret_cast<const char *>(within.content.data() + position), chars);
         position += chars;
         return res;
     }
@@ -271,6 +302,11 @@ struct EXSObject
         // Sloppy
         char buf[512];
         assert(chars < 512);
+        if (chars >= sizeof(buf) || !ensure(chars))
+        {
+            overran = true;
+            return {};
+        }
         memset(buf, 0, sizeof(buf));
         memcpy(buf, within.content.data() + position, chars);
         position += chars;
@@ -588,6 +624,8 @@ struct EXSParameters : EXSObject
     void parse()
     {
         int paramCount = (int)readU32();
+        if (paramCount < 0)
+            return;
         int paramBlockLength = paramCount * 3;
 
         // After the 4-byte count we just consumed, the chunk holds
@@ -597,6 +635,14 @@ struct EXSParameters : EXSObject
         // count itself).
         const auto idsBase = position;
         const auto valuesBase = position + paramCount;
+
+        // paramCount is untrusted: bail if the declared block (ids + values)
+        // doesn't fit, rather than indexing content[] out of bounds.
+        if (valuesBase + 2 * (size_t)paramCount > within.content.size())
+        {
+            overran = true;
+            return;
+        }
 
         for (int i = 0; i < paramCount; i++)
         {
@@ -661,17 +707,41 @@ EXSInfo parseEXS(const fs::path &p)
         break;
         case EXSBlock::TYPE_ZONE:
         {
-            zones.emplace_back(block);
+            auto z = EXSZone(block);
+            if (z.overran)
+            {
+                SCLOG_IF(sampleCompoundParsers, "Skipping truncated EXS zone block");
+            }
+            else
+            {
+                zones.push_back(std::move(z));
+            }
         }
         break;
         case EXSBlock::TYPE_GROUP:
         {
-            groups.emplace_back(block);
+            auto g = EXSGroup(block);
+            if (g.overran)
+            {
+                SCLOG_IF(sampleCompoundParsers, "Skipping truncated EXS group block");
+            }
+            else
+            {
+                groups.push_back(std::move(g));
+            }
         }
         break;
         case EXSBlock::TYPE_SAMPLE:
         {
-            samples.emplace_back(block);
+            auto s = EXSSample(block);
+            if (s.overran)
+            {
+                SCLOG_IF(sampleCompoundParsers, "Skipping truncated EXS sample block");
+            }
+            else
+            {
+                samples.push_back(std::move(s));
+            }
         }
         break;
         case EXSBlock::TYPE_PARAMS:
@@ -1441,14 +1511,20 @@ void dumpEXSToLog(const fs::path &p)
         SCLOG_IF(sampleCompoundParsers, "  VelRange " << z.velocityLow << "-" << z.velocityHigh);
         SCLOG_IF(sampleCompoundParsers, "  Group");
         SCLOG_IF(sampleCompoundParsers, "    gidx=" << z.groupIndex);
-        const auto &grp = info.groups[z.groupIndex];
-        SCLOG_IF(sampleCompoundParsers, "    gname='" << grp.within.name << "'");
+        if (z.groupIndex >= 0 && z.groupIndex < (int)info.groups.size())
+        {
+            const auto &grp = info.groups[z.groupIndex];
+            SCLOG_IF(sampleCompoundParsers, "    gname='" << grp.within.name << "'");
+        }
         SCLOG_IF(sampleCompoundParsers, "  Sample");
         SCLOG_IF(sampleCompoundParsers, "    sidx=" << z.sampleIndex);
-        const auto &smp = info.samples[z.sampleIndex];
-        SCLOG_IF(sampleCompoundParsers, "    sname=" << smp.within.name);
-        SCLOG_IF(sampleCompoundParsers, "    spath=" << smp.filePath);
-        SCLOG_IF(sampleCompoundParsers, "    sname=" << smp.fileName);
+        if (z.sampleIndex >= 0 && z.sampleIndex < (int)info.samples.size())
+        {
+            const auto &smp = info.samples[z.sampleIndex];
+            SCLOG_IF(sampleCompoundParsers, "    sname=" << smp.within.name);
+            SCLOG_IF(sampleCompoundParsers, "    spath=" << smp.filePath);
+            SCLOG_IF(sampleCompoundParsers, "    sname=" << smp.fileName);
+        }
     }
 }
 } // namespace scxt::exs_support
