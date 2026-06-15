@@ -130,17 +130,20 @@ struct GroupMatrixEndpoints
                 auto reg = [&](const auto &t, const std::string &nm) {
                     registerGroupModTarget(e, t, longPath, nm, false, shortPath, nm);
                 };
+                auto orderGuard = scxt::modulation::shared::ExplicitMenuOrder(e);
                 reg(dlyT, "Delay");
                 reg(aT, "Attack");
                 reg(hT, "Hold");
                 reg(dT, "Decay");
                 reg(sT, "Sustain");
                 reg(rT, "Release");
+                orderGuard.separator();
                 reg(asT, "Attack Shape");
                 reg(dsT, "Decay Shape");
                 reg(rsT, "Release Shape");
+                orderGuard.separator();
                 reg(retriggerT, "Retrigger");
-                reg(rateMulT, "Rate Multiplier");
+                reg(rateMulT, "Env Times");
             }
         }
         void bind(GroupMatrix &m, engine::Group &g);
@@ -369,9 +372,10 @@ inline const std::string &displayName(const targetDisplayName_t &d) { return std
 inline const std::string &displayShortPath(const targetDisplayName_t &d) { return std::get<2>(d); }
 inline const std::string &displayShortName(const targetDisplayName_t &d) { return std::get<3>(d); }
 
-// The last two are "multiplicative" and "enabled"
-// "multiplicative" uses first bit as can and second bit as should
-typedef std::tuple<GroupMatrixConfig::TargetIdentifier, targetDisplayName_t, int32_t, bool>
+// Fields after the display name are "multiplicative", "enabled", and "separatorBefore".
+// "multiplicative" uses first bit as can and second bit as should. "separatorBefore" asks the
+// menu to draw a separator before this item (set via explicit menu ordering).
+typedef std::tuple<GroupMatrixConfig::TargetIdentifier, targetDisplayName_t, int32_t, bool, bool>
     namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<GroupMatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;

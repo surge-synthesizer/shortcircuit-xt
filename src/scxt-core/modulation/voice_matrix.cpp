@@ -217,7 +217,7 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
     namedSourceVector_t sr;
     namedCurveVector_t cr;
 
-    auto identCmp = [](const auto &a, const auto &b) {
+    auto identCmp = [e](const auto &a, const auto &b) {
         const auto &srca = std::get<0>(a);
         const auto &srcb = std::get<0>(b);
         const auto &ida = std::get<1>(a);
@@ -227,28 +227,33 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
             return srca.index < srcb.index;
         }
 
-        if (ida.first == idb.first)
+        // categories (paths) sort alphabetically, keeping same-path items contiguous
+        if (ida.first != idb.first)
+            return strnatcasecmp(ida.first.c_str(), idb.first.c_str()) < 0;
+
+        // within a category: explicit regOrder (>= 0) wins and precedes alphabetical items
+        auto ordOf = [e](const auto &s) -> int32_t {
+            auto it = e->voiceModSources.find(s);
+            return it == e->voiceModSources.end() ? -1 : it->second.regOrder;
+        };
+        auto oa = ordOf(srca);
+        auto ob = ordOf(srcb);
+        if (oa >= 0 || ob >= 0)
         {
-            if (ida.second == idb.second)
-            {
-                return std::hash<
-                           std::remove_cv_t<std::remove_reference_t<decltype(std::get<0>(a))>>>{}(
-                           std::get<0>(a)) <
-                       std::hash<
-                           std::remove_cv_t<std::remove_reference_t<decltype(std::get<0>(b))>>>{}(
-                           std::get<0>(b));
-            }
-            else
-            {
-                return strnatcasecmp(ida.second.c_str(), idb.second.c_str()) < 0;
-            }
+            if (oa >= 0 && ob >= 0)
+                return oa < ob;
+            return oa >= 0;
         }
-        return strnatcasecmp(ida.first.c_str(), idb.first.c_str()) < 0;
+
+        if (ida.second != idb.second)
+            return strnatcasecmp(ida.second.c_str(), idb.second.c_str()) < 0;
+        return std::hash<std::remove_cv_t<std::remove_reference_t<decltype(srca)>>>{}(srca) <
+               std::hash<std::remove_cv_t<std::remove_reference_t<decltype(srcb)>>>{}(srcb);
     };
 
-    // Targets carry a 4-tuple displayName (path, name, shortPath, shortName); sort by long
-    // path/name
-    auto tgtCmp = [](const namedTarget_t &a, const namedTarget_t &b) {
+    // Targets carry a 4-tuple displayName (path, name, shortPath, shortName); categories sort
+    // alphabetically by long path, items within a category by explicit regOrder then long name.
+    auto tgtCmp = [e](const namedTarget_t &a, const namedTarget_t &b) {
         const auto &ta = std::get<0>(a);
         const auto &tb = std::get<0>(b);
         if (ta.gid == 'proc' && tb.gid == ta.gid && tb.index == ta.index)
@@ -257,37 +262,48 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
         }
         const auto &dna = std::get<1>(a);
         const auto &dnb = std::get<1>(b);
-        if (displayPath(dna) == displayPath(dnb))
+        if (displayPath(dna) != displayPath(dnb))
+            return strnatcasecmp(displayPath(dna).c_str(), displayPath(dnb).c_str()) < 0;
+
+        auto ordOf = [e](const MatrixConfig::TargetIdentifier &t) -> int32_t {
+            auto it = e->voiceModTargets.find(t);
+            return it == e->voiceModTargets.end() ? -1 : it->second.regOrder;
+        };
+        auto oa = ordOf(ta);
+        auto ob = ordOf(tb);
+        if (oa >= 0 || ob >= 0)
         {
-            if (displayName(dna) == displayName(dnb))
-            {
-                return std::hash<MatrixConfig::TargetIdentifier>{}(ta) <
-                       std::hash<MatrixConfig::TargetIdentifier>{}(tb);
-            }
-            return strnatcasecmp(displayName(dna).c_str(), displayName(dnb).c_str()) < 0;
+            if (oa >= 0 && ob >= 0)
+                return oa < ob;
+            return oa >= 0;
         }
-        return strnatcasecmp(displayPath(dna).c_str(), displayPath(dnb).c_str()) < 0;
+
+        if (displayName(dna) != displayName(dnb))
+            return strnatcasecmp(displayName(dna).c_str(), displayName(dnb).c_str()) < 0;
+        return std::hash<MatrixConfig::TargetIdentifier>{}(ta) <
+               std::hash<MatrixConfig::TargetIdentifier>{}(tb);
     };
 
     for (const auto &[t, fns] : e->voiceModTargets)
     {
-        const auto &pathFn = std::get<0>(fns);
-        const auto &nameFn = std::get<1>(fns);
-        const auto &shortPathFn = std::get<2>(fns);
-        const auto &shortNameFn = std::get<3>(fns);
-        const auto &additiveFn = std::get<4>(fns);
-        const auto &enabledFn = std::get<5>(fns);
+        const auto &pathFn = fns.pathFn;
+        const auto &nameFn = fns.nameFn;
+        const auto &shortPathFn = fns.shortPathFn;
+        const auto &shortNameFn = fns.shortNameFn;
+        const auto &additiveFn = fns.additiveFn;
+        const auto &enabledFn = fns.enabledFn;
         auto p = pathFn(z, t);
         auto n = nameFn(z, t);
         auto sp = shortPathFn ? shortPathFn(z, t) : p;
         auto sn = shortNameFn ? shortNameFn(z, t) : n;
-        tg.emplace_back(t, targetDisplayName_t{p, n, sp, sn}, additiveFn(z, t), enabledFn(z, t));
+        tg.emplace_back(t, targetDisplayName_t{p, n, sp, sn}, additiveFn(z, t), enabledFn(z, t),
+                        fns.separatorBefore);
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);
 
     for (const auto &[s, fns] : e->voiceModSources)
     {
-        sr.emplace_back(s, identifierDisplayName_t{fns.first(z, s), fns.second(z, s)});
+        sr.emplace_back(s, identifierDisplayName_t{fns.pathFn(z, s), fns.nameFn(z, s)});
     }
     std::sort(sr.begin(), sr.end(), identCmp);
 
@@ -341,8 +357,7 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         return "Out Lvl";
     };
 
-    registerVoiceModTarget(e, mixT, ptFn, mixFn, false, ptShortFn, mixFn);
-    registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn, true, ptShortFn, levShortFn);
+    auto order = scxt::modulation::shared::ExplicitMenuOrder(e);
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
@@ -382,6 +397,10 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
 
         registerVoiceModTarget(e, fpT[i], ptFn, elFn, adFn, enFn, ptShortFn, elShortFn);
     }
+
+    order.separator();
+    registerVoiceModTarget(e, mixT, ptFn, mixFn, false, ptShortFn, mixFn);
+    registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn, true, ptShortFn, levShortFn);
 }
 
 MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
@@ -429,24 +448,30 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
         auto ms = scxt::modulation::ModulatorStorage();
         auto nm = [&ms](auto &v) { return datamodel::describeValue(ms, v).name; };
 
+        auto orderGuard = scxt::modulation::shared::ExplicitMenuOrder(e);
         registerVoiceModTarget(e, rateT, ptFn, notEnvLabel(nm(ms.rate)));
         registerVoiceModTarget(e, amplitudeT, ptFn, allLabel(nm(ms.amplitude)), true);
         registerVoiceModTarget(e, retriggerT, ptFn, allLabel("Retrigger"));
+        orderGuard.separator();
         registerVoiceModTarget(e, curve.deformT, ptFn, curveLabel(nm(ms.curveLfoStorage.deform)));
         registerVoiceModTarget(e, curve.angleT, ptFn, curveLabel(nm(ms.curveLfoStorage.angle)));
         registerVoiceModTarget(e, curve.delayT, ptFn, curveLabel(nm(ms.curveLfoStorage.delay)));
         registerVoiceModTarget(e, curve.attackT, ptFn, curveLabel(nm(ms.curveLfoStorage.attack)));
         registerVoiceModTarget(e, curve.releaseT, ptFn, curveLabel(nm(ms.curveLfoStorage.release)));
+        orderGuard.separator();
         registerVoiceModTarget(e, step.smoothT, ptFn, stepLabel(nm(ms.stepLfoStorage.smooth)));
+        orderGuard.separator();
         registerVoiceModTarget(e, env.delayT, ptFn, envLabel(nm(ms.envLfoStorage.delay)));
         registerVoiceModTarget(e, env.attackT, ptFn, envLabel(nm(ms.envLfoStorage.attack)));
         registerVoiceModTarget(e, env.holdT, ptFn, envLabel(nm(ms.envLfoStorage.hold)));
         registerVoiceModTarget(e, env.decayT, ptFn, envLabel(nm(ms.envLfoStorage.decay)));
         registerVoiceModTarget(e, env.sustainT, ptFn, envLabel(nm(ms.envLfoStorage.sustain)));
         registerVoiceModTarget(e, env.releaseT, ptFn, envLabel(nm(ms.envLfoStorage.release)));
+        orderGuard.separator();
         registerVoiceModTarget(e, env.aShapeT, ptFn, envLabel(nm(ms.envLfoStorage.aShape)));
         registerVoiceModTarget(e, env.dShapeT, ptFn, envLabel(nm(ms.envLfoStorage.dShape)));
         registerVoiceModTarget(e, env.rShapeT, ptFn, envLabel(nm(ms.envLfoStorage.rShape)));
+        orderGuard.separator();
         registerVoiceModTarget(e, env.rateMulT, ptFn, envLabel(nm(ms.envLfoStorage.rateMul)));
     }
 }

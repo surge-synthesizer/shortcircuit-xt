@@ -84,9 +84,7 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
             return "Out Lvl";
         };
 
-        registerGroupModTarget(e, mixT, ptFn, mixFn, false, ptShortFn, mixFn);
-        registerGroupModTarget(e, outputLevelDbT, ptFn, levFn, true, ptShortFn, levShortFn);
-
+        auto order = scxt::modulation::shared::ExplicitMenuOrder(e);
         for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
         {
             auto elFn = [icopy = i](const engine::Group &z,
@@ -119,6 +117,10 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
             };
             registerGroupModTarget(e, fpT[i], ptFn, elFn, adFn, ptShortFn, elShortFn);
         }
+
+        order.separator();
+        registerGroupModTarget(e, mixT, ptFn, mixFn, false, ptShortFn, mixFn);
+        registerGroupModTarget(e, outputLevelDbT, ptFn, levFn, true, ptShortFn, levShortFn);
     }
 }
 
@@ -204,24 +206,30 @@ GroupMatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
             registerGroupModTarget(e, t, ptFn, nameFn, mul, ptShortFn, nameFn);
         };
 
+        auto orderGuard = scxt::modulation::shared::ExplicitMenuOrder(e);
         reg(rateT, notEnvLabel(nm(ms.rate)));
         reg(amplitudeT, allLabel(nm(ms.amplitude)), true);
         reg(retriggerT, allLabel("Retrigger"));
+        orderGuard.separator();
         reg(curve.deformT, curveLabel(nm(ms.curveLfoStorage.deform)));
         reg(curve.angleT, curveLabel(nm(ms.curveLfoStorage.angle)));
         reg(curve.delayT, curveLabel(nm(ms.curveLfoStorage.delay)));
         reg(curve.attackT, curveLabel(nm(ms.curveLfoStorage.attack)));
         reg(curve.releaseT, curveLabel(nm(ms.curveLfoStorage.release)));
+        orderGuard.separator();
         reg(step.smoothT, stepLabel(nm(ms.stepLfoStorage.smooth)));
+        orderGuard.separator();
         reg(env.delayT, envLabel(nm(ms.envLfoStorage.delay)));
         reg(env.attackT, envLabel(nm(ms.envLfoStorage.attack)));
         reg(env.holdT, envLabel(nm(ms.envLfoStorage.hold)));
         reg(env.decayT, envLabel(nm(ms.envLfoStorage.decay)));
         reg(env.sustainT, envLabel(nm(ms.envLfoStorage.sustain)));
         reg(env.releaseT, envLabel(nm(ms.envLfoStorage.release)));
+        orderGuard.separator();
         reg(env.aShapeT, envLabel(nm(ms.envLfoStorage.aShape)));
         reg(env.dShapeT, envLabel(nm(ms.envLfoStorage.dShape)));
         reg(env.rShapeT, envLabel(nm(ms.envLfoStorage.rShape)));
+        orderGuard.separator();
         reg(env.rateMulT, envLabel(nm(ms.envLfoStorage.rateMul)));
     }
 }
@@ -352,7 +360,7 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
     namedSourceVector_t sr;
     namedCurveVector_t cr;
 
-    auto identCmp = [](const auto &a, const auto &b) {
+    auto identCmp = [e](const auto &a, const auto &b) {
         const auto &srca = std::get<0>(a);
         const auto &srcb = std::get<0>(b);
         const auto &ida = std::get<1>(a);
@@ -364,28 +372,33 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
             return srca.index < srcb.index;
         }
 
-        if (ida.first == idb.first)
+        // categories (paths) sort alphabetically, keeping same-path items contiguous
+        if (ida.first != idb.first)
+            return strnatcasecmp(ida.first.c_str(), idb.first.c_str()) < 0;
+
+        // within a category: explicit regOrder (>= 0) wins and precedes alphabetical items
+        auto ordOf = [e](const auto &s) -> int32_t {
+            auto it = e->groupModSources.find(s);
+            return it == e->groupModSources.end() ? -1 : it->second.regOrder;
+        };
+        auto oa = ordOf(srca);
+        auto ob = ordOf(srcb);
+        if (oa >= 0 || ob >= 0)
         {
-            if (ida.second == idb.second)
-            {
-                return std::hash<
-                           std::remove_cv_t<std::remove_reference_t<decltype(std::get<0>(a))>>>{}(
-                           std::get<0>(a)) <
-                       std::hash<
-                           std::remove_cv_t<std::remove_reference_t<decltype(std::get<0>(b))>>>{}(
-                           std::get<0>(b));
-            }
-            else
-            {
-                return strnatcasecmp(ida.second.c_str(), idb.second.c_str()) < 0;
-            }
+            if (oa >= 0 && ob >= 0)
+                return oa < ob;
+            return oa >= 0;
         }
-        return strnatcasecmp(ida.first.c_str(), idb.first.c_str()) < 0;
+
+        if (ida.second != idb.second)
+            return strnatcasecmp(ida.second.c_str(), idb.second.c_str()) < 0;
+        return std::hash<std::remove_cv_t<std::remove_reference_t<decltype(srca)>>>{}(srca) <
+               std::hash<std::remove_cv_t<std::remove_reference_t<decltype(srcb)>>>{}(srcb);
     };
 
-    // Targets carry a 4-tuple displayName (path, name, shortPath, shortName); sort by long
-    // path/name
-    auto tgtCmp = [](const namedTarget_t &a, const namedTarget_t &b) {
+    // Targets carry a 4-tuple displayName (path, name, shortPath, shortName); categories sort
+    // alphabetically by long path, items within a category by explicit regOrder then long name.
+    auto tgtCmp = [e](const namedTarget_t &a, const namedTarget_t &b) {
         const auto &ta = std::get<0>(a);
         const auto &tb = std::get<0>(b);
         if (ta.gid == 'gprc' && tb.gid == ta.gid && tb.index == ta.index)
@@ -394,37 +407,48 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
         }
         const auto &dna = std::get<1>(a);
         const auto &dnb = std::get<1>(b);
-        if (displayPath(dna) == displayPath(dnb))
+        if (displayPath(dna) != displayPath(dnb))
+            return strnatcasecmp(displayPath(dna).c_str(), displayPath(dnb).c_str()) < 0;
+
+        auto ordOf = [e](const GroupMatrixConfig::TargetIdentifier &t) -> int32_t {
+            auto it = e->groupModTargets.find(t);
+            return it == e->groupModTargets.end() ? -1 : it->second.regOrder;
+        };
+        auto oa = ordOf(ta);
+        auto ob = ordOf(tb);
+        if (oa >= 0 || ob >= 0)
         {
-            if (displayName(dna) == displayName(dnb))
-            {
-                return std::hash<GroupMatrixConfig::TargetIdentifier>{}(ta) <
-                       std::hash<GroupMatrixConfig::TargetIdentifier>{}(tb);
-            }
-            return strnatcasecmp(displayName(dna).c_str(), displayName(dnb).c_str()) < 0;
+            if (oa >= 0 && ob >= 0)
+                return oa < ob;
+            return oa >= 0;
         }
-        return strnatcasecmp(displayPath(dna).c_str(), displayPath(dnb).c_str()) < 0;
+
+        if (displayName(dna) != displayName(dnb))
+            return strnatcasecmp(displayName(dna).c_str(), displayName(dnb).c_str()) < 0;
+        return std::hash<GroupMatrixConfig::TargetIdentifier>{}(ta) <
+               std::hash<GroupMatrixConfig::TargetIdentifier>{}(tb);
     };
 
     for (const auto &[t, fns] : e->groupModTargets)
     {
-        const auto &pathFn = std::get<0>(fns);
-        const auto &nameFn = std::get<1>(fns);
-        const auto &shortPathFn = std::get<2>(fns);
-        const auto &shortNameFn = std::get<3>(fns);
-        const auto &additiveFn = std::get<4>(fns);
-        const auto &enabledFn = std::get<5>(fns);
+        const auto &pathFn = fns.pathFn;
+        const auto &nameFn = fns.nameFn;
+        const auto &shortPathFn = fns.shortPathFn;
+        const auto &shortNameFn = fns.shortNameFn;
+        const auto &additiveFn = fns.additiveFn;
+        const auto &enabledFn = fns.enabledFn;
         auto p = pathFn(g, t);
         auto n = nameFn(g, t);
         auto sp = shortPathFn ? shortPathFn(g, t) : p;
         auto sn = shortNameFn ? shortNameFn(g, t) : n;
-        tg.emplace_back(t, targetDisplayName_t{p, n, sp, sn}, additiveFn(g, t), enabledFn(g, t));
+        tg.emplace_back(t, targetDisplayName_t{p, n, sp, sn}, additiveFn(g, t), enabledFn(g, t),
+                        fns.separatorBefore);
     }
     std::sort(tg.begin(), tg.end(), tgtCmp);
 
     for (const auto &[s, fns] : e->groupModSources)
     {
-        sr.emplace_back(s, identifierDisplayName_t{fns.first(g, s), fns.second(g, s)});
+        sr.emplace_back(s, identifierDisplayName_t{fns.pathFn(g, s), fns.nameFn(g, s)});
     }
     std::sort(sr.begin(), sr.end(), identCmp);
 

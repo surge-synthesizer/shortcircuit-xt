@@ -296,7 +296,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
                     c = cn.second;
             }
 
-            for (const auto &[di, dn, ca, isen] : dsts)
+            for (const auto &[di, dn, ca, isen, sep] : dsts)
             {
                 // long name in the multi-select consistency banner (room for full text)
                 if (di == row.target)
@@ -348,7 +348,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
             }
         }
 
-        for (const auto &[di, dn, ca, en] : dsts)
+        for (const auto &[di, dn, ca, en, sep] : dsts)
         {
             if (di == row.target)
             {
@@ -772,11 +772,22 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
         bool checkPath{false};
         juce::PopupMenu subMenu;
 
-        for (const auto &[ti, tn, mulConfig, isEnabled] : tgts)
+        // Separators are deferred so conditionally-hidden items don't leave doubled or leading
+        // separators: a requested separator is only emitted right before the next visible item,
+        // and only if content precedes it. We note the request even for hidden items so it carries
+        // to the next visible one rather than being lost. Tracked per-menu (top level / submenu).
+        bool subPendingSep{false}, subHasContent{false};
+        bool topPendingSep{false}, topHasContent{true}; // p already has the "Off" item
+
+        for (const auto &[ti, tn, mulConfig, isEnabled, sepBefore] : tgts)
         {
             // tn is targetDisplayName_t = tuple<path, name, shortPath, shortName>; menu shows longs
             const auto &tnPath = std::get<0>(tn);
             const auto &tnName = std::get<1>(tn);
+
+            if (sepBefore)
+                (tnPath.empty() ? topPendingSep : subPendingSep) = true;
+
             if (tnName.empty())
                 continue;
 
@@ -804,7 +815,11 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
 
             if (tnPath.empty())
             {
+                if (topPendingSep && topHasContent)
+                    p.addSeparator();
+                topPendingSep = false;
                 p.addItem(tnName, isEnabled, selected, mop);
+                topHasContent = true;
             }
             else
             {
@@ -819,8 +834,14 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
                     subMenu = juce::PopupMenu();
                     subMenu.addSectionHeader(tnPath);
                     subMenu.addSeparator();
+                    subPendingSep = false; // header separator already present
+                    subHasContent = false;
                 }
+                if (subPendingSep && subHasContent)
+                    subMenu.addSeparator();
+                subPendingSep = false;
                 subMenu.addItem(tnName, isEnabled, selected, mop);
+                subHasContent = true;
                 checkPath = checkPath || selected;
             }
         }

@@ -146,6 +146,7 @@ struct MatrixEndpoints
         EGTarget(engine::Engine *e, uint32_t p)
             : scxt::modulation::shared::EGTargetEndpointData<TG, 'envg'>(p)
         {
+            auto orderGuard = scxt::modulation::shared::ExplicitMenuOrder(e);
             std::string group = (index == 0 ? "AEG" : std::string("EG") + std::to_string(p + 1));
             registerVoiceModTarget(e, dlyT, group, "Delay");
             registerVoiceModTarget(e, aT, group, "Attack");
@@ -153,11 +154,13 @@ struct MatrixEndpoints
             registerVoiceModTarget(e, dT, group, "Decay");
             registerVoiceModTarget(e, sT, group, "Sustain");
             registerVoiceModTarget(e, rT, group, "Release");
+            orderGuard.separator();
             registerVoiceModTarget(e, asT, group, "Attack Shape");
             registerVoiceModTarget(e, dsT, group, "Decay Shape");
             registerVoiceModTarget(e, rsT, group, "Release Shape");
+            orderGuard.separator();
             registerVoiceModTarget(e, retriggerT, group, "Retrigger");
-            registerVoiceModTarget(e, rateMulT, group, "Rate Multiplier");
+            registerVoiceModTarget(e, rateMulT, group, "Env Times");
         }
 
         void bind(Matrix &m, engine::Zone &z);
@@ -513,9 +516,10 @@ inline const std::string &displayName(const targetDisplayName_t &d) { return std
 inline const std::string &displayShortPath(const targetDisplayName_t &d) { return std::get<2>(d); }
 inline const std::string &displayShortName(const targetDisplayName_t &d) { return std::get<3>(d); }
 
-// The last two are "multiplcative" and "enabled"
-// "multiplcaitve" uses first bit as can and second bit as should
-typedef std::tuple<MatrixConfig::TargetIdentifier, targetDisplayName_t, int32_t, bool>
+// Fields after the display name are "multiplicative", "enabled", and "separatorBefore".
+// "multiplicative" uses first bit as can and second bit as should. "separatorBefore" asks the
+// menu to draw a separator before this item (set via explicit menu ordering).
+typedef std::tuple<MatrixConfig::TargetIdentifier, targetDisplayName_t, int32_t, bool, bool>
     namedTarget_t;
 typedef std::vector<namedTarget_t> namedTargetVector_t;
 typedef std::pair<MatrixConfig::SourceIdentifier, identifierDisplayName_t> namedSource_t;

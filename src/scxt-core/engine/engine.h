@@ -703,23 +703,80 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     using gmodSrcStrFn_t = std::function<std::string(
         const Group &, const voice::modulation::MatrixConfig::SourceIdentifier &)>;
 
-    // Function order: pathFn, nameFn, shortPathFn, shortNameFn, additiveFn, enabledFn.
     // shortPathFn/shortNameFn may be empty; consumers should fall back to pathFn/nameFn.
-    std::unordered_map<voice::modulation::MatrixConfig::TargetIdentifier,
-                       std::tuple<vmodTgtStrFn_t, vmodTgtStrFn_t, vmodTgtStrFn_t, vmodTgtStrFn_t,
-                                  vmodTgtIntFn_t, vmodTgtBoolFn_t>>
+    // regOrder drives menu/sort order: -1 (the default) means sort alphabetically; a value >= 0
+    // is an explicit order assigned within a shared::ExplicitMenuOrder guard scope.
+    struct VoiceModTarget
+    {
+        vmodTgtStrFn_t pathFn, nameFn, shortPathFn, shortNameFn;
+        vmodTgtIntFn_t additiveFn;
+        vmodTgtBoolFn_t enabledFn;
+        int32_t regOrder{-1};
+        bool separatorBefore{false};
+    };
+    struct GroupModTarget
+    {
+        gmodTgtStrFn_t pathFn, nameFn, shortPathFn, shortNameFn;
+        gmodTgtIntFn_t additiveFn;
+        gmodTgtBoolFn_t enabledFn;
+        int32_t regOrder{-1};
+        bool separatorBefore{false};
+    };
+    struct VoiceModSource
+    {
+        vmodSrcStrFn_t pathFn, nameFn;
+        int32_t regOrder{-1};
+    };
+    struct GroupModSource
+    {
+        gmodSrcStrFn_t pathFn, nameFn;
+        int32_t regOrder{-1};
+    };
+
+    std::unordered_map<voice::modulation::MatrixConfig::TargetIdentifier, VoiceModTarget>
         voiceModTargets;
-    std::unordered_map<modulation::GroupMatrixConfig::TargetIdentifier,
-                       std::tuple<gmodTgtStrFn_t, gmodTgtStrFn_t, gmodTgtStrFn_t, gmodTgtStrFn_t,
-                                  gmodTgtIntFn_t, gmodTgtBoolFn_t>>
+    std::unordered_map<modulation::GroupMatrixConfig::TargetIdentifier, GroupModTarget>
         groupModTargets;
 
-    std::unordered_map<voice::modulation::MatrixConfig::SourceIdentifier,
-                       std::pair<vmodSrcStrFn_t, vmodSrcStrFn_t>>
+    std::unordered_map<voice::modulation::MatrixConfig::SourceIdentifier, VoiceModSource>
         voiceModSources;
-    std::unordered_map<modulation::GroupMatrixConfig::SourceIdentifier,
-                       std::pair<gmodSrcStrFn_t, gmodSrcStrFn_t>>
+    std::unordered_map<modulation::GroupMatrixConfig::SourceIdentifier, GroupModSource>
         groupModSources;
+
+    // Explicit menu-order state. While active (inside a shared::ExplicitMenuOrder guard), each
+    // registered target/source is stamped with an incrementing regOrder; outside, regOrder is -1
+    // and the item sorts alphabetically. See nextMenuOrder().
+    int32_t menuOrderCounter{0};
+    bool menuOrderActive{false};
+    bool menuOrderPendingSeparator{false};
+    void beginExplicitMenuOrder()
+    {
+        menuOrderActive = true;
+        menuOrderPendingSeparator = false;
+    }
+    void endExplicitMenuOrder()
+    {
+        menuOrderActive = false;
+        menuOrderPendingSeparator = false;
+    }
+    void requestMenuSeparator()
+    {
+        if (menuOrderActive)
+            menuOrderPendingSeparator = true;
+    }
+    // Returns the next explicit order (and whether a separator precedes this item) if a guard is
+    // active, else -1 / false for alphabetical ordering.
+    int32_t nextMenuOrder(bool &separatorBefore)
+    {
+        if (!menuOrderActive)
+        {
+            separatorBefore = false;
+            return -1;
+        }
+        separatorBefore = menuOrderPendingSeparator;
+        menuOrderPendingSeparator = false;
+        return menuOrderCounter++;
+    }
 
     // shortPathFn / shortNameFn may be empty std::function; in that case the metadata builder
     // falls back to pathFn / nameFn.

@@ -1396,14 +1396,18 @@ void Engine::registerVoiceModTarget(const voice::modulation::MatrixConfig::Targe
                                     vmodTgtIntFn_t additiveFn, vmodTgtBoolFn_t enabledFn,
                                     vmodTgtStrFn_t shortPathFn, vmodTgtStrFn_t shortNameFn)
 {
-    voiceModTargets.emplace(
-        t, std::make_tuple(pathFn, nameFn, shortPathFn, shortNameFn, additiveFn, enabledFn));
+    bool sep{false};
+    auto ord = nextMenuOrder(sep);
+    voiceModTargets.emplace(t, VoiceModTarget{pathFn, nameFn, shortPathFn, shortNameFn, additiveFn,
+                                              enabledFn, ord, sep});
 }
 
 void Engine::registerVoiceModSource(const voice::modulation::MatrixConfig::SourceIdentifier &t,
                                     vmodSrcStrFn_t pathFn, vmodSrcStrFn_t nameFn)
 {
-    voiceModSources.emplace(t, std::make_pair(pathFn, nameFn));
+    bool sep{false};
+    auto ord = nextMenuOrder(sep);
+    voiceModSources.emplace(t, VoiceModSource{pathFn, nameFn, ord});
 }
 
 void Engine::registerGroupModTarget(const modulation::GroupMatrixConfig::TargetIdentifier &t,
@@ -1411,14 +1415,18 @@ void Engine::registerGroupModTarget(const modulation::GroupMatrixConfig::TargetI
                                     gmodTgtIntFn_t additiveFn, gmodTgtBoolFn_t enabledFn,
                                     gmodTgtStrFn_t shortPathFn, gmodTgtStrFn_t shortNameFn)
 {
-    groupModTargets.emplace(
-        t, std::make_tuple(pathFn, nameFn, shortPathFn, shortNameFn, additiveFn, enabledFn));
+    bool sep{false};
+    auto ord = nextMenuOrder(sep);
+    groupModTargets.emplace(t, GroupModTarget{pathFn, nameFn, shortPathFn, shortNameFn, additiveFn,
+                                              enabledFn, ord, sep});
 }
 
 void Engine::registerGroupModSource(const modulation::GroupMatrixConfig::SourceIdentifier &t,
                                     gmodSrcStrFn_t pathFn, gmodSrcStrFn_t nameFn)
 {
-    groupModSources.emplace(t, std::make_pair(pathFn, nameFn));
+    bool sep{false};
+    auto ord = nextMenuOrder(sep);
+    groupModSources.emplace(t, GroupModSource{pathFn, nameFn, ord});
 }
 
 void Engine::terminateVoicesForZone(scxt::engine::Zone &z) { z.terminateAllVoices(); }

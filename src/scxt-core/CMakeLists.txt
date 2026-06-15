@@ -66,6 +66,7 @@ add_library(${PROJECT_NAME} STATIC
 
         modulation/group_matrix.cpp
         modulation/voice_matrix.cpp
+        modulation/matrix_shared.cpp
         modulation/mod_curves.cpp
         modulation/modulator_storage.cpp
 
