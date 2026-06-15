@@ -163,6 +163,7 @@ static constexpr sheet_t::Class ToggleButton{"header.togglebutton"};
 static constexpr sheet_t::Class MenuButton{"header.menubutton"};
 static constexpr sheet_t::Class GlyphButton{"header.menubutton"};
 static constexpr sheet_t::Class GlyphButtonAccent{"header.menubutton.accent"};
+static constexpr sheet_t::Class PanicButton{"header.textbutton.panic"};
 void applyColorsAndFonts(const sheet_t::ptr_t &, const ColorMap &, const ThemeApplier &);
 void init()
 {
@@ -171,6 +172,7 @@ void init()
     sheet_t::addClass(MenuButton).withBaseClass(jcmp::MenuButton::Styles::styleClass);
     sheet_t::addClass(GlyphButton).withBaseClass(jcmp::GlyphButton::Styles::styleClass);
     sheet_t::addClass(GlyphButtonAccent).withBaseClass(GlyphButton);
+    sheet_t::addClass(PanicButton).withBaseClass(TextPushButton);
 }
 } // namespace header
 
@@ -326,6 +328,11 @@ void ThemeApplier::setLabelToHighlight(sst::jucegui::style::StyleConsumer *s)
 void ThemeApplier::applyHeaderSCButtonTheme(sst::jucegui::style::StyleConsumer *s)
 {
     s->setCustomClass(detail::header::GlyphButtonAccent);
+}
+
+void ThemeApplier::applyHeaderPanicButtonTheme(sst::jucegui::style::StyleConsumer *s)
+{
+    s->setCustomClass(detail::header::PanicButton);
 }
 
 void ThemeApplier::applyChannelStripTheme(juce::Component *toThis)
@@ -753,6 +760,11 @@ void applyColorsAndFonts(const sheet_t::ptr_t &base, const ColorMap &cols, const
     base->setColour(GlyphButtonAccent, jcmp::GlyphButton::Styles::labelcolor,
                     cols.get(ColorMap::accent_1a));
     base->setColour(GlyphButtonAccent, jcmp::GlyphButton::Styles::labelcolor_hover,
+                    cols.get(ColorMap::accent_1a));
+
+    base->setColour(PanicButton, jcmp::TextPushButton::Styles::labelcolor,
+                    cols.get(ColorMap::accent_1a));
+    base->setColour(PanicButton, jcmp::TextPushButton::Styles::labelcolor_hover,
                     cols.get(ColorMap::accent_1a));
 }
 } // namespace header

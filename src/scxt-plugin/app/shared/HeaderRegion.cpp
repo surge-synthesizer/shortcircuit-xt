@@ -28,6 +28,7 @@
 #include "HeaderRegion.h"
 #include "app/SCXTEditor.h"
 #include "messaging/client/interaction_messages.h"
+#include "messaging/client/enginestatus_messages.h"
 #include "messaging/client/patch_io_messages.h"
 #include "messaging/client/structure_messages.h"
 #include "infrastructure/user_defaults.h"
@@ -190,6 +191,27 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*omniButton);
 
+    panicButton = std::make_unique<jcmp::TextPushButton>();
+    panicButton->setLabel("!");
+    panicButton->setTitle("Panic");
+    panicButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        juce::PopupMenu p;
+        p.addSectionHeader("Panic");
+        p.addSeparator();
+        p.addItem("All Sounds Off", [w]() {
+            if (w)
+                w->sendToSerialization(cmsg::StopSounds{true});
+        });
+        p.addItem("All Notes Off", [w]() {
+            if (w)
+                w->sendToSerialization(cmsg::StopSounds{false});
+        });
+        p.showMenuAsync(w->editor->defaultPopupMenuOptions(w->panicButton.get()));
+    });
+    addAndMakeVisible(*panicButton);
+
     if (hasFeature::memoryUsageExplanation)
     {
         chipButton = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::MEMORY);
@@ -243,6 +265,7 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     editor->themeApplier.setLabelToHighlight(cpuLevel.get());
     editor->themeApplier.setLabelToHighlight(ramLevel.get());
     editor->themeApplier.applyHeaderSCButtonTheme(scMenu.get());
+    editor->themeApplier.applyHeaderPanicButtonTheme(panicButton.get());
 }
 
 void HeaderRegion::mouseDown(const juce::MouseEvent &e)
@@ -286,6 +309,8 @@ void HeaderRegion::resized()
     activityDisplay->setBounds(multiMenuButton->getBounds());
 
     scMenu->setBounds(b.withTrimmedLeft(1248).withWidth(24));
+
+    panicButton->setBounds(b.withTrimmedLeft(988).withWidth(28).withHeight(28));
 
     cpuLabel->setBounds(b.withTrimmedLeft(1022).withWidth(25).withHeight(14));
     ramLabel->setBounds(b.withTrimmedLeft(1022).withWidth(25).withHeight(14).translated(0, 14));
