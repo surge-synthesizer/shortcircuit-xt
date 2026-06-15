@@ -37,7 +37,7 @@ namespace scxt::engine
 
 std::string toStringGroupTriggerID(const GroupTriggerID &p)
 {
-    if (p >= GroupTriggerID::MACRO && (int)p <= (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
+    if (p >= GroupTriggerID::MACRO && (int)p < (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
     {
         return fmt::format("macro{}", (int)p - (int)GroupTriggerID::MACRO);
     }
@@ -206,7 +206,7 @@ struct GTKeyswitchMomentary : GroupTrigger
 GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &gis,
                                GroupTriggerStorage &st, GroupTriggerBuffer &bf)
 {
-    if (id >= GroupTriggerID::MACRO && (int)id <= (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
+    if (id >= GroupTriggerID::MACRO && (int)id < (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
     {
         static_assert(sizeof(GTMacro) < sizeof(GroupTriggerBuffer));
         return new (bf) GTMacro(id, gis, st, (int)id - (int)GroupTriggerID::MACRO);
@@ -234,7 +234,7 @@ GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &g
 
 std::string getGroupTriggerDisplayName(GroupTriggerID id)
 {
-    if (id >= GroupTriggerID::MACRO && (int)id <= (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
+    if (id >= GroupTriggerID::MACRO && (int)id < (int)GroupTriggerID::MACRO + scxt::macrosPerPart)
     {
         return fmt::format("MACRO {}", (int)id - (int)GroupTriggerID::MACRO + 1);
     }

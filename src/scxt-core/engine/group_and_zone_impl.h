@@ -263,11 +263,11 @@ std::string HasGroupZoneProcessors<T>::toStringProcRoutingPath(
     case procRoute_ser3:
         return "procRoute_ser3";
     case procRoute_par1:
-        return "procRoete_par1";
+        return "procRoute_par1";
     case procRoute_par2:
-        return "procRoete_par2";
+        return "procRoute_par2";
     case procRoute_par3:
-        return "procRoete_par3";
+        return "procRoute_par3";
     case procRoute_bypass:
         return "procRoute_bypass";
     }
@@ -282,9 +282,18 @@ HasGroupZoneProcessors<T>::fromStringProcRoutingPath(const std::string &s)
         makeEnumInverse<ProcRoutingPath, HasGroupZoneProcessors<T>::toStringProcRoutingPath>(
             procRoute_linear, procRoute_bypass);
     auto p = inverse.find(s);
-    if (p == inverse.end())
-        return procRoute_linear;
-    return p->second;
+    if (p != inverse.end())
+        return p->second;
+
+    // Legacy alias: pre-1.0 patches streamed the par paths with a typo
+    if (s == "procRoete_par1")
+        return procRoute_par1;
+    if (s == "procRoete_par2")
+        return procRoute_par2;
+    if (s == "procRoete_par3")
+        return procRoute_par3;
+
+    return procRoute_linear;
 }
 
 template <typename T>
