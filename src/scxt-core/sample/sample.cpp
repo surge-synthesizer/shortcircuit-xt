@@ -45,6 +45,8 @@ Sample::~Sample()
         free(sampleData[0]);
     if (sampleData[1])
         free(sampleData[1]);
+    delete[] meta.slice_start;
+    delete[] meta.slice_end;
 }
 
 bool Sample::load(const fs::path &path)
