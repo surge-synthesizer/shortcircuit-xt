@@ -73,6 +73,7 @@ struct ModulationCurves
         add('x2  ', "", "x^2", [](auto x) { return x * x; });
         add('x3  ', "", "x^3", [](auto x) { return x * x * x; });
         add('unip', "", "(x+1)/2", [](auto x) { return (x + 1.f) / 2.f; });
+        add('bip ', "", "2x - 1", [](auto x) { return x * 2.f - 1.f; });
         add('absx', "Rectifiers", "|x|", [](auto x) { return std::fabs(x); });
         add('hwpo', "Rectifiers", "max(x,0)", [](auto x) { return std::max(x, 0.f); });
         add('hwne', "Rectifiers", "min(x,0)", [](auto x) { return std::min(x, 0.f); });
