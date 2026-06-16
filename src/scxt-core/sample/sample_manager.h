@@ -196,6 +196,13 @@ struct SampleManager : MoveableOnly<SampleManager>
             samples.clear();
         }
         sf2FilesByPath.clear();
+        sf2MD5ByPath.clear();
+        gigFilesByPath.clear();
+        gigMD5ByPath.clear();
+        scxtMonolithFilesByPath.clear();
+        scxtMonolithMD5ByPath.clear();
+        zipArchives.clear();
+        idAliases.clear();
         streamingVersion = 0x2112'01'01;
         updateSampleMemory();
     }

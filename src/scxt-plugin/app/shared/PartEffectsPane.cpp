@@ -156,9 +156,11 @@ template <bool forBus> void PartEffectsPane<forBus>::rebuild()
     name = effectDisplayName(t, false);
 
     removeAllChildren();
+    // order matters: components own pointers into the attachments, so clear them first
     components.clear();
-    // intAttachments.clear();
-    // floatAttachments.clear();
+    floatAttachments.clear();
+    boolAttachments.clear();
+    jsonLabels.clear();
 
     if (getHeight() < 10)
         return;

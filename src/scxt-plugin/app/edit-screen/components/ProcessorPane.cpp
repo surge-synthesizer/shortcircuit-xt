@@ -1048,6 +1048,8 @@ void ProcessorPane::layoutControlsWithJsonEngine(const std::string &jsonpath)
     for (auto &f : jsonDeactEditors)
         f.reset();
     jsonLabels.clear();
+    eqDisplays.clear();
+    sineDisplays.clear();
 
     auto eng = sst::jucegui::layouts::JsonLayoutEngine(*this);
 
