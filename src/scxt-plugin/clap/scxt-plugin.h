@@ -49,6 +49,7 @@
 
 #include "clap-helpers-config.h"
 #include "utils.h"
+#include <sst/cpputils/rtsan_support.h>
 
 static_assert((int)scxt::voice::Voice::ExpressionIDs::VOLUME == (int)CLAP_NOTE_EXPRESSION_VOLUME);
 static_assert((int)scxt::voice::Voice::ExpressionIDs::PAN == (int)CLAP_NOTE_EXPRESSION_PAN);
@@ -97,6 +98,7 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
                        clap_note_port_info *info) const noexcept override;
 
     clap_process_status process(const clap_process *process) noexcept override;
+    clap_process_status process_nonblock(const clap_process *process) SST_CPPUTILS_NONBLOCKING;
     bool handleEvent(const clap_event_header_t *);
 
     bool implementsState() const noexcept override { return true; }
