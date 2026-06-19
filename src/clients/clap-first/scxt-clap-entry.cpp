@@ -55,7 +55,6 @@ extern "C"
 #endif
 }
 
-
 #if defined(__has_feature)
 #if __has_feature(realtime_sanitizer)
 #define SST_RTSAN_EXPORT __attribute__((visibility("default"), used))

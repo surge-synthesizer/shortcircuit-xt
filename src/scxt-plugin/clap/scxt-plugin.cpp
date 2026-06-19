@@ -260,7 +260,9 @@ clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
     return process_nonblock(process);
 }
 
-clap_process_status SCXTPlugin::process_nonblock(const clap_process *process) SST_CPPUTILS_NONBLOCKING {
+clap_process_status
+SCXTPlugin::process_nonblock(const clap_process *process) SST_CPPUTILS_NONBLOCKING
+{
 #if BUILD_IS_DEBUG
     engine->getMessageController()->threadingChecker.registerAsAudioThread();
 #endif
