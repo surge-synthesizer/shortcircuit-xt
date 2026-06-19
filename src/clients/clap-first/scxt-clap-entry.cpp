@@ -26,6 +26,7 @@
  */
 
 #include <clap/clap.h>
+#include <iostream>
 
 namespace scxt::clap_first
 {
@@ -53,3 +54,15 @@ extern "C"
 #pragma GCC diagnostic pop
 #endif
 }
+
+
+#if defined(__has_feature)
+#if __has_feature(realtime_sanitizer)
+#define SST_RTSAN_EXPORT __attribute__((visibility("default"), used))
+extern "C" SST_RTSAN_EXPORT const char *__rtsan_default_options() { return "halt_on_error=false"; }
+extern "C" SST_RTSAN_EXPORT void __sanitizer_report_error_summary(const char *error_summary)
+{
+    fprintf(stderr, "%s\n", error_summary);
+}
+#endif
+#endif

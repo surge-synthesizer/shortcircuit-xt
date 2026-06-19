@@ -31,11 +31,17 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
             $<$<CXX_COMPILER_ID:GNU>:-Wno-error=deprecated-declarations>
             $<$<AND:$<BOOL:${SCXT_TIME_TRACE}>,$<CXX_COMPILER_ID:Clang,AppleClang>>:-ftime-trace>
             $<$<AND:$<BOOL:${SCXT_TIME_TRACE}>,$<CXX_COMPILER_ID:Clang,AppleClang>>:-ftime-trace-granularity=50>
+
+            # not technically rtsan but llvm mac requires it
+            $<$<BOOL:${SCXT_USE_RTSAN}>:-Wno-elaborated-enum-base>
+            $<$<BOOL:${SCXT_USE_RTSAN}>:-fsanitize=realtime>
+
     )
 
     add_link_options(
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=address>
             $<$<BOOL:${SCXT_SANITIZE}>:-fsanitize=undefined>
+            $<$<BOOL:${SCXT_USE_RTSAN}>:-fsanitize=realtime>
     )
 endif ()
 
