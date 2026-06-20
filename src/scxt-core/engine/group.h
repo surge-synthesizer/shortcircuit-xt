@@ -133,6 +133,9 @@ struct Group : MoveableOnly<Group>,
     const Engine *getEngine() const;
 
     float output alignas(16)[2][blockSize << 1];
+    // Pre-allocate the mod matrix maps off the audio thread; called from Part::addGroup on the
+    // serialization thread when a group is added.
+    void warmup();
     void attack();
     void resetLFOs(int whichLFO = -1);
     void process(Engine &onto);

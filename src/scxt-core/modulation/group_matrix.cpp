@@ -39,6 +39,16 @@ std::unordered_map<GroupMatrixConfig::SourceIdentifier, int32_t> GroupMatrixConf
 
 namespace shmo = scxt::modulation::shared;
 
+void GroupMatrix::warmup(engine::Engine *e)
+{
+    // See Matrix::warmup; same approach for the (monophonic) group matrix.
+    static float warmupSink{0.f};
+    for (const auto &sp : e->groupModSources)
+        bindSourceValue(sp.first, warmupSink);
+    for (const auto &tp : e->groupModTargets)
+        bindTargetBaseValue(tp.first, warmupSink);
+}
+
 GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
     : scxt::modulation::shared::ProcessorTargetEndpointData<TG, 'gprc'>(p)
 {

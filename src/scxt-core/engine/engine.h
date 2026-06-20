@@ -821,6 +821,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     std::unique_ptr<browser::Browser> browser;
     std::array<voice::Voice *, maxVoices> voices;
     std::array<std::unique_ptr<voice::modulation::MatrixEndpoints>, maxVoices> allEndpoints;
+    // Pre-warmed seed matrices, one per voice slot. Like allEndpoints, the seed is moved into the
+    // voice on first use; thereafter the (warmed) matrix rides with the voice across
+    // reconstruction.
+    std::array<std::unique_ptr<voice::modulation::Matrix>, maxVoices> allMatrices;
     std::unique_ptr<uint8_t[]> voiceInPlaceBuffer{nullptr};
     std::unique_ptr<messaging::MessageController> messageController;
     std::unique_ptr<selection::SelectionManager> selectionManager;

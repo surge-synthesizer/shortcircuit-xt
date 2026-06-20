@@ -313,11 +313,14 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
     }
     p = m.getTargetValuePointer(tg);
 
-#if BUILD_IS_DEBUG
+#if BUILD_IS_DEBUG && !BUILD_IS_RTSAN
     /* Make sure every element has a description or a value provided.
      * This could be in an assert but you know, figure I'll just do it this
      * way (inasmuch as the describe will fail miserably if theres no
-     * metadata in debug mode here but not in release)
+     * metadata in debug mode here but not in release).
+     *
+     * describeValue allocates (ParamMetaData owns a string/vector), so this is
+     * compiled out under rtsan even though it is otherwise debug-only.
      * */
     if (!providedMetadata.has_value())
     {
@@ -524,6 +527,9 @@ struct MIDICCBase
         {
             sources[i] = ccSourceA(i);
             registerSource(e, sources[i], "MIDI CCs", fmt::format("CC {:03}", i));
+            // Default lag is a registration-time concern. Doing it here keeps it off the audio
+            // thread
+            CF::setDefaultLagFor(sources[i], 50);
         }
     }
     std::array<SR, 128> sources;
@@ -533,7 +539,6 @@ struct MIDICCBase
         for (int i = 0; i < numMidiCC; ++i)
         {
             m.bindSourceValue(sources[i], p.midiCCValues[i]);
-            CF::setDefaultLagFor(sources[i], 50);
         }
     }
 };

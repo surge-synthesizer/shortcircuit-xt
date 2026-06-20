@@ -188,7 +188,9 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         PRESSURE = 6
     };
 
-    scxt::voice::modulation::Matrix modMatrix;
+    // Both are null after placement-new and injected (popped in from the prior voice or the
+    // pre-warmed seed) by Engine::initiateVoice before the voice is used. See allMatrices.
+    std::unique_ptr<scxt::voice::modulation::Matrix> modMatrix;
     std::unique_ptr<modulation::MatrixEndpoints> endpoints;
 
     ahdsrenv_t &aeg{eg[0]};
