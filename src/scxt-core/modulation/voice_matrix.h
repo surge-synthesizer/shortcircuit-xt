@@ -506,6 +506,11 @@ struct MatrixEndpoints
             nameFn);
 };
 
+// A single shared, read-only Sources used purely to enumerate source identifiers (e.g. the
+// scanning in Zone::onRoutingChanged). Constructing Sources allocates, so we build it once off
+// the audio thread and reuse it. Call once during engine warmup to force off-thread init.
+const MatrixEndpoints::Sources &sourcesForScanning();
+
 /*
  * Metadata functions return a path (or empty for top level) and name.
  * These are bad implementations for now

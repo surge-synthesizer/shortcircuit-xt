@@ -86,6 +86,20 @@ void MatrixEndpoints::EGTarget::bind(scxt::voice::modulation::Matrix &m, engine:
     baseBind(m, z.egStorage[index]);
 }
 
+// Persistent metadata for the targets that override their description. inline const -> built
+// once at static-init (off the realtime thread); bind passes a pointer so nothing is constructed
+// on the audio thread.
+namespace
+{
+const datamodel::pmd playbackRatioMetadata =
+    datamodel::pmd().asFloat().withRange(0, 2).withLinearScaleFormatting("x");
+const datamodel::pmd startPosMetadata =
+    datamodel::pmd().asPercentBipolar().withName("Start Pos Adjustment");
+const datamodel::pmd playSampleMetadata = datamodel::pmd().asBool().withName("Sample Playing Gate");
+const datamodel::pmd sampleTuneMetadata =
+    datamodel::pmd().asSemitoneRange().withName("Sample Tune").withDefault(0.0);
+} // namespace
+
 void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     auto &mt = z.mapping;
@@ -94,8 +108,7 @@ void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, en
     shmo::bindEl(m, mt, ampT, mt.amplitude, ampP);
     shmo::bindEl(m, mt, panT, mt.pan, panP);
     // This is a true oddity. We can modulate but not specify it
-    shmo::bindEl(m, mt, playbackRatioT, zeroBase, playbackRatioP,
-                 datamodel::pmd().asFloat().withRange(0, 2).withLinearScaleFormatting("x"));
+    shmo::bindEl(m, mt, playbackRatioT, zeroBase, playbackRatioP, &playbackRatioMetadata);
 }
 
 void MatrixEndpoints::OutputTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -108,13 +121,10 @@ void MatrixEndpoints::OutputTarget::bind(scxt::voice::modulation::Matrix &m, eng
 void MatrixEndpoints::SampleTarget::bind(Matrix &m, engine::Zone &z)
 {
     auto &mt = z.mapping;
-    shmo::bindEl(m, mt, startPosT, zeroBase, startPosP,
-                 datamodel::pmd().asPercentBipolar().withName("Start Pos Adjustment"));
+    shmo::bindEl(m, mt, startPosT, zeroBase, startPosP, &startPosMetadata);
     // need a bindEl with an extra nonmod default value
-    shmo::bindEl(m, mt, playSampleT, zeroBase, oneBase, playSampleP,
-                 datamodel::pmd().asBool().withName("Sample Playing Gate"));
-    shmo::bindEl(m, mt, sampleTuneT, zeroBase, sampleTuneP,
-                 datamodel::pmd().asSemitoneRange().withName("Sample Tune").withDefault(0.0));
+    shmo::bindEl(m, mt, playSampleT, zeroBase, oneBase, playSampleP, &playSampleMetadata);
+    shmo::bindEl(m, mt, sampleTuneT, zeroBase, sampleTuneP, &sampleTuneMetadata);
 }
 
 void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -126,7 +136,7 @@ void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, 
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
-        shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], d.floatControlDescriptions[i]);
+        shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], &d.floatControlDescriptions[i]);
     }
 }
 
@@ -226,6 +236,12 @@ void MatrixEndpoints::registerVoiceModSource(
         return;
 
     e->registerVoiceModSource(t, pathFn, nameFn);
+}
+
+const MatrixEndpoints::Sources &sourcesForScanning()
+{
+    static const MatrixEndpoints::Sources s(nullptr);
+    return s;
 }
 
 voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)

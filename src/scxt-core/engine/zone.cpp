@@ -424,7 +424,9 @@ void Zone::terminateAllVoices()
 }
 void Zone::onRoutingChanged()
 {
-    voice::modulation::MatrixEndpoints::Sources usedForScanning(nullptr);
+    // Shared, read-only Sources used purely for identifier comparison below. Built once off the
+    // audio thread (see sourcesForScanning) so this runs allocation-free on the audio thread.
+    const auto &usedForScanning = voice::modulation::sourcesForScanning();
     std::fill(lfosActive.begin(), lfosActive.end(), false);
     auto pglfo = glfosActive;
     std::fill(glfosActive.begin(), glfosActive.end(), false);

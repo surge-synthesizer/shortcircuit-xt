@@ -40,10 +40,11 @@ namespace scxt::datamodel
 {
 using pmd = sst::basic_blocks::params::ParamMetaData;
 
-template <typename P, typename V> pmd describeValue(const P &p, const V &l)
+template <typename P, typename V>
+const pmd &describeValue(const P &p, const V &l, bool realtime = false)
 {
     auto pd = detail::offV(p, l);
-    return detail::descFor<P>(p, pd);
+    return detail::descFor<P>(p, pd, realtime);
 }
 } // namespace scxt::datamodel
 

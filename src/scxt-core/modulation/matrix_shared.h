@@ -270,17 +270,19 @@ template <typename TG, uint32_t gn> struct ProcessorTargetEndpointData
 
 template <typename Matrix, typename P>
 void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &tg,
-            float &baseValue, const float *&p,
-            std::optional<datamodel::pmd> providedMetadata = std::nullopt,
+            float &baseValue, const float *&p, const datamodel::pmd *providedMetadata = nullptr,
             std::optional<datamodel::pmd::FeatureState> featureState = std::nullopt)
 {
     bindEl(m, payload, tg, baseValue, baseValue, p, providedMetadata, featureState);
 }
 
+// providedMetadata is borrowed (not owned/copied): pass a pointer to a persistent pmd - the
+// processor's floatControlDescriptions[i] member, or a static override. On the realtime bind
+// path we only read minVal/maxVal/supportsMultiplicative through it, never build or copy a pmd.
 template <typename Matrix, typename P>
 void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &tg,
             float &baseValue, float &unmodulatedBase, const float *&p,
-            std::optional<datamodel::pmd> providedMetadata = std::nullopt,
+            const datamodel::pmd *providedMetadata = nullptr,
             std::optional<datamodel::pmd::FeatureState> featureState = std::nullopt)
 {
     assert(tg.gid != 0); // hit this? You forgot to init your target ctor
@@ -288,15 +290,9 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
 
     if (m.forUIMode)
     {
-        datamodel::pmd tmd;
-        if (!providedMetadata.has_value())
-        {
-            tmd = datamodel::describeValue(payload, baseValue);
-        }
-        else
-        {
-            tmd = *providedMetadata;
-        }
+        // UI thread: the full pmd (name/labels/default) is wanted; copying it here is fine.
+        const auto &tmd =
+            providedMetadata ? *providedMetadata : datamodel::describeValue(payload, baseValue);
         m.activeTargetsToPMD[tg] = tmd;
         m.activeTargetsToBaseValue[tg] = baseValue;
         m.activeTargetsToFeatureState[tg] = featureState.value_or(datamodel::pmd::FeatureState{});
@@ -313,33 +309,30 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
     }
     p = m.getTargetValuePointer(tg);
 
-#if BUILD_IS_DEBUG && !BUILD_IS_RTSAN
+#if BUILD_IS_DEBUG
     /* Make sure every element has a description or a value provided.
      * This could be in an assert but you know, figure I'll just do it this
      * way (inasmuch as the describe will fail miserably if theres no
      * metadata in debug mode here but not in release).
      *
-     * describeValue allocates (ParamMetaData owns a string/vector), so this is
-     * compiled out under rtsan even though it is otherwise debug-only.
+     * realtime=true so this stays read-only - describeValue returns a const ref
+     * to a seeded static, so it neither allocates nor writes the computed default.
      * */
-    if (!providedMetadata.has_value())
+    if (!providedMetadata)
     {
-        auto metaData = datamodel::describeValue(payload, baseValue);
+        [[maybe_unused]] const auto &metaData =
+            datamodel::describeValue(payload, baseValue, /*realtime*/ true);
     }
 #endif
 
     auto idxIt = m.targetToOutputIndex.find(tg);
     if (idxIt != m.targetToOutputIndex.end())
     {
-        datamodel::pmd tmd;
-        if (!providedMetadata.has_value())
-        {
-            tmd = datamodel::describeValue(payload, baseValue);
-        }
-        else
-        {
-            tmd = *providedMetadata;
-        }
+        // Realtime bind: read the three scalars through a reference; describeValue returns a
+        // const ref to a seeded static, so nothing is built or copied here.
+        const auto &tmd = providedMetadata
+                              ? *providedMetadata
+                              : datamodel::describeValue(payload, baseValue, /*realtime*/ true);
         bool nonAdditive = tmd.hasSupportsMultiplicativeModulation();
 
         auto pt = m.getTargetValuePointer(tg);
@@ -370,22 +363,25 @@ void bindEl(Matrix &m, const P &payload, typename Matrix::TR::TargetIdentifier &
     }
 };
 
+// Persistent metadata for the (always percent) retrigger targets, so baseBind doesn't construct
+// a pmd on the audio thread. inline const -> built once at static-init, off the realtime thread.
+inline const datamodel::pmd retriggerMetadata = datamodel::pmd().withName("Retrigger").asPercent();
+
 template <typename TG, uint32_t gn>
 template <typename M, typename EG>
 inline void EGTargetEndpointData<TG, gn>::baseBind(M &m, EG &eg)
 {
     auto fs = datamodel::pmd::FeatureState{}.withTemposync(eg.isTemposync);
-    bindEl(m, eg, dlyT, eg.dly, dlyP, std::nullopt, fs);
-    bindEl(m, eg, aT, eg.a, aP, std::nullopt, fs);
-    bindEl(m, eg, hT, eg.h, hP, std::nullopt, fs);
-    bindEl(m, eg, dT, eg.d, dP, std::nullopt, fs);
+    bindEl(m, eg, dlyT, eg.dly, dlyP, nullptr, fs);
+    bindEl(m, eg, aT, eg.a, aP, nullptr, fs);
+    bindEl(m, eg, hT, eg.h, hP, nullptr, fs);
+    bindEl(m, eg, dT, eg.d, dP, nullptr, fs);
     bindEl(m, eg, sT, eg.s, sP);
-    bindEl(m, eg, rT, eg.r, rP, std::nullopt, fs);
+    bindEl(m, eg, rT, eg.r, rP, nullptr, fs);
     bindEl(m, eg, asT, eg.aShape, asP);
     bindEl(m, eg, dsT, eg.dShape, dsP);
     bindEl(m, eg, rsT, eg.rShape, rsP);
-    bindEl(m, eg, retriggerT, zeroBase, retriggerP,
-           datamodel::pmd().withName("Retrigger").asPercent());
+    bindEl(m, eg, retriggerT, zeroBase, retriggerP, &retriggerMetadata);
     bindEl(m, eg, rateMulT, eg.rateMul, rateMulP);
 }
 
@@ -396,25 +392,24 @@ inline void LFOTargetEndpointData<TG, gn>::baseBind(M &m, Z &z)
     auto &ms = z.modulatorStorage[index];
     auto fs = datamodel::pmd::FeatureState{}.withTemposync(ms.temposync);
 
-    bindEl(m, ms, rateT, ms.rate, rateP, std::nullopt, fs);
+    bindEl(m, ms, rateT, ms.rate, rateP, nullptr, fs);
     bindEl(m, ms, amplitudeT, ms.amplitude, amplitudeP);
-    bindEl(m, ms, retriggerT, zeroBase, retriggerP,
-           datamodel::pmd().withName("Retrigger").asPercent());
+    bindEl(m, ms, retriggerT, zeroBase, retriggerP, &retriggerMetadata);
 
     bindEl(m, ms, curve.deformT, ms.curveLfoStorage.deform, curve.deformP);
     bindEl(m, ms, curve.angleT, ms.curveLfoStorage.angle, curve.angleP);
-    bindEl(m, ms, curve.delayT, ms.curveLfoStorage.delay, curve.delayP, std::nullopt, fs);
-    bindEl(m, ms, curve.attackT, ms.curveLfoStorage.attack, curve.attackP, std::nullopt, fs);
-    bindEl(m, ms, curve.releaseT, ms.curveLfoStorage.release, curve.releaseP, std::nullopt, fs);
+    bindEl(m, ms, curve.delayT, ms.curveLfoStorage.delay, curve.delayP, nullptr, fs);
+    bindEl(m, ms, curve.attackT, ms.curveLfoStorage.attack, curve.attackP, nullptr, fs);
+    bindEl(m, ms, curve.releaseT, ms.curveLfoStorage.release, curve.releaseP, nullptr, fs);
 
     bindEl(m, ms, step.smoothT, ms.stepLfoStorage.smooth, step.smoothP);
 
-    bindEl(m, ms, env.delayT, ms.envLfoStorage.delay, env.delayP, std::nullopt, fs);
-    bindEl(m, ms, env.attackT, ms.envLfoStorage.attack, env.attackP, std::nullopt, fs);
-    bindEl(m, ms, env.holdT, ms.envLfoStorage.hold, env.holdP, std::nullopt, fs);
-    bindEl(m, ms, env.decayT, ms.envLfoStorage.decay, env.decayP, std::nullopt, fs);
+    bindEl(m, ms, env.delayT, ms.envLfoStorage.delay, env.delayP, nullptr, fs);
+    bindEl(m, ms, env.attackT, ms.envLfoStorage.attack, env.attackP, nullptr, fs);
+    bindEl(m, ms, env.holdT, ms.envLfoStorage.hold, env.holdP, nullptr, fs);
+    bindEl(m, ms, env.decayT, ms.envLfoStorage.decay, env.decayP, nullptr, fs);
     bindEl(m, ms, env.sustainT, ms.envLfoStorage.sustain, env.sustainP);
-    bindEl(m, ms, env.releaseT, ms.envLfoStorage.release, env.releaseP, std::nullopt, fs);
+    bindEl(m, ms, env.releaseT, ms.envLfoStorage.release, env.releaseP, nullptr, fs);
     bindEl(m, ms, env.aShapeT, ms.envLfoStorage.aShape, env.aShapeP);
     bindEl(m, ms, env.dShapeT, ms.envLfoStorage.dShape, env.dShapeP);
     bindEl(m, ms, env.rShapeT, ms.envLfoStorage.rShape, env.rShapeP);

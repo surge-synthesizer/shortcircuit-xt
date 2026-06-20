@@ -30,6 +30,7 @@
 #include "sst/plugininfra/version_information.h"
 
 #include "configuration.h"
+#include "datamodel/metadata.h"
 #include "messaging/audio/audio_serial.h"
 #include "part.h"
 #include "sst/cpputils/iterators.h"
@@ -154,6 +155,11 @@ Engine::Engine()
     browserDb->writeDebugMessage(std::string("SCXT Startup ") +
                                  sst::plugininfra::VersionInformation::project_version_and_hash);
 
+    // Build all SC_DESCRIBE field-metadata statics now, off the audio thread. The seeds only
+    // self-register at DLL load (cheap); this is the first call that actually constructs the
+    // ParamMetaData, keeping that work out of plugin scanning.
+    datamodel::detail::seedAllMetadata();
+
     // This forces metadata init of the mod matrix
     modulation::ModulationCurves::initializeCurves();
     voice::modulation::MatrixEndpoints usedForInit(this);
@@ -175,6 +181,10 @@ Engine::Engine()
         mm = std::make_unique<voice::modulation::Matrix>();
         mm->warmup(this);
     }
+
+    // Force the shared scanning Sources to build now, off the audio thread, so the first
+    // Zone::onRoutingChanged (which may run on the audio thread) is allocation-free.
+    voice::modulation::sourcesForScanning();
 
     previewVoice = std::make_unique<voice::PreviewVoice>();
 
