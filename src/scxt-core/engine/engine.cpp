@@ -166,6 +166,16 @@ Engine::Engine()
         ep = std::make_unique<voice::modulation::MatrixEndpoints>(nullptr);
     }
 
+    // Pre-warm one seed matrix per voice slot so the first attack of each voice (on the audio
+    // thread) reuses already-allocated map nodes instead of allocating. usedForInit above has
+    // populated the voice mod source/target registries that warmup walks. The seed is popped into
+    // the voice in initiateVoice and persists with the voice thereafter.
+    for (auto &mm : allMatrices)
+    {
+        mm = std::make_unique<voice::modulation::Matrix>();
+        mm->warmup(this);
+    }
+
     previewVoice = std::make_unique<voice::PreviewVoice>();
 
     runtimeConfig.defaultOmniFlavor = static_cast<OmniFlavor>(
@@ -215,14 +225,20 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
         if (!v || !v->isVoiceAssigned)
         {
             std::unique_ptr<voice::modulation::MatrixEndpoints> mp;
+            // Carry the warmed mod matrix across the voice reconstruction, exactly like endpoints:
+            // a pointer move, so the already-allocated map nodes ride along with no allocation
+            // here.
+            std::unique_ptr<voice::modulation::Matrix> mm;
             if (v)
             {
                 mp = std::move(voices[idx]->endpoints);
+                mm = std::move(voices[idx]->modMatrix);
                 voices[idx]->~Voice();
             }
             else
             {
                 mp = std::move(allEndpoints[idx]);
+                mm = std::move(allMatrices[idx]);
             }
             auto *dp = voiceInPlaceBuffer.get() + idx * sizeof(voice::Voice);
             const auto &z = zoneByPath(path);
@@ -234,6 +250,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->voiceCreationId = nextVoiceCreationId++;
             voices[idx]->setSampleRate(sampleRate, sampleRateInv);
             voices[idx]->endpoints = std::move(mp);
+            voices[idx]->modMatrix = std::move(mm);
             activeVoices++;
             return voices[idx];
         }
@@ -247,6 +264,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->cleanupVoice();
             std::unique_ptr<voice::modulation::MatrixEndpoints> mp;
             mp = std::move(voices[idx]->endpoints);
+            std::unique_ptr<voice::modulation::Matrix> mm = std::move(voices[idx]->modMatrix);
             voices[idx]->~Voice();
 
             auto *dp = voiceInPlaceBuffer.get() + idx * sizeof(voice::Voice);
@@ -259,6 +277,7 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
             voices[idx]->voiceCreationId = nextVoiceCreationId++;
             voices[idx]->setSampleRate(sampleRate, sampleRateInv);
             voices[idx]->endpoints = std::move(mp);
+            voices[idx]->modMatrix = std::move(mm);
             activeVoices++;
             return voices[idx];
         }

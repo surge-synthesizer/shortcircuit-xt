@@ -124,11 +124,15 @@ void Voice::voiceStarted()
     startBeat = engine->transport.timeInBeats;
     updateTransportPhasors();
 
+    // endpoints and modMatrix are popped in by Engine::initiateVoice before the voice runs.
+    assert(endpoints);
+    assert(modMatrix);
+
     // This order matters
-    endpoints->sources.bind(modMatrix, *zone, *this);
-    modMatrix.prepare(zone->routingTable, getSampleRate(), blockSize);
-    endpoints->bindTargetBaseValues(modMatrix, *zone);
-    modMatrix.process();
+    endpoints->sources.bind(*modMatrix, *zone, *this);
+    modMatrix->prepare(zone->routingTable, getSampleRate(), blockSize);
+    endpoints->bindTargetBaseValues(*modMatrix, *zone);
+    modMatrix->process();
 
     // These probably need to happen after the modulator is set up
     initializeGenerator();
@@ -384,7 +388,7 @@ template <bool OS> bool Voice::processWithOS()
     updateTransportPhasors();
 
     // TODO and probably just want to process the envelopes here
-    modMatrix.process();
+    modMatrix->process();
 
     bool samplePlaying = *endpoints->sampleTarget.playSampleP > 0.1;
 
@@ -1211,7 +1215,7 @@ void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generator
 
     // TODO round robin
     GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate * sampleRateInv *
-                         (1.0 + modMatrix.getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
+                         (1.0 + modMatrix->getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
     auto &var = zone->variantData.variants[sampleIndex];
     // pitch already has keytrack in

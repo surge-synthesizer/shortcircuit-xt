@@ -99,6 +99,11 @@ struct GroupMatrix : sst::basic_blocks::mod_matrix::FixedMatrix<GroupMatrixConfi
     std::unordered_map<GroupMatrixConfig::TargetIdentifier, float> activeTargetsToBaseValue;
     std::unordered_map<GroupMatrixConfig::TargetIdentifier, datamodel::pmd::FeatureState>
         activeTargetsToFeatureState;
+
+    // Pre-allocate the base/source map nodes for every registered source and target, off the
+    // audio thread, so later group binds reuse nodes instead of allocating. See
+    // GroupMatrix::warmup.
+    void warmup(engine::Engine *e);
 };
 
 struct GroupMatrixEndpoints

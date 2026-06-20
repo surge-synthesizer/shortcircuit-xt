@@ -231,6 +231,7 @@ size_t Part::addGroup()
 
     g->parentPart = this;
     g->setSampleRate(getSampleRate());
+    g->warmup();
 
     std::unordered_set<std::string> gn;
     std::string gpfx = "New Group";
@@ -263,6 +264,7 @@ size_t Part::addGroup(std::unique_ptr<Group> &g)
 {
     g->parentPart = this;
     g->setSampleRate(getSampleRate());
+    g->warmup();
     groups.push_back(std::move(g));
     return groups.size();
 }

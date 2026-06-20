@@ -693,6 +693,13 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
     }
 }
 
+void Group::warmup()
+{
+    // Pre-allocate the mod matrix maps off the audio thread. See GroupMatrix::warmup.
+    if (getEngine())
+        modMatrix.warmup(getEngine());
+}
+
 void Group::attack()
 {
     attackInThisBlock = true;

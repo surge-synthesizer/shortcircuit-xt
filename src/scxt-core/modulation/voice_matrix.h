@@ -106,6 +106,10 @@ struct Matrix : sst::basic_blocks::mod_matrix::FixedMatrix<MatrixConfig>
     std::unordered_map<MatrixConfig::TargetIdentifier, float> activeTargetsToBaseValue;
     std::unordered_map<MatrixConfig::TargetIdentifier, datamodel::pmd::FeatureState>
         activeTargetsToFeatureState;
+
+    // Pre-allocate the base/source map nodes for every registered source and target, off the
+    // audio thread, so later per-voice binds reuse nodes instead of allocating. See Matrix::warmup.
+    void warmup(engine::Engine *e);
 };
 
 struct MatrixEndpoints
