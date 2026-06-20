@@ -162,6 +162,8 @@ endif ()
 target_compile_options(sc-compiler-options INTERFACE ${OS_COMPILE_OPTIONS})
 target_compile_definitions(sc-compiler-options INTERFACE ${OS_COMPILE_DEFINITIONS})
 target_compile_definitions(sc-compiler-options INTERFACE $<IF:$<CONFIG:DEBUG>,BUILD_IS_DEBUG,BUILD_IS_RELEASE>=1)
+# So code can compile out debug-only work that allocates on the realtime path under rtsan.
+target_compile_definitions(sc-compiler-options INTERFACE $<$<BOOL:${SCXT_USE_RTSAN}>:BUILD_IS_RTSAN=1>)
 target_include_directories(sc-compiler-options INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 target_link_libraries(sc-compiler-options INTERFACE ${OS_LINK_LIBRARIES})
 add_dependencies(sc-compiler-options version-info)

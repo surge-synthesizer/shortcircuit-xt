@@ -43,6 +43,25 @@ std::unordered_map<MatrixConfig::SourceIdentifier, int32_t> MatrixConfig::defaul
 
 namespace shmo = scxt::modulation::shared;
 
+void Matrix::warmup(engine::Engine *e)
+{
+    // Bind every registered source and target to a throwaway sink. This forces the base/source
+    // maps to their full key set once, off the audio thread, so subsequent attack-time binds are
+    // insert_or_assign on existing nodes (no allocation). Real binds overwrite the sink pointers.
+    static float warmupSink{0.f};
+    for (const auto &sp : e->voiceModSources)
+        bindSourceValue(sp.first, warmupSink);
+    for (const auto &tp : e->voiceModTargets)
+        bindTargetBaseValue(tp.first, warmupSink);
+
+    // A few sources are bound at attack but intentionally not registered (not exposed in the mod
+    // menu), so the registry loop above misses them. Warm them explicitly so the attack-time bind
+    // reuses nodes. Keep in sync with the unregistered binds in Sources::*::bind.
+    using KaP = MatrixEndpoints::Sources::KeyAndPitchSources;
+    bindSourceValue(KaP::midiKeyTrackA, warmupSink);
+    bindSourceValue(KaP::midiKeyA, warmupSink);
+}
+
 void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, engine::Zone &z)
 {
     for (auto &l : lfo)
