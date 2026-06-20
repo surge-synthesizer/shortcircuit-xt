@@ -58,8 +58,10 @@ typedef std::tuple<int, voice::modulation::Matrix::RoutingTable::Routing, bool>
 inline void doUpdateZoneRoutingRow(const zoneRoutingRowPayload_t &payload, engine::Engine &engine,
                                    MessageController &cont)
 {
-    // TODO Selected Zone State
-    const auto &[i, r, b] = payload;
+    auto [i, r, b] = payload;
+
+    // the extra payload is a selection -> ui item. We don't need it in the audio thread.
+    r.extraPayload = std::nullopt;
 
     auto sz = engine.getSelectionManager()->currentlySelectedZones();
     if (!sz.empty())
@@ -102,8 +104,9 @@ typedef std::tuple<int, modulation::GroupMatrix::RoutingTable::Routing, bool>
 inline void doUpdateGroupRoutingRow(const updateGroupRoutingRowPayload_t &payload,
                                     engine::Engine &engine, MessageController &cont)
 {
-    // TODO Selected Zone State
-    const auto &[i, r, b] = payload;
+    auto [i, r, b] = payload;
+    // extraPayload is selection -> ui. We don't need it in audio thread.
+    r.extraPayload = std::nullopt;
     auto sg = engine.getSelectionManager()->currentlySelectedGroups();
     if (!sg.empty())
     {

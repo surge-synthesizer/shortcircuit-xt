@@ -159,7 +159,7 @@ void GroupMatrixEndpoints::ProcessorTarget::bind(scxt::modulation::GroupMatrix &
 
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
-        shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], d.floatControlDescriptions[i]);
+        shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], &d.floatControlDescriptions[i]);
     }
 }
 

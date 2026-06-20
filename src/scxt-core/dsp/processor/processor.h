@@ -376,16 +376,13 @@ template <ProcessorType ft> struct ProcessorForGroupOnly
 
 } // namespace scxt::dsp::processor
 
-SC_DESCRIBE(scxt::dsp::processor::ProcessorStorage,
-            SC_FIELD_COMPUTED(mix,
-                              {
-                                  auto dr = dsp::processor::getProcessorDefaultMix(payload.type);
-                                  return datamodel::pmd().asPercent().withName("Mix").withDefault(
-                                      dr);
-                              });
-            SC_FIELD(outputCubAmp,
-                     pmd()
-                         .asCubicDecibelUpTo(scxt::dsp::processor::ProcessorStorage::maxOutputDB)
-                         .withName("Output")););
+SC_DESCRIBE(
+    scxt::dsp::processor::ProcessorStorage,
+    SC_FIELD_COMPUTED(mix, datamodel::pmd().asPercent().withName("Mix"),
+                      scField.defaultVal = dsp::processor::getProcessorDefaultMix(payload.type));
+    SC_FIELD(outputCubAmp,
+             pmd()
+                 .asCubicDecibelUpTo(scxt::dsp::processor::ProcessorStorage::maxOutputDB)
+                 .withName("Output")););
 
 #endif // __SCXT_DSP_PROCESSOR_PROCESSOR_H
