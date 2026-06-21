@@ -29,6 +29,8 @@
 
 #include "sst/plugininfra/version_information.h"
 
+#include "sst/cpputils/rtsan_support.h"
+
 #include "configuration.h"
 #include "datamodel/metadata.h"
 #include "messaging/audio/audio_serial.h"
@@ -100,6 +102,10 @@ Engine::Engine()
     dsp::twoToTheXTable.init();
     dsp::twentyFiveSecondExpTable.init();
     tuning::equalTuning.init();
+
+    // Build any processor config caches now, off the audio thread, so spawning a
+    // processor later (which happens on the audio thread) reads warmed data.
+    dsp::processor::warmUpAllProcessors();
 
     sampleManager = std::make_unique<sample::SampleManager>(messageController->threadingChecker);
     sampleManager->raiseError = [this](auto a, auto b) {
@@ -379,6 +385,8 @@ bool Engine::processAudio()
         break;
         case messaging::audio::s2a_dispatch_to_pointer_under_structurelock:
         {
+            // We know this will lock and potentailly allocate so for now don't add rtsan noise
+            SST_CPPUTILS_RTSAN_DISABLE;
             std::lock_guard<std::mutex> structG(modifyStructureMutex);
             auto cb =
                 static_cast<messaging::MessageController::AudioThreadCallback *>(msgopt->payload.p);

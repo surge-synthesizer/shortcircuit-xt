@@ -196,6 +196,22 @@ template <size_t I> remapFn_t implGetRemapFn()
         return PT::remapParametersForStreamingVersion;
 }
 
+template <typename T>
+concept HasWarmUpCache = requires { T::warmUpCache(); };
+
+template <size_t I> void implWarmUpProcessor()
+{
+    if constexpr (I != ProcessorType::proct_none)
+    {
+        using PT = typename ProcessorImplementor<(ProcessorType)I>::T;
+        if constexpr (!std::is_same<PT, unimpl_t>::value)
+        {
+            if constexpr (HasWarmUpCache<PT>)
+                PT::warmUpCache();
+        }
+    }
+}
+
 template <size_t I>
 Processor *returnSpawnOnto(engine::Engine *e, uint8_t *m, engine::MemoryPool *mp,
                            const ProcessorStorage &ps, float *f, int *i, bool needsMetadata)
@@ -382,6 +398,13 @@ std::optional<ProcessorType> fromProcessorStreamingName(const std::string &s)
             return (ProcessorType)i;
     }
     return {};
+}
+
+void warmUpAllProcessors()
+{
+    []<size_t... Is>(std::index_sequence<Is...>) {
+        (detail::implWarmUpProcessor<Is>(), ...);
+    }(std::make_index_sequence<(size_t)ProcessorType::proct_num_types>());
 }
 
 processorList_t getAllProcessorDescriptions()
