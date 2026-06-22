@@ -78,6 +78,8 @@ struct PartSidebar : juce::Component,
         addPartButton = std::make_unique<jcmp::TextPushButton>();
         addPartButton->setLabel("Add Part");
         addPartButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
             w->sendToSerialization(cmsg::ActivateNextPart(true));
         });
         viewportContents->addChildComponent(*addPartButton);
@@ -554,6 +556,8 @@ struct GroupZoneSidebarBase : juce::Component,
             {
                 p.addItem("Part " + std::to_string(i + 1), true, i == editor->selectedPart,
                           [w = juce::Component::SafePointer(this), index = i]() {
+                              if (!w)
+                                  return;
                               w->sendToSerialization(cmsg::SelectPart(index));
                           });
             }

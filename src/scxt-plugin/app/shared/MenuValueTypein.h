@@ -49,13 +49,16 @@ struct MenuValueTypeinBase : HasEditor, juce::PopupMenu::CustomComponent, juce::
 
     void visibilityChanged() override
     {
-        juce::Timer::callAfterDelay(2, [this]() {
-            if (textEditor->isVisible())
+        juce::Timer::callAfterDelay(2, [w = juce::Component::SafePointer(this)]() {
+            if (!w)
+                return;
+            if (w->textEditor->isVisible())
             {
-                textEditor->setText(getInitialText(), juce::NotificationType::dontSendNotification);
-                setupTextEditorStyle();
-                textEditor->grabKeyboardFocus();
-                textEditor->selectAll();
+                w->textEditor->setText(w->getInitialText(),
+                                       juce::NotificationType::dontSendNotification);
+                w->setupTextEditorStyle();
+                w->textEditor->grabKeyboardFocus();
+                w->textEditor->selectAll();
             }
         });
     }
@@ -83,7 +86,9 @@ struct MenuValueTypein : MenuValueTypeinBase
 
     std::string getInitialText() const override
     {
-        return underComp->continuous()->getValueAsString();
+        if (underComp && underComp->continuous())
+            return underComp->continuous()->getValueAsString();
+        return "";
     }
 
     void setValueString(const std::string &s) override

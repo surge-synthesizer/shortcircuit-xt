@@ -741,19 +741,22 @@ void VariantDisplay::showFileBrowser()
 
     fileChooser->launchAsync(
         juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-        [this](const juce::FileChooser &fc) mutable {
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &fc) {
+            if (!w)
+                return;
             if (fc.getURLResults().size() > 0)
             {
                 const auto u = shared::juceFileToFSPath(fc.getResult());
 
                 namespace cmsg = scxt::messaging::client;
-                auto za{editor->currentLeadZoneSelection};
-                auto sampleID{selectedVariation};
-                sendToSerialization(
-                    cmsg::AddSampleInZone({u.u8string(), za->part, za->group, za->zone, sampleID}));
+                auto za{w->editor->currentLeadZoneSelection};
+                auto sampleID{w->selectedVariation};
+                if (za.has_value())
+                    w->sendToSerialization(cmsg::AddSampleInZone(
+                        {u.u8string(), za->part, za->group, za->zone, sampleID}));
             }
 
-            fileChooser = nullptr;
+            w->fileChooser = nullptr;
         },
         nullptr);
 }
