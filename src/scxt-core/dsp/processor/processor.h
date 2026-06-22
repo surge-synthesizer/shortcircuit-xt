@@ -157,6 +157,14 @@ typedef std::vector<ProcessorDescription> processorList_t;
 processorList_t getAllProcessorDescriptions();
 
 /**
+ * Some processors cache configuration which is expensive (and allocating) to build but is
+ * a pure function of their compile-time type. Those expose a static warmUpCache() which this
+ * populates once. Call off the audio thread (engine construction) so the first audio-thread
+ * spawn reads warmed data instead of allocating.
+ */
+void warmUpAllProcessors();
+
+/**
  * If you choose to spawnProcessorOnto you need a block at least this size.
  * This should be a multiple of 16 if you enlarge it.
  */
