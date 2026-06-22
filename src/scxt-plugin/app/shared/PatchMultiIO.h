@@ -60,6 +60,8 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
         title, juce::File(that->editor->browser.patchIODirectory.u8string()), "*.scm");
     fileChooser->launchAsync(
         flags, [style, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
+            if (!w)
+                return;
             auto result = c.getResults();
             if (result.isEmpty() || result.size() > 1)
             {
@@ -80,6 +82,8 @@ template <typename T> void doLoadMulti(T *that, std::unique_ptr<juce::FileChoose
     fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
                                  juce::FileBrowserComponent::openMode,
                              [w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
+                                 if (!w)
+                                     return;
                                  auto result = c.getResults();
                                  if (result.isEmpty() || result.size() > 1)
                                  {
@@ -115,6 +119,8 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
         title, juce::File(that->editor->browser.patchIODirectory.u8string()), ext);
     fileChooser->launchAsync(
         flags, [style, part, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
+            if (!w)
+                return;
             auto result = c.getResults();
             if (result.isEmpty() || result.size() > 1)
             {
@@ -136,6 +142,8 @@ void doLoadPartInto(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, in
     fileChooser->launchAsync(
         juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
         [part, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
+            if (!w)
+                return;
             auto result = c.getResults();
             if (result.isEmpty() || result.size() > 1)
             {

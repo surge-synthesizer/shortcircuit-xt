@@ -1980,6 +1980,8 @@ void LfoPane::doLoadPreset()
     fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
                                  juce::FileBrowserComponent::openMode,
                              [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+                                 if (!w)
+                                     return;
                                  auto result = c.getResults();
                                  if (result.isEmpty() || result.size() > 1)
                                  {
@@ -2002,6 +2004,8 @@ void LfoPane::doSavePreset()
                                  juce::FileBrowserComponent::saveMode |
                                  juce::FileBrowserComponent::warnAboutOverwriting,
                              [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+                                 if (!w)
+                                     return;
                                  auto result = c.getResults();
                                  if (result.isEmpty() || result.size() > 1)
                                  {

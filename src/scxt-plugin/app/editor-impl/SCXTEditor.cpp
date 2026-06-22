@@ -814,8 +814,11 @@ void SCXTEditor::devSweepKeys(int msBetween, int key)
     }
 
     sendToSerialization(cmsg::NoteFromGUI({key, 0.9, true}));
-    juce::Timer::callAfterDelay(msBetween,
-                                [this, nk = key + 1, ms = msBetween]() { devSweepKeys(ms, nk); });
+    juce::Timer::callAfterDelay(
+        msBetween, [w = juce::Component::SafePointer(this), nk = key + 1, ms = msBetween]() {
+            if (w)
+                w->devSweepKeys(ms, nk);
+        });
 }
 
 } // namespace scxt::ui::app

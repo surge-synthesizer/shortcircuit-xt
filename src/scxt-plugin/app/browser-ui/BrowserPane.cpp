@@ -176,7 +176,9 @@ struct DriveArea : juce::Component, HasEditor
                     ed->fileChooser = std::make_unique<juce::FileChooser>("Add Location");
                     ed->fileChooser->launchAsync(
                         juce::FileBrowserComponent::canSelectDirectories,
-                        [idxxx = idxx, w, ed](const auto &c) {
+                        [idxxx = idxx, w](const auto &c) {
+                            if (!w)
+                                return;
                             auto result = c.getResults();
                             if (result.size() != 1)
                             {
