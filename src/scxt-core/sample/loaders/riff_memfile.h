@@ -62,7 +62,7 @@ class RIFFMemFile
         size = 0;
         loc = 0;
     }
-    RIFFMemFile(const void *data, int datasize)
+    RIFFMemFile(const void *data, size_t datasize)
     {
         assert(data);
         assert(datasize);
@@ -108,6 +108,8 @@ class RIFFMemFile
 
     bool SkipPSTRING()
     {
+        if (loc >= size)
+            return false;
         unsigned char length = (*(unsigned char *)(data + loc)) + 1;
         if (length & 1)
             length++; // IFF 16-bit alignment
@@ -181,6 +183,20 @@ class RIFFMemFile
     }
 
     size_t TellI() const { return loc; }
+
+    size_t bytesRemaining() const { return (loc < size) ? (size - loc) : 0; }
+
+    // Never trust a file-supplied chunk size: clamp a proposed child-chunk end
+    // offset to the enclosing chunk's end and the file size. (SMP-1)
+    size_t clampChildEnd(size_t proposedEnd) const
+    {
+        size_t parentEnd = EndStack.empty() ? size : EndStack.front();
+        if (proposedEnd > parentEnd)
+            proposedEnd = parentEnd;
+        if (proposedEnd > size)
+            proposedEnd = size;
+        return proposedEnd;
+    }
 
     size_t SeekI(size_t pos, int mode = mf_FromStart)
     {
@@ -394,7 +410,7 @@ class RIFFMemFile
         if (Tag)
             *Tag = sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + loc));
         if (DataSize)
-            *DataSize = size;
+            *DataSize = chunksize;
         void *dataptr = data + loc + 8;
         if ((loc + 8 + chunksize) > EndStack.front())
         {
@@ -456,12 +472,14 @@ class RIFFMemFile
         if ((Tag != 'LIST') && (Tag != 'RIFF'))
             return false;
         size_t chunksize = readWaveEndianLittle(int32FromPointer(data + loc + 4));
+        if (chunksize < 4) // must hold at least the 4-byte LIST/RIFF subtype
+            return false;
         int LISTTag =
             sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + loc + 8));
         loc += 12;
 
         StartStack.push_front(loc);
-        EndStack.push_front(loc + chunksize - 4);
+        EndStack.push_front(clampChildEnd(loc + (chunksize - 4)));
 
         if (datasize)
             *datasize = chunksize - 4;
@@ -498,10 +516,12 @@ class RIFFMemFile
                     }
                     else
                     {
+                        if (rh.datasize < 4) // must hold at least the 4-byte subtype
+                            return false;
                         if (datasize)
                             *datasize = rh.datasize - 4; // don't include the subid
                         StartStack.push_front(loc);
-                        EndStack.push_front(loc + rh.datasize - 4);
+                        EndStack.push_front(clampChildEnd(loc + (rh.datasize - 4)));
                         return true;
                     }
                 }
@@ -520,7 +540,9 @@ class RIFFMemFile
 
     uint32_t RIFFGetFileType() // Read the ID of the RIFF chunk
     {
-        return sst::basic_blocks::mechanics::endian_read_int32BE(*(uint32_t *)(data + 8));
+        if (size < 12)
+            return 0;
+        return sst::basic_blocks::mechanics::endian_read_int32BE(int32FromPointer(data + 8));
     };
 
     bool RIFFCreateChunk(uint32_t tag, void *indata, size_t datasize)
