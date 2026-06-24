@@ -6,6 +6,7 @@ add_executable(scxt-test
         streaming.cpp
 		sample_analytics.cpp
 		sample_load.cpp
+		sample_fuzz.cpp
 		processors_and_fx.cpp
 
 		ui_basics.cpp

@@ -32,8 +32,10 @@
 #include "riff_memfile.h"
 #include "riff_wave.h"
 // #include "sampler_state.h"
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <cstring>
 
 #define ADD_ERROR_MESSAGE(...)                                                                     \
     {                                                                                              \
@@ -89,13 +91,17 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         return false;
     }
 
-    int32_t WaveDataSize = datasize;
+    size_t WaveDataSize = datasize;
     if (!WaveDataSize)
     {
         ADD_ERROR_MESSAGE("Failed to load wav: datasize is zero");
         return false;
     }
-    int32_t WaveDataSamples = 8 * WaveDataSize / (wh.wBitsPerSample * wh.nChannels);
+    // 64-bit intermediate: 8 * WaveDataSize overflows int32 for a data chunk over
+    // 256MB (a few minutes of hi-res stereo). (SMP-3)
+    unsigned int WaveDataSamples =
+        (unsigned int)((uint64_t)8 * WaveDataSize /
+                       ((uint64_t)(uint16_t)wh.wBitsPerSample * (uint16_t)wh.nChannels));
 
     /* get pointer to the sampledata */
 
@@ -266,8 +272,19 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             switch (tag)
             {
             case 'INAM':
-                strncpy(name, (char *)mf.RIFFReadChunk(), 64);
-                break;
+            {
+                // RIFFReadChunk can return null; chunk data isn't NUL-terminated
+                // and may be longer than name[], so copy bounded and terminate. (SMP-4)
+                size_t inamLen = 0;
+                auto *inam = (char *)mf.RIFFReadChunk(nullptr, &inamLen);
+                if (inam)
+                {
+                    size_t n = std::min(inamLen, sizeof(name) - 1);
+                    memcpy(name, inam, n);
+                    name[n] = 0;
+                }
+            }
+            break;
             default:
                 mf.RIFFSkipChunk();
                 break;
@@ -284,8 +301,18 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
 
         if (cuepoints > 1)
         {
-            meta.slice_start = new int[cuepoints];
-            meta.slice_end = new int[cuepoints];
+            // Don't trust the count: a hostile file can request a giant alloc.
+            // Cap to the cue points the file can actually contain. (SMP-5)
+            size_t maxCue = mf.bytesRemaining() / sizeof(loaders::CuePoint);
+            if ((size_t)cuepoints > maxCue)
+                cuepoints = (int32_t)maxCue;
+        }
+
+        if (cuepoints > 1)
+        {
+            // zero-init so a truncated read leaves 0, not uninitialized slices
+            meta.slice_start = new int[cuepoints]();
+            meta.slice_end = new int[cuepoints]();
             meta.slice_end[cuepoints - 1] = sampleLengthPerChannel;
             meta.n_slices = cuepoints;
             meta.playmode = pm_forward_hitpoints;
@@ -294,7 +321,8 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             for (int i = 0; i < cuepoints; i++)
             {
                 loaders::CuePoint cp;
-                mf.Read(&cp, sizeof(loaders::CuePoint));
+                if (!mf.Read(&cp, sizeof(loaders::CuePoint)))
+                    break;
                 meta.slice_start[i] = cp.dwSampleOffset;
                 if (i)
                     meta.slice_end[i - 1] = cp.dwSampleOffset;
@@ -308,13 +336,26 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         if (mf.riff_descend('strc', &datasize))
         {
             loaders::wave_strc_header header;
-            mf.Read(&header, sizeof(header));
+            // audio is already loaded; slices are optional, so a truncated strc
+            // chunk just means "no slices", not a failed sample load
+            if (!mf.Read(&header, sizeof(header)))
+                return true;
             int32_t subchunks = header.subchunks - 1; // first entry seem different
 
             if (subchunks > 1)
             {
-                meta.slice_start = new int[subchunks];
-                meta.slice_end = new int[subchunks];
+                // Cap by what the file holds: one skipped first entry + subchunks. (SMP-5)
+                size_t maxEntries = mf.bytesRemaining() / sizeof(loaders::wave_strc_entry);
+                size_t cap = (maxEntries > 0) ? (maxEntries - 1) : 0;
+                if ((size_t)subchunks > cap)
+                    subchunks = (int32_t)cap;
+            }
+
+            if (subchunks > 1)
+            {
+                // zero-init so a truncated read leaves 0, not uninitialized slices
+                meta.slice_start = new int[subchunks]();
+                meta.slice_end = new int[subchunks]();
                 meta.slice_end[subchunks - 1] = sampleLengthPerChannel;
                 meta.n_slices = subchunks;
                 meta.playmode = pm_forward_hitpoints;
@@ -326,7 +367,8 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
                 for (int i = 0; i < subchunks; i++)
                 {
                     loaders::wave_strc_entry entry;
-                    mf.Read(&entry, sizeof(loaders::wave_strc_entry));
+                    if (!mf.Read(&entry, sizeof(loaders::wave_strc_entry)))
+                        break;
                     meta.slice_start[i] = entry.spos1;
                     if (i)
                         meta.slice_end[i - 1] = entry.spos1;
