@@ -219,6 +219,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                         if (zone->mapping.keyboardRange.includes(key + kt) &&
                             zone->mapping.velocityRange.includes(velocity))
                         {
+                            if (idx >= res.size())
+                            {
+                                // more zones match this note than we can voice; drop the rest
+                                SCLOG_IF(warnings, "findZone match count hit "
+                                                       << res.size()
+                                                       << " for one note; dropping extras");
+                                return idx;
+                            }
                             res[idx] = {(size_t)pidx, (size_t)gidx,        (size_t)zidx,
                                         channel,      (int16_t)(key + kt), noteId};
                             idx++;
