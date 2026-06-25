@@ -359,58 +359,7 @@ bool Engine::processAudio()
     messageController->isAudioRunning = true;
     auto av = (uint32_t)activeVoices;
 
-    bool tryToDrain{true};
-    while (tryToDrain && !messageController->serializationToAudioQueue.empty())
-    {
-        auto msgopt = messageController->serializationToAudioQueue.pop();
-        if (!msgopt.has_value())
-        {
-            tryToDrain = false;
-            break;
-        }
-        switch (msgopt->id)
-        {
-        case messaging::audio::s2a_dispatch_to_pointer:
-        {
-            auto cb =
-                static_cast<messaging::MessageController::AudioThreadCallback *>(msgopt->payload.p);
-            cb->exec(*this);
-
-            messaging::audio::AudioToSerialization rt;
-            rt.id = messaging::audio::a2s_pointer_complete;
-            rt.payloadType = messaging::audio::AudioToSerialization::VOID_STAR;
-            rt.payload.p = (void *)cb;
-            messageController->audioToSerializationQueue.push(rt);
-        }
-        break;
-        case messaging::audio::s2a_dispatch_to_pointer_under_structurelock:
-        {
-            // We know this will lock and potentailly allocate so for now don't add rtsan noise
-            SST_CPPUTILS_RTSAN_DISABLE;
-            std::lock_guard<std::mutex> structG(modifyStructureMutex);
-            auto cb =
-                static_cast<messaging::MessageController::AudioThreadCallback *>(msgopt->payload.p);
-            cb->exec(*this);
-
-            messaging::audio::AudioToSerialization rt;
-            rt.id = messaging::audio::a2s_pointer_complete;
-            rt.payloadType = messaging::audio::AudioToSerialization::VOID_STAR;
-            rt.payload.p = (void *)cb;
-            messageController->audioToSerializationQueue.push(rt);
-        }
-        break;
-        case messaging::audio::s2a_param_beginendedit:
-        case messaging::audio::s2a_param_set_value:
-        case messaging::audio::s2a_param_refresh:
-        {
-            if (messageController->passWrapperEventsToWrapperQueue)
-                messageController->engineToPluginWrapperQueue.push(*msgopt);
-        }
-        break;
-        case messaging::audio::s2a_none:
-            break;
-        }
-    }
+    drainSerialToEngineQueue();
 
     getPatch()->busses.clear();
 
@@ -520,6 +469,62 @@ bool Engine::processAudio()
     cpuAvg += (pct - ppct) / cpuAverageObservation;
     sharedUIMemoryState.cpuLevel = cpuAvg;
     return true;
+}
+
+void Engine::drainSerialToEngineQueue()
+{
+    bool tryToDrain{true};
+    while (tryToDrain && !messageController->serializationToAudioQueue.empty())
+    {
+        auto msgopt = messageController->serializationToAudioQueue.pop();
+        if (!msgopt.has_value())
+        {
+            tryToDrain = false;
+            break;
+        }
+        switch (msgopt->id)
+        {
+        case messaging::audio::s2a_dispatch_to_pointer:
+        {
+            auto cb =
+                static_cast<messaging::MessageController::AudioThreadCallback *>(msgopt->payload.p);
+            cb->exec(*this);
+
+            messaging::audio::AudioToSerialization rt;
+            rt.id = messaging::audio::a2s_pointer_complete;
+            rt.payloadType = messaging::audio::AudioToSerialization::VOID_STAR;
+            rt.payload.p = (void *)cb;
+            messageController->audioToSerializationQueue.push(rt);
+        }
+        break;
+        case messaging::audio::s2a_dispatch_to_pointer_under_structurelock:
+        {
+            // We know this will lock and potentailly allocate so for now don't add rtsan noise
+            SST_CPPUTILS_RTSAN_DISABLE;
+            std::lock_guard<std::mutex> structG(modifyStructureMutex);
+            auto cb =
+                static_cast<messaging::MessageController::AudioThreadCallback *>(msgopt->payload.p);
+            cb->exec(*this);
+
+            messaging::audio::AudioToSerialization rt;
+            rt.id = messaging::audio::a2s_pointer_complete;
+            rt.payloadType = messaging::audio::AudioToSerialization::VOID_STAR;
+            rt.payload.p = (void *)cb;
+            messageController->audioToSerializationQueue.push(rt);
+        }
+        break;
+        case messaging::audio::s2a_param_beginendedit:
+        case messaging::audio::s2a_param_set_value:
+        case messaging::audio::s2a_param_refresh:
+        {
+            if (messageController->passWrapperEventsToWrapperQueue)
+                messageController->engineToPluginWrapperQueue.push(*msgopt);
+        }
+        break;
+        case messaging::audio::s2a_none:
+            break;
+        }
+    }
 }
 
 void Engine::assertActiveVoiceCount()
