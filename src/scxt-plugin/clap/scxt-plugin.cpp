@@ -295,6 +295,9 @@ SCXTPlugin::process_nonblock(const clap_process *process) SST_CPPUTILS_NONBLOCKI
     {
         if (blockPos == 0)
         {
+            // do this before any voice creation
+            engine->drainSerialToEngineQueue();
+
             // Only realy need to run events when we do the block process
             while (nextEvent && nextEvent->time <= s)
             {

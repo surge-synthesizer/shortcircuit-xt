@@ -615,6 +615,7 @@ void Group::setupOnUnstream(engine::Engine &e)
 
     triggerConditions.setupOnUnstream(parentPart->groupTriggerInstrumentState);
     resetPolyAndPlaymode(e);
+    lastOversample = outputInfo.oversample;
 }
 
 void Group::onGroupMidiChannelSubscriptionChanged()

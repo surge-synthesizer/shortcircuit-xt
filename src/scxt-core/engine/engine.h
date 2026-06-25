@@ -113,6 +113,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * Returns true if processing should continue
      */
     bool processAudio();
+    void drainSerialToEngineQueue();
 
     sst::basic_blocks::modulators::Transport transport;
     void onTransportUpdated();
