@@ -215,7 +215,7 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, cons
         sidx = region;
     }
 
-    if (sidx < 0 && sidx >= f->GetSampleCount())
+    if (sidx < 0 || sidx >= f->GetSampleCount())
     {
         return std::nullopt;
     }
@@ -252,19 +252,30 @@ std::optional<SampleID> SampleManager::loadSampleFromSF2(const fs::path &p, cons
 
 int SampleManager::findSF2SampleIndexFor(sf2::File *f, int presetNum, int instrument, int region)
 {
+    // every "not found" path must return -1: that's the caller's sentinel, and
+    // 0 is a valid sample index.
     auto *preset = f->GetPreset(presetNum);
+    if (!preset)
+        return -1;
 
     auto *presetRegion = preset->GetRegion(instrument);
+    if (!presetRegion)
+        return -1;
     sf2::Instrument *instr = presetRegion->pInstrument;
+    if (!instr)
+        return -1;
 
     if (instr->pGlobalRegion)
     {
         // TODO: Global Region
     }
 
-    auto sfsample = instr->GetRegion(region)->GetSample();
+    auto *instrRegion = instr->GetRegion(region);
+    if (!instrRegion)
+        return -1;
+    auto sfsample = instrRegion->GetSample();
     if (!sfsample)
-        return false;
+        return -1;
 
     for (int i = 0; i < f->GetSampleCount(); ++i)
     {
@@ -332,7 +343,7 @@ std::optional<SampleID> SampleManager::loadSampleFromGIG(const fs::path &p, cons
 
     auto sidx = region;
 
-    if (sidx < 0 && sidx >= f->CountSamples())
+    if (sidx < 0 || sidx >= f->CountSamples())
     {
         return std::nullopt;
     }

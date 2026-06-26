@@ -127,7 +127,11 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     }
     aiff_CommonChunk cc;
     // read header
-    mf.Read(&cc, sizeof(cc));
+    if (!mf.Read(&cc, sizeof(cc)))
+    {
+        addError("AIFF 'COMM' chunk is truncated");
+        return false;
+    }
     channels = sst::basic_blocks::mechanics::swap_endian_16(cc.numChannels);
     if (channels > 2)
     {
@@ -136,12 +140,6 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     }
     int nsamples = sst::basic_blocks::mechanics::swap_endian_32(cc.numSampleFrames);
     int bitdepth = sst::basic_blocks::mechanics::swap_endian_16(cc.sampleSize);
-
-    if (!SetMeta(channels, ConvertFromIeeeExtended(cc.sampleRate), nsamples))
-    {
-        addError("Unable to setup meta data");
-        return false;
-    }
 
     // load sample data
     mf.SeekI(wr);
@@ -158,10 +156,34 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     // of padding + the actual audio data. Logic factory AIFFs use a non-zero
     // offset (e.g. 386 bytes), and ignoring it causes ReadPtr to walk past the
     // chunk end and return null → SIGSEGV in the loader.
-    unsigned char *loaddata = (unsigned char *)mf.ReadPtr(datasize - 8 - offset);
+    size_t audioBytes = (size_t)datasize - 8 - offset;
+    unsigned char *loaddata = (unsigned char *)mf.ReadPtr(audioBytes);
     if (!loaddata)
     {
         addError("AIFF 'SSND' chunk is shorter than the declared audio length");
+        return false;
+    }
+
+    // the COMM frame count is independent of the SSND payload, so a file
+    // that declares more frames than the chunk holds makes the load_data_*
+    // helpers read past the mapped buffer. Clamp to what the SSND data can
+    // actually supply before SetMeta allocates and the loaders fill it.
+    unsigned int bytesPerFrame = (unsigned int)channels * (bitdepth / 8);
+    if (bytesPerFrame > 0)
+    {
+        size_t maxFrames = audioBytes / bytesPerFrame;
+        if (nsamples < 0 || (size_t)nsamples > maxFrames)
+        {
+            SCLOG_IF(warnings, "AIFF COMM frame count " << nsamples
+                                                        << " exceeds SSND payload; clamping to "
+                                                        << maxFrames);
+            nsamples = (int)maxFrames;
+        }
+    }
+
+    if (!SetMeta(channels, ConvertFromIeeeExtended(cc.sampleRate), nsamples))
+    {
+        addError("Unable to setup meta data");
         return false;
     }
 
@@ -221,20 +243,34 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     {
         uint16_t markercount = sst::basic_blocks::mechanics::swap_endian_16(mf.ReadWORD());
 
-        meta.slice_start = new int[markercount];
-        meta.slice_end = new int[markercount];
-        meta.n_slices = markercount;
+        // cap the count to what the chunk can physically hold (each marker
+        // is at least sizeof(aiff_marker) bytes) so a hostile count can't drive a
+        // huge allocation; zero-init the arrays so an INST loop referencing an
+        // absent marker id reads a defined 0 rather than uninitialized heap; and
+        // bail on a short read instead of consuming garbage.
+        size_t maxMarkers = mf.bytesRemaining() / sizeof(aiff_marker);
+        if (markercount > maxMarkers)
+            markercount = (uint16_t)maxMarkers;
 
-        for (int i = 0; i < markercount; i++)
+        if (markercount > 0)
         {
-            aiff_marker marker;
-            mf.Read(&marker, sizeof(marker));
-            mf.SkipPSTRING();
-            uint16_t id = sst::basic_blocks::mechanics::swap_endian_16(marker.id);
-            if (id < markercount)
+            meta.slice_start = new int[markercount]();
+            meta.slice_end = new int[markercount]();
+            meta.n_slices = markercount;
+
+            for (int i = 0; i < markercount; i++)
             {
-                meta.slice_start[id] = sst::basic_blocks::mechanics::swap_endian_32(marker.pos);
-                meta.slice_end[id] = sst::basic_blocks::mechanics::swap_endian_32(marker.pos);
+                aiff_marker marker;
+                if (!mf.Read(&marker, sizeof(marker)))
+                    break;
+                if (!mf.SkipPSTRING())
+                    break;
+                uint16_t id = sst::basic_blocks::mechanics::swap_endian_16(marker.id);
+                if (id < markercount)
+                {
+                    meta.slice_start[id] = sst::basic_blocks::mechanics::swap_endian_32(marker.pos);
+                    meta.slice_end[id] = sst::basic_blocks::mechanics::swap_endian_32(marker.pos);
+                }
             }
         }
     }

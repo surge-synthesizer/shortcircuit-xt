@@ -67,17 +67,25 @@ template <class T> class SampleFLACDecoderBase : public T
             collectedSize += frame->header.blocksize;
             return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         }
+
+        // STREAMINFO can understate the total frame count; never write past
+        // the buffer that metadata_callback allocated for sampleLengthPerChannel.
+        int64_t avail = (int64_t)sample->sampleLengthPerChannel - streamPos;
+        if (avail <= 0)
+            return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+        const unsigned n = (unsigned)std::min<int64_t>(frame->header.blocksize, avail);
+
         if (bitDepth == 16 && sample->bitDepth == Sample::BD_I16)
         {
             for (int c = 0; c < sample->channels; ++c)
             {
                 auto sdata = sample->GetSamplePtrI16(c);
-                for (int i = 0; i < frame->header.blocksize; i++)
+                for (unsigned i = 0; i < n; i++)
                 {
                     sdata[i + streamPos] = (FLAC__int16)buffer[c][i];
                 }
             }
-            streamPos += frame->header.blocksize;
+            streamPos += n;
             return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         }
         else if (bitDepth == 24 && sample->bitDepth == Sample::BD_F32)
@@ -85,12 +93,12 @@ template <class T> class SampleFLACDecoderBase : public T
             for (int c = 0; c < sample->channels; ++c)
             {
                 auto sdata = sample->GetSamplePtrF32(c);
-                for (int i = 0; i < frame->header.blocksize; i++)
+                for (unsigned i = 0; i < n; i++)
                 {
                     sdata[i + streamPos] = buffer[c][i] * 1.f / (1 << 24);
                 }
             }
-            streamPos += frame->header.blocksize;
+            streamPos += n;
 
             return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         }
@@ -99,12 +107,12 @@ template <class T> class SampleFLACDecoderBase : public T
             for (int c = 0; c < sample->channels; ++c)
             {
                 auto sdata = sample->GetSamplePtrF32(c);
-                for (int i = 0; i < frame->header.blocksize; i++)
+                for (unsigned i = 0; i < n; i++)
                 {
                     sdata[i + streamPos] = (double)(buffer[c][i] * 1.0) / (1LL << 32);
                 }
             }
-            streamPos += frame->header.blocksize;
+            streamPos += n;
 
             return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         }
@@ -141,31 +149,24 @@ template <class T> class SampleFLACDecoderBase : public T
                 collectSizeOnly = true;
                 needsSecondPass = true;
             }
+            else if (channels != 1 && channels != 2)
+            {
+                // with no buffer allocated for 3+ channels, leaving
+                // isValid/bitDepth unset makes write_callback abort cleanly
+                // instead of writing through a null GetSamplePtr.
+                SCLOG_IF(warnings, "Unsupported FLAC channel count " << channels);
+            }
             else if (bps == 16)
             {
-                if (channels == 1)
-                {
-                    sample->allocateI16(0, total_samples);
-                }
-                else if (channels == 2)
-                {
-                    sample->allocateI16(0, total_samples);
-                    sample->allocateI16(1, total_samples);
-                }
+                for (unsigned c = 0; c < channels; ++c)
+                    sample->allocateI16(c, total_samples);
                 isValid = true;
                 bitDepth = 16;
             }
             else if (bps == 24 || bps == 32)
             {
-                if (channels == 1)
-                {
-                    sample->allocateF32(0, total_samples);
-                }
-                else if (channels == 2)
-                {
-                    sample->allocateF32(0, total_samples);
-                    sample->allocateF32(1, total_samples);
-                }
+                for (unsigned c = 0; c < channels; ++c)
+                    sample->allocateF32(c, total_samples);
                 isValid = true;
                 bitDepth = bps;
             }
@@ -274,55 +275,59 @@ bool Sample::parseFlac(const fs::path &p)
         {
             if (si->get_block_type() == FLAC__METADATA_TYPE_APPLICATION)
             {
+                // must not `continue` out of here — that would skip the
+                // si->next() at the loop bottom and spin on this block. Guard
+                // with positive conditions and always delete instead.
                 auto a = dynamic_cast<FLAC::Metadata::Application *>(si->get_block());
-                if (!a)
+                if (a)
                 {
-                    continue;
-                }
-                auto fourB2 = [](const auto *b) {
-                    std::string ids;
-                    for (int i = 0; i < 4; ++i)
-                        ids += (char)b[i];
-                    return ids;
-                };
-                if (fourB2(a->get_id()) != "riff")
-                {
-                    continue;
-                }
-
-                auto *d = a->get_data();
-                auto blockType = fourB2(d);
-                d += 4;
-                if (blockType == "smpl")
-                {
-                    // strip off size.
-                    d += 4;
-
-                    loaders::SamplerChunk smpl_chunk;
-                    loaders::SampleLoop smpl_loop;
-
-                    memccpy(&smpl_chunk, d, 1, sizeof(loaders::SamplerChunk));
-                    d += sizeof(loaders::SamplerChunk);
-
-                    meta.key_root = smpl_chunk.dwMIDIUnityNote & 0xFF;
-                    meta.rootkey_present = true;
-
-                    if (smpl_chunk.cSampleLoops > 0)
+                    auto fourB2 = [](const auto *b) {
+                        std::string ids;
+                        for (int i = 0; i < 4; ++i)
+                            ids += (char)b[i];
+                        return ids;
+                    };
+                    // get_length() excludes the block header but includes the
+                    // 4-byte application id; get_data() points past that id.
+                    size_t appLen = a->get_length() >= 4 ? (size_t)a->get_length() - 4 : 0;
+                    if (fourB2(a->get_id()) == "riff" && appLen >= 8)
                     {
-                        meta.loop_present = true;
-                        memccpy(&smpl_loop, d, 1, sizeof(loaders::SampleLoop));
-                        d += sizeof(loaders::SampleLoop);
+                        auto *d = a->get_data();
+                        auto blockType = fourB2(d);
+                        // consumed from get_data(): blockType(4) + chunk size(4)
+                        size_t off = 8;
+                        // bounds-check each read against the application block
+                        // length before copying the fixed-size structs.
+                        if (blockType == "smpl" && off + sizeof(loaders::SamplerChunk) <= appLen)
+                        {
+                            loaders::SamplerChunk smpl_chunk;
+                            loaders::SampleLoop smpl_loop;
 
-                        meta.loop_start = smpl_loop.dwStart;
-                        meta.loop_end =
-                            std::min((uint32_t)smpl_loop.dwEnd + 1, sampleLengthPerChannel);
-                        if (smpl_loop.dwType == 1)
-                            meta.playmode = pm_forward_loop_bidirectional;
-                        else
-                            meta.playmode = pm_forward_loop;
+                            memcpy(&smpl_chunk, d + off, sizeof(loaders::SamplerChunk));
+                            off += sizeof(loaders::SamplerChunk);
+
+                            meta.key_root = smpl_chunk.dwMIDIUnityNote & 0xFF;
+                            meta.rootkey_present = true;
+
+                            if (smpl_chunk.cSampleLoops > 0 &&
+                                off + sizeof(loaders::SampleLoop) <= appLen)
+                            {
+                                meta.loop_present = true;
+                                memcpy(&smpl_loop, d + off, sizeof(loaders::SampleLoop));
+                                off += sizeof(loaders::SampleLoop);
+
+                                meta.loop_start = smpl_loop.dwStart;
+                                meta.loop_end =
+                                    std::min((uint32_t)smpl_loop.dwEnd + 1, sampleLengthPerChannel);
+                                if (smpl_loop.dwType == 1)
+                                    meta.playmode = pm_forward_loop_bidirectional;
+                                else
+                                    meta.playmode = pm_forward_loop;
+                            }
+                        }
                     }
+                    delete a;
                 }
-                delete a;
             }
             else if (si->get_block_type() == FLAC__METADATA_TYPE_STREAMINFO)
             {
@@ -330,16 +335,14 @@ bool Sample::parseFlac(const fs::path &p)
             else if (si->get_block_type() == FLAC__METADATA_TYPE_VORBIS_COMMENT)
             {
                 auto a = dynamic_cast<FLAC::Metadata::VorbisComment *>(si->get_block());
-                if (!a)
+                if (a)
                 {
-                    continue;
+                    for (int q = 0; q < a->get_num_comments(); ++q)
+                    {
+                        auto c = a->get_comment(q);
+                    }
+                    delete a;
                 }
-
-                for (int q = 0; q < a->get_num_comments(); ++q)
-                {
-                    auto c = a->get_comment(q);
-                }
-                delete a;
             }
             else
             {

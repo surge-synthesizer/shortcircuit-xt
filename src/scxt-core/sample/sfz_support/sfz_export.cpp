@@ -66,13 +66,17 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
             }
             if (va == 0)
             {
+                // RAISE_ERROR_ENGINE reports but does not return; without
+                // bailing here the code emits a region referencing variants[0].
                 RAISE_ERROR_ENGINE(e, "SFZ Export Error",
                                    "Zones with no samples are not yet supported in SFZ export");
+                return false;
             }
             if (va > 1)
             {
                 RAISE_ERROR_ENGINE(e, "SFZ Export Error",
                                    "Zones multiple variants are not yet supported in SFZ export");
+                return false;
             }
             oss << "\n<region>\n";
             oss << "// zone name: " << z->getName() << "\n";
@@ -99,9 +103,11 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
             auto cmf = collectMap.find(z->variantData.variants[0].sampleID);
             if (cmf == collectMap.end())
             {
+                // bail before dereferencing the end() iterator below.
                 RAISE_ERROR_ENGINE(e, "SFZ Export Error",
                                    "Can't remap " +
                                        z->variantData.variants[0].sampleID.to_string());
+                return false;
             }
             auto pt = cmf->second;
             auto rp = pt.lexically_relative(dir.parent_path());

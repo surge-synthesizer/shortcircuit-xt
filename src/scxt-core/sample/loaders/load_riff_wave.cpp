@@ -98,7 +98,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         return false;
     }
     // 64-bit intermediate: 8 * WaveDataSize overflows int32 for a data chunk over
-    // 256MB (a few minutes of hi-res stereo). (SMP-3)
+    // 256MB (a few minutes of hi-res stereo).
     unsigned int WaveDataSamples =
         (unsigned int)((uint64_t)8 * WaveDataSize /
                        ((uint64_t)(uint16_t)wh.wBitsPerSample * (uint16_t)wh.nChannels));
@@ -274,7 +274,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             case 'INAM':
             {
                 // RIFFReadChunk can return null; chunk data isn't NUL-terminated
-                // and may be longer than name[], so copy bounded and terminate. (SMP-4)
+                // and may be longer than name[], so copy bounded and terminate.
                 size_t inamLen = 0;
                 auto *inam = (char *)mf.RIFFReadChunk(nullptr, &inamLen);
                 if (inam)
@@ -302,7 +302,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         if (cuepoints > 1)
         {
             // Don't trust the count: a hostile file can request a giant alloc.
-            // Cap to the cue points the file can actually contain. (SMP-5)
+            // Cap to the cue points the file can actually contain.
             size_t maxCue = mf.bytesRemaining() / sizeof(loaders::CuePoint);
             if ((size_t)cuepoints > maxCue)
                 cuepoints = (int32_t)maxCue;
@@ -344,7 +344,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
 
             if (subchunks > 1)
             {
-                // Cap by what the file holds: one skipped first entry + subchunks. (SMP-5)
+                // Cap by what the file holds: one skipped first entry + subchunks.
                 size_t maxEntries = mf.bytesRemaining() / sizeof(loaders::wave_strc_entry);
                 size_t cap = (maxEntries > 0) ? (maxEntries - 1) : 0;
                 if ((size_t)subchunks > cap)

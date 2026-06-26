@@ -79,7 +79,12 @@ void addSCManifest(const std::unique_ptr<RIFF::File> &f, const std::string &type
 
 std::string readSCManifestString(RIFF::File *f)
 {
+    // libgig returns null for an absent chunk; opening a RIFF that isn't
+    // an SCXT patch would deref null. Throw so the callers' RIFF::Exception
+    // handlers report an error instead of crashing.
     auto c1 = f->GetSubChunk(manifestChunk);
+    if (!c1)
+        throw RIFF::Exception("File has no SCXT manifest chunk");
     std::string s((char *)c1->LoadChunkData(), c1->GetSize());
     c1->ReleaseChunkData();
     return s;
@@ -88,6 +93,8 @@ std::string readSCManifestString(RIFF::File *f)
 std::unordered_map<std::string, std::string> readSCManifest(RIFF::File *f)
 {
     auto c1 = f->GetSubChunk(manifestChunk);
+    if (!c1)
+        throw RIFF::Exception("File has no SCXT manifest chunk");
     std::string s((char *)c1->LoadChunkData(), c1->GetSize());
     c1->ReleaseChunkData();
 
@@ -114,6 +121,8 @@ void addSCDataChunk(const std::unique_ptr<RIFF::File> &f, const std::string &msg
 std::string readSCDataChunk(const std::unique_ptr<RIFF::File> &f)
 {
     auto cp = f->GetSubChunk(dataChunk);
+    if (!cp)
+        throw RIFF::Exception("File has no SCXT data chunk");
     auto res = std::string((char *)cp->LoadChunkData(), cp->GetSize());
     cp->ReleaseChunkData();
     return res;
@@ -215,6 +224,8 @@ std::vector<fs::path> readMonolithBinaryIndex(const std::unique_ptr<RIFF::File> 
         return {};
     }
     auto c = lst->GetSubChunk(samplePathsChunk);
+    if (!c)
+        throw RIFF::Exception("Monolith sample list has no paths chunk");
     std::string s((char *)c->LoadChunkData(), c->GetSize());
     c->ReleaseChunkData();
 

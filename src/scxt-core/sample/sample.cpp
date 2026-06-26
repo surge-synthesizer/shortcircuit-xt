@@ -229,10 +229,12 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
     }
     else if (sfsample->GetFrameSize() == 3 && sfsample->GetChannelCount() == 1)
     {
-        bitDepth = BD_I16;
         channels = 1;
         auto buf = sfsample->LoadSampleData();
-        load_data_i24(0, (void *)(buf.pStart), buf.Size, sfsample->GetFrameSize());
+        // buf.Size is bytes; the sample count is bytes / frameSize (3).
+        // load_data_i24 calls allocateF32 which sets bitDepth = BD_F32.
+        load_data_i24(0, (void *)(buf.pStart), buf.Size / 3, sfsample->GetFrameSize());
+        sfsample->ReleaseSampleData();
         return true;
     }
 

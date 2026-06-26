@@ -92,7 +92,16 @@ struct ScanWorker
             }
             if (p && keepRunning)
             {
-                p->go(*this);
+                try
+                {
+                    p->go(*this);
+                }
+                catch (const std::exception &e)
+                {
+                    // backstop so no work item can ever escape and
+                    // terminate the worker thread.
+                    SCLOG_IF(warnings, "Scan work item threw: " << e.what());
+                }
                 delete p;
 
                 if (lastCount != nextCount)
@@ -121,13 +130,24 @@ struct ScanWorker
         ScanFile(const fs::path &p) : path(p) {}
         void go(ScanWorker &w) override
         {
-            if (fs::exists(path))
+            // a file removed/locked between enqueue and scan throws from
+            // the filesystem calls; let it escape and it takes the worker thread
+            // (and the process) down via std::terminate.
+            try
             {
-                auto sc = infrastructure::createMD5SumFromFile(path);
-                auto sz = fs::file_size(path);
-                auto mt = writeTimeInMinutes(path);
-                w.scanner.writer.enqueueWorkItem(
-                    new WriterWorker::EnQAddSampleInfo(path, sc, mt, sz));
+                if (fs::exists(path))
+                {
+                    auto sc = infrastructure::createMD5SumFromFile(path);
+                    auto sz = fs::file_size(path);
+                    auto mt = writeTimeInMinutes(path);
+                    w.scanner.writer.enqueueWorkItem(
+                        new WriterWorker::EnQAddSampleInfo(path, sc, mt, sz));
+                }
+            }
+            catch (const std::exception &e)
+            {
+                SCLOG_IF(warnings,
+                         "Skipping unreadable file '" << path.u8string() << "': " << e.what());
             }
         }
     };
@@ -140,25 +160,37 @@ struct ScanWorker
 
         void go(ScanWorker &w) override
         {
-            auto files = fs::directory_iterator(path);
+            // a permission-denied directory (or one deleted mid-scan)
+            // throws from directory_iterator/last_write_time. An unhandled throw
+            // out of the worker thread is std::terminate, so contain it here and
+            // skip the offending directory.
             std::vector<fs::path> toScan;
-            for (auto &dirent : files)
+            try
             {
-                if (dirent.is_regular_file())
+                auto files = fs::directory_iterator(path);
+                for (auto &dirent : files)
                 {
-                    if (browser::Browser::isLoadableFile(dirent.path()))
+                    if (dirent.is_regular_file())
                     {
-                        auto mse = writeTimeInMinutes(dirent.path());
-                        if (mse > afterMtime)
+                        if (browser::Browser::isLoadableFile(dirent.path()))
                         {
-                            toScan.push_back(dirent.path());
+                            auto mse = writeTimeInMinutes(dirent.path());
+                            if (mse > afterMtime)
+                            {
+                                toScan.push_back(dirent.path());
+                            }
                         }
                     }
+                    else if (dirent.is_directory())
+                    {
+                        w.enqueueWorkItem(new ScanDir{dirent.path(), (uint64_t)afterMtime});
+                    }
                 }
-                else if (dirent.is_directory())
-                {
-                    w.enqueueWorkItem(new ScanDir{dirent.path(), (uint64_t)afterMtime});
-                }
+            }
+            catch (const std::exception &e)
+            {
+                SCLOG_IF(warnings,
+                         "Skipping unreadable directory '" << path.u8string() << "': " << e.what());
             }
 
             for (const auto &s : toScan)

@@ -73,7 +73,10 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
 
     // Step two grab the multisample.xml
     if (fileToIndex.find("multisample.xml") == fileToIndex.end())
+    {
+        mz_zip_reader_end(&zip_archive); // don't leak the archive handle
         return ctx.fail("Multisample Error", "No XML file in Multisample");
+    }
 
     size_t rsize{0};
     auto data =
@@ -107,15 +110,25 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
     start="0.000" stop="317919.000"/>
     </sample>
          */
-        if (!fc->Attribute("file"))
+        auto fileAttr = fc->Attribute("file");
+        if (!fileAttr)
             return ctx.fail("Multisample Error", "Sample is not a file");
 
-        size_t ssize{0};
-        auto data = mz_zip_reader_extract_to_heap(&zip_archive, fileToIndex[fc->Attribute("file")],
-                                                  &ssize, 0);
+        // use find(), not operator[]: a name absent from the archive must be a
+        // hard error, not a default-inserted index 0.
+        auto fti = fileToIndex.find(fileAttr);
+        if (fti == fileToIndex.end())
+            return ctx.fail("Multisample Error",
+                            std::string("Referenced file not in archive: ") + fileAttr);
+        auto fileIndex = fti->second;
 
-        auto lsid = engine.getSampleManager()->setupSampleFromMultifile(
-            p, md5, fileToIndex[fc->Attribute("file")], data, ssize);
+        size_t ssize{0};
+        auto data = mz_zip_reader_extract_to_heap(&zip_archive, fileIndex, &ssize, 0);
+        if (!data)
+            return ctx.fail("Multisample Error", std::string("Unable to extract ") + fileAttr);
+
+        auto lsid =
+            engine.getSampleManager()->setupSampleFromMultifile(p, md5, fileIndex, data, ssize);
         free(data);
 
         if (!lsid.has_value())
@@ -179,7 +192,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
             auto group{0};
             fc->QueryIntAttribute("group", &group);
 
-            if (group < 0 || group > (int)addedGroupIndices.size())
+            if (group < 0 || group >= (int)addedGroupIndices.size())
             {
                 SCLOG_IF(sampleCompoundParsers, "Bad group : " << group);
                 return false;
