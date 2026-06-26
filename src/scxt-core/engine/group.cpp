@@ -742,6 +742,8 @@ void Group::attack()
         return;
     }
 
+    // This group is starting from scracth so don't oversapmle detect.
+    lastOversample = outputInfo.oversample;
     for (int i = 0; i < processorsPerZoneAndGroup; ++i)
     {
         const auto &ps = processorStorage[i];
