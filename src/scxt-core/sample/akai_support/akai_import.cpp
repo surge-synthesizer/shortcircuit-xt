@@ -376,7 +376,8 @@ struct GLOBAL_MODS
 
     void load(const char *data, uint32_t size)
     {
-        if (size < 25)
+        // reads through data[25], which needs at least 26 bytes.
+        if (size < 26)
             return;
         ampMod1Src = (uint8_t)data[5];
         ampMod2Src = (uint8_t)data[7];
@@ -429,7 +430,9 @@ std::pair<std::string, uint32_t> fourCCSize(const char *c)
 
 void KEYGROUP::parse(const char *data, uint32_t size)
 {
-    uint32_t pos = 0;
+    // pos is 64-bit so `pos + 8 + sz` can't wrap a near-0xFFFFFFFF chunk
+    // size past the bounds check (and into an OOB read / infinite advance).
+    size_t pos = 0;
     while (pos + 8 <= size)
     {
         auto [id, sz] = fourCCSize(data + pos);
@@ -482,7 +485,8 @@ bool AKPFile::load(const char *data, size_t size)
     if (fourCC(data) != "RIFF" || fourCC(data + 8) != "APRG")
         return false;
 
-    uint32_t pos = 12;
+    // 64-bit pos so chunk-size arithmetic can't wrap (see KEYGROUP::parse).
+    size_t pos = 12;
     while (pos + 8 <= size)
     {
         auto [id, sz] = fourCCSize(data + pos);

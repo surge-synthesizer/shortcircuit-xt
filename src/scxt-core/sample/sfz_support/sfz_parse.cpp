@@ -106,12 +106,12 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
     };
 
     auto stripTrailingAndQuotes = [](const auto &s) {
-        auto ep = s.size() - 1;
-        while (ep >= 0 && (s[ep] == ' ' || s[ep] == '\n' || s[ep] == '\r'))
+        auto ep = s.size(); // one past last kept char; size_t, so never go below 0
+        while (ep > 0 && (s[ep - 1] == ' ' || s[ep - 1] == '\n' || s[ep - 1] == '\r'))
         {
             ep--;
         }
-        auto res = s.substr(0, ep + 1);
+        auto res = s.substr(0, ep);
         if (!res.empty())
         {
             if (res.size() > 1 && res[0] == '"' && res.back() == '"')

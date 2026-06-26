@@ -30,11 +30,14 @@
 #include <filesystem>
 #include <string>
 
+#include <fstream>
+
 #include "console_harness.h"
 #include "engine/engine.h"
 #include "engine/part.h"
 #include "engine/zone.h"
 #include "modulation/voice_matrix.h"
+#include "patch_io/patch_io.h"
 
 #ifndef SCXT_TEST_SOURCE_DIR
 #define SCXT_TEST_SOURCE_DIR ""
@@ -325,4 +328,45 @@ TEST_CASE("Import SFZ *square generator", "[importer]")
             scxt::dsp::processor::ProcessorType::proct_osc_EBWaveforms);
     CHECK(zone->processorStorage[0].intParams[0] == 2); // PULSE
     CHECK(zone->processorStorage[0].mix == Approx(1.0f));
+}
+
+TEST_CASE("Import FLAC fixture", "[importer]")
+{
+    // Smoke test for the FLAC loader: exercises the metadata-iteration loop
+    // (must not spin forever on non-"riff" application / vorbis blocks)
+    // and the smpl APPLICATION reader (memcpy, bounds-checked) end to end.
+    auto p = fixturePath("聲音不好.flac");
+    INFO("fixture=" << p.string());
+    REQUIRE(fs::exists(p));
+
+    ImporterFixture f;
+    f.loadSample(p);
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() >= 1);
+    int totalZones = 0;
+    for (auto &g : part.getGroups())
+        totalZones += (int)g->getZones().size();
+    CHECK(totalZones >= 1);
+}
+
+TEST_CASE("loadMulti on a non-SCXT RIFF errors instead of crashing", "[importer][patch_io]")
+{
+    // a valid RIFF that is not an SCXT patch has no manifest subchunk; libgig
+    // returns null for it. The readers must throw a RIFF::Exception (which
+    // loadMulti catches → clean `false`) rather than dereference the null.
+    auto tmp = fs::temp_directory_path() / "scxt_not_a_patch.scm";
+    {
+        std::ofstream o(tmp, std::ios::binary);
+        // Minimal but valid RIFF: "RIFF" + size(4) + "WAVE", no subchunks.
+        const unsigned char riff[12] = {'R', 'I', 'F', 'F', 4, 0, 0, 0, 'W', 'A', 'V', 'E'};
+        o.write((const char *)riff, sizeof(riff));
+    }
+
+    ImporterFixture f;
+    bool result = scxt::patch_io::loadMulti(tmp, f.engine());
+    CHECK_FALSE(result);
+
+    std::error_code ec;
+    fs::remove(tmp, ec);
 }

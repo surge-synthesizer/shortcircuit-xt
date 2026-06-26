@@ -187,7 +187,7 @@ class RIFFMemFile
     size_t bytesRemaining() const { return (loc < size) ? (size - loc) : 0; }
 
     // Never trust a file-supplied chunk size: clamp a proposed child-chunk end
-    // offset to the enclosing chunk's end and the file size. (SMP-1)
+    // offset to the enclosing chunk's end and the file size.
     size_t clampChildEnd(size_t proposedEnd) const
     {
         size_t parentEnd = EndStack.empty() ? size : EndStack.front();
