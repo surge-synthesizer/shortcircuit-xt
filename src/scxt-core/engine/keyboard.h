@@ -29,6 +29,7 @@
 
 #include <utility>
 #include <cassert>
+#include <algorithm>
 
 namespace scxt::engine
 {
