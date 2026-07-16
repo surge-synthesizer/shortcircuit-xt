@@ -281,11 +281,11 @@ struct GUID
 #define WAVE_FORMAT_EXTENSIBLE 0xFFFE                 /* Microsoft */
 
 // 00000001-0000-0010-8000-00aa00389b71
-#define KSDATAFORMAT_SUBTYPE_PCM                                                                   \
-    (loaders::GUID) { 0x00000001, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71} }
+constexpr scxt::sample::loaders::GUID KSDATAFORMAT_SUBTYPE_PCM{
+    0x00000001, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
 
 // 00000003-0000-0010-8000-00aa00389b71
-#define KSDATAFORMAT_SUBTYPE_IEEE_FLOAT                                                            \
-    (loaders::GUID) { 0x00000003, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71} }
+constexpr scxt::sample::loaders::GUID KSDATAFORMAT_SUBTYPE_IEEE_FLOAT{
+    0x00000003, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
 
 #endif // SCXT_SRC_SAMPLE_LOADERS_RIFF_WAVE_H
