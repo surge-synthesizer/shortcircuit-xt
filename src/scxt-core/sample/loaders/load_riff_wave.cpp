@@ -84,6 +84,15 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         return false;
     }
 
+    // if the wav file is in EXTENSIBLE format, read the subformat
+    loaders::GUID SubFormat;
+    if (wh.wFormatTag == WAVE_FORMAT_EXTENSIBLE)
+    {
+        mf.ReadWORD();  // Samples
+        mf.ReadDWORD(); // dwChannelMask
+        mf.Read(&SubFormat, sizeof(loaders::GUID));
+    }
+
     mf.SeekI(wr);
     if (!mf.riff_descend('data', &datasize))
     {
@@ -118,7 +127,8 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         return false;
     }
 
-    if (wh.wFormatTag == WAVE_FORMAT_PCM)
+    if (wh.wFormatTag == WAVE_FORMAT_PCM ||
+        (wh.wFormatTag == WAVE_FORMAT_EXTENSIBLE && SubFormat == KSDATAFORMAT_SUBTYPE_PCM))
     {
         if (wh.wBitsPerSample == 8)
         {
@@ -167,7 +177,9 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             return false;
         }
     }
-    else if (wh.wFormatTag == WAVE_FORMAT_IEEE_FLOAT)
+    else if (wh.wFormatTag == WAVE_FORMAT_IEEE_FLOAT ||
+             (wh.wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
+              SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT))
     {
         if (wh.wBitsPerSample == 32)
         {
