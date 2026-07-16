@@ -94,3 +94,33 @@ TEST_CASE("Opus parses from in-memory bytes", "[sample][opus]")
     CHECK(s.channels == 2);
     CHECK(s.getSampleLength() > 0);
 }
+
+TEST_CASE("Load extensible wav sample", "[sample][wav]")
+{
+    // 32-bit float stored with a WAVEFORMATEXTENSIBLE instead of a WAVEFORMATEX header.
+    auto p = samplePath("WavExtensibleFloat.wav");
+    INFO("fixture=" << p.u8string());
+    REQUIRE(fs::exists(p));
+
+    sample::Sample s;
+    REQUIRE(s.load(p));
+
+    CHECK(s.type == sample::Sample::WAV_FILE);
+    CHECK(s.sample_loaded);
+    CHECK(s.sample_rate == 48000);
+    CHECK(s.bitDepth == sample::Sample::BD_F32);
+    CHECK(s.channels == 2);
+    CHECK(s.getSampleLength() > 0);
+
+    // ~0.96s of audio at 48kHz
+    CHECK(s.getSampleLength() > 40000);
+    CHECK(s.getSampleLength() < 50000);
+
+    // The decoded buffer should contain some non-zero signal.
+    auto *d0 = s.GetSamplePtrF32(0);
+    REQUIRE(d0 != nullptr);
+    float peak = 0.f;
+    for (size_t i = 0; i < s.getSampleLength(); ++i)
+        peak = std::max(peak, std::fabs(d0[i]));
+    CHECK(peak > 0.01f);
+}
