@@ -35,16 +35,14 @@ namespace scxt::sample::loaders
 {
 struct wavheader
 {
-    int16_t wFormatTag;      /* format type */
+    uint16_t wFormatTag;     /* format type */
     int16_t nChannels;       /* number of channels (i.e. mono, stereo...) */
     int32_t nSamplesPerSec;  /* sample rate */
     int32_t nAvgBytesPerSec; /* for buffer estimation */
     int16_t nBlockAlign;     /* block size of data */
     int16_t wBitsPerSample;  /* Number of bits per sample of mono data */
-
-    /*int16_t    cbSize;*/ /* The count in bytes of the size of
-                                                                           extra information (after
-                              cbSize) */
+    int16_t cbSize;          /* The count in bytes of the size of
+                                extra information (after cbSize) */
 };
 
 struct CuePoint
@@ -121,6 +119,20 @@ struct wave_inst_chunk
     char key_low, key_high;
     char vel_low, vel_high;
 };
+
+struct GUID
+{
+    uint32_t Data1;
+    uint16_t Data2;
+    uint16_t Data3;
+    uint8_t Data4[8];
+
+    bool operator==(const struct GUID &other) const
+    {
+        return std::memcmp(this, &other, sizeof(GUID)) == 0;
+    }
+};
+
 } // namespace scxt::sample::loaders
 
 #pragma pack(pop)
@@ -266,5 +278,14 @@ struct wave_inst_chunk
 #define WAVE_FORMAT_NORRIS 0x1400                     /* Norris Communications, Inc. */
 #define WAVE_FORMAT_SOUNDSPACE_MUSICOMPRESS 0x1500    /* AT&T Labs, Inc. */
 #define WAVE_FORMAT_DVM 0x2000                        /* FAST Multimedia AG */
+#define WAVE_FORMAT_EXTENSIBLE 0xFFFE                 /* Microsoft */
+
+// 00000001-0000-0010-8000-00aa00389b71
+constexpr scxt::sample::loaders::GUID KSDATAFORMAT_SUBTYPE_PCM{
+    0x00000001, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
+
+// 00000003-0000-0010-8000-00aa00389b71
+constexpr scxt::sample::loaders::GUID KSDATAFORMAT_SUBTYPE_IEEE_FLOAT{
+    0x00000003, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
 
 #endif // SCXT_SRC_SAMPLE_LOADERS_RIFF_WAVE_H
