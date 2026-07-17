@@ -244,7 +244,6 @@ void ThemeApplier::recolorStylesheet(const sst::jucegui::style::StyleSheet::ptr_
     s->setSliderGutterWidth(6);
     s->setSliderHandleRadius(6);
     s->setKnobRingStrokeWidth(3, 3, 25);
-
 }
 
 void ThemeApplier::recolorStylesheetWith(std::unique_ptr<ColorMap> &&c, const sheet_t::ptr_t &s)
