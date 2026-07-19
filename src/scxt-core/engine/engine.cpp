@@ -347,6 +347,13 @@ void Engine::immediatelyTerminateAllVoices()
     forceVoiceUpdate = true;
 }
 
+void Engine::markDirty() const
+{
+    messaging::audio::SerializationToAudio s2am;
+    s2am.id = messaging::audio::s2a_state_mark_dirty;
+    messageController->sendSerializationToAudio(s2am);
+}
+
 bool Engine::processAudio()
 {
     auto processingStartTime = std::chrono::high_resolution_clock::now();

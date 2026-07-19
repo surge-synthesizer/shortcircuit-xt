@@ -189,11 +189,7 @@ inline void pushPayloadUndoFor(engine::Engine &e, const std::vector<ZoneAddress>
     if (g == UndoGesture::Discrete && e.undoManager.gestureCovers(tag))
     {
         // skip the snapshot work, but notify the host of the state change
-
-        messaging::audio::SerializationToAudio s2am;
-        s2am.id = messaging::audio::s2a_state_mark_dirty;
-        e.getMessageController()->sendSerializationToAudio(s2am);
-
+        e.markDirty();
         return;
     }
 

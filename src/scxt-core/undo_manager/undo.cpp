@@ -39,6 +39,7 @@ void UndoManager::storeUndoStep(engine::Engine &e, std::unique_ptr<UndoableItem>
     if (coalesce == Coalesce::Captured)
     {
         SCLOG_IF(undoRedo, "|== drop '" << item->describe() << "' coalesced into open batch");
+        e.markDirty();
         return;
     }
     SCLOG_IF(undoRedo, "|>> push '" << item->describe() << "' (stack size " << undoStack.size() + 1
@@ -50,10 +51,7 @@ void UndoManager::storeUndoStep(engine::Engine &e, std::unique_ptr<UndoableItem>
         undoStack.pop_front();
     if (coalesce == Coalesce::Armed)
         coalesce = Coalesce::Captured;
-
-    messaging::audio::SerializationToAudio s2am;
-    s2am.id = messaging::audio::s2a_state_mark_dirty;
-    e.getMessageController()->sendSerializationToAudio(s2am);
+    e.markDirty();
 }
 
 void UndoManager::storeUndoStepTagged(engine::Engine &e, std::unique_ptr<UndoableItem> item,
@@ -63,11 +61,7 @@ void UndoManager::storeUndoStepTagged(engine::Engine &e, std::unique_ptr<Undoabl
     {
         SCLOG_IF(undoRedo,
                  "|== drop '" << item->describe() << "' covered by open gesture '" << tag << "'");
-
-        messaging::audio::SerializationToAudio s2am;
-        s2am.id = messaging::audio::s2a_state_mark_dirty;
-        e.getMessageController()->sendSerializationToAudio(s2am);
-
+        e.markDirty();
         return;
     }
     storeUndoStep(e, std::move(item));
@@ -110,9 +104,7 @@ bool UndoManager::applyUndoStep(engine::Engine &e)
 
     item->restore(e);
 
-    messaging::audio::SerializationToAudio s2am;
-    s2am.id = messaging::audio::s2a_state_mark_dirty;
-    e.getMessageController()->sendSerializationToAudio(s2am);
+    e.markDirty();
 
     return true;
 }
@@ -142,9 +134,7 @@ bool UndoManager::applyRedoStep(engine::Engine &e)
 
     item->restore(e);
 
-    messaging::audio::SerializationToAudio s2am;
-    s2am.id = messaging::audio::s2a_state_mark_dirty;
-    e.getMessageController()->sendSerializationToAudio(s2am);
+    e.markDirty();
 
     return true;
 }
