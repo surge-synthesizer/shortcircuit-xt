@@ -47,11 +47,11 @@ enum struct UndoGesture
 
 struct UndoManager
 {
-    void storeUndoStep(std::unique_ptr<UndoableItem> item);
+    void storeUndoStep(engine::Engine &e, std::unique_ptr<UndoableItem> item);
     // gesture-aware push: drops the item if a gesture with this tag is
     // open; any other tag closes that gesture first. Begin opens the tag.
-    void storeUndoStepTagged(std::unique_ptr<UndoableItem> item, const std::string &tag,
-                             UndoGesture g);
+    void storeUndoStepTagged(engine::Engine &e, std::unique_ptr<UndoableItem> item,
+                             const std::string &tag, UndoGesture g);
     bool applyUndoStep(engine::Engine &e);
     bool applyRedoStep(engine::Engine &e);
     // For whole-engine replacements (load multi, load part, unstream, reset)
@@ -110,7 +110,7 @@ template <typename Item, typename E, typename... Args> void pushUndo(E &e, Args 
 {
     auto item = std::make_unique<Item>();
     item->store(e, std::forward<Args>(args)...);
-    e.undoManager.storeUndoStep(std::move(item));
+    e.undoManager.storeUndoStep(e, std::move(item));
 }
 
 // Gesture-aware variant: tag + gesture so continuous edits coalesce to one entry.
@@ -119,7 +119,7 @@ void pushUndoTagged(E &e, const std::string &tag, UndoGesture g, Args &&...args)
 {
     auto item = std::make_unique<Item>();
     item->store(e, std::forward<Args>(args)...);
-    e.undoManager.storeUndoStepTagged(std::move(item), tag, g);
+    e.undoManager.storeUndoStepTagged(e, std::move(item), tag, g);
 }
 
 } // namespace scxt::undo

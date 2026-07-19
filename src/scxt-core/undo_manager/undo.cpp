@@ -34,7 +34,7 @@
 namespace scxt::undo
 {
 
-void UndoManager::storeUndoStep(std::unique_ptr<UndoableItem> item)
+void UndoManager::storeUndoStep(engine::Engine &e, std::unique_ptr<UndoableItem> item)
 {
     if (coalesce == Coalesce::Captured)
     {
@@ -50,18 +50,27 @@ void UndoManager::storeUndoStep(std::unique_ptr<UndoableItem> item)
         undoStack.pop_front();
     if (coalesce == Coalesce::Armed)
         coalesce = Coalesce::Captured;
+
+    messaging::audio::SerializationToAudio s2am;
+    s2am.id = messaging::audio::s2a_state_mark_dirty;
+    e.getMessageController()->sendSerializationToAudio(s2am);
 }
 
-void UndoManager::storeUndoStepTagged(std::unique_ptr<UndoableItem> item, const std::string &tag,
-                                      UndoGesture g)
+void UndoManager::storeUndoStepTagged(engine::Engine &e, std::unique_ptr<UndoableItem> item,
+                                      const std::string &tag, UndoGesture g)
 {
     if (g == UndoGesture::Discrete && gestureCovers(tag))
     {
         SCLOG_IF(undoRedo,
                  "|== drop '" << item->describe() << "' covered by open gesture '" << tag << "'");
+
+        messaging::audio::SerializationToAudio s2am;
+        s2am.id = messaging::audio::s2a_state_mark_dirty;
+        e.getMessageController()->sendSerializationToAudio(s2am);
+
         return;
     }
-    storeUndoStep(std::move(item));
+    storeUndoStep(e, std::move(item));
     if (g == UndoGesture::Begin)
         openGesture(tag);
 }
@@ -100,6 +109,11 @@ bool UndoManager::applyUndoStep(engine::Engine &e)
     }
 
     item->restore(e);
+
+    messaging::audio::SerializationToAudio s2am;
+    s2am.id = messaging::audio::s2a_state_mark_dirty;
+    e.getMessageController()->sendSerializationToAudio(s2am);
+
     return true;
 }
 
@@ -127,6 +141,11 @@ bool UndoManager::applyRedoStep(engine::Engine &e)
     }
 
     item->restore(e);
+
+    messaging::audio::SerializationToAudio s2am;
+    s2am.id = messaging::audio::s2a_state_mark_dirty;
+    e.getMessageController()->sendSerializationToAudio(s2am);
+
     return true;
 }
 

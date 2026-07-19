@@ -114,7 +114,8 @@ enum SerializationToAudioMessageId
 
     s2a_param_beginendedit,
     s2a_param_set_value,
-    s2a_param_refresh
+    s2a_param_refresh,
+    s2a_state_mark_dirty
 };
 
 /**

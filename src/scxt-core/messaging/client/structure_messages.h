@@ -435,7 +435,7 @@ inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &
             undoItem->deleteGroupsAtEnd.push_back(
                 (int32_t)engine.getPatch()->getPart(tgt.part)->getGroups().size());
         }
-        engine.undoManager.storeUndoStep(std::move(undoItem));
+        engine.undoManager.storeUndoStep(engine, std::move(undoItem));
     }
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(

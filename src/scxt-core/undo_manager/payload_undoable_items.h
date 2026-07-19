@@ -187,11 +187,17 @@ inline void pushPayloadUndoFor(engine::Engine &e, const std::vector<ZoneAddress>
 
     auto tag = gestureTag<Spec>(index);
     if (g == UndoGesture::Discrete && e.undoManager.gestureCovers(tag))
-        return; // skip the snapshot work too
+    {
+        // skip the snapshot work, but notify the host of the state change
 
-    auto item = std::make_unique<PayloadUndoableItem<Spec>>();
-    item->store(e, index, sel);
-    e.undoManager.storeUndoStepTagged(std::move(item), tag, g);
+        messaging::audio::SerializationToAudio s2am;
+        s2am.id = messaging::audio::s2a_state_mark_dirty;
+        e.getMessageController()->sendSerializationToAudio(s2am);
+
+        return;
+    }
+
+    undo::pushUndoTagged<PayloadUndoableItem<Spec>>(e, tag, g, index, sel);
 }
 
 // One-line undo push for handler call sites: snapshot the current selection

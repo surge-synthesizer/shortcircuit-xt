@@ -516,6 +516,7 @@ void Engine::drainSerialToEngineQueue()
         case messaging::audio::s2a_param_beginendedit:
         case messaging::audio::s2a_param_set_value:
         case messaging::audio::s2a_param_refresh:
+        case messaging::audio::s2a_state_mark_dirty:
         {
             if (messageController->passWrapperEventsToWrapperQueue)
                 messageController->engineToPluginWrapperQueue.push(*msgopt);

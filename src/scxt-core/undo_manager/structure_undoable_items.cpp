@@ -118,7 +118,7 @@ void pushZoneAddUndo(engine::Engine &e, int16_t part, int32_t group)
         (group < (int)pt->getGroups().size()) ? (int32_t)pt->getGroup(group)->getZones().size() : 0;
     auto item = std::make_unique<ZonesDeleteOnUndoItem>();
     item->store(e, {{part, group, zi}});
-    e.undoManager.storeUndoStep(std::move(item));
+    e.undoManager.storeUndoStep(e, std::move(item));
 }
 
 // --- ZonesRestoreItem ---
@@ -576,11 +576,17 @@ void pushPartStreamUndo(engine::Engine &e, int16_t part, const std::string &labe
 {
     auto tag = "Part Stream/" + std::to_string(part);
     if (g == UndoGesture::Discrete && e.undoManager.gestureCovers(tag))
-        return; // skip streaming the whole part just to drop it
+    {
+        // skip the snapshot work, but notify the host of the state change
 
-    auto item = std::make_unique<PartStreamRestoreItem>();
-    item->store(e, part, label);
-    e.undoManager.storeUndoStepTagged(std::move(item), tag, g);
+        messaging::audio::SerializationToAudio s2am;
+        s2am.id = messaging::audio::s2a_state_mark_dirty;
+        e.getMessageController()->sendSerializationToAudio(s2am);
+
+        return;
+    }
+
+    undo::pushUndoTagged<PartStreamRestoreItem>(e, tag, g, part, label);
 }
 
 // --- EngineStateRestoreItem ---
