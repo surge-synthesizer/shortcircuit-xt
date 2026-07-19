@@ -239,6 +239,11 @@ void ThemeApplier::recolorStylesheet(const sst::jucegui::style::StyleSheet::ptr_
     detail::mix::channelstrip::applyColorsAndFonts(s, *colors, *this);
     detail::mix::auxchannelstrip::applyColorsAndFonts(s, *colors, *this);
     detail::util::applyColors(s, *colors);
+
+    // ---- Slider / knob geometry — thinner gutters, smaller handles, lighter knob rings ----
+    s->setSliderGutterWidth(6);
+    s->setSliderHandleRadius(6);
+    s->setKnobRingStrokeWidth(3, 3, 25);
 }
 
 void ThemeApplier::recolorStylesheetWith(std::unique_ptr<ColorMap> &&c, const sheet_t::ptr_t &s)
