@@ -191,7 +191,12 @@ void SampleWaveform::rebuildEnvelopePaths()
             }
             for (int s = startSample; s < endSample; ++s)
             {
-                if (c + fac < s)
+                mx = std::max(data[s], mx);
+                mn = std::min(data[s], mn);
+
+                // accumulate first, then close the bucket at s so sample s isn't
+                // shoved one bucket to the right
+                if (s + 1 >= c + fac)
                 {
                     double nmx = mx * 1.0 / normFactor;
                     double nmn = mn * 1.0 / normFactor;
@@ -204,8 +209,6 @@ void SampleWaveform::rebuildEnvelopePaths()
                     mx = seedmx;
                     mn = seedmn;
                 }
-                mx = std::max(data[s], mx);
-                mn = std::min(data[s], mn);
             }
         };
 
