@@ -434,6 +434,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     }
 
     /**
+     * Notify the host that the serialized state has changed.
+     */
+    void markDirty() const;
+
+    /**
      * Prepare to play sets up the internal state to prepare us to play. Call it in
      * your interfaces pre-playing once.
      */

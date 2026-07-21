@@ -127,6 +127,7 @@ inline void doResetEngine(const std::string &fl, engine::Engine &e, MessageContr
 {
     e.undoManager.clear();
     scxt::patch_io::initFromResourceBundle(e, fl);
+    e.markDirty();
     e.sendFullRefreshToClient();
 }
 CLIENT_TO_SERIAL(ResetEngine, c2s_reset_engine, std::string, doResetEngine(payload, engine, cont));

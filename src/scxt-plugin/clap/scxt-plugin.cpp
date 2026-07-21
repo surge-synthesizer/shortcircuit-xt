@@ -367,6 +367,12 @@ SCXTPlugin::process_nonblock(const clap_process *process) SST_CPPUTILS_NONBLOCKI
                     _host.requestCallback();
                 }
                 break;
+                case messaging::audio::s2a_state_mark_dirty:
+                {
+                    nextMainThreadAction |= STATE_MARK_DIRTY;
+                    _host.requestCallback();
+                }
+                break;
                 default:
                     SCLOG_IF(plugin, "Unexpected message " << msgopt->id);
                     break;
@@ -579,6 +585,13 @@ void SCXTPlugin::onMainThread() noexcept
         {
             _host.paramsRescan(CLAP_PARAM_RESCAN_INFO | CLAP_PARAM_RESCAN_VALUES |
                                CLAP_PARAM_RESCAN_TEXT);
+        }
+    }
+    if (a & STATE_MARK_DIRTY)
+    {
+        if (_host.canUseState())
+        {
+            _host.stateMarkDirty();
         }
     }
 }

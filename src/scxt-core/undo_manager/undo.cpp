@@ -34,11 +34,12 @@
 namespace scxt::undo
 {
 
-void UndoManager::storeUndoStep(std::unique_ptr<UndoableItem> item)
+void UndoManager::storeUndoStep(engine::Engine &e, std::unique_ptr<UndoableItem> item)
 {
     if (coalesce == Coalesce::Captured)
     {
         SCLOG_IF(undoRedo, "|== drop '" << item->describe() << "' coalesced into open batch");
+        e.markDirty();
         return;
     }
     SCLOG_IF(undoRedo, "|>> push '" << item->describe() << "' (stack size " << undoStack.size() + 1
@@ -50,18 +51,20 @@ void UndoManager::storeUndoStep(std::unique_ptr<UndoableItem> item)
         undoStack.pop_front();
     if (coalesce == Coalesce::Armed)
         coalesce = Coalesce::Captured;
+    e.markDirty();
 }
 
-void UndoManager::storeUndoStepTagged(std::unique_ptr<UndoableItem> item, const std::string &tag,
-                                      UndoGesture g)
+void UndoManager::storeUndoStepTagged(engine::Engine &e, std::unique_ptr<UndoableItem> item,
+                                      const std::string &tag, UndoGesture g)
 {
     if (g == UndoGesture::Discrete && gestureCovers(tag))
     {
         SCLOG_IF(undoRedo,
                  "|== drop '" << item->describe() << "' covered by open gesture '" << tag << "'");
+        e.markDirty();
         return;
     }
-    storeUndoStep(std::move(item));
+    storeUndoStep(e, std::move(item));
     if (g == UndoGesture::Begin)
         openGesture(tag);
 }
@@ -100,6 +103,9 @@ bool UndoManager::applyUndoStep(engine::Engine &e)
     }
 
     item->restore(e);
+
+    e.markDirty();
+
     return true;
 }
 
@@ -127,6 +133,9 @@ bool UndoManager::applyRedoStep(engine::Engine &e)
     }
 
     item->restore(e);
+
+    e.markDirty();
+
     return true;
 }
 

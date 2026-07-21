@@ -83,6 +83,7 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
     enum MainThreadActions : uint64_t
     {
         RESCAN_PARAM_IVT = 1 << 0,
+        STATE_MARK_DIRTY = 1 << 1,
     };
     std::atomic<uint64_t> nextMainThreadAction;
     void onMainThread() noexcept override;

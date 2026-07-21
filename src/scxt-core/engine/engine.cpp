@@ -347,6 +347,13 @@ void Engine::immediatelyTerminateAllVoices()
     forceVoiceUpdate = true;
 }
 
+void Engine::markDirty() const
+{
+    messaging::audio::SerializationToAudio s2am;
+    s2am.id = messaging::audio::s2a_state_mark_dirty;
+    messageController->sendSerializationToAudio(s2am);
+}
+
 bool Engine::processAudio()
 {
     auto processingStartTime = std::chrono::high_resolution_clock::now();
@@ -516,6 +523,7 @@ void Engine::drainSerialToEngineQueue()
         case messaging::audio::s2a_param_beginendedit:
         case messaging::audio::s2a_param_set_value:
         case messaging::audio::s2a_param_refresh:
+        case messaging::audio::s2a_state_mark_dirty:
         {
             if (messageController->passWrapperEventsToWrapperQueue)
                 messageController->engineToPluginWrapperQueue.push(*msgopt);
