@@ -91,6 +91,14 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     SCLOG_IF(voiceResponder, "voice initiation of " << nts << " voices");
     int32_t actualCreated{0};
     int outIdx{0};
+
+    // In mono mode the voice manager terminates the prior voice and hands us its sounding
+    // pitch as continuation data. Every newly created voice needs it, sampled or not.
+    auto glideFromPriorVoice = [&](voice::Voice *v, int idx) {
+        if (v && voiceInstructionBuffer[idx].fromPlayingVoice)
+            v->startGlideFrom(voiceInstructionBuffer[idx].continuationData.pitch);
+    };
+
     for (auto idx = 0; idx < nts; ++idx)
     {
         if (voiceInstructionBuffer[idx].instruction ==
@@ -119,11 +127,8 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->originalMidiKey = key;
 
                 v->attack();
+                glideFromPriorVoice(v, idx);
 
-                if (voiceInstructionBuffer[idx].fromPlayingVoice)
-                {
-                    v->startGlideFrom(voiceInstructionBuffer[idx].continuationData.pitch);
-                }
                 actualCreated++;
             }
 
@@ -211,6 +216,8 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
 
                     v->originalMidiKey = key;
                     v->attack();
+                    glideFromPriorVoice(v, idx);
+
                     actualCreated++;
                 }
                 voiceInitWorkingBuffer[outIdx].voice = v;

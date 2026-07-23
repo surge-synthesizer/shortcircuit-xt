@@ -123,13 +123,17 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         inGlide = true;
     }
 
+    // Mono mode replaces the voice rather than moving it, so the new voice is handed the
+    // outgoing voice's sounding pitch and glides up to its own target from there.
     void startGlideFrom(float pitch)
     {
         inGlide = false;
-        auto p = calculateVoicePitch();
-        auto diff = pitch - p;
-        glideSemitones = diff;
+        glideSemitones = 0.f;
         glideProgress = 0.f;
+        if (zone->parentGroup->outputInfo.glideTime <= 0.f)
+            return;
+
+        glideSemitones = pitch - calculateVoicePitch();
         inGlide = true;
     }
 
