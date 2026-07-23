@@ -32,6 +32,7 @@
 
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
@@ -64,13 +65,14 @@ struct GroupSettingsCard : juce::Component, HasEditor
     std::unique_ptr<sst::jucegui::components::TickSeparatorLabel> pbRuleH;
     std::unique_ptr<sst::jucegui::components::TickSeparatorLabel> rightVRule01, rightVRule12,
         glideRuleH;
-    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> pbDnVal, pbUpVal,
-        glideDrag, volDrag, panDrag, tuneDrag;
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> glideDrag, volDrag,
+        panDrag, tuneDrag;
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableDiscreteValue> pbDnVal, pbUpVal;
 
     using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
     using intMsg_t = scxt::messaging::client::UpdateGroupOutputInt16TValue;
     typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo> attachment_t;
-    typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo, int16_t>
+    typedef connectors::DiscretePayloadDataAttachment<engine::Group::GroupOutputInfo, int16_t>
         iattachment_t;
 
     std::unique_ptr<attachment_t> volAttachment, panAttachment, tuneAttachment, glideAttachment;

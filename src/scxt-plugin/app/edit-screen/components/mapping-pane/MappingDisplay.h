@@ -31,6 +31,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/Viewport.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/TextPushButton.h"
@@ -97,7 +98,7 @@ struct MappingDisplay : juce::Component,
 
 {
 
-    typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
+    typedef connectors::DiscretePayloadDataAttachment<engine::Zone::ZoneMappingData, int16_t>
         int16Attachment_t;
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, float>
         floatAttachment_t;
@@ -159,9 +160,21 @@ struct MappingDisplay : juce::Component,
             PBDown, PBUp, VelocitySens, Level, Pan, Pitch, Tracking;
     };
 
-    MapEls<std::unique_ptr<int16Attachment_t>> intAttachments;
+    // Same membership as MapEls; used for the integer-backed controls, which are
+    // sparse here (only the key/velocity/pitch-bend slots are populated).
+    template <typename T> struct MapDiscreteEls
+    {
+        T RootKey, KeyStart, KeyEnd, FadeStart, FadeEnd, VelStart, VelEnd, VelFadeStart, VelFadeEnd,
+            PBDown, PBUp, VelocitySens, Level, Pan, Pitch, Tracking;
+    };
+
+    MapDiscreteEls<std::unique_ptr<int16Attachment_t>> intAttachments;
     MapEls<std::unique_ptr<floatAttachment_t>> floatAttachments;
+    // continuous (float) text editors; sparse — only Level/Pan/Pitch/Tracking/VelocitySens
     MapEls<std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>> textEds;
+    // discrete (integer) text editors; sparse — the key/velocity/pitch-bend slots
+    MapDiscreteEls<std::unique_ptr<sst::jucegui::components::DraggableTextEditableDiscreteValue>>
+        discreteTextEds;
     MapEls<std::unique_ptr<sst::jucegui::components::Label>> labels;
     MapEls<std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphs;
 

@@ -35,6 +35,7 @@
 #include "sst/jucegui/components/TextEditor.h"
 #include "sst/jucegui/components/HSliderFilled.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 #include "app/HasEditor.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/part.h"
@@ -53,7 +54,8 @@ struct PartSidebarCard : juce::Component,
     using attachment_t =
         scxt::ui::connectors::PayloadDataAttachment<engine::Part::PartConfiguration>;
     using tsposeattachment_t =
-        scxt::ui::connectors::PayloadDataAttachment<engine::Part::PartConfiguration, int32_t>;
+        scxt::ui::connectors::DiscretePayloadDataAttachment<engine::Part::PartConfiguration,
+                                                            int32_t>;
 
     static constexpr int row0{2}, rowHeight{20}, rowMargin{2}, tuningTransposeSplit{38};
 
@@ -66,7 +68,8 @@ struct PartSidebarCard : juce::Component,
     std::unique_ptr<sst::jucegui::components::MenuButton> patchName;
     std::unique_ptr<sst::jucegui::components::TextPushButton> midiMode, outBus, polyCount;
     std::unique_ptr<sst::jucegui::components::HSliderFilled> level, pan;
-    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> tuning, transpose;
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> tuning;
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableDiscreteValue> transpose;
     std::unique_ptr<sst::jucegui::components::TextEditor> partBlurb;
 
     std::unique_ptr<juce::FileChooser> fileChooser;

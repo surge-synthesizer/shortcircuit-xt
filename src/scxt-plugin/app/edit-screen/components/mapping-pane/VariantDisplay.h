@@ -31,6 +31,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/ZoomContainer.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/TabbedComponent.h"
 #include "sst/jucegui/components/ToggleButton.h"
@@ -71,17 +72,23 @@ struct VariantDisplay : juce::Component, HasEditor
 
     std::unordered_map<Ctrl, std::unique_ptr<connectors::SamplePointDataAttachment>>
         sampleAttachments;
+    // continuous (float/dummy) text editors: curve, volume, pan, tune
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>>
         sampleEditors;
+    // discrete (integer frame) text editors: the sample-point controls
+    std::unordered_map<
+        Ctrl, std::unique_ptr<sst::jucegui::components::DraggableTextEditableDiscreteValue>>
+        discreteSampleEditors;
     std::unordered_map<Ctrl, std::unique_ptr<floatAttachment_t>> sampleFloatAttachments;
 
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::Label>> labels;
     std::unordered_map<Ctrl, std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphLabels;
 
-    typedef connectors::PayloadDataAttachment<engine::Zone::Variants, int> sample_attachment_t;
+    typedef connectors::DiscretePayloadDataAttachment<engine::Zone::Variants, int>
+        sample_attachment_t;
 
     std::unique_ptr<sample_attachment_t> loopCntAttachment;
-    std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> loopCnt;
+    std::unique_ptr<sst::jucegui::components::DraggableTextEditableDiscreteValue> loopCnt;
 
     std::unique_ptr<connectors::BooleanPayloadDataAttachment<engine::Zone::Variants>>
         loopAttachment, reverseAttachment;
@@ -136,6 +143,8 @@ struct VariantDisplay : juce::Component, HasEditor
     {
         for (auto &[k, c] : sampleEditors)
             c.reset();
+        for (auto &[k, c] : discreteSampleEditors)
+            c.reset();
     }
 
     void onSamplePointChangedFromGUI();
@@ -158,6 +167,8 @@ struct VariantDisplay : juce::Component, HasEditor
         loopModeButton->setVisible(b);
         reverseActive->setVisible(b);
         for (const auto &[k, p] : sampleEditors)
+            p->setVisible(b);
+        for (const auto &[k, p] : discreteSampleEditors)
             p->setVisible(b);
         for (const auto &[k, l] : labels)
             l->setVisible(b);

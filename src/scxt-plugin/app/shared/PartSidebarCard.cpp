@@ -131,6 +131,13 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     att(editor->partConfigurations[part].tuning, tuning, tuningAtt);
     att(editor->partConfigurations[part].transpose, transpose, transposeAtt);
 
+    // The discrete text value is not a ContinuousParamEditor, so setupFloatWidget
+    // leaves its popup at the default discrete menu; route right-click to type-in.
+    transpose->onPopupMenu = [w = juce::Component::SafePointer(transpose.get())](auto &m) {
+        if (w)
+            w->activateEditor();
+    };
+
     partBlurb = std::make_unique<jcmp::TextEditor>();
     partBlurb->setAllText("");
     partBlurb->setMultiLine(true);

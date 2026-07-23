@@ -41,6 +41,7 @@
 #include "sst/jucegui/components/VSlider.h"
 #include "sst/jucegui/components/NamedPanelDivider.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 
 #include "sst/jucegui/layouts/ListLayout.h"
 
@@ -402,7 +403,7 @@ struct StepLFOPane : juce::Component, app::HasEditor
     std::unique_ptr<jcmp::Label> rateL, deformL, phaseL;
 
     std::unique_ptr<LfoPane::int16Attachment_t> stepsA;
-    std::unique_ptr<jcmp::DraggableTextEditableValue> stepsEd;
+    std::unique_ptr<jcmp::DraggableTextEditableDiscreteValue> stepsEd;
     std::unique_ptr<jcmp::GlyphPainter> stepsGlyph;
 
     std::unique_ptr<LfoPane::boolBaseAttachment_t> cycleA;
@@ -885,7 +886,8 @@ struct MiscPanel : juce::Component, HasEditor
         buildComponents();
     }
 
-    using intatt_t = connectors::PayloadDataAttachment<modulation::MiscSourceStorage, int32_t>;
+    using intatt_t =
+        connectors::DiscretePayloadDataAttachment<modulation::MiscSourceStorage, int32_t>;
 
     std::unique_ptr<jcmp::Label> phasorTitle, randomTitle;
     std::array<std::unique_ptr<jcmp::Label>, scxt::phasorsPerGroupOrZone> phasorABCs;
@@ -893,7 +895,8 @@ struct MiscPanel : juce::Component, HasEditor
     std::array<std::unique_ptr<jcmp::MenuButton>, scxt::phasorsPerGroupOrZone> syncButtons;
     std::array<std::unique_ptr<jcmp::MenuButton>, scxt::phasorsPerGroupOrZone> divButtons;
 
-    std::array<std::unique_ptr<jcmp::DraggableTextEditableValue>, scxt::phasorsPerGroupOrZone>
+    std::array<std::unique_ptr<jcmp::DraggableTextEditableDiscreteValue>,
+               scxt::phasorsPerGroupOrZone>
         numText, denText;
     std::array<std::unique_ptr<intatt_t>, scxt::phasorsPerGroupOrZone> numTextA, denTextA;
 
@@ -1019,57 +1022,29 @@ struct MiscPanel : juce::Component, HasEditor
     {
         void paint(juce::Graphics &g) override
         {
-            std::string msg;
-            if (continuous())
-            {
-                msg = continuous()->getValueAsString();
-                if (!displayUnits)
-                    msg = continuous()->getValueAsStringWithoutUnits();
-            }
+            auto msg = hasSource() ? displayString() : std::string();
             auto slp = msg.find("/");
 
-            if (underlyingEditor->isVisible())
+            // while the type-in is open, or when there is no n/d split to show,
+            // this is exactly the stock draggable text value
+            if (underlyingEditor->isVisible() || slp == std::string::npos)
             {
-                g.setColour(getColour(Styles::background));
-                if (isHovered)
-                    g.setColour(getColour(Styles::background_hover));
-                g.fillRoundedRectangle(getLocalBounds().toFloat(), 3.f);
-
+                paintFor(this, g);
                 return;
             }
 
-            g.setColour(getColour(Styles::background));
-            if (isHovered)
-                g.setColour(getColour(Styles::background_hover));
+            // this matches resized below
+            auto ls = getLocalBounds().withWidth(20);
+            auto rs = getLocalBounds().withWidth(20).translated(getWidth() - 20, 0);
 
-            if (slp == std::string::npos)
-            {
-                g.fillRoundedRectangle(getLocalBounds().toFloat(), 3.f);
-                g.setFont(getFont(Styles::labelfont));
-                g.setColour(getColour(
-                    Styles::value)); // on Hover, the text colour is intensionally the same.
-                g.drawText(msg, getLocalBounds(), juce::Justification::centred);
-            }
-            else
-            {
-                // this matches resized below
-                auto ls = getLocalBounds().withWidth(20);
-                auto rs = getLocalBounds().withWidth(20).translated(getWidth() - 20, 0);
+            paintBackgroundFor(this, g, ls);
+            paintBackgroundFor(this, g, rs);
+            paintValueTextFor(this, g, msg.substr(0, slp), ls);
+            paintValueTextFor(this, g, msg.substr(slp + 1), rs);
 
-                g.fillRoundedRectangle(ls.toFloat(), 3.f);
-                g.fillRoundedRectangle(rs.toFloat(), 3.f);
-
-                g.setFont(getFont(Styles::labelfont));
-                g.setColour(getColour(
-                    Styles::value)); // on Hover, the text colour is intensionally the same.
-                auto ns = msg.substr(0, slp);
-                auto ds = msg.substr(slp + 1);
-                g.drawText(ns, ls, juce::Justification::centred);
-                g.drawText(ds, rs, juce::Justification::centred);
-                g.setColour(style()->getColour(jcmp::Label::Styles::styleClass,
-                                               jcmp::Label::Styles::labelcolor));
-                g.drawText("/", getLocalBounds(), juce::Justification::centred);
-            }
+            g.setColour(style()->getColour(jcmp::Label::Styles::styleClass,
+                                           jcmp::Label::Styles::labelcolor));
+            g.drawText("/", getLocalBounds(), juce::Justification::centred);
         }
     };
 
@@ -1130,13 +1105,21 @@ struct MiscPanel : juce::Component, HasEditor
             const auto &dd =
                 scxt::datamodel::describeValue(ms.phasors[i], ms.phasors[i].denominator);
             numTextA[i] = std::make_unique<intatt_t>(nd, onChange, ms.phasors[i].numerator);
-            numText[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
+            numText[i] = std::make_unique<jcmp::DraggableTextEditableDiscreteValue>();
             numText[i]->setSource(numTextA[i].get());
+            numText[i]->onPopupMenu = [w = juce::Component::SafePointer(numText[i].get())](auto &) {
+                if (w)
+                    w->activateEditor();
+            };
             addChildComponent(*numText[i]);
 
             denTextA[i] = std::make_unique<intatt_t>(dd, onChange, ms.phasors[i].denominator);
-            denText[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
+            denText[i] = std::make_unique<jcmp::DraggableTextEditableDiscreteValue>();
             denText[i]->setSource(denTextA[i].get());
+            denText[i]->onPopupMenu = [w = juce::Component::SafePointer(denText[i].get())](auto &) {
+                if (w)
+                    w->activateEditor();
+            };
             addChildComponent(*denText[i]);
 
             phasorSlashes[i] = std::make_unique<jcmp::Label>();

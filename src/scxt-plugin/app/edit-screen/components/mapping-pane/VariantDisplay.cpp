@@ -181,16 +181,20 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
     auto attachSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
         auto at = std::make_unique<connectors::SamplePointDataAttachment>(
             v, [this](const auto &) { onSamplePointChangedFromGUI(); });
-        auto sl = std::make_unique<jcmp::DraggableTextEditableValue>();
+        auto sl = std::make_unique<jcmp::DraggableTextEditableDiscreteValue>();
         sl->setSource(at.get());
-        if (sampleEditors[c])
+        sl->onPopupMenu = [w = juce::Component::SafePointer(sl.get())](auto &) {
+            if (w)
+                w->activateEditor();
+        };
+        if (discreteSampleEditors[c])
         {
-            removeChildComponent(sampleEditors[c].get());
-            sampleEditors[c].reset();
+            removeChildComponent(discreteSampleEditors[c].get());
+            discreteSampleEditors[c].reset();
             sampleAttachments[c].reset();
         }
         addAndMakeVisible(*sl);
-        sampleEditors[c] = std::move(sl);
+        discreteSampleEditors[c] = std::move(sl);
         sampleAttachments[c] = std::move(at);
     };
 
@@ -257,16 +261,16 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
         return std::min(f, this->variantView.variants[this->selectedVariation].endLoop);
     };
 
-    editor->themeApplier.applyVariantLoopTheme(sampleEditors[startL].get());
+    editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[startL].get());
     addLabel(startL, "Start");
     attachSamplePoint(endL, "EndL", variantView.variants[selectedVariation].endLoop);
     sampleAttachments[endL]->precheckGuiAdjust = [this](auto f) {
         return std::max(f, this->variantView.variants[this->selectedVariation].startLoop);
     };
-    editor->themeApplier.applyVariantLoopTheme(sampleEditors[endL].get());
+    editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[endL].get());
     addLabel(endL, "End");
     attachSamplePoint(fadeL, "fadeL", variantView.variants[selectedVariation].loopFade);
-    editor->themeApplier.applyVariantLoopTheme(sampleEditors[fadeL].get());
+    editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[fadeL].get());
     addLabel(fadeL, "XF");
 
     attachToDummy(curve, "Curve", 'vcrv');
@@ -363,8 +367,12 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
             }
         },
         variantView.variants[selectedVariation].loopCountWhenCounted);
-    loopCnt = std::make_unique<jcmp::DraggableTextEditableValue>();
+    loopCnt = std::make_unique<jcmp::DraggableTextEditableDiscreteValue>();
     loopCnt->setSource(loopCntAttachment.get());
+    loopCnt->onPopupMenu = [w = juce::Component::SafePointer(loopCnt.get())](auto &) {
+        if (w)
+            w->activateEditor();
+    };
     addAndMakeVisible(*loopCnt);
 
     if (rebuildTabs)
@@ -449,7 +457,7 @@ void VariantDisplay::resized()
     for (const auto m : {startP, endP})
     {
         ofRow(labels[m], p.getWidth() - 72 - padding);
-        ofRow(sampleEditors[m], 72);
+        ofRow(discreteSampleEditors[m], 72);
         newRow("ctrl");
     }
 
@@ -468,16 +476,16 @@ void VariantDisplay::resized()
 
     ofRow(zoomButton, 16);
     ofRow(labels[startL], p.getWidth() - 72 - 16 - 2 * padding);
-    ofRow(sampleEditors[startL], 72);
+    ofRow(discreteSampleEditors[startL], 72);
     newRow("endL");
 
     ofRow(labels[endL], p.getWidth() - 72 - padding);
-    ofRow(sampleEditors[endL], 72);
+    ofRow(discreteSampleEditors[endL], 72);
     newRow("endL");
 
     // 25 34 18 40
     ofRow(labels[fadeL], 25);
-    ofRow(sampleEditors[fadeL], 34);
+    ofRow(discreteSampleEditors[fadeL], 34);
     addPad(7);
     ofRow(glyphLabels[curve], 18);
     ofRow(sampleEditors[curve], 40);
@@ -627,10 +635,10 @@ void VariantDisplay::rebuild()
     bool hasLoop = variantView.variants[selectedVariation].loopActive;
     loopModeButton->setEnabled(hasLoop);
     loopCnt->setEnabled(hasLoop);
-    sampleEditors[startL]->setVisible(hasLoop);
-    sampleEditors[endL]->setVisible(hasLoop);
+    discreteSampleEditors[startL]->setVisible(hasLoop);
+    discreteSampleEditors[endL]->setVisible(hasLoop);
 
-    sampleEditors[fadeL]->setVisible(hasLoop);
+    discreteSampleEditors[fadeL]->setVisible(hasLoop);
     sampleEditors[curve]->setVisible(hasLoop);
     zoomButton->setVisible(hasLoop);
     labels[startL]->setVisible(hasLoop);
