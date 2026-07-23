@@ -64,15 +64,47 @@ struct MacroValueAttachment : HasEditor, sst::jucegui::data::Continuous
     }
     void setValueFromModel(const float &) override {}
     float getDefaultValue() const override { return 0; }
-    bool isBipolar() const override { return macro().isBipolar; }
+    bool isBipolar() const override { return macro().isBipolar(); }
     float getMin() const override
     {
-        if (macro().isBipolar)
+        if (macro().isBipolar())
             return -1;
         else
             return 0;
     }
     float getMax() const override { return 1; }
+};
+
+struct MacroToggleAttachment : HasEditor, sst::jucegui::data::Discrete
+{
+    int part{-1}, index{-1};
+    MacroToggleAttachment(SCXTEditor *e, int p, int i) : HasEditor(e), part(p), index(i) {}
+
+    const engine::Macro &macro() const
+    {
+        assert(part >= 0 && part < scxt::numParts);
+        assert(index >= 0 && index < scxt::macrosPerPart);
+        return editor->macroCache[part][index];
+    }
+
+    engine::Macro &macro()
+    {
+        assert(part >= 0 && part < scxt::numParts);
+        assert(index >= 0 && index < scxt::macrosPerPart);
+        return editor->macroCache[part][index];
+    }
+
+    std::string getLabel() const override { return macro().name; }
+    int getValue() const override { return macro().value > 0.5 ? 1 : 0; }
+    void setValueFromGUI(const int &f) override
+    {
+        macro().setValueConstrained(f ? 1.f : 0.f);
+        sendToSerialization(scxt::messaging::client::SetMacroValue({part, index, macro().value}));
+    }
+    void setValueFromModel(const int &) override {}
+    int getMin() const override { return 0; }
+    int getMax() const override { return 1; }
+    std::string getValueAsStringFor(int i) const override { return i > 0 ? "On" : "Off"; }
 };
 
 struct NarrowVerticalMenu : HasEditor, juce::Component
@@ -158,6 +190,28 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
     valueAttachment = std::make_unique<MacroValueAttachment>(editor, part, index);
     knob->setSource(valueAttachment.get());
 
+    toggleButton = std::make_unique<sst::jucegui::components::ToggleButton>();
+    toggleButton->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH_WITH_BG);
+    toggleButton->setGlyph(sst::jucegui::components::GlyphPainter::SMALL_POWER_LIGHT);
+    addChildComponent(*toggleButton);
+
+    toggleButton->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(messaging::client::MacroBeginEndEdit({true, w->part, w->index}));
+    };
+    toggleButton->onEndEdit = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->sendToSerialization(messaging::client::MacroBeginEndEdit({false, w->part, w->index}));
+    };
+
+    sst::jucegui::component_adapters::setClapParamId(toggleButton.get(),
+                                                     engine::Macro::partIndexToMacroID(p, i));
+
+    toggleAttachment = std::make_unique<MacroToggleAttachment>(editor, part, index);
+    toggleButton->setSource(toggleAttachment.get());
+
     if (valueOnly)
     {
         macroNameLabel = std::make_unique<sst::jucegui::components::Label>();
@@ -188,8 +242,11 @@ SingleMacroEditor::~SingleMacroEditor() {}
 void SingleMacroEditor::changePart(int p, int i)
 {
     valueAttachment->part = p;
+    toggleAttachment->part = p;
     part = p;
     sst::jucegui::component_adapters::setClapParamId(knob.get(),
+                                                     engine::Macro::partIndexToMacroID(p, i));
+    sst::jucegui::component_adapters::setClapParamId(toggleButton.get(),
                                                      engine::Macro::partIndexToMacroID(p, i));
     repaint();
 }
@@ -209,11 +266,13 @@ void SingleMacroEditor::resized()
             kb = kb.reduced(overShoot / 2, 0);
         }
         knob->setBounds(kb);
+        toggleButton->setBounds(kb.reduced(2));
     }
     else
     {
         auto b = getLocalBounds();
         knob->setBounds(b.withHeight(b.getWidth()).reduced(15));
+        toggleButton->setBounds(b.withHeight(b.getWidth()).reduced(13));
         menuButton->setBounds(b.withWidth(12).withHeight(24).translated(0, 10));
         macroNameEditor->setBounds(
             b.withTrimmedTop(b.getWidth() - 12 + 3).withHeight(18).reduced(3, 0));
@@ -239,15 +298,21 @@ void SingleMacroEditor::showMenu()
     juce::PopupMenu p;
     p.addSectionHeader(macro.name);
     p.addSeparator();
-    p.addItem("Bipolar", true, macro.isBipolar, [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        auto &macro = w->editor->macroCache[w->part][w->index];
-        macro.setIsBipolar(!macro.isBipolar);
-        w->sendToSerialization(
-            scxt::messaging::client::SetMacroFullState({w->part, w->index, macro}));
-        w->repaint();
-    });
+    auto addMode = [this, &p, &macro](const std::string &label, engine::Macro::Mode mode) {
+        p.addItem(label, true, macro.mode == mode,
+                  [w = juce::Component::SafePointer(this), mode]() {
+                      if (!w)
+                          return;
+                      auto &macro = w->editor->macroCache[w->part][w->index];
+                      macro.setMode(mode);
+                      w->sendToSerialization(
+                          scxt::messaging::client::SetMacroFullState({w->part, w->index, macro}));
+                      w->updateFromEditorData();
+                  });
+    };
+    addMode("Unipolar", engine::Macro::UNIPOLAR);
+    addMode("Bipolar", engine::Macro::BIPOLAR);
+    addMode("Toggle", engine::Macro::TOGGLE);
     p.showMenuAsync(editor->defaultPopupMenuOptions(menuButton.get()));
 }
 void SingleMacroEditor::onStyleChanged()
@@ -283,6 +348,8 @@ void SingleMacroEditor::updateFromEditorData()
     {
         macroNameLabel->setText(macro.name);
     }
+    knob->setVisible(!macro.isToggle());
+    toggleButton->setVisible(macro.isToggle());
     repaint();
 }
 void SingleMacroEditor::textEditorReturnKeyPressed(juce::TextEditor &e)

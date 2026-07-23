@@ -513,7 +513,9 @@ bool SCXTPlugin::paramsInfo(uint32_t paramIndex, clap_param_info *info) const no
         strncpy(info->module, moduleName.c_str(), CLAP_NAME_SIZE);
         info->min_value = 0;
         info->max_value = 1;
-        info->default_value = (macro.isBipolar ? 0.5 : 0);
+        info->default_value = (macro.isBipolar() ? 0.5 : 0);
+        if (macro.isToggle())
+            info->flags |= CLAP_PARAM_IS_STEPPED;
         return true;
     }
     return false;

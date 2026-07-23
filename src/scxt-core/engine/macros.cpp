@@ -29,5 +29,27 @@
 
 namespace scxt::engine
 {
+std::string Macro::toStringMode(const Mode &m)
+{
+    switch (m)
+    {
+    case UNIPOLAR:
+        return "unipolar";
+    case BIPOLAR:
+        return "bipolar";
+    case TOGGLE:
+        return "toggle";
+    }
+    return "unipolar";
+}
 
+Macro::Mode Macro::fromStringMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Macro::Mode, Macro::toStringMode>(Macro::Mode::UNIPOLAR,
+                                                                            Macro::Mode::TOGGLE);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return UNIPOLAR;
+    return p->second;
+}
 } // namespace scxt::engine

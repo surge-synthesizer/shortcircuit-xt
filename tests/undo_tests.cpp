@@ -245,25 +245,25 @@ TEST_CASE("Macro full state undo/redo", "[undo]")
     UndoFixture f;
     auto &macro = f.engine().getPatch()->getPart(0)->macros[0];
     auto originalName = macro.name;
-    auto originalBipolar = macro.isBipolar;
+    auto originalMode = macro.mode;
 
     scxt::engine::Macro newMacro = macro;
     newMacro.name = "Brightness";
-    newMacro.isBipolar = true;
+    newMacro.setMode(scxt::engine::Macro::BIPOLAR);
 
     f.send(cmsg::SetMacroFullState({(int16_t)0, (int16_t)0, newMacro}));
     REQUIRE(macro.name == "Brightness");
-    REQUIRE(macro.isBipolar == true);
+    REQUIRE(macro.mode == scxt::engine::Macro::BIPOLAR);
     REQUIRE(f.undoManager().hasUndoSteps());
 
     f.sendUndo();
     REQUIRE(macro.name == originalName);
-    REQUIRE(macro.isBipolar == originalBipolar);
+    REQUIRE(macro.mode == originalMode);
     REQUIRE(f.undoManager().hasRedoSteps());
 
     f.sendRedo();
     REQUIRE(macro.name == "Brightness");
-    REQUIRE(macro.isBipolar == true);
+    REQUIRE(macro.mode == scxt::engine::Macro::BIPOLAR);
 }
 
 TEST_CASE("Zone mapping gesture coalesces to one undo", "[undo]")
