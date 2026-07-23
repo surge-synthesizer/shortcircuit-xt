@@ -220,12 +220,12 @@ SC_STREAMDEF(scxt::engine::Engine::PGZStructureBundle,
                  findOrSet(v, "features", 0, to.features);
              }));
 
+STREAM_ENUM(engine::Macro::Mode, engine::Macro::toStringMode, engine::Macro::fromStringMode);
+
 SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
                  v = {{"p", t.part}, {"i", t.index}, {"v", t.value}};
 
-                 addUnlessDefault<val_t>(v, "bp", false, t.isBipolar);
-                 addUnlessDefault<val_t>(v, "st", false, t.isStepped);
-                 addUnlessDefault<val_t>(v, "sc", (size_t)1, t.stepCount);
+                 addUnlessDefault<val_t>(v, "md", scxt::engine::Macro::UNIPOLAR, t.mode);
                  addUnlessDefault<val_t>(v, "nm", scxt::engine::Macro::defaultNameFor(t.index),
                                          t.name);
              }),
@@ -233,9 +233,13 @@ SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
                  findIf(v, "v", result.value);
                  findIf(v, "i", result.index);
                  findIf(v, "p", result.part);
-                 findOrSet(v, "bp", false, result.isBipolar);
-                 findOrSet(v, "st", false, result.isStepped);
-                 findOrSet(v, "sc", 1, result.stepCount);
+                 // "bp" is the pre-mode bipolar flag; "md" wins when present
+                 bool legacyBipolar{false};
+                 findOrSet(v, "bp", false, legacyBipolar);
+                 findOrSet(v, "md",
+                           legacyBipolar ? scxt::engine::Macro::BIPOLAR
+                                         : scxt::engine::Macro::UNIPOLAR,
+                           result.mode);
                  findOrSet(v, "nm", scxt::engine::Macro::defaultNameFor(result.index), result.name);
              }));
 

@@ -31,6 +31,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/Label.h"
+#include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/style/StyleAndSettingsConsumer.h"
 #include "sst/jucegui/util/VisibilityParentWatcher.h"
 #include "app/HasEditor.h"
@@ -39,13 +40,16 @@
 namespace scxt::ui::app::shared
 {
 struct MacroValueAttachment;
+struct MacroToggleAttachment;
 struct SingleMacroEditor : HasEditor,
                            juce::Component,
                            juce::TextEditor::Listener,
                            sst::jucegui::style::StyleConsumer
 {
     std::unique_ptr<MacroValueAttachment> valueAttachment;
+    std::unique_ptr<MacroToggleAttachment> toggleAttachment;
     std::unique_ptr<sst::jucegui::components::Knob> knob;
+    std::unique_ptr<sst::jucegui::components::ToggleButton> toggleButton;
     std::unique_ptr<juce::Component> menuButton;
     std::unique_ptr<juce::TextEditor> macroNameEditor;
     std::unique_ptr<sst::jucegui::components::Label> macroNameLabel;

@@ -134,7 +134,8 @@ inline void updateMacroValue(const macroValue_t &t, engine::Engine &engine, Mess
             // Set the value
             auto &partO = e.getPatch()->getPart(part); // ->macros[index];
             partO->macroLagHandler.setTargetOnMacro(index, value);
-            if (!partO->isActive())
+            // toggles switch immediately; lagging a two state value just delays it
+            if (!partO->isActive() || partO->macros[index].isToggle())
                 partO->macroLagHandler.instantlySnap();
             // macro.setValueConstrained(value);
         },

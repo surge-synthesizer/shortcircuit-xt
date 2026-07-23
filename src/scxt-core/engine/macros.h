@@ -29,6 +29,7 @@
 #define SCXT_SRC_SCXT_CORE_ENGINE_MACROS_H
 
 #include <cassert>
+#include <cctype>
 #include <cstdint>
 #include <cstddef>
 #include <algorithm>
@@ -37,6 +38,7 @@
 
 #include "sst/basic-blocks/params/ParamMetadata.h"
 #include "configuration.h"
+#include "utils.h"
 
 namespace scxt::engine
 {
@@ -46,22 +48,35 @@ struct Macro
 
     int16_t part{-1}, index{-1};
 
-    bool isBipolar{false}; // The value is expected in range -1..1
-    bool isStepped{false}; // The value has discrete stepped value
-    size_t stepCount{1};   // how many steps between min and max.
-                           // So 1 means a 0..1 or -1..1 toggle
+    enum Mode
+    {
+        UNIPOLAR, // 0 .. 1
+        BIPOLAR,  // -1 .. 1
+        TOGGLE,   // 0 or 1 only; snapped at 0.5
+    } mode{UNIPOLAR};
+    DECLARE_ENUM_STRING(Mode);
+
     std::string name{};
 
-    void setIsBipolar(bool b)
+    bool isBipolar() const { return mode == BIPOLAR; }
+    bool isToggle() const { return mode == TOGGLE; }
+
+    void setMode(Mode m)
     {
-        isBipolar = b;
+        mode = m;
         setValueConstrained(value);
     }
-    void setValueConstrained(float f) { value = std::clamp(f, isBipolar ? -1.f : 0.f, 1.f); }
+    void setValueConstrained(float f)
+    {
+        if (mode == TOGGLE)
+            value = (f > 0.5f ? 1.f : 0.f);
+        else
+            value = std::clamp(f, isBipolar() ? -1.f : 0.f, 1.f);
+    }
     void setValue01(float f)
     {
         assert(f >= 0.f && f <= 1.f);
-        if (isBipolar)
+        if (isBipolar())
         {
             setValueConstrained(f * 2 - 1.0);
         }
@@ -73,7 +88,7 @@ struct Macro
     float getValue01For(float vv) const
     {
         float res = vv;
-        if (isBipolar)
+        if (isBipolar())
         {
             res = (res + 1) * 0.5;
         }
@@ -83,24 +98,39 @@ struct Macro
 
     float valueFromString(const std::string &s) const
     {
+        if (mode == TOGGLE)
+            return boolFromString(s) ? 1.f : 0.f;
         auto sv = std::atof(s.c_str());
-        return std::clamp((float)sv, isBipolar ? -1.f : 0.f, 1.f);
+        return std::clamp((float)sv, isBipolar() ? -1.f : 0.f, 1.f);
     }
 
     float value01FromString(const std::string &s) const
     {
         auto v = valueFromString(s);
-        if (isBipolar)
+        if (isBipolar())
             v = (v + 1) * 0.5;
         return v;
     }
 
     std::string value01ToString(float dv) const
     {
+        if (mode == TOGGLE)
+            return dv > 0.5f ? "On" : "Off";
         auto fv = dv;
-        if (isBipolar)
+        if (isBipolar())
             fv = fv * 2 - 1;
         return fmt::format("{:.4f}", fv);
+    }
+
+    static bool boolFromString(const std::string &s)
+    {
+        auto t = s;
+        std::transform(t.begin(), t.end(), t.begin(), [](auto c) { return std::tolower(c); });
+        if (t == "on" || t == "true" || t == "yes")
+            return true;
+        if (t == "off" || t == "false" || t == "no")
+            return false;
+        return std::atof(t.c_str()) > 0.5;
     }
 
     static std::string defaultNameFor(int index) { return "Macro " + std::to_string(index + 1); }
