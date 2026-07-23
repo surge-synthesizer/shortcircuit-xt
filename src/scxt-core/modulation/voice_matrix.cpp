@@ -95,7 +95,8 @@ const datamodel::pmd playbackRatioMetadata =
     datamodel::pmd().asFloat().withRange(0, 2).withLinearScaleFormatting("x");
 const datamodel::pmd startPosMetadata =
     datamodel::pmd().asPercentBipolar().withName("Start Pos Adjustment");
-const datamodel::pmd playSampleMetadata = datamodel::pmd().asBool().withName("Sample Playing Gate");
+const datamodel::pmd playSampleMetadata =
+    datamodel::pmd().asOnOffBool().withName("Sample Playing Gate");
 const datamodel::pmd sampleTuneMetadata =
     datamodel::pmd().asSemitoneRange().withName("Sample Tune").withDefault(0.0);
 } // namespace

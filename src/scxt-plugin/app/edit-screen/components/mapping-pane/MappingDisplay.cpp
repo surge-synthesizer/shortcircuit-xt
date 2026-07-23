@@ -103,11 +103,11 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
         ffac::attachAndAdd(mappingView, v, this, a, w);
     };
 
-    iAdd(mappingView.rootKey, intAttachments.RootKey, textEds.RootKey);
+    iAdd(mappingView.rootKey, intAttachments.RootKey, discreteTextEds.RootKey);
     makeLabel(labels.RootKey, "Root Key");
 
-    iAddConstrained(mappingView.keyboardRange.keyStart, intAttachments.KeyStart, textEds.KeyStart,
-                    [w = juce::Component::SafePointer(this)](auto v) {
+    iAddConstrained(mappingView.keyboardRange.keyStart, intAttachments.KeyStart,
+                    discreteTextEds.KeyStart, [w = juce::Component::SafePointer(this)](auto v) {
                         if (!w)
                             return true;
                         return v <= w->mappingView.keyboardRange.keyEnd;
@@ -178,55 +178,59 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
             sendToSerialization(cmsg::RequestZoneMapping({editor->selectedPart}));
         };
     };
-    addDeltas(intAttachments.KeyStart, textEds.KeyStart,
+    addDeltas(intAttachments.KeyStart, discreteTextEds.KeyStart,
               engine::Zone::ChangeDimension::KEY_RANGE_START);
 
-    iAddConstrained(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, textEds.KeyEnd,
+    iAddConstrained(mappingView.keyboardRange.keyEnd, intAttachments.KeyEnd, discreteTextEds.KeyEnd,
                     [w = juce::Component::SafePointer(this)](auto v) {
                         if (!w)
                             return true;
                         return v >= w->mappingView.keyboardRange.keyStart;
                     });
-    addDeltas(intAttachments.KeyEnd, textEds.KeyEnd, engine::Zone::ChangeDimension::KEY_RANGE_END);
+    addDeltas(intAttachments.KeyEnd, discreteTextEds.KeyEnd,
+              engine::Zone::ChangeDimension::KEY_RANGE_END);
 
     makeLabel(labels.KeyStart, "Key Range");
-    iAdd(mappingView.keyboardRange.fadeStart, intAttachments.FadeStart, textEds.FadeStart);
-    addDeltas(intAttachments.FadeStart, textEds.FadeStart,
+    iAdd(mappingView.keyboardRange.fadeStart, intAttachments.FadeStart, discreteTextEds.FadeStart);
+    addDeltas(intAttachments.FadeStart, discreteTextEds.FadeStart,
               engine::Zone::ChangeDimension::KEY_FADE_START);
 
-    iAdd(mappingView.keyboardRange.fadeEnd, intAttachments.FadeEnd, textEds.FadeEnd);
-    addDeltas(intAttachments.FadeEnd, textEds.FadeEnd, engine::Zone::ChangeDimension::KEY_FADE_END);
+    iAdd(mappingView.keyboardRange.fadeEnd, intAttachments.FadeEnd, discreteTextEds.FadeEnd);
+    addDeltas(intAttachments.FadeEnd, discreteTextEds.FadeEnd,
+              engine::Zone::ChangeDimension::KEY_FADE_END);
     makeLabel(labels.FadeStart, "Key XFade");
 
-    iAddConstrained(mappingView.velocityRange.velStart, intAttachments.VelStart, textEds.VelStart,
-                    [w = juce::Component::SafePointer(this)](auto v) {
+    iAddConstrained(mappingView.velocityRange.velStart, intAttachments.VelStart,
+                    discreteTextEds.VelStart, [w = juce::Component::SafePointer(this)](auto v) {
                         if (!w)
                             return true;
                         return v <= w->mappingView.velocityRange.velEnd;
                     });
-    addDeltas(intAttachments.VelStart, textEds.VelStart,
+    addDeltas(intAttachments.VelStart, discreteTextEds.VelStart,
               engine::Zone::ChangeDimension::VEL_RANGE_START);
-    iAddConstrained(mappingView.velocityRange.velEnd, intAttachments.VelEnd, textEds.VelEnd,
+    iAddConstrained(mappingView.velocityRange.velEnd, intAttachments.VelEnd, discreteTextEds.VelEnd,
                     [w = juce::Component::SafePointer(this)](auto v) {
                         if (!w)
                             return true;
                         return v >= w->mappingView.velocityRange.velStart;
                     });
-    addDeltas(intAttachments.VelEnd, textEds.VelEnd, engine::Zone::ChangeDimension::VEL_RANGE_END);
+    addDeltas(intAttachments.VelEnd, discreteTextEds.VelEnd,
+              engine::Zone::ChangeDimension::VEL_RANGE_END);
 
     makeLabel(labels.VelStart, "Vel Range");
 
-    iAdd(mappingView.velocityRange.fadeStart, intAttachments.VelFadeStart, textEds.VelFadeStart);
-    addDeltas(intAttachments.VelFadeStart, textEds.VelFadeStart,
+    iAdd(mappingView.velocityRange.fadeStart, intAttachments.VelFadeStart,
+         discreteTextEds.VelFadeStart);
+    addDeltas(intAttachments.VelFadeStart, discreteTextEds.VelFadeStart,
               engine::Zone::ChangeDimension::VEL_FADE_START);
-    iAdd(mappingView.velocityRange.fadeEnd, intAttachments.VelFadeEnd, textEds.VelFadeEnd);
-    addDeltas(intAttachments.VelFadeEnd, textEds.VelFadeEnd,
+    iAdd(mappingView.velocityRange.fadeEnd, intAttachments.VelFadeEnd, discreteTextEds.VelFadeEnd);
+    addDeltas(intAttachments.VelFadeEnd, discreteTextEds.VelFadeEnd,
               engine::Zone::ChangeDimension::VEL_FADE_END);
 
     makeLabel(labels.VelFadeStart, "Vel XFade");
 
-    iAdd(mappingView.pbDown, intAttachments.PBDown, textEds.PBDown);
-    iAdd(mappingView.pbUp, intAttachments.PBUp, textEds.PBUp);
+    iAdd(mappingView.pbDown, intAttachments.PBDown, discreteTextEds.PBDown);
+    iAdd(mappingView.pbUp, intAttachments.PBUp, discreteTextEds.PBUp);
     makeLabel(labels.PBDown, "Pitch Bend");
 
     fAdd(mappingView.amplitude, floatAttachments.Level, textEds.Level);
@@ -332,36 +336,36 @@ void MappingDisplay::resized()
     };
 
     labels.RootKey->setBounds(spl(0, 0, 169, 16));
-    textEds.RootKey->setBounds(sp(169, 0, 32, 16));
+    discreteTextEds.RootKey->setBounds(sp(169, 0, 32, 16));
 
     labels.KeyStart->setBounds(spl(0, 24, 129, 16));
-    textEds.KeyStart->setBounds(sp(129, 24, 32, 16));
+    discreteTextEds.KeyStart->setBounds(sp(129, 24, 32, 16));
     rules[KeyHSep]->setBounds(spr(161, 24, 8, 16));
-    textEds.KeyEnd->setBounds(sp(169, 24, 32, 16));
+    discreteTextEds.KeyEnd->setBounds(sp(169, 24, 32, 16));
 
     labels.FadeStart->setBounds(spl(0, 48, 129, 16));
-    textEds.FadeStart->setBounds(sp(129, 48, 32, 16));
-    textEds.FadeEnd->setBounds(sp(169, 48, 32, 16));
+    discreteTextEds.FadeStart->setBounds(sp(129, 48, 32, 16));
+    discreteTextEds.FadeEnd->setBounds(sp(169, 48, 32, 16));
 
     rules[KeyVSepLo]->setBounds(spr(141, 40, 8, 8));
     rules[KeyVSepHi]->setBounds(spr(181, 40, 8, 8));
 
     labels.VelStart->setBounds(spl(0, 72, 129, 16));
-    textEds.VelStart->setBounds(sp(129, 72, 32, 16));
+    discreteTextEds.VelStart->setBounds(sp(129, 72, 32, 16));
     rules[VelHSep]->setBounds(spr(161, 72, 8, 16));
-    textEds.VelEnd->setBounds(sp(169, 72, 32, 16));
+    discreteTextEds.VelEnd->setBounds(sp(169, 72, 32, 16));
 
     labels.VelFadeStart->setBounds(spl(0, 96, 129, 16));
-    textEds.VelFadeStart->setBounds(sp(129, 96, 32, 16));
-    textEds.VelFadeEnd->setBounds(sp(169, 96, 32, 16));
+    discreteTextEds.VelFadeStart->setBounds(sp(129, 96, 32, 16));
+    discreteTextEds.VelFadeEnd->setBounds(sp(169, 96, 32, 16));
 
     rules[VelVSepLo]->setBounds(spr(141, 88, 8, 8));
     rules[VelVSepHi]->setBounds(spr(181, 88, 8, 8));
 
     labels.PBDown->setBounds(spl(0, 120, 129, 16));
-    textEds.PBDown->setBounds(sp(129, 120, 32, 16));
+    discreteTextEds.PBDown->setBounds(sp(129, 120, 32, 16));
     rules[PBHSep]->setBounds(spr(161, 120, 8, 16));
-    textEds.PBUp->setBounds(sp(169, 120, 32, 16));
+    discreteTextEds.PBUp->setBounds(sp(169, 120, 32, 16));
 
     glyphs.Pitch->setBounds(sp(135, 146, 16, 16));
     textEds.Pitch->setBounds(sp(153, 146, 48, 16));

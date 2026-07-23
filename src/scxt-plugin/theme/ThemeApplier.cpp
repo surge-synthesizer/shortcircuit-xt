@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/MultiSwitch.h"
 #include "sst/jucegui/components/Knob.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 #include "sst/jucegui/components/ToolTip.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/JogUpDownButton.h"
@@ -270,6 +271,8 @@ void ThemeApplier::applyZoneMultiScreenModulationTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::HSliderFilled>(detail::edit::zone::ModulationHSliderFilled);
     map.addCustomClass<jcmp::DraggableTextEditableValue>(
         detail::edit::zone::ModulationDraggableTextEditableValue);
+    map.addCustomClass<jcmp::DraggableTextEditableDiscreteValue>(
+        detail::edit::zone::ModulationDraggableTextEditableValue);
     populateSharedGroupZoneMultiModulation(map);
     map.applyMapTo(toThis);
 }
@@ -291,6 +294,8 @@ void ThemeApplier::applyGroupMultiScreenModulationTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::Knob>(detail::edit::group::ModulationKnob);
     map.addCustomClass<jcmp::DraggableTextEditableValue>(
         detail::edit::group::ModulationDraggableTextEditableValue);
+    map.addCustomClass<jcmp::DraggableTextEditableDiscreteValue>(
+        detail::edit::group::ModulationDraggableTextEditableValue);
     map.addCustomClass<jcmp::HSliderFilled>(detail::edit::group::ModulationHSliderFilled);
     populateSharedGroupZoneMultiModulation(map);
     map.applyMapTo(toThis);
@@ -303,6 +308,8 @@ void ThemeApplier::applyGroupMultiScreenTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::Knob>(detail::edit::group::Knob);
     map.addCustomClass<jcmp::DraggableTextEditableValue>(
         detail::edit::group::DraggableTextEditableValue);
+    map.addCustomClass<jcmp::DraggableTextEditableDiscreteValue>(
+        detail::edit::group::DraggableTextEditableValue);
     map.applyMapTo(toThis);
 }
 
@@ -310,6 +317,8 @@ void ThemeApplier::applyVariantLoopTheme(juce::Component *toThis)
 {
     jstl::CustomTypeMap map;
     map.addCustomClass<jcmp::DraggableTextEditableValue>(
+        detail::edit::variant::DraggableTextEditableValue);
+    map.addCustomClass<jcmp::DraggableTextEditableDiscreteValue>(
         detail::edit::variant::DraggableTextEditableValue);
     map.addCustomClass<jcmp::ToggleButton>(detail::edit::variant::ToggleButton);
     map.applyMapTo(toThis);

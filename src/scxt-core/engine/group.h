@@ -429,7 +429,7 @@ SC_DESCRIBE(
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_par3, "P3"},
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_bypass, "BYP"},
                           }));
-    SC_FIELD(oversample, pmd().asBool().withName("Oversample"));
+    SC_FIELD(oversample, pmd().asOnOffBool().withName("Oversample"));
     SC_FIELD(velocitySensitivity,
              pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));
     SC_FIELD(glideTime, pmd().as25SecondExpTime().withDefault(0.f).withName("Glide Time"));)

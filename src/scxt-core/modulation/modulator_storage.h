@@ -350,7 +350,7 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                   {modulation::ModulatorStorage::RELEASE, "RELEASE"},
                                   {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},
                               }));
-    SC_FIELD(temposync, pmd().asBool().withName("Temposync"));
+    SC_FIELD(temposync, pmd().asOnOffBool().withName("Temposync"));
     SC_FIELD(rate, pmd().asLfoRate().withName("Rate"));
     SC_FIELD(amplitude,
              pmd().asPercent().withName("Amplitude").withSupportsMultiplicativeModulation());
@@ -371,7 +371,7 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                  .withDefault(16)
                  .withName("Step Count"));
     SC_FIELD(stepLfoStorage.rateIsForSingleStep, pmd()
-                                                     .asBool()
+                                                     .asOnOffBool()
                                                      .withName("Cycle")
                                                      .withCustomMinDisplay("RATE: CYCLE")
                                                      .withCustomMaxDisplay("RATE: STEP"));
@@ -381,8 +381,8 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
     SC_FIELD(curveLfoStorage.delay, envTime().withDefault(0).withName("Delay"));
     SC_FIELD(curveLfoStorage.attack, envTime().withDefault(0).withName("Attack"));
     SC_FIELD(curveLfoStorage.release, envTime().withDefault(1).withName("Release"));
-    SC_FIELD(curveLfoStorage.unipolar, pmd().asBool().withName("Unipolar"));
-    SC_FIELD(curveLfoStorage.useenv, pmd().asBool().withName("Use Envelope"));
+    SC_FIELD(curveLfoStorage.unipolar, pmd().asOnOffBool().withName("Unipolar"));
+    SC_FIELD(curveLfoStorage.useenv, pmd().asOnOffBool().withName("Use Envelope"));
 
     SC_FIELD(envLfoStorage.delay, envTime().withDefault(0).withName("Delay"));
     SC_FIELD(envLfoStorage.attack, envTime().withDefault(0).withName("Attack"));
@@ -404,7 +404,7 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                         .withFeature(pmd::Features::BELOW_ONE_IS_INVERSE_FRACTION)
                                         .withFeature(pmd::Features::ALLOW_FRACTIONAL_TYPEINS)
                                         .withName("Rate Multiplier"));
-    SC_FIELD(envLfoStorage.loop, pmd().asBool().withDefault(0.0).withName("Loop"));
+    SC_FIELD(envLfoStorage.loop, pmd().asOnOffBool().withDefault(0.0).withName("Loop"));
 });
 
 SC_DESCRIBE(scxt::modulation::modulators::PhasorStorage,
@@ -439,7 +439,7 @@ SC_DESCRIBE(scxt::modulation::AudioSourceStorage,
             SC_FIELD_ARRAY_MEMBER(followers, gain, envFollowersPerGroupOrZone,
                                   pmd().asFloat().asDecibelWithRange(-36.f, 36.f).withName("Gain"));
             SC_FIELD_ARRAY_MEMBER(followers, stereoLink, envFollowersPerGroupOrZone,
-                                  pmd().asBool().withDefault(false).withName("Stereo Link"));
+                                  pmd().asOnOffBool().withDefault(false).withName("Stereo Link"));
             SC_FIELD_ARRAY_MEMBER(
                 followers, followSource, envFollowersPerGroupOrZone,
                 pmd()

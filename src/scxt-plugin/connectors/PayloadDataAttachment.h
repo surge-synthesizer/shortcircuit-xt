@@ -33,9 +33,13 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <algorithm>
+#include <limits>
+#include <cmath>
 #include "sst/jucegui/data/Continuous.h"
 #include "sst/jucegui/data/Discrete.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 #include "datamodel/metadata.h"
 #include "sample/sample.h"
 #include "app/HasEditor.h"
@@ -400,6 +404,8 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     std::function<void(const onGui_t &at)> onGuiValueChanged;
     // reports a user-visible error (title, message); set by configureUpdater
     std::function<void(const std::string &, const std::string &)> onError{nullptr};
+    // when set, widget begin-edit sends the tagged undo snapshot message
+    std::function<void()> sendBeginEdit{nullptr};
 
     DiscretePayloadDataAttachment(const datamodel::pmd &cd,
                                   std::function<void(const onGui_t &at)> oGVC, ValueType &v)
@@ -439,13 +445,85 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
 
     int getMin() const override { return (int)description.minVal; }
     int getMax() const override { return (int)description.maxVal; }
+    int getDefaultValue() const override { return (int)description.defaultVal; }
 
+    sst::basic_blocks::params::ParamMetaData::FeatureState getFeatureState() const
+    {
+        return sst::basic_blocks::params::ParamMetaData::FeatureState();
+    }
+
+    std::function<std::string(int)> valueToString{nullptr};
+
+    /*
+     * A pmd that carries display labels must declare supportsStringConversion, or
+     * it renders here as a raw integer. Note asBool() alone does NOT set it, so a
+     * labelled bool wants asOnOffBool() (custom min/max displays still win over
+     * the on/off map -- see ParamMetaData::valueToString, the BOOL branch).
+     */
     std::string getValueAsStringFor(int i) const override
     {
-        auto r = description.valueToString((float)i);
-        if (r.has_value())
-            return *r;
-        return "";
+        if (description.supportsStringConversion)
+        {
+            auto res = description.valueToString((float)i, getFeatureState());
+            if (res.has_value())
+                return *res;
+        }
+        if (valueToString)
+            return valueToString(i);
+        return sst::jucegui::data::Discrete::getValueAsStringFor(i);
+    }
+
+    std::string getValueAsStringWithoutUnitsFor(int i) const override
+    {
+        if (description.supportsStringConversion)
+        {
+            auto res = description.valueToString((float)i, getFeatureState().withNoUnits(true));
+            if (res.has_value())
+                return *res;
+        }
+        if (valueToString)
+            return valueToString(i);
+        return sst::jucegui::data::Discrete::getValueAsStringWithoutUnitsFor(i);
+    }
+
+    std::optional<std::string> getValueAlternateAsStringFor(int i) const override
+    {
+        if (description.supportsStringConversion)
+            return description.valueToAlternateString((float)i, getFeatureState());
+        return std::nullopt;
+    }
+
+    std::function<std::optional<float>(const std::string &)> stringToValue{nullptr};
+    void setValueAsString(const std::string &s) override
+    {
+        if (description.supportsStringConversion)
+        {
+            std::string em;
+            auto res = description.valueFromString(s, em);
+            if (res.has_value())
+            {
+                setValueFromGUI((int)std::round(*res));
+                return;
+            }
+            else
+            {
+                if (onError)
+                    onError(label + ": Invalid Value", em);
+                else
+                    SCLOG_IF(debug, em);
+                return;
+            }
+        }
+        if (stringToValue)
+        {
+            auto f = stringToValue(s);
+            if (f.has_value())
+            {
+                setValueFromGUI((int)std::round(*f));
+                return;
+            }
+        }
+        sst::jucegui::data::Discrete::setValueAsString(s);
     }
 
     void andThenOnGui(std::function<void(const DiscretePayloadDataAttachment &)> f)
@@ -543,7 +621,7 @@ struct DirectBooleanPayloadDataAttachment : sst::jucegui::data::Discrete
     std::string getValueAsStringFor(int i) const override { return i == 0 ? "Off" : "On"; }
 };
 
-struct SamplePointDataAttachment : sst::jucegui::data::Continuous
+struct SamplePointDataAttachment : sst::jucegui::data::Discrete
 {
     int64_t &value;
     std::string label;
@@ -551,36 +629,54 @@ struct SamplePointDataAttachment : sst::jucegui::data::Continuous
     std::function<void(const SamplePointDataAttachment &)> onGuiChanged{nullptr};
     std::function<int64_t(int64_t)> precheckGuiAdjust{nullptr};
 
+    // Frames advanced per jog. 0 => auto (sampleCount / 4096), so one wheel notch
+    // or arrow key is a useful nudge regardless of sample length. Left settable so
+    // a future waveform-zoom hook can drive it; shift-drag still gives one frame.
+    int64_t jogIncrement{0};
+
     SamplePointDataAttachment(int64_t &v,
                               std::function<void(const SamplePointDataAttachment &)> ogc)
         : value(v), onGuiChanged(ogc)
     {
+        setJogWrapsAtEnd(false);
     }
 
-    float getValue() const override { return value; }
-    std::string getValueAsStringFor(float f) const override
+    int getValue() const override { return (int)value; }
+    std::string getValueAsStringFor(int i) const override
     {
-        if (f < 0)
+        if (i < 0)
             return "";
-        return fmt::format("{}", (int64_t)f);
+        return fmt::format("{}", (int64_t)i);
     }
-    void setValueFromGUI(const float &ff) override
+    void setValueFromGUI(const int &fi) override
     {
-        auto f = ff;
+        int64_t f = fi;
         if (precheckGuiAdjust)
         {
-            f = precheckGuiAdjust(ff);
+            f = precheckGuiAdjust(f);
         }
-        value = (int64_t)f;
+        value = f;
         if (onGuiChanged)
             onGuiChanged(*this);
     }
     std::string getLabel() const override { return label; }
-    float getQuantizedStepSize() const override { return 1; }
-    float getMin() const override { return -1; }
-    float getMax() const override { return sampleCount; }
-    float getDefaultValue() const override { return 0; }
-    void setValueFromModel(const float &f) override
+    int getMin() const override { return -1; }
+    // clamp the (int64) frame count into int range rather than narrowing silently;
+    // >2^31 frames is ~12h at 48k and not a practical sample length.
+    int getMax() const override
+    {
+        return (int)std::min<int64_t>(sampleCount, std::numeric_limits<int>::max());
+    }
+    int getDefaultValue() const override { return 0; }
+
+    void jog(int dir) override
+    {
+        auto inc = jogIncrement > 0 ? jogIncrement : std::max<int64_t>(1, sampleCount / 4096);
+        auto nv = std::clamp<int64_t>(value + (int64_t)dir * inc, getMin(), getMax());
+        setValueFromGUI((int)nv);
+    }
+
+    void setValueFromModel(const int &f) override
     {
         value = (int64_t)f;
         for (auto *l : guilisteners)
@@ -604,13 +700,14 @@ template <typename A, typename Msg, typename ABase = A> struct SingleValueFactor
             typename std::remove_cv<typename std::remove_reference<decltype(val)>::type>::type,
             float>;
         constexpr bool isText =
-            std::is_same_v<W, sst::jucegui::components::DraggableTextEditableValue>;
+            std::is_same_v<W, sst::jucegui::components::DraggableTextEditableValue> ||
+            std::is_same_v<W, sst::jucegui::components::DraggableTextEditableDiscreteValue>;
 
         if constexpr (isText)
         {
-            // A draggable text value still drags like a continuous control, so
-            // wire its begin/end-edit (which drives the undo gesture) and
-            // tooltips, then override the popup to open the inline editor.
+            // A draggable text value drags/types like a plain control, so wire its
+            // begin/end-edit (which drives the undo gesture) and tooltips, then
+            // override the popup to open the inline editor instead of a menu.
             if (showTT)
                 e->setupFloatWidget(wid.get(), att.get());
             else
