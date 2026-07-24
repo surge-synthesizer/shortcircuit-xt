@@ -156,16 +156,25 @@ void Voice::voiceStarted()
         {
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
             curveLfos[i].assign(&zone->modulatorStorage[i], &engine->transport);
-            curveLfos[i].attack(ms.start_phase, *endpoints->lfo[i].curve.delayP, ms.modulatorShape);
         }
         else if (lfoEvaluator[i] == ENV)
         {
             envLfos[i].setSampleRate(sampleRate, sampleRateInv);
-            envLfos[i].attack(*endpoints->lfo[i].env.delayP, *endpoints->lfo[i].env.attackP);
         }
         else
         {
             SCLOG_IF(warnings, "Unimplemented modulator shape " << ms.modulatorShape);
+        }
+
+        // RELEASE holds off until the key comes up; everything else starts here.
+        if (ms.triggerMode == scxt::modulation::ModulatorStorage::RELEASE)
+        {
+            lfoTrigger[i] = {false, true};
+            silenceLFO(i);
+        }
+        else
+        {
+            startLFO(i, ms, engine->transport, engine->rng, endpoints->lfo[i]);
         }
     }
 
@@ -248,63 +257,8 @@ template <bool OS> bool Voice::processWithOS()
         {
             continue;
         }
-        bool rt = doLFORetrigger[i];
-        doLFORetrigger[i] = false;
-
-        if (lfoEvaluator[i] == STEP)
-        {
-            if (rt)
-            {
-                stepLfos[i].retrigger();
-            }
-            stepLfos[i].process(blockSize);
-            stepLfos[i].output *= *(endpoints->lfo[i].amplitudeP);
-        }
-        else if (lfoEvaluator[i] == CURVE)
-        {
-            auto &lp = endpoints->lfo[i];
-
-            if (rt)
-            {
-                curveLfos[i].attack(0, *lp.curve.delayP, zone->modulatorStorage[i].modulatorShape);
-            }
-
-            curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
-                                 *lp.curve.attackP, *lp.curve.releaseP,
-                                 zone->modulatorStorage[i].curveLfoStorage.useenv,
-                                 zone->modulatorStorage[i].curveLfoStorage.unipolar, isGated);
-            curveLfos[i].output *= *(endpoints->lfo[i].amplitudeP);
-        }
-        else if (lfoEvaluator[i] == ENV)
-        {
-            auto &lp = endpoints->lfo[i].env;
-
-            auto eloop = zone->modulatorStorage[i].envLfoStorage.loop;
-            auto useGate = isGated;
-            if (envLfos[i].envelope.stage > scxt::modulation::modulators::EnvLFO::env_t::s_release)
-            {
-                rt = true;
-            }
-            if (eloop)
-            {
-                useGate = envLfos[i].envelope.stage <
-                          scxt::modulation::modulators::EnvLFO::env_t::s_sustain;
-            }
-            if (rt)
-            {
-                envLfos[i].attackFrom(envLfos[i].output, *lp.delayP, *lp.attackP);
-                useGate = true;
-            }
-
-            envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
-                               *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
-                               useGate, zone->modulatorStorage[i].temposync,
-                               engine->transport.tempo / 120.f);
-            envLfos[i].output *= *(endpoints->lfo[i].amplitudeP);
-        }
-        else
-        {
-        }
+        processLFOBlock(i, zone->modulatorStorage[i], isGated, engine->transport, engine->rng,
+                        endpoints->lfo[i]);
     }
 
     if (phasorsActive)

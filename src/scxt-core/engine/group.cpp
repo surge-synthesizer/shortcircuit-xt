@@ -206,60 +206,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         if (!lfosActive[i])
             continue;
 
-        bool rt = doLFORetrigger[i];
-        doLFORetrigger[i] = false;
-
-        if (lfoEvaluator[i] == STEP)
-        {
-            if (rt)
-            {
-                stepLfos[i].retrigger();
-            }
-            stepLfos[i].process(blockSize);
-            stepLfos[i].output *= *(endpoints.lfo[i].amplitudeP);
-        }
-        else if (lfoEvaluator[i] == CURVE)
-        {
-            auto &lp = endpoints.lfo[i];
-
-            if (rt)
-            {
-                curveLfos[i].attack(0, *lp.curve.delayP, modulatorStorage[i].modulatorShape);
-            }
-
-            curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
-                                 *lp.curve.attackP, *lp.curve.releaseP,
-                                 modulatorStorage[i].curveLfoStorage.useenv,
-                                 modulatorStorage[i].curveLfoStorage.unipolar, gated);
-
-            curveLfos[i].output *= *(endpoints.lfo[i].amplitudeP);
-        }
-        else if (lfoEvaluator[i] == ENV)
-        {
-            auto &lp = endpoints.lfo[i].env;
-
-            auto eloop = modulatorStorage[i].envLfoStorage.loop;
-            auto useGate = gated;
-
-            if (eloop)
-            {
-                useGate = envLfos[i].envelope.stage <
-                          scxt::modulation::modulators::EnvLFO::env_t::s_sustain;
-            }
-            if (rt)
-            {
-                envLfos[i].attackFrom(envLfos[i].output, *lp.delayP, *lp.attackP);
-                useGate = true;
-            }
-
-            envLfos[i].process(*lp.delayP, *lp.attackP, *lp.holdP, *lp.decayP, *lp.sustainP,
-                               *lp.releaseP, *lp.aShapeP, *lp.dShapeP, *lp.rShapeP, *lp.rateMulP,
-                               useGate, modulatorStorage[i].temposync, e.transport.tempo / 120.f);
-            envLfos[i].output *= *(endpoints.lfo[i].amplitudeP);
-        }
-        else
-        {
-        }
+        processLFOBlock(i, modulatorStorage[i], gated, e.transport, e.rng, endpoints.lfo[i]);
     }
     phasorEvaluator.step(e.transport, miscSourceStorage);
 
@@ -728,6 +675,21 @@ void Group::attack()
             {
                 const auto &ms = modulatorStorage[i];
 
+                // RELEASE re-arms rather than re-attacking - it fires when the group ungates
+                if (ms.triggerMode == modulation::ModulatorStorage::RELEASE)
+                {
+                    lfoTrigger[i] = {false, true};
+                    silenceLFO(i);
+                    continue;
+                }
+
+                // ONESHOT re-fires its burst on every group attack
+                if (ms.triggerMode == modulation::ModulatorStorage::ONESHOT)
+                {
+                    startLFO(i, ms, getEngine()->transport, getEngine()->rng, endpoints.lfo[i]);
+                    continue;
+                }
+
                 // Looping envelopes are basically unipolar lfos so follow lfos
                 if (ms.isEnv() && !ms.envLfoStorage.loop)
                 {
@@ -871,16 +833,25 @@ void Group::resetLFOs(int whichLFO)
         else if (lfoEvaluator[i] == CURVE)
         {
             curveLfos[i].setSampleRate(sampleRate, sampleRateInv);
-            curveLfos[i].attack(ms.start_phase, *endpoints.lfo[i].curve.delayP, ms.modulatorShape);
         }
         else if (lfoEvaluator[i] == ENV)
         {
             envLfos[i].setSampleRate(sampleRate, sampleRateInv);
-            envLfos[i].attack(*endpoints.lfo[i].env.delayP, *endpoints.lfo[i].env.attackP);
         }
         else
         {
             SCLOG_IF(warnings, "Unimplemented modulator shape " << ms.modulatorShape);
+        }
+
+        // RELEASE holds off until the group ungates; everything else starts here.
+        if (ms.triggerMode == modulation::ModulatorStorage::RELEASE)
+        {
+            lfoTrigger[i] = {false, true};
+            silenceLFO(i);
+        }
+        else
+        {
+            startLFO(i, ms, getEngine()->transport, getEngine()->rng, endpoints.lfo[i]);
         }
     }
 

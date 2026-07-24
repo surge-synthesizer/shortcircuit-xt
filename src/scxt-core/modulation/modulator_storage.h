@@ -181,11 +181,10 @@ struct ModulatorStorage
     DECLARE_ENUM_STRING(ModulatorShape);
 
     // These enum values are streamed. Do not change them.
-    // ...but they don't work yet anyway so maybe do? :)
     enum TriggerMode : int16_t
     {
         KEYTRIGGER,
-        FREERUN,
+        SONGPOS,
         RANDOM,
         RELEASE,
         ONESHOT
@@ -345,7 +344,7 @@ SC_DESCRIBE(scxt::modulation::ModulatorStorage, {
                                          modulation::ModulatorStorage::ONESHOT)
                               .withUnorderedMapFormatting({
                                   {modulation::ModulatorStorage::KEYTRIGGER, "KEYTRIG"},
-                                  {modulation::ModulatorStorage::FREERUN, "SONGPOS"},
+                                  {modulation::ModulatorStorage::SONGPOS, "SONGPOS"},
                                   {modulation::ModulatorStorage::RANDOM, "RANDOM"},
                                   {modulation::ModulatorStorage::RELEASE, "RELEASE"},
                                   {modulation::ModulatorStorage::ONESHOT, "ONESHOT"},

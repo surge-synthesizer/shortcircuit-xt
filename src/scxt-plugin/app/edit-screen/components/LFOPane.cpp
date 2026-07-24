@@ -1799,6 +1799,10 @@ void LfoPane::rebuildPanelComponents()
                                                 cmsg::UpdateZoneOrGroupModStorageInt16TValue>;
 
     tfac::attach(ms, ms.triggerMode, this, triggerModeA, triggerMode, forZone, selectedTab);
+    triggerModeA->andThenOnGui([w = juce::Component::SafePointer(this)](const auto &) {
+        if (w)
+            w->updateTriggerDependentUI();
+    });
     getContentAreaComponent()->addAndMakeVisible(*triggerMode);
 
     triggerL = std::make_unique<jcmp::Label>();
@@ -1832,6 +1836,7 @@ void LfoPane::rebuildPanelComponents()
 
     repositionContentAreaComponents();
     setSubPaneVisibility();
+    updateTriggerDependentUI();
 
     std::unique_ptr<jcmp::ToggleButton> tsb;
     using tsfac = connectors::BooleanSingleValueFactory<boolAttachment_t,
@@ -1906,6 +1911,25 @@ void LfoPane::setSubPaneVisibility()
     envLfoPane->setVisible(ms.isEnv() && con);
     consistencyLfoPane->setVisible(!con);
     modulatorShape->setVisible(con);
+}
+
+void LfoPane::updateTriggerDependentUI()
+{
+    if (!curveLfoPane || !envLfoPane)
+        return;
+
+    auto &ms = modulatorStorageData[selectedTab];
+    auto oneShot = ms.triggerMode == modulation::ModulatorStorage::ONESHOT;
+
+    // The one shot *is* the sub-envelope running once, so the engine forces it either
+    // way. Arm the toggle so the UI agrees with what you hear, and lock it while armed.
+    curveLfoPane->useenvB->setEnabled(!oneShot);
+    if (oneShot && !ms.curveLfoStorage.useenv)
+        curveLfoPane->useenvA->setValueFromGUI(1);
+
+    envLfoPane->loopB->setEnabled(!oneShot);
+    if (oneShot && ms.envLfoStorage.loop)
+        envLfoPane->loopA->setValueFromGUI(0);
 }
 
 void LfoPane::showModulatorShapeMenu()

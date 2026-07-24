@@ -232,8 +232,8 @@ ModulatorStorage::toStringTriggerMode(const scxt::modulation::ModulatorStorage::
     {
     case KEYTRIGGER:
         return "kt";
-    case FREERUN:
-        return "free";
+    case SONGPOS:
+        return "song";
     case RANDOM:
         return "rnd";
     case RELEASE:
