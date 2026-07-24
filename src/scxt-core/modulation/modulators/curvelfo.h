@@ -31,6 +31,7 @@
 #include "sst/basic-blocks/modulators/SimpleLFO.h"
 #include "sst/basic-blocks/modulators/DAREnvelope.h"
 #include "sst/basic-blocks/modulators/Transport.h"
+#include "sst/basic-blocks/tables/TemposyncSupport.h"
 #include "sst/basic-blocks/dsp/RNG.h"
 
 #include "utils.h"
@@ -114,8 +115,18 @@ struct CurveLFO : SampleRateSupport
         simpleEnv.attack(delay);
     }
 
+    // The rate the SimpleLFO actually runs at - temposync-snapped when synced. Shared
+    // with the songpos phase lock so the lock and the free-run can't drift apart.
+    static float snappedRate(const ModulatorStorage &ms, float rate)
+    {
+        if (!ms.temposync)
+            return rate;
+        return -sst::basic_blocks::tables::temposync::TwoToThe::snap(-rate);
+    }
+
+    void silence() { output = 0.f; }
+
     uint32_t smp{0};
-    datamodel::pmd tsConverter{datamodel::pmd().asLfoRate()};
     void process(const float rate, const float deform, const float angle, const float delay,
                  const float attack, const float release, bool useEnv, bool unipolar, bool isGated)
     {
@@ -124,7 +135,7 @@ struct CurveLFO : SampleRateSupport
         bool isTemposync{false};
         if (settings && td && settings->temposync)
         {
-            rt = -tsConverter.snapToTemposync(-rt);
+            rt = snappedRate(*settings, rt);
             tsRatio = td->tempo / 120.0;
             isTemposync = true;
         }

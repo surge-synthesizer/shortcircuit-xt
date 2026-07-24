@@ -312,6 +312,7 @@ SCXTPlugin::process_nonblock(const clap_process *process) SST_CPPUTILS_NONBLOCKI
             engine->processAudio();
             engine->transport.timeInBeats += (double)scxt::blockSize * engine->transport.tempo *
                                              engine->getSampleRateInv() / 60.f;
+            engine->transport.timeInSeconds += (double)scxt::blockSize * engine->getSampleRateInv();
 
             bool tryToDrain{true};
             while (tryToDrain &&

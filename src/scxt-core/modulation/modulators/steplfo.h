@@ -32,6 +32,8 @@
 #include <array>
 #include <vector>
 #include <utility>
+#include <algorithm>
+#include <cmath>
 #include <modulation/modulator_storage.h>
 #include "sst/basic-blocks/dsp/RNG.h"
 #include "sst/basic-blocks/modulators/Transport.h"
@@ -57,10 +59,46 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
         this->rate = rate;
         underlyingLfo.setSampleRate(sampleRate, sampleRateInv);
         underlyingLfo.assign(&settings->stepLfoStorage, *rate, td, rng, settings->temposync);
-        underlyingLfo.phase = settings->start_phase;
+        setStartPosition(settings->start_phase);
+    }
+
+    /*
+     * phase01 is a fraction of the whole sequence. songPosSeconds, when non-zero,
+     * additionally advances the position by where the song is (SONGPOS trigger).
+     */
+    void setStartPosition(float phase01, double songPosSeconds = 0.0)
+    {
+        if (!settings || !rate)
+            return;
+
+        const auto &ss = settings->stepLfoStorage;
+        auto repeat = std::max((int)ss.repeat, 1);
+        double total = std::clamp(phase01, 0.f, 0.999999f) * repeat;
+
+        if (songPosSeconds != 0.0)
+        {
+            // Steps advance at 2^rate per second, scaled by the whole-sequence length in
+            // cycle mode and by tempo when synced. Mirrors UpdatePhaseIncrement exactly,
+            // table for table, so the lock and the free-run don't drift apart.
+            double stepsPerSec = (ss.rateIsForSingleStep ? 1.0 : repeat);
+            if (settings->temposync && td)
+            {
+                stepsPerSec *= std::pow(2.0, (double)*rate) * td->tempo / 120.0;
+            }
+            else
+            {
+                stepsPerSec *= tuning::equalTuning.note_to_pitch(12 * *rate);
+            }
+            total += songPosSeconds * stepsPerSec;
+        }
+
+        auto totalFloor = (long)std::floor(total);
+        auto step = (int)(((totalFloor % repeat) + repeat) % repeat);
+        underlyingLfo.setPhaseTo(step, (float)(total - totalFloor));
     }
 
     void retrigger() { underlyingLfo.retrigger(); }
+    void silence() { output = 0.f; }
     // void sync();
     void process(int samples)
     {

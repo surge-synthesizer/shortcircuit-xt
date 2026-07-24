@@ -65,6 +65,7 @@ struct AudioThreadProvider
             engine.processAudio();
             engine.transport.timeInBeats +=
                 (double)scxt::blockSize * 120 * engine.getSampleRateInv() / 60.f;
+            engine.transport.timeInSeconds += (double)scxt::blockSize * engine.getSampleRateInv();
             std::this_thread::sleep_for(std::chrono::microseconds(sleepTime));
         }
     }

@@ -91,6 +91,9 @@ struct LfoPane : sst::jucegui::components::NamedPanel, app::HasEditor
 
     void setSubPaneVisibility();
 
+    // ONESHOT owns the sub-envelope, so its toggle shows armed and greys out
+    void updateTriggerDependentUI();
+
     void resized() override;
     void rebuildPanelComponents(); // entirely new components
 
