@@ -16,6 +16,7 @@ add_executable(scxt-test
 		modulator_tests.cpp
 		mod_matrix_operations_tests.cpp
 		exclusive_group_tests.cpp
+		keyswitch_tests.cpp
 		glide_tests.cpp
 		legato_tests.cpp
 		undo_tests.cpp
