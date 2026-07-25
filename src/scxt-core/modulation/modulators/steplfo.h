@@ -95,21 +95,50 @@ struct StepLFO : MoveableOnly<StepLFO>, SampleRateSupport
         auto totalFloor = (long)std::floor(total);
         auto step = (int)(((totalFloor % repeat) + repeat) % repeat);
         underlyingLfo.setPhaseTo(step, (float)(total - totalFloor));
+
+        startStep = step;
+        stepsAdvanced = 0;
+        lastPhase = underlyingLfo.phase;
     }
 
-    void retrigger() { underlyingLfo.retrigger(); }
+    void retrigger()
+    {
+        underlyingLfo.retrigger();
+        startStep = 0;
+        stepsAdvanced = 0;
+        lastPhase = underlyingLfo.phase;
+    }
     void silence() { output = 0.f; }
+
+    /*
+     * Has the sequence played all of its steps? A one shot pins the underlying LFO at
+     * the last step rather than wrapping, so count the phase wraps instead of the steps.
+     */
+    bool sequenceComplete() const
+    {
+        if (!settings)
+            return false;
+        return startStep + stepsAdvanced >= std::max((int)settings->stepLfoStorage.repeat, 1);
+    }
+
     // void sync();
     void process(int samples)
     {
         underlyingLfo.process(*rate, settings->triggerMode, settings->temposync,
                               settings->triggerMode == ModulatorStorage::ONESHOT, samples);
         output = underlyingLfo.output;
+
+        if (underlyingLfo.phase < lastPhase)
+            stepsAdvanced++;
+        lastPhase = underlyingLfo.phase;
     }
 
     float output{0.f};
 
   private:
+    int startStep{0}, stepsAdvanced{0};
+    double lastPhase{0.0};
+
     const float *rate{nullptr};
     sst::basic_blocks::modulators::Transport *td{nullptr};
     modulation::ModulatorStorage *settings{nullptr};
