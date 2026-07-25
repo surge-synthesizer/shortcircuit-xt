@@ -37,7 +37,7 @@ namespace scxt::modulation::modulators
 struct EnvLFO : SampleRateSupport
 {
     using env_t = sst::basic_blocks::modulators::AHDSRShapedSC<
-        EnvLFO, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>;
+        EnvLFO, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp, true>;
 
     float envelope_rate_linear_nowrap(float f)
     {

@@ -90,11 +90,11 @@ template <typename T, size_t egsPerObject> struct HasModulators
         envelopeFollowers{};
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
-        T, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp>
+        T, blockSize, sst::basic_blocks::modulators::TwentyFiveSecondExp, true>
         ahdsrenv_t;
 
     typedef sst::basic_blocks::modulators::AHDSRShapedSC<
-        DoubleRate, (blockSize << 1), sst::basic_blocks::modulators::TwentyFiveSecondExp>
+        DoubleRate, (blockSize << 1), sst::basic_blocks::modulators::TwentyFiveSecondExp, true>
         ahdsrenvOS_t;
 
     std::array<ahdsrenv_t, egsPerObject> eg;

@@ -98,6 +98,10 @@ SC_STREAMDEF(scxt::modulation::modulators::EnvLFOStorage, SC_FROM({
                  findOrSet(v, "release", 0.f, result.release);
 
                  findOrSet(v, "aShape", 0.f, result.aShape);
+                 // aShapePositive template flag flipped to true on 2026-07-24; older streams
+                 // used the opposite attack-shape sign convention, so negate to preserve sound.
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'07'24))
+                     result.aShape = -result.aShape;
                  findOrSet(v, "dShape", 0.f, result.dShape);
                  findOrSet(v, "rShape", 0.f, result.rShape);
                  findOrSet(v, "rateMul", 0.f, result.rateMul);
@@ -134,6 +138,10 @@ SC_STREAMDEF(modulation::modulators::AdsrStorage, SC_FROM({
                  findOrSet(v, "s", 1.f, result.s);
                  findOrSet(v, "r", 0.5f, result.r);
                  findOrSet(v, "aShape", 0.f, result.aShape);
+                 // aShapePositive template flag flipped to true on 2026-07-24; older streams
+                 // used the opposite attack-shape sign convention, so negate to preserve sound.
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'07'24))
+                     result.aShape = -result.aShape;
                  findOrSet(v, "dShape", 0.f, result.dShape);
                  findOrSet(v, "rShape", 0.f, result.rShape);
                  findOrSet(v, "groupGate", false, result.gateGroupEGOnAnyPlaying);
