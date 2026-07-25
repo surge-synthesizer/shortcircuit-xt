@@ -187,9 +187,9 @@ struct ModulatorStorage
         SONGPOS,
         RANDOM,
         RELEASE,
-        // Runs once and then goes silent. What "once" means depends on the shape: one
-        // pass of the env, one pass of the curve's DAR or - with that off - one cycle
-        // of the curve itself, or one play through of the step sequence.
+        // Runs once rather than looping. For the env that is one pass, for the curve one
+        // pass of its DAR or - with that off - one cycle and then silence, and for the
+        // step sequence one play through which then holds on the last step.
         ONESHOT
     } triggerMode{TriggerMode::KEYTRIGGER};
     DECLARE_ENUM_STRING(TriggerMode);

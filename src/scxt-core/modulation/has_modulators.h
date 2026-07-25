@@ -294,18 +294,8 @@ template <typename T, size_t egsPerObject> struct HasModulators
         case STEP:
             if (rt)
                 stepLfos[i].retrigger();
-
-            // A one shot plays the sequence out and then goes quiet
-            if (oneShot && stepLfos[i].sequenceComplete())
-            {
-                stepLfos[i].silence();
-                break;
-            }
             stepLfos[i].process(blockSize);
-            if (oneShot && stepLfos[i].sequenceComplete())
-                stepLfos[i].silence();
-            else
-                stepLfos[i].output *= amp;
+            stepLfos[i].output *= amp;
             break;
         case CURVE:
         {
