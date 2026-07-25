@@ -483,7 +483,7 @@ TEST_CASE("Non-ONESHOT curve LFO free runs past its first cycle")
     REQUIRE(maxAbsOver(out, 2 * blocksPerSecond, 3 * blocksPerSecond) > 0.9f);
 }
 
-TEST_CASE("ONESHOT step LFO plays every step once then silence")
+TEST_CASE("ONESHOT step LFO plays every step once then holds the last one")
 {
     auto e = std::make_unique<scxt::engine::Engine>();
     auto *g = setupStepLFOGroup(e.get(), MS::ONESHOT);
@@ -498,8 +498,9 @@ TEST_CASE("ONESHOT step LFO plays every step once then silence")
         REQUIRE(at == Approx(s % 2 == 0 ? 1.f : -1.f));
     }
 
-    // Then the sequence goes quiet rather than parking on the last step
-    REQUIRE(std::abs(lastNonZeroBlock(out) - blocksPerSecond) <= 2);
+    // Then it parks on the last step rather than looping or dropping out
+    for (int b = blocksPerSecond + 2; b < 3 * blocksPerSecond; ++b)
+        REQUIRE(out[b] == Approx(-1.f));
 }
 
 TEST_CASE("Non-ONESHOT step LFO loops the sequence")
