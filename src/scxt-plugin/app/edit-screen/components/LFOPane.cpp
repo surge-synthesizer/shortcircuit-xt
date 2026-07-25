@@ -1921,11 +1921,18 @@ void LfoPane::updateTriggerDependentUI()
     auto &ms = modulatorStorageData[selectedTab];
     auto oneShot = ms.triggerMode == modulation::ModulatorStorage::ONESHOT;
 
-    // The one shot *is* the sub-envelope running once, so the engine forces it either
-    // way. Arm the toggle so the UI agrees with what you hear, and lock it while armed.
-    curveLfoPane->useenvB->setEnabled(!oneShot);
-    if (oneShot && !ms.curveLfoStorage.useenv)
-        curveLfoPane->useenvA->setValueFromGUI(1);
+    // A one shot ignores the gate, so the env breaks at its sustain level rather than
+    // holding there - DAHDSR reads DAHDBR - and the curve's DAR release is really a decay
+    std::optional<std::string> breakName{}, decayName{};
+    if (oneShot)
+    {
+        breakName = "Breakpoint";
+        decayName = "Decay";
+    }
+    envLfoPane->sustainA->labelOverride = breakName;
+    envLfoPane->sustainL->setText(oneShot ? "B" : "S");
+    curveLfoPane->envA[2]->labelOverride = decayName;
+    curveLfoPane->envL[2]->setText(oneShot ? "D" : "R");
 
     envLfoPane->loopB->setEnabled(!oneShot);
     if (oneShot && ms.envLfoStorage.loop)

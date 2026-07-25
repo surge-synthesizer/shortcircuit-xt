@@ -280,8 +280,10 @@ TEST_CASE("lfoEnvelopeGate maps trigger mode onto the sub-envelope gate")
 namespace
 {
 constexpr double LOOP_TEST_SR = 48000.0;
+constexpr int blocksPerSecond{(int)(LOOP_TEST_SR / scxt::blockSize)};
 
-scxt::engine::Group *setupEnvLFOGroup(scxt::engine::Engine *e, bool loop)
+// A part with a single group holding a single zone, ready for LFO 0 to be set up
+scxt::engine::Group *makeLFOGroup(scxt::engine::Engine *e)
 {
     e->prepareToPlay(LOOP_TEST_SR);
 
@@ -295,6 +297,13 @@ scxt::engine::Group *setupEnvLFOGroup(scxt::engine::Engine *e, bool loop)
     z->mapping.velocityRange = {0, 127};
     z->initialize();
     g->addZone(z);
+
+    return g;
+}
+
+scxt::engine::Group *setupEnvLFOGroup(scxt::engine::Engine *e, bool loop)
+{
+    auto *g = makeLFOGroup(e);
 
     auto &ms = g->modulatorStorage[0];
     ms.modulatorShape = MS::LFO_ENV;
@@ -355,4 +364,150 @@ TEST_CASE("Group non-looping envelope LFO rises once and holds while held")
     REQUIRE(countEnvPeaks(e, g, 20000) == 1);
 
     delete e;
+}
+
+/*
+ * ONESHOT means "run once and stop", which each shape spells differently: a curve with
+ * no sub-envelope is one cycle of the waveform, a curve with one is its DAR making a
+ * single pass, and a step sequence is its steps played out. Drive real group LFOs with
+ * the gate held and check where the output actually stops.
+ */
+namespace
+{
+// Run LFO 0 with the gate held, collecting a block by block copy of its output
+std::vector<float> runLFOBlocks(scxt::engine::Engine *e, scxt::engine::Group *g, const float &out,
+                                int nBlocks)
+{
+    std::vector<float> res;
+    res.reserve(nBlocks);
+    for (int b = 0; b < nBlocks; ++b)
+    {
+        g->processLFOBlock(0, g->modulatorStorage[0], /*gate=*/true, e->transport, e->rng,
+                           g->endpoints.lfo[0]);
+        res.push_back(out);
+    }
+    return res;
+}
+
+int lastNonZeroBlock(const std::vector<float> &v)
+{
+    int res{-1};
+    for (int i = 0; i < (int)v.size(); ++i)
+        if (v[i] != 0.f)
+            res = i;
+    return res;
+}
+
+float maxAbsOver(const std::vector<float> &v, int from, int to)
+{
+    float res{0.f};
+    for (int i = from; i < std::min(to, (int)v.size()); ++i)
+        res = std::max(res, std::fabs(v[i]));
+    return res;
+}
+
+// A ramp at rate 0 is one cycle per second, and is nonzero for all of it but the midpoint
+scxt::engine::Group *setupCurveLFOGroup(scxt::engine::Engine *e, MS::TriggerMode tm, bool useEnv)
+{
+    auto *g = makeLFOGroup(e);
+
+    auto &ms = g->modulatorStorage[0];
+    ms.modulatorShape = MS::LFO_RAMP;
+    ms.triggerMode = tm;
+    ms.rate = 0.f;
+    ms.start_phase = 0.f;
+    ms.curveLfoStorage.useenv = useEnv;
+    ms.curveLfoStorage.delay = 0.f;
+    ms.curveLfoStorage.attack = 0.f;
+    ms.curveLfoStorage.release = 1.f; // the top of the env time scale, so 25s
+
+    g->warmup();
+    g->attack();
+    return g;
+}
+
+// Four alternating steps, the whole sequence in a second, no smoothing between them
+scxt::engine::Group *setupStepLFOGroup(scxt::engine::Engine *e, MS::TriggerMode tm)
+{
+    auto *g = makeLFOGroup(e);
+
+    auto &ms = g->modulatorStorage[0];
+    ms.modulatorShape = MS::STEP;
+    ms.triggerMode = tm;
+    ms.rate = 0.f;
+    ms.start_phase = 0.f;
+    ms.stepLfoStorage.repeat = 4;
+    ms.stepLfoStorage.smooth = 0.f;
+    ms.stepLfoStorage.rateIsForSingleStep = false;
+    for (int i = 0; i < 4; ++i)
+        ms.stepLfoStorage.data[i] = (i % 2 == 0) ? 1.f : -1.f;
+
+    g->warmup();
+    g->attack();
+    return g;
+}
+} // namespace
+
+TEST_CASE("ONESHOT curve LFO without an envelope runs one cycle then silence")
+{
+    auto e = std::make_unique<scxt::engine::Engine>();
+    auto *g = setupCurveLFOGroup(e.get(), MS::ONESHOT, /*useEnv=*/false);
+
+    auto out = runLFOBlocks(e.get(), g, g->curveLfos[0].output, 3 * blocksPerSecond);
+
+    // The cycle itself runs full scale...
+    REQUIRE(maxAbsOver(out, 0, blocksPerSecond - 10) > 0.9f);
+    // ...and then it stops, at the cycle boundary rather than anywhere else
+    REQUIRE(std::abs(lastNonZeroBlock(out) - blocksPerSecond) <= 2);
+}
+
+TEST_CASE("ONESHOT curve LFO with an envelope keeps cycling under its envelope")
+{
+    auto e = std::make_unique<scxt::engine::Engine>();
+    auto *g = setupCurveLFOGroup(e.get(), MS::ONESHOT, /*useEnv=*/true);
+
+    auto out = runLFOBlocks(e.get(), g, g->curveLfos[0].output, 3 * blocksPerSecond);
+
+    // The 25 second release is nowhere near done, so the LFO is still going well past
+    // the one cycle mark the envelope-free one shot stops at
+    REQUIRE(maxAbsOver(out, 2 * blocksPerSecond, 3 * blocksPerSecond) > 0.5f);
+}
+
+TEST_CASE("Non-ONESHOT curve LFO free runs past its first cycle")
+{
+    auto e = std::make_unique<scxt::engine::Engine>();
+    auto *g = setupCurveLFOGroup(e.get(), MS::KEYTRIGGER, /*useEnv=*/false);
+
+    auto out = runLFOBlocks(e.get(), g, g->curveLfos[0].output, 3 * blocksPerSecond);
+
+    REQUIRE(maxAbsOver(out, 2 * blocksPerSecond, 3 * blocksPerSecond) > 0.9f);
+}
+
+TEST_CASE("ONESHOT step LFO plays every step once then silence")
+{
+    auto e = std::make_unique<scxt::engine::Engine>();
+    auto *g = setupStepLFOGroup(e.get(), MS::ONESHOT);
+
+    auto out = runLFOBlocks(e.get(), g, g->stepLfos[0].output, 3 * blocksPerSecond);
+
+    // All four steps play, including the last one
+    auto blocksPerStep = blocksPerSecond / 4;
+    for (int s = 0; s < 4; ++s)
+    {
+        auto at = out[s * blocksPerStep + blocksPerStep / 2];
+        REQUIRE(at == Approx(s % 2 == 0 ? 1.f : -1.f));
+    }
+
+    // Then the sequence goes quiet rather than parking on the last step
+    REQUIRE(std::abs(lastNonZeroBlock(out) - blocksPerSecond) <= 2);
+}
+
+TEST_CASE("Non-ONESHOT step LFO loops the sequence")
+{
+    auto e = std::make_unique<scxt::engine::Engine>();
+    auto *g = setupStepLFOGroup(e.get(), MS::KEYTRIGGER);
+
+    auto out = runLFOBlocks(e.get(), g, g->stepLfos[0].output, 3 * blocksPerSecond);
+
+    REQUIRE(maxAbsOver(out, 2 * blocksPerSecond, 3 * blocksPerSecond) > 0.9f);
 }

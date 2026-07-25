@@ -113,6 +113,9 @@ struct CurveLFO : SampleRateSupport
         }
         simpleLfo.applyPhaseOffset(initPhase);
         simpleEnv.attack(delay);
+
+        cyclesElapsed = 0.0;
+        lastPhase = wrappedPhase();
     }
 
     // The rate the SimpleLFO actually runs at - temposync-snapped when synced. Shared
@@ -125,6 +128,21 @@ struct CurveLFO : SampleRateSupport
     }
 
     void silence() { output = 0.f; }
+
+    /*
+     * How far the LFO has run since attack, in cycles. The underlying phase wraps, so
+     * accumulate the per-block deltas; ONESHOT uses this to stop after exactly one pass.
+     * The noise shapes park above 1 until their first block, hence the wrap here.
+     */
+    float wrappedPhase() const
+    {
+        auto p = simpleLfo.phase;
+        return p >= 1.f ? p - 1.f : p;
+    }
+    bool cycleComplete() const { return cyclesElapsed >= 1.0; }
+
+    double cyclesElapsed{0.0};
+    float lastPhase{0.f};
 
     uint32_t smp{0};
     void process(const float rate, const float deform, const float angle, const float delay,
@@ -140,6 +158,14 @@ struct CurveLFO : SampleRateSupport
             isTemposync = true;
         }
         simpleLfo.process_block(rt, deform, curveShape, false, tsRatio, angle);
+
+        auto ph = wrappedPhase();
+        auto dp = ph - lastPhase;
+        if (dp < 0)
+            dp += 1.f;
+        cyclesElapsed += dp;
+        lastPhase = ph;
+
         auto lfov = simpleLfo.lastTarget;
         if (unipolar)
             lfov = (lfov + 1) * 0.5;

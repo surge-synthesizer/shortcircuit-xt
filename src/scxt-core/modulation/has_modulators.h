@@ -294,24 +294,47 @@ template <typename T, size_t egsPerObject> struct HasModulators
         case STEP:
             if (rt)
                 stepLfos[i].retrigger();
+
+            // A one shot plays the sequence out and then goes quiet
+            if (oneShot && stepLfos[i].sequenceComplete())
+            {
+                stepLfos[i].silence();
+                break;
+            }
             stepLfos[i].process(blockSize);
-            stepLfos[i].output *= amp;
+            if (oneShot && stepLfos[i].sequenceComplete())
+                stepLfos[i].silence();
+            else
+                stepLfos[i].output *= amp;
             break;
         case CURVE:
         {
             if (rt)
                 curveLfos[i].attack(0, *lp.curve.delayP, ms.modulatorShape);
 
-            // ONESHOT is the DAR envelope running exactly once, so it forces the env on
+            // With the sub-envelope off, a one shot is one cycle of the curve and then
+            // silence; with it on, it is the DAR envelope making a single pass instead
+            auto useEnv = ms.curveLfoStorage.useenv;
+            auto oneCycle = oneShot && !useEnv;
+
+            if (oneCycle && curveLfos[i].cycleComplete())
+            {
+                curveLfos[i].silence();
+                break;
+            }
+
             using senv_t = modulation::modulators::CurveLFO::senv_t;
             auto useGate =
                 lfoEnvelopeGate(ms.triggerMode, gate, curveLfos[i].simpleEnv.stage, senv_t::s_hold);
 
             curveLfos[i].process(*lp.rateP, *lp.curve.deformP, *lp.curve.angleP, *lp.curve.delayP,
-                                 *lp.curve.attackP, *lp.curve.releaseP,
-                                 ms.curveLfoStorage.useenv || oneShot, ms.curveLfoStorage.unipolar,
-                                 useGate);
-            curveLfos[i].output *= amp;
+                                 *lp.curve.attackP, *lp.curve.releaseP, useEnv,
+                                 ms.curveLfoStorage.unipolar, useGate);
+            // Silence the block the cycle ends on rather than show the next one starting
+            if (oneCycle && curveLfos[i].cycleComplete())
+                curveLfos[i].silence();
+            else
+                curveLfos[i].output *= amp;
             break;
         }
         case ENV:
