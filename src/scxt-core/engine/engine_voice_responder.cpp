@@ -39,8 +39,8 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
     assert(!transactionValid);
 
     auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
-    auto nts = engine.findZone(channel, useKey, noteId, std::clamp((int)(velocity * 128), 0, 127),
-                               findZoneWorkingBuffer);
+    auto nts = engine.findZone(channel, useKey, key, noteId,
+                               std::clamp((int)(velocity * 128), 0, 127), findZoneWorkingBuffer);
 
     auto voicesCreated{0};
     for (auto idx = 0; idx < nts; ++idx)

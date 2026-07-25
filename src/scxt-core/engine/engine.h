@@ -147,7 +147,12 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     static_assert(std::is_default_constructible_v<int16_t>);
     static_assert(std::is_default_constructible_v<pathToZone_t>);
 
-    size_t findZone(int16_t channel, int16_t key, int32_t noteId, int16_t velocity,
+    /*
+     * key is post-retune, so zone mapping follows MTS-ESP and friends. midiKey is what the MIDI
+     * stream actually sent; group trigger conditions use it so a keyswitch stays put on the
+     * keyboard no matter what the tuning does.
+     */
+    size_t findZone(int16_t channel, int16_t key, int16_t midiKey, int32_t noteId, int16_t velocity,
                     std::array<pathToZone_t, maxVoices> &res)
     {
         size_t idx{0};
@@ -168,14 +173,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                     }
 
                     auto tcv =
-                        group->triggerConditions.groupShouldPlay(*this, *group, channel, key);
+                        group->triggerConditions.groupShouldPlay(*this, *group, channel, midiKey);
 
                     if (group->triggerConditions.containsKeySwitchLatch && !tcv)
                     {
-                        if (group->triggerConditions.wasPlaySupressedByKeySwitch(*this, *group,
-                                                                                 channel, key))
+                        if (group->triggerConditions.keySwitchLatchHolds(*this, *group, channel,
+                                                                         midiKey))
                         {
-                            SCLOG_IF(groupTrigggers, "Keyswitch found at " << (int)key << " "
+                            SCLOG_IF(groupTrigggers, "Keyswitch found at " << (int)midiKey << " "
                                                                            << group->id.to_string()
                                                                            << " " << group->name);
 

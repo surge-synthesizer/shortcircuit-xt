@@ -115,7 +115,7 @@ struct GTMacro : GroupTrigger
     {
     }
 
-    bool groupShouldPlay(const Engine &, const Group &g, int16_t, int16_t) const override
+    bool conditionHolds(const Engine &, const Group &g, int16_t, int16_t) const override
     {
         auto mv = g.parentPart->macros[macro].value;
         return mv >= lb && mv <= ub;
@@ -140,7 +140,7 @@ struct GTMIDI1CC : GroupTrigger
     {
     }
 
-    bool groupShouldPlay(const Engine &, const Group &g, int16_t, int16_t) const override
+    bool conditionHolds(const Engine &, const Group &g, int16_t, int16_t) const override
     {
         assert(g.parentPart);
         auto ccv = g.parentPart->midiCCValues[cc];
@@ -166,14 +166,14 @@ struct GTKeyswitchLatch : GroupTrigger
     {
     }
 
-    // hmmm that ! is because this is answering 'should group play'. That's gonna be confusing.
-    // Probably need a split API for conjunctions. Ponder.
-    bool groupShouldPlay(const Engine &, const Group &g, int16_t, int16_t key) const override
+    // Holds when the incoming key is my switch key. That key selects the group rather than
+    // sounding it, so a holding latch suppresses play.
+    bool conditionHolds(const Engine &, const Group &g, int16_t, int16_t midiKey) const override
     {
-        if (key == (int)std::round(storage.args[0]))
-            return false;
-        return true;
+        return midiKey == (int)std::round(storage.args[0]);
     }
+
+    bool holdingSuppressesPlay() const override { return true; }
 
     void storageAdjusted() override {}
 };
@@ -186,9 +186,8 @@ struct GTKeyswitchMomentary : GroupTrigger
     {
     }
 
-    // hmmm that ! is because this is answering 'should group play'. That's gonna be confusing.
-    // Probably need a split API for conjunctions. Ponder.
-    bool groupShouldPlay(const Engine &e, const Group &g, int16_t ch, int16_t key) const override
+    // Holds while my switch key is physically held down, which is what lets the group play
+    bool conditionHolds(const Engine &e, const Group &g, int16_t ch, int16_t midiKey) const override
     {
         auto vsKey = (int)std::round(storage.args[0]);
         if (ch < 0 || ch >= 16 || vsKey < 0 || vsKey >= 128)
@@ -292,7 +291,7 @@ void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
 }
 
 bool GroupTriggerConditions::groupShouldPlay(const Engine &e, const Group &g, int16_t channel,
-                                             int16_t key) const
+                                             int16_t midiKey) const
 {
     if (alwaysReturnsTrue)
         return true;
@@ -302,23 +301,21 @@ bool GroupTriggerConditions::groupShouldPlay(const Engine &e, const Group &g, in
     {
         // FIXME - conjunctions
         if (active[i] && conditions[i])
-            v = v & conditions[i]->groupShouldPlay(e, g, channel, key);
+            v = v & conditions[i]->groupShouldPlay(e, g, channel, midiKey);
     }
     return v;
 }
 
-bool GroupTriggerConditions::wasPlaySupressedByKeySwitch(const Engine &e, const Group &g,
-                                                         int16_t channel, int16_t key) const
+bool GroupTriggerConditions::keySwitchLatchHolds(const Engine &e, const Group &g, int16_t channel,
+                                                 int16_t midiKey) const
 {
     for (int i = 0; i < triggerConditionsPerGroup; ++i)
     {
-        auto gtk = dynamic_cast<GTKeyswitchLatch *>(conditions[i]);
-        if (gtk)
+        if (active[i] && conditions[i] &&
+            conditions[i]->getID() == GroupTriggerID::KEYSWITCH_LATCH &&
+            conditions[i]->conditionHolds(e, g, channel, midiKey))
         {
-            if (!gtk->groupShouldPlay(e, g, channel, key))
-            {
-                return true;
-            }
+            return true;
         }
     }
     return false;

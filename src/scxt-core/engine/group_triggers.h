@@ -90,8 +90,24 @@ struct GroupTrigger
     }
     GroupTriggerID getID() const { return id; }
     virtual ~GroupTrigger() = default;
-    virtual bool groupShouldPlay(const Engine &, const Group &, int16_t channel,
-                                 int16_t key) const = 0;
+
+    /*
+     * Two separate questions. conditionHolds is "is this condition true right now" - is the
+     * macro in range, is this the key I watch. groupShouldPlay is what findZone asks. They
+     * differ for the keyswitch latch, which consumes its switch key rather than sounding on it.
+     */
+    virtual bool conditionHolds(const Engine &, const Group &, int16_t channel,
+                                int16_t midiKey) const = 0;
+
+    // true when a holding condition suppresses play rather than enabling it
+    virtual bool holdingSuppressesPlay() const { return false; }
+
+    bool groupShouldPlay(const Engine &e, const Group &g, int16_t channel, int16_t midiKey) const
+    {
+        auto h = conditionHolds(e, g, channel, midiKey);
+        return holdingSuppressesPlay() ? !h : h;
+    }
+
     virtual void storageAdjusted() = 0;
 
     /*
@@ -140,9 +156,12 @@ struct GroupTriggerConditions
 
     void setupOnUnstream(GroupTriggerInstrumentState &);
 
-    bool groupShouldPlay(const Engine &, const Group &, int16_t channel, int16_t key) const;
-    bool wasPlaySupressedByKeySwitch(const Engine &, const Group &, int16_t channel,
-                                     int16_t key) const;
+    /*
+     * midiKey is the key as the MIDI stream delivered it, before any tuning remap. Conditions
+     * are a performance gesture, not a pitch, so they must not move with MTS-ESP or transposition.
+     */
+    bool groupShouldPlay(const Engine &, const Group &, int16_t channel, int16_t midiKey) const;
+    bool keySwitchLatchHolds(const Engine &, const Group &, int16_t channel, int16_t midiKey) const;
 
   protected:
     std::array<GroupTriggerBuffer, scxt::triggerConditionsPerGroup> conditionBuffers;
