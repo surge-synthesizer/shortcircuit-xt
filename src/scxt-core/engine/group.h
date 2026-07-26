@@ -102,7 +102,6 @@ struct Group : MoveableOnly<Group>,
     {
         float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f}, tuning{0.f};
         bool muted{false};
-        bool mutedByLatch{false};
         bool oversample{true};
 
         ProcRoutingPath procRouting{procRoute_linear};
@@ -128,6 +127,14 @@ struct Group : MoveableOnly<Group>,
     } outputInfo;
 
     GroupTriggerConditions triggerConditions;
+
+    /*
+     * Which keyswitch-latch group is live. The engine owns this - findZone writes it as the
+     * player switches articulation - but it does stream, so a saved session comes back on the
+     * articulation you left it on. It sits outside GroupOutputInfo precisely because that
+     * struct gets assigned wholesale from the client, which would clobber a live switch.
+     */
+    bool mutedByLatch{false};
 
     Engine *getEngine();
     const Engine *getEngine() const;
