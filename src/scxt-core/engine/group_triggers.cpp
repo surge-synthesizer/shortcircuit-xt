@@ -306,6 +306,32 @@ bool GroupTriggerConditions::groupShouldPlay(const Engine &e, const Group &g, in
     return v;
 }
 
+bool GroupTriggerConditions::isKeySwitchKey(int16_t midiKey) const
+{
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        const auto &s = storage[i];
+        if (active[i] &&
+            (s.id == GroupTriggerID::KEYSWITCH_LATCH ||
+             s.id == GroupTriggerID::KEYSWITCH_MOMENTARY) &&
+            (int)std::round(s.args[0]) == midiKey)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+int16_t GroupTriggerConditions::firstKeySwitchLatchKey() const
+{
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        if (active[i] && storage[i].id == GroupTriggerID::KEYSWITCH_LATCH)
+            return (int16_t)std::round(storage[i].args[0]);
+    }
+    return -1;
+}
+
 bool GroupTriggerConditions::keySwitchLatchHolds(const Engine &e, const Group &g, int16_t channel,
                                                  int16_t midiKey) const
 {

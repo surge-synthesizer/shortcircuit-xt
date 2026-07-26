@@ -190,6 +190,7 @@ struct ConsoleUI
     void onGroupMatrix(const scxt::modulation::GroupMatrix::RoutingTable &) ON_STUB;
 
     void onGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &) ON_STUB;
+    void onPartKeySwitchDisplay(const scxt::messaging::client::partKeySwitchPayload_t &) ON_STUB;
 
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &) ON_STUB;

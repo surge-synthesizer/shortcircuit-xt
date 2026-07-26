@@ -263,6 +263,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     std::array<std::array<scxt::engine::Macro, scxt::macrosPerPart>, scxt::numParts> macroCache;
 
+    // Keyswitch keys per part, so the mapping keyboard can mark every switch in the part
+    // rather than only the selected group's
+    std::array<scxt::engine::partKeySwitchDisplay_t, scxt::numParts> keySwitchDisplay{};
+
     // Some items which are not fully represented here have a server-side clipboard
     scxt::engine::Clipboard::ContentType clipboardType{scxt::engine::Clipboard::ContentType::NONE};
     // but some can be copy and pasted entirely in the ui.

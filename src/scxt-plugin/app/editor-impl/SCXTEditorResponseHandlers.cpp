@@ -588,6 +588,17 @@ void SCXTEditorReceiver::onGroupTriggerConditions(scxt::engine::GroupTriggerCond
     editor.editScreen->partSidebar->groupTriggerConditionChanged(g);
 }
 
+void SCXTEditorReceiver::onPartKeySwitchDisplay(
+    const scxt::messaging::client::partKeySwitchPayload_t &p)
+{
+    const auto &[part, keys] = p;
+    if (part < 0 || part >= scxt::numParts)
+        return;
+    editor.keySwitchDisplay[part] = keys;
+    // the mapping keyboard paints these
+    editor.editScreen->repaint();
+}
+
 void SCXTEditorReceiver::onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &t)
 {
     editor.tuningStatus = t;

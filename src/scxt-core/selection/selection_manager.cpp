@@ -772,6 +772,11 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
 
     serializationSendToClient(cms::s2c_send_group_trigger_conditions, g->triggerConditions,
                               *(engine.getMessageController()));
+    serializationSendToClient(
+        cms::s2c_send_part_keyswitch_display,
+        cms::partKeySwitchPayload_t{(int16_t)part,
+                                    engine.getPatch()->getPart(part)->keySwitchDisplay()},
+        *(engine.getMessageController()));
 }
 
 void SelectionManager::sendDisplayDataForLeadSelection(bool forZone)

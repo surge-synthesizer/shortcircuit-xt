@@ -194,7 +194,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                                     gkt->mutedByLatch = false;
                                     continue;
                                 }
-                                gkt->mutedByLatch = gkt->id != group->id;
+                                // Several groups can share a switch key, so bring up everything
+                                // latched to this key rather than only the group we matched
+                                gkt->mutedByLatch = !gkt->triggerConditions.keySwitchLatchHolds(
+                                    *this, *gkt, channel, midiKey);
                                 SCLOG_IF(groupTrigggers,
                                          "   Muted by latch: " << gkt->mutedByLatch);
                             }

@@ -34,6 +34,8 @@
 #include "json/engine_traits.h"
 #include "json/stream.h"
 
+#include "test_utils.h"
+
 /*
  * Group keyswitch triggers. Like the exclusive group tests these drive the engine
  * directly on the test thread so we exercise real findZone / voice creation logic.
@@ -43,30 +45,10 @@
  * a switch press can never be confused with a zone hit.
  */
 
-static constexpr double TEST_SAMPLE_RATE = 48000.0;
+// makeEngine, addBlankZoneToGroup and the voice counters are in test_utils.h
 
 static constexpr int SW_A{24}, SW_B{25};
 static constexpr int PLAY_KEY{60};
-
-static scxt::engine::Engine *makeEngine()
-{
-    auto *e = new scxt::engine::Engine();
-    e->prepareToPlay(TEST_SAMPLE_RATE);
-    // Pin tuning so an MTS-ESP master on the dev box can't remap our test keys
-    e->midikeyRetuner.setTuningMode(scxt::tuning::MidikeyRetuner::TWELVE_TET);
-    return e;
-}
-
-static void addBlankZoneToGroup(scxt::engine::Part &part, int groupIdx, int keyLo, int keyHi)
-{
-    auto z = std::make_unique<scxt::engine::Zone>();
-    z->mapping.keyboardRange.keyStart = keyLo;
-    z->mapping.keyboardRange.keyEnd = keyHi;
-    z->mapping.velocityRange.velStart = 0;
-    z->mapping.velocityRange.velEnd = 127;
-    z->initialize();
-    part.getGroup(groupIdx)->addZone(z);
-}
 
 static void setKeyswitch(scxt::engine::Part &part, int groupIdx, scxt::engine::GroupTriggerID id,
                          int key)
@@ -89,34 +71,6 @@ static void setupTwoLatchGroups(scxt::engine::Engine &eng)
     setKeyswitch(part, 0, scxt::engine::GroupTriggerID::KEYSWITCH_LATCH, SW_A);
     setKeyswitch(part, 1, scxt::engine::GroupTriggerID::KEYSWITCH_LATCH, SW_B);
     part.guaranteeKeyswitchLatchCoherence(eng);
-}
-
-static int countLiveVoicesInGroup(const scxt::engine::Group &grp)
-{
-    int n = 0;
-    for (const auto &zone : grp.getZones())
-        for (int i = 0; i < (int)scxt::maxVoices; ++i)
-        {
-            const auto *v = zone->voiceWeakPointers[i];
-            if (v && v->isVoiceAssigned && v->terminationSequence < 0)
-                n++;
-        }
-    return n;
-}
-
-// Voices for one specific key. A released voice still rings, so tests that press several
-// keys in sequence have to ask about the key they care about rather than the whole group.
-static int countLiveVoicesForKey(const scxt::engine::Group &grp, int key)
-{
-    int n = 0;
-    for (const auto &zone : grp.getZones())
-        for (int i = 0; i < (int)scxt::maxVoices; ++i)
-        {
-            const auto *v = zone->voiceWeakPointers[i];
-            if (v && v->isVoiceAssigned && v->terminationSequence < 0 && v->key == key)
-                n++;
-        }
-    return n;
 }
 
 // Read a JSON group into out. The target must already belong to a part - a detached Group
@@ -179,6 +133,116 @@ TEST_CASE("Keyswitch latch - switching back and forth", "[keyswitch]")
     eng->processNoteOnEvent(0, 0, PLAY_KEY, -1, 1.f, 0.f);
     REQUIRE(countLiveVoicesInGroup(*part.getGroup(0)) >= 1);
     REQUIRE(countLiveVoicesInGroup(*part.getGroup(1)) == 0);
+}
+
+TEST_CASE("Keyswitch latch - two groups can share one switch key", "[keyswitch]")
+{
+    // A switch key selects an articulation, and an articulation may be built from more than
+    // one group, so sharing a key has to bring all of them up together.
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto &part = *eng->getPatch()->getPart(0);
+    for (int i = 0; i < 3; ++i)
+    {
+        part.addGroup();
+        addBlankZoneToGroup(part, i, 48, 72);
+    }
+    // groups 0 and 1 are both on SW_A; group 2 is the other articulation
+    setKeyswitch(part, 0, scxt::engine::GroupTriggerID::KEYSWITCH_LATCH, SW_A);
+    setKeyswitch(part, 1, scxt::engine::GroupTriggerID::KEYSWITCH_LATCH, SW_A);
+    setKeyswitch(part, 2, scxt::engine::GroupTriggerID::KEYSWITCH_LATCH, SW_B);
+    part.guaranteeKeyswitchLatchCoherence(*eng);
+
+    // Coherence settles on SW_A, so both of its groups are live
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+    REQUIRE(part.getGroup(2)->mutedByLatch);
+
+    eng->processNoteOnEvent(0, 0, PLAY_KEY, -1, 1.f, 0.f);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(0), PLAY_KEY) >= 1);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(1), PLAY_KEY) >= 1);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(2), PLAY_KEY) == 0);
+
+    // Switch to SW_B and only group 2 answers
+    eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
+    REQUIRE(!part.getGroup(2)->mutedByLatch);
+
+    eng->processNoteOnEvent(0, 0, PLAY_KEY + 1, -1, 1.f, 0.f);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(0), PLAY_KEY + 1) == 0);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(1), PLAY_KEY + 1) == 0);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(2), PLAY_KEY + 1) >= 1);
+
+    // And back again - both shared-key groups return together
+    eng->processNoteOnEvent(0, 0, SW_A, -1, 1.f, 0.f);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+    REQUIRE(part.getGroup(2)->mutedByLatch);
+}
+
+TEST_CASE("Keyswitch latch - coherence never leaves everything muted", "[keyswitch]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+
+    // However we got here, an instrument with keyswitches and no articulation is unusable
+    part.getGroup(0)->mutedByLatch = true;
+    part.getGroup(1)->mutedByLatch = true;
+    part.guaranteeKeyswitchLatchCoherence(*eng);
+
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
+}
+
+TEST_CASE("Keyswitch - part reports every switch key and which is live", "[keyswitch]")
+{
+    // The mapping keyboard marks all of a part's switch keys, not just the selected group's,
+    // and paints the live articulation differently from the rest.
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+
+    using kss = scxt::engine::KeySwitchDisplayState;
+    auto ks = part.keySwitchDisplay();
+    REQUIRE(ks[SW_A] == (int32_t)kss::ACTIVE);
+    REQUIRE(ks[SW_B] == (int32_t)kss::INACTIVE);
+    REQUIRE(ks[PLAY_KEY] == (int32_t)kss::NOT_A_SWITCH);
+
+    // Switching articulation swaps which of the two reads as live
+    eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
+    ks = part.keySwitchDisplay();
+    REQUIRE(ks[SW_A] == (int32_t)kss::INACTIVE);
+    REQUIRE(ks[SW_B] == (int32_t)kss::ACTIVE);
+
+    // A momentary switch is a switch key, but is never reported live from a snapshot
+    part.addGroup();
+    addBlankZoneToGroup(part, 2, 48, 72);
+    setKeyswitch(part, 2, scxt::engine::GroupTriggerID::KEYSWITCH_MOMENTARY, PLAY_KEY + 5);
+    ks = part.keySwitchDisplay();
+    REQUIRE(ks[PLAY_KEY + 5] == (int32_t)kss::INACTIVE);
+}
+
+TEST_CASE("Keyswitch - switch keys are reported for display", "[keyswitch]")
+{
+    // The mapping keyboard paints these, working from a client-side copy whose conditions
+    // are never built, so the query has to run off storage alone.
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+
+    scxt::engine::GroupTriggerConditions uiCopy = part.getGroup(0)->triggerConditions;
+    REQUIRE(uiCopy.isKeySwitchKey(SW_A));
+    REQUIRE(!uiCopy.isKeySwitchKey(SW_B));
+    REQUIRE(!uiCopy.isKeySwitchKey(PLAY_KEY));
+
+    // Momentary switches are switch keys too, and an inactive row is not
+    setKeyswitch(part, 1, scxt::engine::GroupTriggerID::KEYSWITCH_MOMENTARY, PLAY_KEY + 3);
+    scxt::engine::GroupTriggerConditions momCopy = part.getGroup(1)->triggerConditions;
+    REQUIRE(momCopy.isKeySwitchKey(PLAY_KEY + 3));
+
+    momCopy.active[0] = false;
+    REQUIRE(!momCopy.isKeySwitchKey(PLAY_KEY + 3));
 }
 
 TEST_CASE("Keyswitch latch - condition holding is not the same as playing", "[keyswitch]")

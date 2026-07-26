@@ -46,30 +46,8 @@
  *   group 0 — blank zone covering keys 36-47
  *   group 1 — blank zone covering keys 48-59
  *
- * "Blank" means no sample loaded; the engine still creates voices for
- * sample-less zones (the generator just produces silence).
+ * makeEngine and addBlankZoneToGroup are in test_utils.h.
  */
-static scxt::engine::Engine *makeEngine()
-{
-    auto *e = new scxt::engine::Engine();
-    e->prepareToPlay(TEST_SAMPLE_RATE);
-    // Pin tuning to 12-TET so any MTS-ESP master running on the dev box
-    // doesn't remap test keys out of the zone ranges.
-    e->midikeyRetuner.setTuningMode(scxt::tuning::MidikeyRetuner::TWELVE_TET);
-    return e;
-}
-
-static void addBlankZoneToGroup(scxt::engine::Part &part, int groupIdx, int keyLo, int keyHi)
-{
-    auto z = std::make_unique<scxt::engine::Zone>();
-    z->mapping.keyboardRange.keyStart = keyLo;
-    z->mapping.keyboardRange.keyEnd = keyHi;
-    z->mapping.velocityRange.velStart = 0;
-    z->mapping.velocityRange.velEnd = 127;
-    z->initialize();
-    part.getGroup(groupIdx)->addZone(z);
-}
-
 static void setupTwoGroups(scxt::engine::Engine &eng)
 {
     auto &part = *eng.getPatch()->getPart(0);
@@ -118,19 +96,7 @@ static int countTerminatingVoicesInGroup(const scxt::engine::Group &grp)
     return n;
 }
 
-// Count voices that exist and have NOT been choked.
-static int countLiveVoicesInGroup(const scxt::engine::Group &grp)
-{
-    int n = 0;
-    for (const auto &zone : grp.getZones())
-        for (int i = 0; i < (int)scxt::maxVoices; ++i)
-        {
-            const auto *v = zone->voiceWeakPointers[i];
-            if (v && v->isVoiceAssigned && v->terminationSequence < 0)
-                n++;
-        }
-    return n;
-}
+// countLiveVoicesInGroup — the un-choked counterpart — is in test_utils.h
 
 TEST_CASE("Exclusive Group - basic choke", "[exclusive_group]")
 {

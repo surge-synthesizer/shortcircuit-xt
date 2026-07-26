@@ -88,6 +88,7 @@ struct SCXTEditorReceiver
     void onGroupMatrix(const scxt::modulation::GroupMatrix::RoutingTable &);
 
     void onGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &);
+    void onPartKeySwitchDisplay(const scxt::messaging::client::partKeySwitchPayload_t &);
 
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &);

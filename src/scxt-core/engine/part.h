@@ -274,6 +274,9 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     void setBusEffectType(Engine &e, int idx, AvailableBusEffects t);
     void setupOnUnstream(Engine &e);
     void guaranteeKeyswitchLatchCoherence(Engine &e);
+
+    // Every keyswitch key across this part's groups, for clients that draw a keyboard
+    partKeySwitchDisplay_t keySwitchDisplay() const;
     void sendAllBusEffectInfoToClient(const Engine &e)
     {
         for (int i = 0; i < maxEffectsPerPart; ++i)
