@@ -141,64 +141,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
         {
             assert(variantIndex == -1);
             SCLOG_IF(voiceResponder, "-- Launching zone and using its RR tactic");
-            int nextAvail{0};
-            if (nbSampleLoadedInZone == 1 || z->variantData.variantPlaybackMode == Zone::UNISON)
-            {
-                z->sampleIndex = 0;
-            }
-            else if (nbSampleLoadedInZone == 2 &&
-                     z->variantData.variantPlaybackMode != Zone::TRUE_RANDOM)
-            {
-                z->sampleIndex = (z->sampleIndex + 1) % 2;
-            }
-            else
-            {
-                if (z->variantData.variantPlaybackMode == Zone::FORWARD_RR)
-                {
-                    z->sampleIndex = (z->sampleIndex + 1) % nbSampleLoadedInZone;
-                }
-                else if (z->variantData.variantPlaybackMode == Zone::TRUE_RANDOM)
-                {
-                    z->sampleIndex = engine.rng.unifInt(0, nbSampleLoadedInZone);
-                }
-                else if (z->variantData.variantPlaybackMode == Zone::RANDOM_NOREPEAT)
-                {
-                    auto previdx = z->sampleIndex;
-                    auto newidx = previdx;
-                    while (newidx == previdx)
-                        newidx = engine.rng.unifInt(0, nbSampleLoadedInZone);
-                    z->sampleIndex = newidx;
-                }
-                else if (z->variantData.variantPlaybackMode == Zone::RANDOM_CYCLE)
-                {
-                    if (z->numAvail == 0 || z->setupFor != nbSampleLoadedInZone)
-                    {
-                        for (auto i = 0; i < nbSampleLoadedInZone; ++i)
-                        {
-                            z->rrs[i] = i;
-                        }
-                        z->numAvail = nbSampleLoadedInZone;
-                        z->setupFor = nbSampleLoadedInZone;
-
-                        nextAvail = engine.rng.unifInt(0, z->numAvail);
-                        if (z->rrs[nextAvail] == z->lastPlayed)
-                        {
-                            // the -1 here makes sure we don't re-reach ourselves
-                            nextAvail = (nextAvail + (engine.rng.unifInt(0, z->numAvail - 1))) %
-                                        z->numAvail;
-                        }
-                    }
-                    else
-                    {
-                        nextAvail = z->numAvail == 1 ? 0 : (engine.rng.unifInt(0, z->numAvail));
-                    }
-                    auto voice = z->rrs[nextAvail];              // we've used it so its a gap
-                    z->rrs[nextAvail] = z->rrs[z->numAvail - 1]; // fill the gap with the end point
-                    z->numAvail--; // and move the endpoint back by one
-                    z->lastPlayed = voice;
-                    z->sampleIndex = voice;
-                }
-            }
+            z->advanceVariantIndex();
 
             if (!z->samplePointers[z->sampleIndex])
             {
@@ -408,8 +351,10 @@ void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, 
     v->initiateGlide(key);
     v->key = key;
     v->originalMidiKey = key - dkey;
+    v->keyChangedInLegatoModeTrigger = 1.f;
     v->calculateVoicePitch();
     v->setIsGated(true);
+    // aeg/aegOS are eg[0]/egOS[0], so this re-attacks the amp envelope too
     for (auto &eg : v->eg)
     {
         eg.attackFrom(eg.outBlock0);
@@ -417,6 +362,24 @@ void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, 
     for (auto &eg : v->egOS)
     {
         eg.attackFrom(eg.outBlock0);
+    }
+
+    if (v->isParked)
+    {
+        /*
+         * The parked voice's generators have stopped, so unlike a releasing voice it needs its
+         * samples rewound. Modulators are deliberately left running - see Voice::isParked. The
+         * generator init reads the voice pitch, so it has to follow the key update above.
+         */
+        SCLOG_IF(voiceResponder, "unparking voice " << v << " to " << (int)key);
+
+        v->isParked = false;
+        v->firstSamplePlayback = true;
+        if (v->zone->getNumSampleLoaded() > 0)
+        {
+            v->setSampleIndex(v->zone->advanceVariantIndex());
+        }
+        v->initializeGenerator();
     }
 }
 

@@ -152,6 +152,10 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     int lastPlayed{-1};
     std::array<int, maxVariantsPerZone> rrs{};
 
+    // Pick the variant the next voice off this zone should play, per variantPlaybackMode,
+    // and store it in sampleIndex. Advances the round-robin/random-cycle state.
+    int8_t advanceVariantIndex();
+
     auto getNumSampleLoaded() const
     {
         return std::distance(variantData.variants.begin(),
@@ -243,6 +247,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     uint32_t activeVoices{0};
     std::array<voice::Voice *, maxVoices> voiceWeakPointers;
     int gatedVoiceCount{0};
+    // Recomputed every process block; see Voice::isParked
+    int soundingVoiceCount{0};
+    int parkedVoiceCount{0};
     void terminateAllVoices();
     bool terminateOnNextProcess{false};
 
@@ -250,6 +257,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     // Just a weak ref - don't take ownership. engine manages lifetime
     void addVoice(voice::Voice *);
     void removeVoice(voice::Voice *);
+    // End any parked voices; they are reaped on the next process block
+    void endParkedVoices();
 
     voice::modulation::Matrix::RoutingTable routingTable;
     void onRoutingChanged();
