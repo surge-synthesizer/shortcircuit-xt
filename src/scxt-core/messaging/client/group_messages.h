@@ -34,6 +34,7 @@
 #include "selection/selection_manager.h"
 #include "messaging/client/detail/message_helpers.h"
 #include "undo_manager/payload_undoable_items.h"
+#include "part_messages.h" // a trigger edit refreshes the part's keyswitch display
 
 namespace scxt::messaging::client
 {
@@ -67,13 +68,22 @@ inline void doUpdateGroupTriggerConditions(const engine::GroupTriggerConditions 
     if (ga.has_value())
     {
         undo::pushPayloadUndoFor<undo::GroupTriggerConditionsSpec>(engine, {*ga});
-        cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
-            auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
-            grp->triggerConditions = p;
-            grp->triggerConditions.setupOnUnstream(
-                eng.getPatch()->getPart(g.part)->groupTriggerInstrumentState);
-            eng.getPatch()->getPart(g.part)->guaranteeKeyswitchLatchCoherence(eng);
-        });
+        cont.scheduleAudioThreadCallback(
+            [p = payload, g = *ga](auto &eng) {
+                auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
+                grp->triggerConditions = p;
+                grp->triggerConditions.setupOnUnstream(
+                    eng.getPatch()->getPart(g.part)->groupTriggerInstrumentState);
+                eng.getPatch()->getPart(g.part)->guaranteeKeyswitchLatchCoherence(eng);
+            },
+            [g = *ga](const auto &eng) {
+                // the edit may have moved a switch key, so refresh the client keyboard
+                serializationSendToClient(
+                    s2c_send_part_keyswitch_display,
+                    partKeySwitchPayload_t{(int16_t)g.part,
+                                           eng.getPatch()->getPart(g.part)->keySwitchDisplay()},
+                    *(eng.getMessageController()));
+            });
     }
 }
 

@@ -67,6 +67,15 @@ void ZoneLayoutKeyboard::paint(juce::Graphics &g)
             g.fillRect(kr);
         }
 
+        auto ksState = editor->keySwitchDisplay[editor->selectedPart][i];
+        if (ksState != (int32_t)engine::KeySwitchDisplayState::NOT_A_SWITCH)
+        {
+            auto live = ksState == (int32_t)engine::KeySwitchDisplayState::ACTIVE;
+            g.setColour(
+                editor->themeColor(live ? theme::ColorMap::accent_2a : theme::ColorMap::accent_2b));
+            g.fillRect(kr);
+        }
+
         auto selZoneColor = editor->themeColor(theme::ColorMap::accent_1b);
         if (i == display->mappingView.rootKey)
         {

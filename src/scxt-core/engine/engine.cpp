@@ -1607,6 +1607,10 @@ void Engine::sendFullRefreshToClient() const
             messaging::client::s2c_send_part_configuration,
             messaging::client::partConfigurationPayload_t{p, getPatch()->getPart(p)->configuration},
             *(getMessageController()));
+        serializationSendToClient(messaging::client::s2c_send_part_keyswitch_display,
+                                  messaging::client::partKeySwitchPayload_t{
+                                      p, getPatch()->getPart(p)->keySwitchDisplay()},
+                                  *(getMessageController()));
         for (int i = 0; i < macrosPerPart; ++i)
         {
             serializationSendToClient(

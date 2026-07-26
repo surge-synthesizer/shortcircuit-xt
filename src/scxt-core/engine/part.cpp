@@ -328,71 +328,65 @@ void Part::setupOnUnstream(Engine &e)
 
 void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
 {
-    int kslCount{0};
-    int muteCount{0};
+    /*
+     * Any number of groups can share a switch key, so the live articulation is "every group
+     * latched to one particular key" rather than "one group". Settle on which key that is -
+     * whatever is already live if anything is, otherwise the first switch we find - and bring
+     * up exactly the groups on it. That leaves a shared-key pair both sounding, and never
+     * leaves an instrument with keyswitches and nothing selected.
+     */
+    int16_t selectedKey{-1};
     for (auto &g : groups)
     {
-        if (g->triggerConditions.containsKeySwitchLatch)
+        auto k = g->triggerConditions.firstKeySwitchLatchKey();
+        if (k < 0)
+            continue;
+        if (selectedKey < 0)
+            selectedKey = k;
+        if (!g->mutedByLatch)
         {
-            SCLOG_IF(groupTrigggers, "Group has trigger " << g->id.to_string());
-            kslCount++;
-        }
-        if (g->mutedByLatch)
-        {
-            SCLOG_IF(groupTrigggers, "Group is Muted " << g->id.to_string());
-            muteCount++;
+            selectedKey = k;
+            break;
         }
     }
-    if (kslCount == 0 && muteCount == 0)
-        return;
 
-    if ((kslCount == 0 && muteCount != 0) || (kslCount == 1 && muteCount != 0))
+    if (selectedKey < 0)
     {
-        // Either there's no switches, or theres just one so it is on
-        SCLOG_IF(debug, "Adjusting mutes in zero or 1 ksl case");
+        // No keyswitches at all, so nothing may claim to be latched off
         for (auto &g : groups)
-        {
             g->mutedByLatch = false;
-        }
+        return;
     }
-    else if (muteCount != kslCount - 1)
+
+    for (auto &g : groups)
     {
-        SCLOG_IF(groupTrigggers,
-                 "Key Switches not set up properly : " << SCD(kslCount) << SCD(muteCount));
-        if (muteCount > kslCount - 1)
-        {
-            // Too maky groups are muted. Unmute some
-            for (auto &g : groups)
-            {
-                if (g->triggerConditions.containsKeySwitchLatch && g->mutedByLatch)
-                {
-                    SCLOG_IF(groupTrigggers, "Stream Un-Muting " << g->id.to_string()
-                                                                 << SCD(kslCount)
-                                                                 << SCD(muteCount));
-                    g->mutedByLatch = false;
-                    muteCount--;
-                    if (muteCount == kslCount - 1)
-                        break;
-                }
-            }
-        }
-        else
-        {
-            // Not enough groups are muted. Mute from back forwards
-            for (auto &g : groups | std::views::reverse)
-            {
-                if (g->triggerConditions.containsKeySwitchLatch && !g->mutedByLatch)
-                {
-                    SCLOG_IF(groupTrigggers, "Stream Muting " << g->id.to_string() << SCD(kslCount)
-                                                              << SCD(muteCount));
-                    g->mutedByLatch = true;
-                    muteCount++;
-                    if (muteCount == kslCount - 1)
-                        break;
-                }
-            }
-        }
+        auto k = g->triggerConditions.firstKeySwitchLatchKey();
+        g->mutedByLatch = (k >= 0 && k != selectedKey);
+        SCLOG_IF(groupTrigggers, "Coherence " << g->id.to_string() << SCD(k) << SCD(selectedKey)
+                                              << SCD(g->mutedByLatch));
     }
+}
+
+partKeySwitchDisplay_t Part::keySwitchDisplay() const
+{
+    partKeySwitchDisplay_t res{};
+    for (int k = 0; k < 128; ++k)
+    {
+        bool isSwitch{false}, isLive{false};
+        for (const auto &g : groups)
+        {
+            if (g->triggerConditions.isKeySwitchKey(k))
+                isSwitch = true;
+            // A momentary switch is live only while held, which is audio thread state this
+            // snapshot cannot see, so only latches report as live here.
+            if (g->triggerConditions.firstKeySwitchLatchKey() == k && !g->mutedByLatch)
+                isLive = true;
+        }
+        res[k] = (int32_t)(isSwitch ? (isLive ? KeySwitchDisplayState::ACTIVE
+                                              : KeySwitchDisplayState::INACTIVE)
+                                    : KeySwitchDisplayState::NOT_A_SWITCH);
+    }
+    return res;
 }
 
 void Part::setBusEffectType(Engine &e, int idx, AvailableBusEffects t)

@@ -67,6 +67,18 @@ enum struct GroupTriggerID : int32_t
 std::string toStringGroupTriggerID(const GroupTriggerID &p);
 GroupTriggerID fromStringGroupTriggerID(const std::string &p);
 
+/*
+ * How a client should draw a key: not a switch at all, a switch that isn't the selected
+ * articulation, or the live one. Sent as int32 so the payload needs no enum streaming.
+ */
+enum struct KeySwitchDisplayState : int32_t
+{
+    NOT_A_SWITCH = 0,
+    INACTIVE,
+    ACTIVE
+};
+using partKeySwitchDisplay_t = std::array<int32_t, 128>;
+
 struct GroupTriggerStorage
 {
     GroupTriggerID id{GroupTriggerID::NONE};
@@ -162,6 +174,13 @@ struct GroupTriggerConditions
      */
     bool groupShouldPlay(const Engine &, const Group &, int16_t channel, int16_t midiKey) const;
     bool keySwitchLatchHolds(const Engine &, const Group &, int16_t channel, int16_t midiKey) const;
+
+    /*
+     * Storage-only queries. The client keeps a copy of this struct whose conditions are never
+     * built, so anything the UI asks has to be answerable from storage and active alone.
+     */
+    bool isKeySwitchKey(int16_t midiKey) const;
+    int16_t firstKeySwitchLatchKey() const; // -1 if this group has no latch
 
   protected:
     std::array<GroupTriggerBuffer, scxt::triggerConditionsPerGroup> conditionBuffers;
