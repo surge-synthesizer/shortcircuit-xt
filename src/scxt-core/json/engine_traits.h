@@ -469,7 +469,6 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"oversample", t.oversample},
                       {"velocitySensitivity", t.velocitySensitivity},
                       {"muted", t.muted},
-                      {"mutedByLatch", t.mutedByLatch},
                       {"procRouting", t.procRouting},
                       {"prCon", t.procRoutingConsistent},
                       {"buCon", t.busRoutingConsistent},
@@ -490,7 +489,6 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findIf(v, "pan", result.pan);
                  findOrSet(v, "tn", 0.f, result.tuning);
                  findIf(v, "muted", result.muted);
-                 findOrSet(v, "mutedByLatch", false, result.mutedByLatch);
                  findIf(v, "procRouting", result.procRouting);
                  findIf(v, "velocitySensitivity", result.velocitySensitivity);
                  findIf(v, "oversample", result.oversample);
@@ -554,13 +552,23 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                       {"miscSourceStorage", t.miscSourceStorage},
                       {"audioSourceStorage", t.audioSourceStorage},
                       {"processorStorage", t.processorStorage},
-                      {"triggerConditions", t.triggerConditions}};
+                      {"triggerConditions", t.triggerConditions},
+                      {"mbl", t.mutedByLatch}};
              }),
              SC_TO({
                  auto &group = to;
                  findIf(v, "name", group.name);
                  findIf(v, "gegStorage", group.gegStorage);
                  findIf(v, "outputInfo", group.outputInfo);
+
+                 // mutedByLatch used to live inside outputInfo; read the old nested spelling
+                 // so patches saved before the move keep their selected articulation
+                 group.mutedByLatch = false;
+                 auto oldOutputInfo = v.find("outputInfo");
+                 if (oldOutputInfo)
+                     findIf(*oldOutputInfo, "mutedByLatch", group.mutedByLatch);
+                 findIf(v, "mbl", group.mutedByLatch);
+
                  findIf(v, "processorStorage", group.processorStorage);
                  findIf(v, "routingTable", group.routingTable);
                  findIf(v, "triggerConditions", group.triggerConditions);

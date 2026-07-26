@@ -337,7 +337,7 @@ void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
             SCLOG_IF(groupTrigggers, "Group has trigger " << g->id.to_string());
             kslCount++;
         }
-        if (g->outputInfo.mutedByLatch)
+        if (g->mutedByLatch)
         {
             SCLOG_IF(groupTrigggers, "Group is Muted " << g->id.to_string());
             muteCount++;
@@ -352,7 +352,7 @@ void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
         SCLOG_IF(debug, "Adjusting mutes in zero or 1 ksl case");
         for (auto &g : groups)
         {
-            g->outputInfo.mutedByLatch = false;
+            g->mutedByLatch = false;
         }
     }
     else if (muteCount != kslCount - 1)
@@ -364,12 +364,12 @@ void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
             // Too maky groups are muted. Unmute some
             for (auto &g : groups)
             {
-                if (g->triggerConditions.containsKeySwitchLatch && g->outputInfo.mutedByLatch)
+                if (g->triggerConditions.containsKeySwitchLatch && g->mutedByLatch)
                 {
                     SCLOG_IF(groupTrigggers, "Stream Un-Muting " << g->id.to_string()
                                                                  << SCD(kslCount)
                                                                  << SCD(muteCount));
-                    g->outputInfo.mutedByLatch = false;
+                    g->mutedByLatch = false;
                     muteCount--;
                     if (muteCount == kslCount - 1)
                         break;
@@ -381,11 +381,11 @@ void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
             // Not enough groups are muted. Mute from back forwards
             for (auto &g : groups | std::views::reverse)
             {
-                if (g->triggerConditions.containsKeySwitchLatch && !g->outputInfo.mutedByLatch)
+                if (g->triggerConditions.containsKeySwitchLatch && !g->mutedByLatch)
                 {
                     SCLOG_IF(groupTrigggers, "Stream Muting " << g->id.to_string() << SCD(kslCount)
                                                               << SCD(muteCount));
-                    g->outputInfo.mutedByLatch = true;
+                    g->mutedByLatch = true;
                     muteCount++;
                     if (muteCount == kslCount - 1)
                         break;

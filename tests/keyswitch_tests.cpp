@@ -32,6 +32,7 @@
 #include "engine/zone.h"
 #include "voice/voice.h"
 #include "json/engine_traits.h"
+#include "json/stream.h"
 
 /*
  * Group keyswitch triggers. Like the exclusive group tests these drive the engine
@@ -118,6 +119,16 @@ static int countLiveVoicesForKey(const scxt::engine::Group &grp, int key)
     return n;
 }
 
+// Read a JSON group into out. The target must already belong to a part - a detached Group
+// has no engine to hand its zones on unstream.
+static void unstreamGroup(const std::string &json, scxt::engine::Group &out)
+{
+    tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>>
+        consumer;
+    tao::json::events::from_string(consumer, json);
+    consumer.value.to(out);
+}
+
 TEST_CASE("Keyswitch latch - exactly one articulation is live at rest", "[keyswitch]")
 {
     std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
@@ -125,8 +136,8 @@ TEST_CASE("Keyswitch latch - exactly one articulation is live at rest", "[keyswi
     auto &part = *eng->getPatch()->getPart(0);
 
     // Coherence leaves the first keyswitch group selected
-    REQUIRE(!part.getGroup(0)->outputInfo.mutedByLatch);
-    REQUIRE(part.getGroup(1)->outputInfo.mutedByLatch);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
 
     eng->processNoteOnEvent(0, 0, PLAY_KEY, -1, 1.f, 0.f);
     REQUIRE(countLiveVoicesInGroup(*part.getGroup(0)) >= 1);
@@ -141,8 +152,8 @@ TEST_CASE("Keyswitch latch - switch key selects its group and sounds nothing", "
 
     // Pressing SW_B hands the articulation to group 1 and must not make a sound
     eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
-    REQUIRE(part.getGroup(0)->outputInfo.mutedByLatch);
-    REQUIRE(!part.getGroup(1)->outputInfo.mutedByLatch);
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
     REQUIRE(countLiveVoicesInGroup(*part.getGroup(0)) == 0);
     REQUIRE(countLiveVoicesInGroup(*part.getGroup(1)) == 0);
 
@@ -159,11 +170,11 @@ TEST_CASE("Keyswitch latch - switching back and forth", "[keyswitch]")
     auto &part = *eng->getPatch()->getPart(0);
 
     eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
-    REQUIRE(!part.getGroup(1)->outputInfo.mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
 
     eng->processNoteOnEvent(0, 0, SW_A, -1, 1.f, 0.f);
-    REQUIRE(!part.getGroup(0)->outputInfo.mutedByLatch);
-    REQUIRE(part.getGroup(1)->outputInfo.mutedByLatch);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
 
     eng->processNoteOnEvent(0, 0, PLAY_KEY, -1, 1.f, 0.f);
     REQUIRE(countLiveVoicesInGroup(*part.getGroup(0)) >= 1);
@@ -203,15 +214,15 @@ TEST_CASE("Keyswitch latch - follows the MIDI key, not the retuned key", "[keysw
     // selected group - the remap moves the pitch, not the switch.
     auto sounded = eng->findZone(0, 50, PLAY_KEY, -1, 100, buf);
     REQUIRE(sounded == 1);
-    REQUIRE(!part.getGroup(0)->outputInfo.mutedByLatch);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
 
     // Pressing SW_B while the tuning remaps it into the middle of the zone range must still
     // read as a keyswitch: no voices, and group 1 becomes the live articulation. Before the
     // conditions took a MIDI key this saw 60, missed the switch, and played a note instead.
     auto switched = eng->findZone(0, 60, SW_B, -1, 100, buf);
     REQUIRE(switched == 0);
-    REQUIRE(part.getGroup(0)->outputInfo.mutedByLatch);
-    REQUIRE(!part.getGroup(1)->outputInfo.mutedByLatch);
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
 }
 
 TEST_CASE("Keyswitch momentary - group sounds only while the switch is held", "[keyswitch]")
@@ -250,28 +261,54 @@ TEST_CASE("Keyswitch latch - selection survives a stream round trip", "[keyswitc
     auto &part = *eng->getPatch()->getPart(0);
 
     eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
-    REQUIRE(part.getGroup(0)->outputInfo.mutedByLatch);
-    REQUIRE(!part.getGroup(1)->outputInfo.mutedByLatch);
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
 
-    auto s = tao::json::to_string(scxt::json::scxt_value(part.getGroup(1)->outputInfo));
-    REQUIRE(s.find("mutedByLatch") != std::string::npos);
+    // Save and reload the way a DAW session does. These tests run on the test thread rather
+    // than the serialization thread, so the stream path's thread assert needs waiving.
+    auto saved = scxt::json::streamEngineState(*eng);
 
-    scxt::engine::Group::GroupOutputInfo readBack;
+    std::unique_ptr<scxt::engine::Engine> reloaded(makeEngine());
     {
-        tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>>
-            consumer;
-        tao::json::events::from_string(consumer, s);
-        consumer.value.to(readBack);
+        auto bg = reloaded->getMessageController()->threadingChecker.bypassChecksInScope();
+        scxt::json::unstreamEngineState(*reloaded, saved);
     }
-    REQUIRE(!readBack.mutedByLatch);
 
-    auto s0 = tao::json::to_string(scxt::json::scxt_value(part.getGroup(0)->outputInfo));
-    scxt::engine::Group::GroupOutputInfo readBack0;
-    {
-        tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>>
-            consumer;
-        tao::json::events::from_string(consumer, s0);
-        consumer.value.to(readBack0);
-    }
-    REQUIRE(readBack0.mutedByLatch);
+    auto &rpart = *reloaded->getPatch()->getPart(0);
+    REQUIRE(rpart.getGroups().size() == 2);
+    REQUIRE(rpart.getGroup(0)->mutedByLatch);
+    REQUIRE(!rpart.getGroup(1)->mutedByLatch);
+}
+
+TEST_CASE("Keyswitch latch - selection is not part of the client-editable output info",
+          "[keyswitch]")
+{
+    // outputInfo is assigned wholesale from the client on several settings updates, so the
+    // live articulation must not travel in it or an unrelated edit would knock it over.
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+
+    eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+
+    // A stale client copy of group 0's settings, replayed the way the settings handlers do
+    auto stale = part.getGroup(0)->outputInfo;
+    part.getGroup(0)->outputInfo = stale;
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+}
+
+TEST_CASE("Keyswitch latch - reads the pre-move nested spelling", "[keyswitch]")
+{
+    // Patches saved while mutedByLatch lived inside outputInfo must still come back on the
+    // articulation they were saved with.
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto &part = *eng->getPatch()->getPart(0);
+    part.addGroup();
+
+    std::string legacy = R"({"zones":[],"name":"legacy","outputInfo":{"amplitude":1.0,)"
+                         R"("pan":0.0,"muted":false,"mutedByLatch":true}})";
+
+    unstreamGroup(legacy, *part.getGroup(0));
+    REQUIRE(part.getGroup(0)->mutedByLatch);
 }

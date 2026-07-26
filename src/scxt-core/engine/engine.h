@@ -191,12 +191,12 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                                 if (!gkt->triggerConditions.containsKeySwitchLatch)
                                 {
                                     SCLOG_IF(groupTrigggers, "   Not a keyswitch - mute false");
-                                    gkt->outputInfo.mutedByLatch = false;
+                                    gkt->mutedByLatch = false;
                                     continue;
                                 }
-                                gkt->outputInfo.mutedByLatch = gkt->id != group->id;
+                                gkt->mutedByLatch = gkt->id != group->id;
                                 SCLOG_IF(groupTrigggers,
-                                         "   Muted by latch: " << gkt->outputInfo.mutedByLatch);
+                                         "   Muted by latch: " << gkt->mutedByLatch);
                             }
 
                             // Ignore any voices found here
@@ -208,7 +208,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                         }
                     }
 
-                    if (group->outputInfo.mutedByLatch)
+                    if (group->mutedByLatch)
                     {
                         SCLOG_IF(groupTrigggers, "Group " << group->id.to_string() << " "
                                                           << group->name << " is muted by latch");
