@@ -33,17 +33,10 @@
 #include <cmath>
 #include <algorithm>
 
-#ifndef SCXT_TEST_SOURCE_DIR
-#define SCXT_TEST_SOURCE_DIR ""
-#endif
+#include "test_utils.h"
 
 using namespace scxt;
 namespace fs = std::filesystem;
-
-static fs::path samplePath(const std::string &relative)
-{
-    return fs::path(SCXT_TEST_SOURCE_DIR) / "resources" / "test_samples" / relative;
-}
 
 TEST_CASE("Load Opus sample", "[sample][opus]")
 {

@@ -33,13 +33,13 @@
 #include "voice/voice.h"
 #include "json/engine_traits.h"
 
+#include "test_utils.h"
+
 /*
  * These tests drive the engine directly on the test thread (no ConsoleHarness,
  * no background audio thread) so we avoid the threading complexity of the full
  * harness while still exercising real voice-creation logic.
  */
-
-static constexpr double TEST_SAMPLE_RATE = 48000.0;
 
 /*
  * Build a minimal two-group engine in part 0:

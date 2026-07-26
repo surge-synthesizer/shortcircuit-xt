@@ -37,9 +37,7 @@
 #include "messaging/messaging.h"
 #include "voice/voice.h"
 
-#ifndef SCXT_TEST_SOURCE_DIR
-#define SCXT_TEST_SOURCE_DIR ""
-#endif
+#include "test_utils.h"
 
 /*
  * A LEGATO group layers two zones on one key. If one of them runs out of sound while the key
@@ -61,8 +59,6 @@ namespace fs = std::filesystem;
 
 namespace
 {
-constexpr double TEST_SAMPLE_RATE = 48000.0;
-
 // The sample is ~14s long. Truncating one zone's playback to a few hundred samples makes its
 // generator run out - and so its voice end - a handful of blocks into a held note.
 constexpr int64_t SHORT_ZONE_END_SAMPLE = 512;
@@ -70,11 +66,6 @@ constexpr int64_t SHORT_ZONE_END_SAMPLE = 512;
 // 0..1 on the exp time scale; long enough that the release tail is still sounding a few
 // blocks after the key comes up.
 constexpr float SLOW_RELEASE = 0.5f;
-
-fs::path samplePath(const std::string &relative)
-{
-    return fs::path(SCXT_TEST_SOURCE_DIR) / "resources" / "test_samples" / relative;
-}
 
 /*
  * One part / one group, driven directly on the test thread (no ConsoleHarness, no audio
