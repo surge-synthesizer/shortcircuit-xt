@@ -27,8 +27,10 @@
 
 #include "catch2/catch2.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include <fstream>
 
@@ -133,6 +135,52 @@ TEST_CASE("Import SF2 fixture", "[importer]")
             if (z->mapping.rootKey != 60)
                 anyNonDefaultRoot = true;
     CHECK(anyNonDefaultRoot);
+}
+
+// A preset zone's key/vel range constrains the instrument zone's rather than
+// replacing it, so each zone is the intersection of the two and an empty
+// intersection produces nothing. The fixture is built so the two differ:
+//
+//   preset zones:      key 0-59         key 60-127
+//   instrument zones:  key 0-71 (lo)    key 72-127 (hi)
+//
+// which intersects to exactly three zones. Importing the cross product instead
+// gives four — including a bogus 72-127 duplicate of the low sample — and that
+// is the shape that made GeneralUser-GS "Steel Guitar" import 100 zones for a
+// ten-region instrument (#1930).
+TEST_CASE("Import SF2 intersects preset and instrument ranges", "[importer]")
+{
+    auto p = fixturePath("sf2_range_intersect.sf2");
+    INFO("fixture=" << p.string());
+    REQUIRE(fs::exists(p));
+
+    ImporterFixture f;
+    f.loadSample(p);
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() == 1);
+
+    std::vector<scxt::engine::Zone *> zones;
+    for (auto &z : part.getGroups()[0]->getZones())
+        zones.push_back(z.get());
+    std::sort(zones.begin(), zones.end(), [](auto *a, auto *b) {
+        return a->mapping.keyboardRange.keyStart < b->mapping.keyboardRange.keyStart;
+    });
+
+    REQUIRE(zones.size() == 3);
+
+    // rootKey distinguishes the two samples: originalPitch 60 (lo) and 84 (hi).
+    CHECK(zones[0]->mapping.keyboardRange.keyStart == 0);
+    CHECK(zones[0]->mapping.keyboardRange.keyEnd == 59);
+    CHECK(zones[0]->mapping.rootKey == 60);
+
+    CHECK(zones[1]->mapping.keyboardRange.keyStart == 60);
+    CHECK(zones[1]->mapping.keyboardRange.keyEnd == 71);
+    CHECK(zones[1]->mapping.rootKey == 60);
+
+    CHECK(zones[2]->mapping.keyboardRange.keyStart == 72);
+    CHECK(zones[2]->mapping.keyboardRange.keyEnd == 127);
+    CHECK(zones[2]->mapping.rootKey == 84);
 }
 
 TEST_CASE("Import AKAI fixture", "[importer]")

@@ -93,6 +93,24 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
                     if (sfsamp == nullptr)
                         continue;
 
+                    // A preset zone's key/vel range constrains the instrument zone's rather
+                    // than replacing it, so the zone is the intersection of the two. An
+                    // empty intersection means this preset zone doesn't reach this
+                    // instrument zone at all, so no zone is created.
+                    auto orDefault = [](auto a, auto d) { return a != sf2::NONE ? a : d; };
+
+                    auto lk =
+                        std::max(orDefault(region->loKey, 0), orDefault(presetRegion->loKey, 0));
+                    auto hk = std::min(orDefault(region->hiKey, 127),
+                                       orDefault(presetRegion->hiKey, 127));
+                    auto lv =
+                        std::max(orDefault(region->minVel, 0), orDefault(presetRegion->minVel, 0));
+                    auto hv = std::min(orDefault(region->maxVel, 127),
+                                       orDefault(presetRegion->maxVel, 127));
+
+                    if (lk > hk || lv > hv)
+                        continue;
+
                     auto sid = e.getSampleManager()->loadSampleFromSF2(p, md5, sf.get(), pc, i, j);
                     if (!sid.has_value())
                         continue;
@@ -100,19 +118,6 @@ bool importSF2(const fs::path &p, engine::Engine &e, int preset)
 
                     auto zn = std::make_unique<engine::Zone>(*sid);
                     zn->engine = &e;
-
-                    auto noneOr = [](auto a, auto b, auto c) {
-                        if (a != sf2::NONE)
-                            return a;
-                        if (b != sf2::NONE)
-                            return b;
-                        return c;
-                    };
-
-                    auto lk = noneOr(region->loKey, presetRegion->loKey, (int)0);
-                    auto hk = noneOr(region->hiKey, presetRegion->hiKey, (int)127);
-                    auto lv = noneOr(region->minVel, presetRegion->minVel, 0);
-                    auto hv = noneOr(region->maxVel, presetRegion->maxVel, 127);
 
                     // SF2 pitch correction is a *signed* char in cents.
                     auto pcv = static_cast<int>(static_cast<int8_t>(sfsamp->PitchCorrection));
