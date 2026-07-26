@@ -37,9 +37,7 @@
 #include "messaging/messaging.h"
 #include "voice/voice.h"
 
-#ifndef SCXT_TEST_SOURCE_DIR
-#define SCXT_TEST_SOURCE_DIR ""
-#endif
+#include "test_utils.h"
 
 /*
  * Glide (portamento) in MONO mode does not move the playing voice the way LEGATO
@@ -56,15 +54,8 @@ namespace fs = std::filesystem;
 
 namespace
 {
-constexpr double TEST_SAMPLE_RATE = 48000.0;
-
 // 0..1 on the 25-second exp scale; ~32ms, so a glide resolves in ~100 blocks.
 constexpr float SLOW_GLIDE = 0.3f;
-
-fs::path samplePath(const std::string &relative)
-{
-    return fs::path(SCXT_TEST_SOURCE_DIR) / "resources" / "test_samples" / relative;
-}
 
 /*
  * One part / one group / one zone spanning the keys we play, driven directly on the

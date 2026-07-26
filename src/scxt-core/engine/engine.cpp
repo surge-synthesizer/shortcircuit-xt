@@ -275,7 +275,9 @@ voice::Voice *Engine::initiateVoice(const pathToZone_t &path)
     SCLOG_IF(voiceResponder, "Fallthrough - looking for early termination voices");
     for (const auto &[idx, v] : sst::cpputils::enumerate(voices))
     {
-        if (v && v->terminationSequence > 0)
+        // Parked voices are silent and only held in case a legato move wants them back, so
+        // under pool exhaustion they go the same way as voices already fading out.
+        if (v && (v->terminationSequence > 0 || v->isParked))
         {
             voices[idx]->cleanupVoice();
             std::unique_ptr<voice::modulation::MatrixEndpoints> mp;
@@ -437,7 +439,7 @@ bool Engine::processAudio()
         {
             auto &itm = sharedUIMemoryState.voiceDisplayItems[i];
 
-            if (v && (v->isVoiceAssigned && v->isVoicePlaying))
+            if (v && v->isVoiceAssigned && v->isSounding())
             {
                 itm.active = true;
                 itm.part = v->zonePath.part;

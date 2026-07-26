@@ -71,6 +71,8 @@ template <bool OS> void Zone::processWithOS(scxt::engine::Engine &onto)
     std::array<voice::Voice *, maxVoices> toCleanUp;
     size_t cleanupIdx{0};
     gatedVoiceCount = 0;
+    soundingVoiceCount = 0;
+    parkedVoiceCount = 0;
     for (int i = 0; i < activeVoices; ++i)
     {
         auto &v = voiceWeakPointers[i];
@@ -103,6 +105,15 @@ template <bool OS> void Zone::processWithOS(scxt::engine::Engine &onto)
         {
             gatedVoiceCount++;
         }
+
+        if (v->isParked)
+        {
+            parkedVoiceCount++;
+        }
+        else if (v->isVoicePlaying)
+        {
+            soundingVoiceCount++;
+        }
     }
 
     for (int i = 0; i < cleanupIdx; ++i)
@@ -131,6 +142,20 @@ void Zone::addVoice(voice::Voice *v)
 
     assert(false);
 }
+void Zone::endParkedVoices()
+{
+    for (int i = 0; i < activeVoices; ++i)
+    {
+        auto v = voiceWeakPointers[i];
+        if (v && v->isParked)
+        {
+            SCLOG_IF(voiceLifecycle, "Ending parked voice at " << SCD((int)v->key));
+            v->isParked = false;
+            v->isVoicePlaying = false;
+        }
+    }
+}
+
 void Zone::removeVoice(voice::Voice *v)
 {
     for (auto &nv : voiceWeakPointers)
@@ -393,6 +418,74 @@ Zone::LoopDirection Zone::fromStringLoopDirection(const std::string &s)
     if (p == inverse.end())
         return FORWARD_ONLY;
     return p->second;
+}
+
+int8_t Zone::advanceVariantIndex()
+{
+    auto nbSampleLoadedInZone = getNumSampleLoaded();
+    if (nbSampleLoadedInZone == 0)
+    {
+        sampleIndex = -1;
+        return sampleIndex;
+    }
+
+    auto &rng = getEngine()->rng;
+    int nextAvail{0};
+
+    if (nbSampleLoadedInZone == 1 || variantData.variantPlaybackMode == UNISON)
+    {
+        sampleIndex = 0;
+    }
+    else if (nbSampleLoadedInZone == 2 && variantData.variantPlaybackMode != TRUE_RANDOM)
+    {
+        sampleIndex = (sampleIndex + 1) % 2;
+    }
+    else if (variantData.variantPlaybackMode == FORWARD_RR)
+    {
+        sampleIndex = (sampleIndex + 1) % nbSampleLoadedInZone;
+    }
+    else if (variantData.variantPlaybackMode == TRUE_RANDOM)
+    {
+        sampleIndex = rng.unifInt(0, nbSampleLoadedInZone);
+    }
+    else if (variantData.variantPlaybackMode == RANDOM_NOREPEAT)
+    {
+        auto previdx = sampleIndex;
+        auto newidx = previdx;
+        while (newidx == previdx)
+            newidx = rng.unifInt(0, nbSampleLoadedInZone);
+        sampleIndex = newidx;
+    }
+    else if (variantData.variantPlaybackMode == RANDOM_CYCLE)
+    {
+        if (numAvail == 0 || setupFor != nbSampleLoadedInZone)
+        {
+            for (auto i = 0; i < nbSampleLoadedInZone; ++i)
+            {
+                rrs[i] = i;
+            }
+            numAvail = nbSampleLoadedInZone;
+            setupFor = nbSampleLoadedInZone;
+
+            nextAvail = rng.unifInt(0, numAvail);
+            if (rrs[nextAvail] == lastPlayed)
+            {
+                // the -1 here makes sure we don't re-reach ourselves
+                nextAvail = (nextAvail + (rng.unifInt(0, numAvail - 1))) % numAvail;
+            }
+        }
+        else
+        {
+            nextAvail = numAvail == 1 ? 0 : (rng.unifInt(0, numAvail));
+        }
+        auto voice = rrs[nextAvail];        // we've used it so its a gap
+        rrs[nextAvail] = rrs[numAvail - 1]; // fill the gap with the end point
+        numAvail--;                         // and move the endpoint back by one
+        lastPlayed = voice;
+        sampleIndex = voice;
+    }
+
+    return sampleIndex;
 }
 
 void Zone::onSampleRateChanged() { mUILag.setRate(120, blockSize, sampleRate); }

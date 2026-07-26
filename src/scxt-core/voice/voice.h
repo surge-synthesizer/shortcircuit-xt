@@ -59,6 +59,9 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float sampleIndexF{0.f};
     float sampleIndexFraction{0};
 
+    // sampleIndex plus its two derived modulation sources
+    void setSampleIndex(int8_t idx);
+
     float inLoopF{0.f}, currentLoopPercentageF{0.f}, currentSamplePercentageF{0.f}, loopCountF{0.0};
 
     bool forceOversample{true};
@@ -297,6 +300,17 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     bool isVoicePlaying{false};
     bool isVoiceAssigned{false};
 
+    /*
+     * A voice in a LEGATO group which runs out of sound doesn't die - it parks. It stays
+     * assigned and registered with the voice manager, runs its modulators but none of its
+     * audio chain, and can be re-attacked in place by a subsequent legato move. That keeps
+     * a short zone layered under a long one retriggerable instead of gone for good.
+     *
+     * Parked voices are reaped by Group::process once nothing in the group is sounding.
+     */
+    bool isParked{false};
+    bool isSounding() const { return isVoicePlaying && !isParked; }
+
     int16_t terminationSequence{-1};
     // how many blocks is the early-terminate/steal fade
     static constexpr int blocksToTerminateAt48k{8};
@@ -327,6 +341,17 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     void release() { setIsGated(false); }
     void beginTerminationSequence()
     {
+        /*
+         * A parked voice is already silent and runs none of its audio chain, so it would never
+         * tick a termination fade down to zero. Nothing to fade - end it here instead.
+         */
+        if (isParked)
+        {
+            isParked = false;
+            isVoicePlaying = false;
+            return;
+        }
+
         // 8 block fade at 48k
         blocksToTerminate =
             (int)std::ceil(std::max(sampleRate, 44100.) * blocksToTerminateAt48k / 48000);

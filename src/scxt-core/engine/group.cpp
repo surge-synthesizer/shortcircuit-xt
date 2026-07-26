@@ -174,7 +174,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         assert(z->isActive());
         gated = gated || (z->gatedVoiceCount > 0);
         fGatedCount += z->gatedVoiceCount;
-        fVoiceCount += z->activeVoices;
+        // parked voices are assigned but silent, so they don't count as sounding
+        fVoiceCount += (int)z->activeVoices - z->parkedVoiceCount;
     }
 
     fAnyGated = (fGatedCount > 0) * 1.f;
@@ -265,6 +266,28 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
                 blk::accumulate_from_to<blockSize>(z->output[0], lOut);
                 blk::accumulate_from_to<blockSize>(z->output[1], rOut);
             }
+        }
+    }
+
+    /*
+     * Legato parking: a voice which ran out of sound in a LEGATO group stays alive so a later
+     * legato move can re-attack that same voice (see Voice::isParked). Once nothing in the
+     * group is sounding there is nothing left to come back to, so let them all go - as is also
+     * true the moment the group stops being LEGATO. These counts were refreshed by the zone
+     * pass just above, so this sees the current block.
+     */
+    int parked{0}, sounding{0};
+    for (int i = 0; i < activeZones; ++i)
+    {
+        parked += activeZoneWeakRefs[i]->parkedVoiceCount;
+        sounding += activeZoneWeakRefs[i]->soundingVoiceCount;
+    }
+
+    if (parked > 0 && (sounding == 0 || outputInfo.playMode != PlayMode::LEGATO))
+    {
+        for (int i = 0; i < activeZones; ++i)
+        {
+            activeZoneWeakRefs[i]->endParkedVoices();
         }
     }
 

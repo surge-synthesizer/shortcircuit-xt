@@ -44,15 +44,7 @@ Voice::Voice(engine::Engine *e, engine::Zone *z)
 {
     assert(zone);
 
-    sampleIndexF = sampleIndex;
-    if (zone->getNumSampleLoaded() <= 1)
-    {
-        sampleIndexFraction = 0;
-    }
-    else
-    {
-        sampleIndexFraction = sampleIndexF / (zone->getNumSampleLoaded() - 1);
-    }
+    setSampleIndex(sampleIndex);
 
     inLoopF = 0.f;
     loopCountF = 0.f;
@@ -78,6 +70,20 @@ Voice::~Voice()
     {
         dsp::processor::unspawnProcessor(processors[i]);
         processors[i] = nullptr;
+    }
+}
+
+void Voice::setSampleIndex(int8_t idx)
+{
+    sampleIndex = idx;
+    sampleIndexF = sampleIndex;
+    if (zone->getNumSampleLoaded() <= 1)
+    {
+        sampleIndexFraction = 0;
+    }
+    else
+    {
+        sampleIndexFraction = sampleIndexF / (zone->getNumSampleLoaded() - 1);
     }
 }
 
@@ -264,6 +270,24 @@ template <bool OS> bool Voice::processWithOS()
     if (phasorsActive)
     {
         phasorEvaluator.step(engine->transport, zone->miscSourceStorage);
+    }
+
+    /*
+     * A parked voice runs its modulators and nothing else. Keeping the LFOs turning means a
+     * zone retriggered by a later legato move comes back in phase with the siblings that kept
+     * sounding, and stays locked to song position. Whether it restarts instead is decided the
+     * same way as for any other legato key change - by routing keyChangedLeg to its retrigger.
+     *
+     * Note this returns before the isVoicePlaying update at the end of the block, which would
+     * otherwise unpark the voice immediately.
+     */
+    if (isParked)
+    {
+        updateTransportPhasors();
+        modMatrix->process();
+        memset(output, 0, sizeof(output));
+        keyChangedInLegatoModeTrigger = 0;
+        return true;
     }
 
     bool envGate{isGated};
@@ -889,6 +913,19 @@ template <bool OS> bool Voice::processWithOS()
     if (isAEGRunning && (hasProcs || isAnyGeneratorRunning))
     {
         isVoicePlaying = true;
+    }
+    else if (zone->parentGroup->outputInfo.playMode == engine::Group::PlayMode::LEGATO &&
+             terminationSequence < 0)
+    {
+        /*
+         * Park rather than die, so a later legato move can re-attack this same voice. We park
+         * unconditionally - if nothing else in the group is sounding, Group::process reaps it
+         * on this very block, which costs one block of silence and saves us maintaining a
+         * sibling count that could drift.
+         */
+        SCLOG_IF(voiceLifecycle, "Voice parking for legato at " << SCD(key));
+
+        isParked = true;
     }
     else
     {
