@@ -150,6 +150,18 @@ struct LegatoFixture
             eng->processAudio();
     }
 
+    int soundingVoices() const
+    {
+        int n{0};
+        for (const auto &z : group->getZones())
+        {
+            auto *v = voiceIn(z.get());
+            if (v && v->isSounding())
+                n++;
+        }
+        return n;
+    }
+
     // The group is monophonic, so a zone has at most one voice on it.
     scxt::voice::Voice *voiceIn(const scxt::engine::Zone *z) const
     {
@@ -318,4 +330,41 @@ TEST_CASE("Parking is legato only - a mono group still ends its voices", "[legat
     CHECK(sv == nullptr); // ended outright, never parked
     CHECK(f.voiceIn(f.longZone) != nullptr);
     CHECK(f.eng->activeVoices == 1);
+}
+
+TEST_CASE("A note landing on the reap block still sounds", "[legato]")
+{
+    /*
+     * The reap is what a parked voice dies of, and it used to only mark the voice as no longer
+     * playing, leaving the actual cleanup to the next process block. For that one block the
+     * voice manager still held a dead voice, so a note arriving right then was legato-moved
+     * onto it - and finding a voice to move is also what suppresses creating a replacement, so
+     * the note made no sound at all. Zones which run out together, which is the common case for
+     * a layered patch, all reap on the same block and take the whole note down with them.
+     */
+    auto nZones = GENERATE(1, 2, 3);
+
+    LegatoFixture f{true};
+    for (int i = 1; i < nZones; ++i)
+    {
+        // identical zones, so they all run out of sound on the same block
+        f.addZone(SHORT_ZONE_END_SAMPLE);
+    }
+
+    f.noteOn(60);
+
+    // Step to the exact block on which the group stops making sound
+    bool silent{false};
+    for (int i = 0; i < 300 && !silent; ++i)
+    {
+        f.runBlocks(1);
+        silent = f.soundingVoices() == 0;
+    }
+    REQUIRE(silent);
+    REQUIRE(f.eng->activeVoices == 0);
+
+    f.noteOn(64);
+    f.runBlocks(2);
+
+    CHECK(f.soundingVoices() == nZones);
 }

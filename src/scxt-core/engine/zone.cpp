@@ -144,6 +144,14 @@ void Zone::addVoice(voice::Voice *v)
 }
 void Zone::endParkedVoices()
 {
+    /*
+     * These have to be reaped here rather than left for the next process block to notice.
+     * Until cleanupVoice runs the voice manager still holds them, and a note arriving in
+     * that gap would legato-move onto a voice which is already dead - silently, since
+     * finding one also suppresses creating a replacement.
+     */
+    std::array<voice::Voice *, maxVoices> toCleanUp;
+    size_t cleanupIdx{0};
     for (int i = 0; i < activeVoices; ++i)
     {
         auto v = voiceWeakPointers[i];
@@ -152,7 +160,13 @@ void Zone::endParkedVoices()
             SCLOG_IF(voiceLifecycle, "Ending parked voice at " << SCD((int)v->key));
             v->isParked = false;
             v->isVoicePlaying = false;
+            toCleanUp[cleanupIdx++] = v;
         }
+    }
+
+    for (size_t i = 0; i < cleanupIdx; ++i)
+    {
+        toCleanUp[i]->cleanupVoice();
     }
 }
 
