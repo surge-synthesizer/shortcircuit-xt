@@ -390,6 +390,7 @@ void Engine::MonoVoiceManagerResponder::setMIDIPitchBend(int16_t channel, int16_
     {
         if (p->configuration.active && p->respondsToMIDIChannel(channel))
         {
+            p->pitchBend14Bit = pb14bit - 8192;
             p->externalSignalLag.setTarget(Part::LagIndexes::pitchBend, fv, &p->pitchBendValue);
         }
     }

@@ -1689,7 +1689,24 @@ void Engine::setMacro01ValueFromPlugin(int part, int index, float value01)
 
 void Engine::processMIDI1Event(uint16_t idx, const uint8_t data[3])
 {
+    // The voice manager has no notion of program change, so peel it off here
+    if ((data[0] & 0xf0) == 0xc0)
+    {
+        processProgramChangeEvent(idx, data[0] & 0x0f, data[1] & 0x7f);
+        return;
+    }
     sst::voicemanager::applyMidi1Message(voiceManager, idx, data);
+}
+
+void Engine::processProgramChangeEvent(int16_t port, int16_t channel, int16_t program)
+{
+    for (const auto &p : getPatch()->getParts())
+    {
+        if (p->configuration.active && p->respondsToMIDIChannel(channel))
+        {
+            p->lastProgramChange = program;
+        }
+    }
 }
 
 void Engine::processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,

@@ -26,6 +26,10 @@
  */
 
 #include "GroupTriggersCard.h"
+
+#include <array>
+#include <optional>
+
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/MenuButton.h"
@@ -38,6 +42,54 @@
 namespace scxt::ui::app::edit_screen
 {
 namespace jcmp = sst::jucegui::components;
+
+/*
+ * The two args mean something different for every trigger type, so their metadata lives here
+ * rather than on the trigger (see the note in group_triggers.h). nullopt means the type doesn't
+ * use that arg. Most types read the pair as a range, so the defaults span the whole scale: a
+ * freshly picked type holds rather than silently muting the group until you widen it.
+ */
+using argMetadata_t =
+    std::array<std::optional<datamodel::pmd>, engine::GroupTriggerStorage::numArgs>;
+
+static argMetadata_t argMetadataFor(engine::GroupTriggerID id)
+{
+    auto arg = [](float lo, float hi, int decimals, float def) {
+        return datamodel::pmd()
+            .asFloat()
+            .withRange(lo, hi)
+            .withLinearScaleFormatting("")
+            .withDecimalPlaces(decimals)
+            .withDefault(def);
+    };
+    auto range = [&arg](float lo, float hi, int decimals) -> argMetadata_t {
+        return {arg(lo, hi, decimals, lo), arg(lo, hi, decimals, hi)};
+    };
+
+    if ((int)id >= (int)engine::GroupTriggerID::MACRO &&
+        (int)id < (int)engine::GroupTriggerID::MACRO + scxt::macrosPerPart)
+        return range(0, 1, 2);
+
+    if ((int)id >= (int)engine::GroupTriggerID::MIDICC &&
+        (int)id <= (int)engine::GroupTriggerID::LAST_MIDICC)
+        return range(0, 127, 0);
+
+    switch (id)
+    {
+    case engine::GroupTriggerID::PROGRAM_CHANGE:
+        return range(0, 127, 0);
+    case engine::GroupTriggerID::PITCH_BEND:
+        return range(-8192, 8191, 0); // signed 14 bit, as the part carries it
+    case engine::GroupTriggerID::KEYSWITCH_LATCH:
+    case engine::GroupTriggerID::KEYSWITCH_MOMENTARY:
+        return {arg(0, 127, 0, 60), std::nullopt}; // a key, not a range
+    case engine::GroupTriggerID::NONE:
+        return {std::nullopt, std::nullopt};
+    default:
+        SCLOG_IF(debug, "No group trigger args for type " << (int)id);
+        return {std::nullopt, std::nullopt};
+    }
+}
 
 struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 {
@@ -97,72 +149,27 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 
             auto onArgChanged = [this](const auto &a) { parent->pushUpdate(); };
 
-            if (sr.id == engine::GroupTriggerID::NONE)
-            {
-                a1A.reset();
-                a2A.reset();
-                a1M.reset();
-                a2M.reset();
-            }
-            else if ((int)sr.id >= (int)engine::GroupTriggerID::MACRO &&
-                     (int)sr.id < (int)engine::GroupTriggerID::MACRO + scxt::macrosPerPart)
-            {
-                auto dm = datamodel::pmd()
-                              .asFloat()
-                              .withRange(0, 1)
-                              .withLinearScaleFormatting("")
-                              .withDecimalPlaces(2)
-                              .withDefault(0.5);
-                a1A = std::make_unique<floatAttachment_t>(dm, onArgChanged, sr.args[0]);
-                a2A = std::make_unique<floatAttachment_t>(dm, onArgChanged, sr.args[1]);
+            a1A.reset();
+            a2A.reset();
+            a1M.reset();
+            a2M.reset();
 
+            auto md = argMetadataFor(sr.id);
+            if (md[0].has_value())
+            {
+                a1A = std::make_unique<floatAttachment_t>(*md[0], onArgChanged, sr.args[0]);
                 a1M = std::make_unique<jcmp::DraggableTextEditableValue>();
                 a1M->setSource(a1A.get());
                 addAndMakeVisible(*a1M);
-
+            }
+            if (md[1].has_value())
+            {
+                a2A = std::make_unique<floatAttachment_t>(*md[1], onArgChanged, sr.args[1]);
                 a2M = std::make_unique<jcmp::DraggableTextEditableValue>();
                 a2M->setSource(a2A.get());
                 addAndMakeVisible(*a2M);
             }
-            else if ((int)sr.id >= (int)engine::GroupTriggerID::MIDICC &&
-                     (int)sr.id <= (int)engine::GroupTriggerID::LAST_MIDICC)
-            {
-                auto dm = datamodel::pmd()
-                              .asFloat()
-                              .withRange(0, 127)
-                              .withLinearScaleFormatting("")
-                              .withDecimalPlaces(0)
-                              .withDefault(64);
-                a1A = std::make_unique<floatAttachment_t>(dm, onArgChanged, sr.args[0]);
-                a2A = std::make_unique<floatAttachment_t>(dm, onArgChanged, sr.args[1]);
 
-                a1M = std::make_unique<jcmp::DraggableTextEditableValue>();
-                a1M->setSource(a1A.get());
-                addAndMakeVisible(*a1M);
-
-                a2M = std::make_unique<jcmp::DraggableTextEditableValue>();
-                a2M->setSource(a2A.get());
-                addAndMakeVisible(*a2M);
-            }
-            else if (sr.id == engine::GroupTriggerID::KEYSWITCH_LATCH ||
-                     sr.id == engine::GroupTriggerID::KEYSWITCH_MOMENTARY)
-            {
-                auto dm = datamodel::pmd()
-                              .asFloat()
-                              .withRange(0, 127)
-                              .withLinearScaleFormatting("")
-                              .withDecimalPlaces(0)
-                              .withDefault(64);
-                a1A = std::make_unique<floatAttachment_t>(dm, onArgChanged, sr.args[0]);
-
-                a1M = std::make_unique<jcmp::DraggableTextEditableValue>();
-                a1M->setSource(a1A.get());
-                addAndMakeVisible(*a1M);
-            }
-            else
-            {
-                SCLOG_IF(debug, "No group trigger for type " << (int)sr.id);
-            }
             resized();
         }
 
@@ -198,7 +205,17 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
             return [w = juce::Component::SafePointer(that), v]() {
                 if (!w)
                     return;
-                w->parent->cond.storage[w->index].id = (engine::GroupTriggerID)v;
+                auto &sr = w->parent->cond.storage[w->index];
+                auto id = (engine::GroupTriggerID)v;
+                if (sr.id != id)
+                {
+                    // the args mean something else now, so a CC range left in a bend
+                    // control would be nonsense. Start the new type at its own defaults.
+                    sr.id = id;
+                    auto md = argMetadataFor(id);
+                    for (int i = 0; i < engine::GroupTriggerStorage::numArgs; ++i)
+                        sr.args[i] = md[i].has_value() ? md[i]->defaultVal : 0.f;
+                }
                 w->parent->pushUpdate();
                 w->setupValuesFromData();
             };
@@ -208,6 +225,9 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 
         p.addItem("KeySwitch", mkv((int)engine::GroupTriggerID::KEYSWITCH_LATCH));
         p.addItem("KeySwitch (Momentary)", mkv((int)engine::GroupTriggerID::KEYSWITCH_MOMENTARY));
+
+        p.addItem("Program Change", mkv((int)engine::GroupTriggerID::PROGRAM_CHANGE));
+        p.addItem("Pitch Bend", mkv((int)engine::GroupTriggerID::PITCH_BEND));
 
         auto mcc = juce::PopupMenu();
         for (int i = 0; i < 128; ++i)

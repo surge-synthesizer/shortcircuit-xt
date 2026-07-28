@@ -123,6 +123,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * blockSize sample block
      */
     void processMIDI1Event(uint16_t midiPort, const uint8_t data[3]);
+    void processProgramChangeEvent(int16_t port, int16_t channel, int16_t program);
     void processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
                             double velocity, float retune);
     void processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
