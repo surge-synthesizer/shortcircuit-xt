@@ -186,6 +186,17 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     float channelAT{0.f};
     float pitchBendValue{0.f}; // -1..1 so the 8192 taken out
 
+    /*
+     * The bend the MIDI stream last sent, kept in the signed 14 bit space MIDI delivers it in:
+     * -8192 .. 8191, centered at 0. pitchBendValue lags toward the float form and only advances
+     * while the part is processing, so a silent part would report a stale bend. Trigger
+     * conditions ask a question about the gesture, not the DSP, so they read this instead.
+     */
+    int16_t pitchBend14Bit{0};
+
+    // Last program change seen on a channel we respond to. Runtime state, not streamed.
+    int16_t lastProgramChange{0};
+
     struct MacroUILagHandler : sst::basic_blocks::dsp::UIComponentLagHandlerBase<MacroUILagHandler>
     {
         Part &part;

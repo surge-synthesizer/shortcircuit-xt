@@ -55,6 +55,10 @@ std::string toStringGroupTriggerID(const GroupTriggerID &p)
         return "ksL";
     case GroupTriggerID::KEYSWITCH_MOMENTARY:
         return "ksM";
+    case GroupTriggerID::PROGRAM_CHANGE:
+        return "pgm";
+    case GroupTriggerID::PITCH_BEND:
+        return "pbnd";
     case GroupTriggerID::MACRO:
     case GroupTriggerID::MIDICC:
     case GroupTriggerID::LAST_MIDICC:
@@ -158,6 +162,58 @@ struct GTMIDI1CC : GroupTrigger
     }
 };
 
+struct GTProgramChange : GroupTrigger
+{
+    int lb{0}, ub{0};
+    GTProgramChange(GroupTriggerID id, GroupTriggerInstrumentState &onState,
+                    GroupTriggerStorage &onStorage)
+        : GroupTrigger(id, onState, onStorage)
+    {
+    }
+
+    // The last program change the part saw, which is 0 until one arrives
+    bool conditionHolds(const Engine &, const Group &g, int16_t, int16_t) const override
+    {
+        assert(g.parentPart);
+        auto pc = g.parentPart->lastProgramChange;
+        return pc >= lb && pc <= ub;
+    }
+
+    void storageAdjusted() override
+    {
+        lb = (int)std::round(storage.args[0]);
+        ub = (int)std::round(storage.args[1]);
+        if (lb > ub)
+            std::swap(lb, ub);
+    }
+};
+
+struct GTPitchBend : GroupTrigger
+{
+    // Signed 14 bit, matching the part - not the -1..1 float the DSP uses
+    int lb{0}, ub{0};
+    GTPitchBend(GroupTriggerID id, GroupTriggerInstrumentState &onState,
+                GroupTriggerStorage &onStorage)
+        : GroupTrigger(id, onState, onStorage)
+    {
+    }
+
+    bool conditionHolds(const Engine &, const Group &g, int16_t, int16_t) const override
+    {
+        assert(g.parentPart);
+        auto pb = g.parentPart->pitchBend14Bit;
+        return pb >= lb && pb <= ub;
+    }
+
+    void storageAdjusted() override
+    {
+        lb = (int)std::round(storage.args[0]);
+        ub = (int)std::round(storage.args[1]);
+        if (lb > ub)
+            std::swap(lb, ub);
+    }
+};
+
 struct GTKeyswitchLatch : GroupTrigger
 {
     GTKeyswitchLatch(GroupTriggerID id, GroupTriggerInstrumentState &onState,
@@ -224,6 +280,8 @@ GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &g
     {
         CS(GroupTriggerID::KEYSWITCH_LATCH, GTKeyswitchLatch);
         CS(GroupTriggerID::KEYSWITCH_MOMENTARY, GTKeyswitchMomentary);
+        CS(GroupTriggerID::PROGRAM_CHANGE, GTProgramChange);
+        CS(GroupTriggerID::PITCH_BEND, GTPitchBend);
     default:
         return nullptr;
     }
@@ -250,6 +308,10 @@ std::string getGroupTriggerDisplayName(GroupTriggerID id)
         return "KSWITCH";
     case GroupTriggerID::KEYSWITCH_MOMENTARY:
         return "KSW/MOM";
+    case GroupTriggerID::PROGRAM_CHANGE:
+        return "PROGRAM";
+    case GroupTriggerID::PITCH_BEND:
+        return "PBEND";
     default:
     {
         SCLOG_IF(groupTrigggers, "Un-named group trigger id=" << (int)id);

@@ -480,6 +480,43 @@ TEST_CASE("Group output values undo/redo", "[undo]")
     }
 }
 
+TEST_CASE("Group trigger condition type change undo/redo", "[undo]")
+{
+    using scxt::engine::GroupTriggerID;
+
+    UndoFixture f;
+    f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+
+    auto &group = f.engine().getPatch()->getPart(0)->getGroup(0);
+
+    scxt::engine::GroupTriggerConditions cond;
+    cond.storage[0].id = GroupTriggerID::PITCH_BEND;
+    cond.storage[0].args[0] = 3999;
+    cond.storage[0].args[1] = 8000;
+    f.send(cmsg::UpdateGroupTriggerConditions(cond));
+    REQUIRE(group->triggerConditions.storage[0].id == GroupTriggerID::PITCH_BEND);
+
+    /*
+     * Picking a new type resets the args along with it - the client sends both in one message,
+     * so one undo has to put the whole old condition back, not just the type.
+     */
+    cond.storage[0].id = GroupTriggerID::PROGRAM_CHANGE;
+    cond.storage[0].args[0] = 0;
+    cond.storage[0].args[1] = 127;
+    f.send(cmsg::UpdateGroupTriggerConditions(cond));
+    REQUIRE(group->triggerConditions.storage[0].id == GroupTriggerID::PROGRAM_CHANGE);
+    REQUIRE(group->triggerConditions.storage[0].args[1] == 127);
+
+    f.sendUndo();
+    REQUIRE(group->triggerConditions.storage[0].id == GroupTriggerID::PITCH_BEND);
+    REQUIRE(group->triggerConditions.storage[0].args[0] == 3999);
+    REQUIRE(group->triggerConditions.storage[0].args[1] == 8000);
+
+    f.sendRedo();
+    REQUIRE(group->triggerConditions.storage[0].id == GroupTriggerID::PROGRAM_CHANGE);
+    REQUIRE(group->triggerConditions.storage[0].args[1] == 127);
+}
+
 TEST_CASE("Mute solo group undo/redo", "[undo]")
 {
     UndoFixture f;

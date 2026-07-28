@@ -58,6 +58,9 @@ enum struct GroupTriggerID : int32_t
     KEYSWITCH_LATCH,
     KEYSWITCH_MOMENTARY,
 
+    PROGRAM_CHANGE,
+    PITCH_BEND,
+
     // Leave these at the end please
     MACRO,
     MIDICC = MACRO + scxt::macrosPerPart,
