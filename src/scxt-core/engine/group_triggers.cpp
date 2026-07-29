@@ -59,6 +59,12 @@ std::string toStringGroupTriggerID(const GroupTriggerID &p)
         return "pgm";
     case GroupTriggerID::PITCH_BEND:
         return "pbnd";
+    case GroupTriggerID::ROUND_ROBIN_CYCLE:
+        return "rr";
+    case GroupTriggerID::ROUND_ROBIN_RANDOM:
+        return "rrR";
+    case GroupTriggerID::ROUND_ROBIN_SHUFFLE:
+        return "rrS";
     case GroupTriggerID::MACRO:
     case GroupTriggerID::MIDICC:
     case GroupTriggerID::LAST_MIDICC:
@@ -258,6 +264,39 @@ struct GTKeyswitchMomentary : GroupTrigger
     void storageAdjusted() override {}
 };
 
+/*
+ * The round robin trigger does no work at all. Which slot of a set is live is a question about all
+ * of the set's groups at once, so the part answers it once per note in advanceRoundRobinSets and
+ * this just reads the answer - which keeps it const, branch free and allocation free.
+ *
+ * All three kinds share a class; the kind only picks which space of sets to look in and which
+ * field of the answer to read.
+ */
+struct GTRoundRobin : GroupTrigger
+{
+    int kind{0}, set{0}, ordinal{1};
+    bool isCycle{true};
+    GTRoundRobin(GroupTriggerID id, GroupTriggerInstrumentState &onState,
+                 GroupTriggerStorage &onStorage)
+        : GroupTrigger(id, onState, onStorage)
+    {
+    }
+
+    bool conditionHolds(const Engine &, const Group &g, int16_t, int16_t) const override
+    {
+        const auto &st = state.roundRobin[kind][set];
+        return isCycle ? (st.ordinal == ordinal) : (st.winner == g.id);
+    }
+
+    void storageAdjusted() override
+    {
+        kind = std::max(roundRobinKindIndex(id), 0);
+        isCycle = (id == GroupTriggerID::ROUND_ROBIN_CYCLE);
+        set = std::clamp((int)std::round(storage.args[0]), 0, (int)maxRoundRobinSets - 1);
+        ordinal = std::clamp((int)std::round(storage.args[1]), 1, (int)maxRoundRobinOrdinal);
+    }
+};
+
 GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &gis,
                                GroupTriggerStorage &st, GroupTriggerBuffer &bf)
 {
@@ -282,6 +321,9 @@ GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &g
         CS(GroupTriggerID::KEYSWITCH_MOMENTARY, GTKeyswitchMomentary);
         CS(GroupTriggerID::PROGRAM_CHANGE, GTProgramChange);
         CS(GroupTriggerID::PITCH_BEND, GTPitchBend);
+        CS(GroupTriggerID::ROUND_ROBIN_CYCLE, GTRoundRobin);
+        CS(GroupTriggerID::ROUND_ROBIN_RANDOM, GTRoundRobin);
+        CS(GroupTriggerID::ROUND_ROBIN_SHUFFLE, GTRoundRobin);
     default:
         return nullptr;
     }
@@ -312,6 +354,12 @@ std::string getGroupTriggerDisplayName(GroupTriggerID id)
         return "PROGRAM";
     case GroupTriggerID::PITCH_BEND:
         return "PBEND";
+    case GroupTriggerID::ROUND_ROBIN_CYCLE:
+        return "RR/CYC";
+    case GroupTriggerID::ROUND_ROBIN_RANDOM:
+        return "RR/RND";
+    case GroupTriggerID::ROUND_ROBIN_SHUFFLE:
+        return "RR/SHF";
     default:
     {
         SCLOG_IF(groupTrigggers, "Un-named group trigger id=" << (int)id);
@@ -325,6 +373,9 @@ void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
 {
     bool allNone{true};
     containsKeySwitchLatch = false;
+    roundRobinKind = GroupTriggerID::NONE;
+    roundRobinSet = 0;
+    roundRobinOrdinal = 1;
     for (int i = 0; i < triggerConditionsPerGroup; ++i)
     {
         auto &s = storage[i];
@@ -340,6 +391,16 @@ void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
             if (s.id == GroupTriggerID::KEYSWITCH_LATCH)
                 containsKeySwitchLatch = true;
 
+            // First active round robin row wins; a group in two cycles at once means nothing
+            if (active[i] && isRoundRobinTriggerID(s.id) && !inRoundRobin())
+            {
+                roundRobinKind = s.id;
+                roundRobinSet =
+                    (int16_t)std::clamp((int)std::round(s.args[0]), 0, (int)maxRoundRobinSets - 1);
+                roundRobinOrdinal =
+                    (int16_t)std::clamp((int)std::round(s.args[1]), 1, (int)maxRoundRobinOrdinal);
+            }
+
             if (!conditions[i] || conditions[i]->getID() != s.id)
             {
                 conditions[i] = makeGroupTrigger(s.id, gis, s, conditionBuffers[i]);
@@ -352,8 +413,8 @@ void GroupTriggerConditions::setupOnUnstream(GroupTriggerInstrumentState &gis)
     alwaysReturnsTrue = allNone;
 }
 
-bool GroupTriggerConditions::groupShouldPlay(const Engine &e, const Group &g, int16_t channel,
-                                             int16_t midiKey) const
+bool GroupTriggerConditions::evaluate(const Engine &e, const Group &g, int16_t channel,
+                                      int16_t midiKey, bool skipRoundRobin) const
 {
     if (alwaysReturnsTrue)
         return true;
@@ -363,9 +424,26 @@ bool GroupTriggerConditions::groupShouldPlay(const Engine &e, const Group &g, in
     {
         // FIXME - conjunctions
         if (active[i] && conditions[i])
+        {
+            if (skipRoundRobin && isRoundRobinTriggerID(conditions[i]->getID()))
+                continue;
             v = v & conditions[i]->groupShouldPlay(e, g, channel, midiKey);
+        }
     }
     return v;
+}
+
+bool GroupTriggerConditions::groupShouldPlay(const Engine &e, const Group &g, int16_t channel,
+                                             int16_t midiKey) const
+{
+    return evaluate(e, g, channel, midiKey, false);
+}
+
+bool GroupTriggerConditions::groupShouldPlayIgnoringRoundRobin(const Engine &e, const Group &g,
+                                                               int16_t channel,
+                                                               int16_t midiKey) const
+{
+    return evaluate(e, g, channel, midiKey, true);
 }
 
 bool GroupTriggerConditions::isKeySwitchKey(int16_t midiKey) const
@@ -376,6 +454,20 @@ bool GroupTriggerConditions::isKeySwitchKey(int16_t midiKey) const
         if (active[i] &&
             (s.id == GroupTriggerID::KEYSWITCH_LATCH ||
              s.id == GroupTriggerID::KEYSWITCH_MOMENTARY) &&
+            (int)std::round(s.args[0]) == midiKey)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool GroupTriggerConditions::isKeySwitchLatchKey(int16_t midiKey) const
+{
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        const auto &s = storage[i];
+        if (active[i] && s.id == GroupTriggerID::KEYSWITCH_LATCH &&
             (int)std::round(s.args[0]) == midiKey)
         {
             return true;

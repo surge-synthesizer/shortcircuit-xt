@@ -80,6 +80,14 @@ static constexpr uint16_t envFollowersPerGroupOrZone{2};
 
 static constexpr uint16_t triggerConditionsPerGroup{4};
 
+/*
+ * Round robin group triggers. 32 sets so a set mask is a uint32_t, and a shuffle set is capped at
+ * the same count since its "already drawn this pass" bag is one too.
+ */
+static constexpr uint16_t maxRoundRobinSets{32};
+static constexpr uint16_t maxRoundRobinGroupsPerSet{32};
+static constexpr uint16_t maxRoundRobinOrdinal{100};
+
 static constexpr uint16_t maxGeneratorsPerVoice{64};
 
 static constexpr size_t modMatrixRowsPerZone{18};

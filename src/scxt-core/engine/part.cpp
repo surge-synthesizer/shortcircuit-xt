@@ -26,6 +26,8 @@
  */
 
 #include <ranges>
+#include <bit>
+#include <limits>
 #include "part.h"
 #include "bus.h"
 #include "patch.h"
@@ -324,6 +326,7 @@ void Part::setupOnUnstream(Engine &e)
     }
     rebuildGroupChannelMask();
     guaranteeKeyswitchLatchCoherence(e);
+    groupTriggerInstrumentState.resetRoundRobin();
 }
 
 void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
@@ -364,6 +367,173 @@ void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
         g->mutedByLatch = (k >= 0 && k != selectedKey);
         SCLOG_IF(groupTrigggers, "Coherence " << g->id.to_string() << SCD(k) << SCD(selectedKey)
                                               << SCD(g->mutedByLatch));
+    }
+}
+
+roundRobinMask_t Part::roundRobinSetsForNote(const Engine &e, int16_t channel, int16_t key,
+                                             int16_t midiKey, int16_t velocity,
+                                             int16_t keyTranspose)
+{
+    roundRobinMask_t res{};
+    auto prex = respondsToMIDIChannelExcludingGroupMask(channel);
+    bool any{false};
+
+    for (const auto &g : groups)
+    {
+        const auto &tc = g->triggerConditions;
+        if (!tc.inRoundRobin())
+            continue;
+
+        auto kind = roundRobinKindIndex(tc.roundRobinKind);
+        auto bit = 1u << tc.roundRobinSet;
+        if (res[kind] & bit) // a note landing in two groups of a set still only spends one slot
+            continue;
+
+        if (g->mutedByLatch)
+            continue;
+
+        if (hasFeature::hasGroupMIDIChannel)
+        {
+            if (!g->respondsToChannelOrUsesPartChannel(channel, prex))
+                continue;
+        }
+
+        // A note the keyswitch has already ruled out shouldn't burn a slot on its way past
+        if (!tc.groupShouldPlayIgnoringRoundRobin(e, *g, channel, midiKey))
+            continue;
+
+        for (const auto &z : *g)
+        {
+            if (z->mapping.keyboardRange.includes(key + keyTranspose) &&
+                z->mapping.velocityRange.includes(velocity))
+            {
+                res[kind] |= bit;
+                any = true;
+                break;
+            }
+        }
+    }
+
+    if (!any)
+        return {};
+
+    /*
+     * A keyswitch latch press is consumed by the switch and sounds nothing, so it must not
+     * advance anything. Only worth the scan once we know a round robin is actually in play.
+     */
+    for (const auto &g : groups)
+    {
+        if (g->triggerConditions.isKeySwitchLatchKey(midiKey))
+            return {};
+    }
+
+    return res;
+}
+
+void Part::advanceRoundRobinSets(Engine &e, const roundRobinMask_t &setMask)
+{
+    for (int k = 0; k < numRoundRobinKinds; ++k)
+    {
+        for (int s = 0; s < maxRoundRobinSets; ++s)
+        {
+            if (!(setMask[k] & (1u << s)))
+                continue;
+
+            // Members of one set always agree on the kind, since the kind is half of the set's name
+            auto isMember = [k, s](const auto &g) {
+                const auto &tc = g->triggerConditions;
+                return tc.inRoundRobin() && tc.roundRobinSet == s &&
+                       roundRobinKindIndex(tc.roundRobinKind) == k;
+            };
+
+            int memberCount{0};
+            for (const auto &g : groups)
+                memberCount += isMember(g) ? 1 : 0;
+            if (memberCount == 0)
+                continue;
+
+            auto &st = groupTriggerInstrumentState.roundRobin[k][s];
+
+            if (k == roundRobinKindIndex(GroupTriggerID::ROUND_ROBIN_CYCLE))
+            {
+                /*
+                 * The sequence is the ordinals actually in use, ascending - an unassigned number
+                 * is not a silent step. So: the smallest ordinal above the live one, or the
+                 * smallest of all when there is none. Groups sharing an ordinal share a step, and
+                 * an ordinal that just got edited away hands the next press to the one above it.
+                 */
+                constexpr auto none{std::numeric_limits<int32_t>::max()};
+                int32_t lowest{none}, next{none};
+                for (const auto &g : groups)
+                {
+                    if (!isMember(g))
+                        continue;
+                    auto o = (int32_t)g->triggerConditions.roundRobinOrdinal;
+                    lowest = std::min(lowest, o);
+                    if (o > st.ordinal)
+                        next = std::min(next, o);
+                }
+                st.ordinal = (next == none ? lowest : next);
+            }
+            else
+            {
+                // RANDOM and SHUFFLE pick one member group; slots are member index in group order
+                int slot{0};
+                if (k == roundRobinKindIndex(GroupTriggerID::ROUND_ROBIN_SHUFFLE))
+                {
+                    if (memberCount > maxRoundRobinGroupsPerSet)
+                    {
+                        SCLOG_IF(warnings, "Round robin shuffle set "
+                                               << s << " has more than "
+                                               << maxRoundRobinGroupsPerSet
+                                               << " groups; shuffling the first ones only");
+                    }
+                    auto bagCount = std::min(memberCount, (int)maxRoundRobinGroupsPerSet);
+                    uint32_t all = (bagCount >= 32 ? ~0u : ((1u << bagCount) - 1));
+                    auto avail = all & ~st.drawn;
+                    if (!avail)
+                    {
+                        // Every member has had its turn, so start a fresh pass
+                        st.drawn = 0;
+                        avail = all;
+                    }
+                    auto nth = (int)(e.rng.unifU32() % (uint32_t)std::popcount(avail));
+                    for (int i = 0; i < bagCount; ++i)
+                    {
+                        if (!(avail & (1u << i)))
+                            continue;
+                        if (nth == 0)
+                        {
+                            slot = i;
+                            break;
+                        }
+                        nth--;
+                    }
+                    st.drawn |= (1u << slot);
+                }
+                else
+                {
+                    slot = (int)(e.rng.unifU32() % (uint32_t)memberCount);
+                }
+
+                int i{0};
+                for (const auto &g : groups)
+                {
+                    if (!isMember(g))
+                        continue;
+                    if (i == slot)
+                    {
+                        st.winner = g->id;
+                        break;
+                    }
+                    i++;
+                }
+            }
+
+            SCLOG_IF(groupTrigggers, "Round robin kind " << k << " set " << s
+                                                         << " advanced to ordinal " << st.ordinal
+                                                         << " winner " << st.winner.to_string());
+        }
     }
 }
 

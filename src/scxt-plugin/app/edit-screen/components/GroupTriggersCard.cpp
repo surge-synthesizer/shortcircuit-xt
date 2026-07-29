@@ -34,6 +34,7 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 
 #include "app/SCXTEditor.h"
 #include "messaging/client/client_messages.h"
@@ -83,6 +84,45 @@ static argMetadata_t argMetadataFor(engine::GroupTriggerID id)
     case engine::GroupTriggerID::KEYSWITCH_LATCH:
     case engine::GroupTriggerID::KEYSWITCH_MOMENTARY:
         return {arg(0, 127, 0, 60), std::nullopt}; // a key, not a range
+    case engine::GroupTriggerID::ROUND_ROBIN_CYCLE:
+    case engine::GroupTriggerID::ROUND_ROBIN_RANDOM:
+    case engine::GroupTriggerID::ROUND_ROBIN_SHUFFLE:
+    {
+        /*
+         * Which set this group belongs to. Each kind has its own space of sets - RR1, RN1 and SH1
+         * are three unrelated round robins - so the prefix names the kind as well as the number.
+         * There is no prefixed-integer display scale, but at this size a map is fine, and it makes
+         * the pmd an INT, which is what picks the discrete widget below.
+         */
+        auto namesFor = [](const char *prefix) {
+            std::unordered_map<int, std::string> res;
+            for (int i = 0; i < scxt::maxRoundRobinSets; ++i)
+                res[i] = fmt::format("{}{}", prefix, i + 1);
+            return res;
+        };
+        static const auto cycleNames = namesFor("RR");
+        static const auto randomNames = namesFor("RN");
+        static const auto shuffleNames = namesFor("SH");
+
+        const auto &names = (id == engine::GroupTriggerID::ROUND_ROBIN_CYCLE    ? cycleNames
+                             : id == engine::GroupTriggerID::ROUND_ROBIN_RANDOM ? randomNames
+                                                                                : shuffleNames);
+        auto set = datamodel::pmd()
+                       .asInt()
+                       .withRange(0, scxt::maxRoundRobinSets - 1)
+                       .withDefault(0)
+                       .withUnorderedMapFormatting(names);
+
+        // Random and shuffle take their order from the set, so they show no second arg at all
+        if (id != engine::GroupTriggerID::ROUND_ROBIN_CYCLE)
+            return {set, std::nullopt};
+
+        return {set, datamodel::pmd()
+                         .asInt()
+                         .withRange(1, scxt::maxRoundRobinOrdinal)
+                         .withDefault(1)
+                         .withLinearScaleFormatting("")};
+    }
     case engine::GroupTriggerID::NONE:
         return {std::nullopt, std::nullopt};
     default:
@@ -98,6 +138,13 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 
     using floatAttachment_t =
         connectors::PayloadDataAttachment<scxt::engine::GroupTriggerConditions>;
+
+    /*
+     * The args are floats in storage whatever they mean, so an arg whose metadata is an INT binds
+     * a discrete attachment over that same float rather than dragging in fractions of a set.
+     */
+    using discreteAttachment_t =
+        connectors::DiscretePayloadDataAttachment<scxt::engine::GroupTriggerConditions, float>;
 
     GroupTriggersCard *parent{nullptr};
     engine::GroupTriggerID lastID{engine::GroupTriggerID::NONE};
@@ -149,25 +196,35 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 
             auto onArgChanged = [this](const auto &a) { parent->pushUpdate(); };
 
-            a1A.reset();
-            a2A.reset();
-            a1M.reset();
-            a2M.reset();
-
             auto md = argMetadataFor(sr.id);
-            if (md[0].has_value())
+            for (int i = 0; i < engine::GroupTriggerStorage::numArgs; ++i)
             {
-                a1A = std::make_unique<floatAttachment_t>(*md[0], onArgChanged, sr.args[0]);
-                a1M = std::make_unique<jcmp::DraggableTextEditableValue>();
-                a1M->setSource(a1A.get());
-                addAndMakeVisible(*a1M);
-            }
-            if (md[1].has_value())
-            {
-                a2A = std::make_unique<floatAttachment_t>(*md[1], onArgChanged, sr.args[1]);
-                a2M = std::make_unique<jcmp::DraggableTextEditableValue>();
-                a2M->setSource(a2A.get());
-                addAndMakeVisible(*a2M);
+                argFA[i].reset();
+                argDA[i].reset();
+                argFM[i].reset();
+                argDM[i].reset();
+                argM[i] = nullptr;
+
+                if (!md[i].has_value())
+                    continue;
+
+                if (md[i]->type == datamodel::pmd::INT)
+                {
+                    argDA[i] =
+                        std::make_unique<discreteAttachment_t>(*md[i], onArgChanged, sr.args[i]);
+                    argDM[i] = std::make_unique<jcmp::DraggableTextEditableDiscreteValue>();
+                    argDM[i]->setSource(argDA[i].get());
+                    argM[i] = argDM[i].get();
+                }
+                else
+                {
+                    argFA[i] =
+                        std::make_unique<floatAttachment_t>(*md[i], onArgChanged, sr.args[i]);
+                    argFM[i] = std::make_unique<jcmp::DraggableTextEditableValue>();
+                    argFM[i]->setSource(argFA[i].get());
+                    argM[i] = argFM[i].get();
+                }
+                addAndMakeVisible(*argM[i]);
             }
 
             resized();
@@ -175,21 +232,21 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 
         typeM->setLabel(engine::getGroupTriggerDisplayName(sr.id));
         auto showRest = (sr.id != engine::GroupTriggerID::NONE);
-        if (a1M)
-            a1M->setVisible(showRest);
-        if (a2M)
-            a2M->setVisible(showRest);
-        if (cM)
-            cM->setVisible(showRest);
-
         auto ac = parent->cond.active[index];
-        typeM->setEnabled(ac);
-        if (a1M)
-            a1M->setEnabled(ac);
-        if (a2M)
-            a2M->setEnabled(ac);
+        for (auto *m : argM)
+        {
+            if (m)
+            {
+                m->setVisible(showRest);
+                m->setEnabled(ac);
+            }
+        }
         if (cM)
+        {
+            cM->setVisible(showRest);
             cM->setEnabled(ac);
+        }
+        typeM->setEnabled(ac);
 
         repaint();
     }
@@ -210,11 +267,20 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
                 if (sr.id != id)
                 {
                     // the args mean something else now, so a CC range left in a bend
-                    // control would be nonsense. Start the new type at its own defaults.
+                    // control would be nonsense. Start the new type at its own defaults -
+                    // except that arg 1 still means "which set" across the round robin
+                    // kinds, so switching cycle to shuffle shouldn't move the group to S1.
+                    auto keepSet =
+                        engine::isRoundRobinTriggerID(id) && engine::isRoundRobinTriggerID(sr.id);
+                    auto set = sr.args[0];
+
                     sr.id = id;
                     auto md = argMetadataFor(id);
                     for (int i = 0; i < engine::GroupTriggerStorage::numArgs; ++i)
                         sr.args[i] = md[i].has_value() ? md[i]->defaultVal : 0.f;
+
+                    if (keepSet)
+                        sr.args[0] = set;
                 }
                 w->parent->pushUpdate();
                 w->setupValuesFromData();
@@ -228,6 +294,27 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 
         p.addItem("Program Change", mkv((int)engine::GroupTriggerID::PROGRAM_CHANGE));
         p.addItem("Pitch Bend", mkv((int)engine::GroupTriggerID::PITCH_BEND));
+
+        /*
+         * A group can only be in one round robin - being in two cycles at once means nothing -
+         * so if another row here already holds one, offer the choices greyed rather than
+         * silently letting the engine pick a winner.
+         */
+        auto rrElsewhere{false};
+        for (int i = 0; i < scxt::triggerConditionsPerGroup; ++i)
+        {
+            if (i != index && parent->cond.active[i] &&
+                engine::isRoundRobinTriggerID(parent->cond.storage[i].id))
+                rrElsewhere = true;
+        }
+        auto mrr = juce::PopupMenu();
+        mrr.addItem("Cycle", !rrElsewhere, false,
+                    mkv((int)engine::GroupTriggerID::ROUND_ROBIN_CYCLE));
+        mrr.addItem("Random", !rrElsewhere, false,
+                    mkv((int)engine::GroupTriggerID::ROUND_ROBIN_RANDOM));
+        mrr.addItem("Shuffle", !rrElsewhere, false,
+                    mkv((int)engine::GroupTriggerID::ROUND_ROBIN_SHUFFLE));
+        p.addSubMenu("Round Robin", mrr);
 
         auto mcc = juce::PopupMenu();
         for (int i = 0; i < 128; ++i)
@@ -254,12 +341,12 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
         activeB->setBounds(tb);
         tb = tb.translated(tb.getWidth() + 2, 0).withWidth(72);
         typeM->setBounds(tb);
-        tb = tb.translated(tb.getWidth() + 2, 0).withWidth(32);
-        if (a1M)
-            a1M->setBounds(tb);
-        tb = tb.translated(tb.getWidth() + 2, 0).withWidth(32);
-        if (a2M)
-            a2M->setBounds(tb);
+        for (auto *m : argM)
+        {
+            tb = tb.translated(tb.getWidth() + 2, 0).withWidth(32);
+            if (m)
+                m->setBounds(tb);
+        }
 
         if (cM)
         {
@@ -268,11 +355,18 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
         }
     }
 
+    static constexpr int numArgs{engine::GroupTriggerStorage::numArgs};
+
     std::unique_ptr<booleanAttachment_t> activeA;
-    std::unique_ptr<floatAttachment_t> a1A, a2A;
     std::unique_ptr<jcmp::ToggleButton> activeB;
     std::unique_ptr<jcmp::TextPushButton> typeM, cM;
-    std::unique_ptr<jcmp::DraggableTextEditableValue> a1M, a2M;
+
+    // Exactly one of the float or discrete pair exists per arg; argM points at whichever it is
+    std::array<std::unique_ptr<floatAttachment_t>, numArgs> argFA;
+    std::array<std::unique_ptr<discreteAttachment_t>, numArgs> argDA;
+    std::array<std::unique_ptr<jcmp::DraggableTextEditableValue>, numArgs> argFM;
+    std::array<std::unique_ptr<jcmp::DraggableTextEditableDiscreteValue>, numArgs> argDM;
+    std::array<juce::Component *, numArgs> argM{};
 };
 GroupTriggersCard::GroupTriggersCard(SCXTEditor *e) : HasEditor(e)
 {

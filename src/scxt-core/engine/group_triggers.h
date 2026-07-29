@@ -44,13 +44,6 @@ struct Engine;
 struct Part;
 struct Group;
 
-/**
- * Maintain the state of keys ccs etc... for a particular instrument
- */
-struct GroupTriggerInstrumentState
-{
-};
-
 enum struct GroupTriggerID : int32_t
 {
     NONE,
@@ -61,14 +54,73 @@ enum struct GroupTriggerID : int32_t
     PROGRAM_CHANGE,
     PITCH_BEND,
 
+    ROUND_ROBIN_CYCLE,
+    ROUND_ROBIN_RANDOM,
+    ROUND_ROBIN_SHUFFLE,
+
     // Leave these at the end please
     MACRO,
     MIDICC = MACRO + scxt::macrosPerPart,
     LAST_MIDICC = MIDICC + 128 // Leave this at the end please
 };
 
+inline bool isRoundRobinTriggerID(GroupTriggerID id)
+{
+    return id == GroupTriggerID::ROUND_ROBIN_CYCLE || id == GroupTriggerID::ROUND_ROBIN_RANDOM ||
+           id == GroupTriggerID::ROUND_ROBIN_SHUFFLE;
+}
+
+/*
+ * Each kind gets its own space of sets - cycle 1 (RR1), random 1 (RN1) and shuffle 1 (SH1) are
+ * three unrelated round robins, not one set three groups disagree about. -1 for anything else.
+ */
+static constexpr int numRoundRobinKinds{3};
+inline int roundRobinKindIndex(GroupTriggerID id)
+{
+    switch (id)
+    {
+    case GroupTriggerID::ROUND_ROBIN_CYCLE:
+        return 0;
+    case GroupTriggerID::ROUND_ROBIN_RANDOM:
+        return 1;
+    case GroupTriggerID::ROUND_ROBIN_SHUFFLE:
+        return 2;
+    default:
+        return -1;
+    }
+}
+
+// Which sets a note lands in: one bit per set, one mask per kind
+using roundRobinMask_t = std::array<uint32_t, numRoundRobinKinds>;
+
 std::string toStringGroupTriggerID(const GroupTriggerID &p);
 GroupTriggerID fromStringGroupTriggerID(const std::string &p);
+
+/**
+ * Maintain the state of keys ccs etc... for a particular instrument
+ */
+struct GroupTriggerInstrumentState
+{
+    /*
+     * Where each round robin set has got to, indexed [kind][set]. Runtime state, deliberately not
+     * streamed - which press of the cycle a performance happens to be on is not part of the
+     * instrument.
+     */
+    struct RoundRobinSetState
+    {
+        int32_t ordinal{0}; // CYCLE: the live ordinal. Ordinals start at 1, so 0 is "not yet"
+        GroupID winner{};   // RANDOM / SHUFFLE: who won this note. The default id is -1, nobody
+        uint32_t drawn{0};  // SHUFFLE: which member slots this pass has already used
+    };
+    std::array<std::array<RoundRobinSetState, scxt::maxRoundRobinSets>, numRoundRobinKinds>
+        roundRobin{};
+
+    void resetRoundRobin()
+    {
+        for (auto &k : roundRobin)
+            k.fill(RoundRobinSetState());
+    }
+};
 
 /*
  * How a client should draw a key: not a switch at all, a switch that isn't the selected
@@ -156,6 +208,16 @@ struct GroupTriggerConditions
     bool alwaysReturnsTrue{true};
     bool containsKeySwitchLatch{false};
 
+    /*
+     * The round robin row, cached from storage. A group belongs to at most one set - the UI stops
+     * you adding a second and this keeps the first - since being in two cycles at once is
+     * meaningless. NONE means this group is in no round robin at all.
+     */
+    GroupTriggerID roundRobinKind{GroupTriggerID::NONE};
+    int16_t roundRobinSet{0};
+    int16_t roundRobinOrdinal{1};
+    bool inRoundRobin() const { return roundRobinKind != GroupTriggerID::NONE; }
+
     enum struct Conjunction : int32_t
     {
         AND,
@@ -179,13 +241,25 @@ struct GroupTriggerConditions
     bool keySwitchLatchHolds(const Engine &, const Group &, int16_t channel, int16_t midiKey) const;
 
     /*
+     * Everything except the round robin. The round robin has to know whether a note would have
+     * played this group before it decides whether to spend a slot on it, and that question has to
+     * be answered before the round robin itself is evaluated.
+     */
+    bool groupShouldPlayIgnoringRoundRobin(const Engine &, const Group &, int16_t channel,
+                                           int16_t midiKey) const;
+
+    /*
      * Storage-only queries. The client keeps a copy of this struct whose conditions are never
      * built, so anything the UI asks has to be answerable from storage and active alone.
      */
     bool isKeySwitchKey(int16_t midiKey) const;
+    bool isKeySwitchLatchKey(int16_t midiKey) const;
     int16_t firstKeySwitchLatchKey() const; // -1 if this group has no latch
 
   protected:
+    bool evaluate(const Engine &, const Group &, int16_t channel, int16_t midiKey,
+                  bool skipRoundRobin) const;
+
     std::array<GroupTriggerBuffer, scxt::triggerConditionsPerGroup> conditionBuffers;
     std::array<GroupTrigger *, scxt::triggerConditionsPerGroup> conditions{};
 };
