@@ -286,6 +286,18 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     void setupOnUnstream(Engine &e);
     void guaranteeKeyswitchLatchCoherence(Engine &e);
 
+    /*
+     * Round robin. Which slot of a set is live is a question about every group in the set at once,
+     * and a group's conditions can only see themselves, so findZone asks the part first: which
+     * sets does this note land in (a bitmask over set index), then advance exactly those once.
+     * Only then do the group conditions get evaluated, against the position just chosen.
+     *
+     * key is post-retune as findZone uses it for zone matching; midiKey is what MIDI sent.
+     */
+    roundRobinMask_t roundRobinSetsForNote(const Engine &e, int16_t channel, int16_t key,
+                                           int16_t midiKey, int16_t velocity, int16_t keyTranspose);
+    void advanceRoundRobinSets(Engine &e, const roundRobinMask_t &setMask);
+
     // Every keyswitch key across this part's groups, for clients that draw a keyboard
     partKeySwitchDisplay_t keySwitchDisplay() const;
     void sendAllBusEffectInfoToClient(const Engine &e)

@@ -165,6 +165,15 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                 auto prex = part->respondsToMIDIChannelExcludingGroupMask(channel);
                 auto kt =
                     part->configuration.transpose + part->getChannelBasedTransposition(channel);
+
+                /*
+                 * Round robin is a question about a whole set of groups at once, so the part
+                 * settles which slot is live before any group's conditions get asked.
+                 */
+                part->advanceRoundRobinSets(*this, part->roundRobinSetsForNote(*this, channel, key,
+                                                                               midiKey, velocity,
+                                                                               (int16_t)kt));
+
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
                     if (hasFeature::hasGroupMIDIChannel)
