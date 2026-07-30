@@ -603,6 +603,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
     int groupId = -1;
     int regionCount{0};
+    // SFZ opcode inheritance runs global -> group -> region, innermost wins
+    SFZParser::opCodes_t currentGlobalOpcodes;
     SFZParser::opCodes_t currentGroupOpcodes;
     // Captures (opcode -> first observed value) across all regions; flushed
     // to ctx.recordUnusedItem at the end of the import.
@@ -617,6 +619,14 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         }
         switch (r.type)
         {
+        case SFZParser::Header::global:
+        {
+            // A new <global> starts a fresh hierarchy, so any group opcodes
+            // still in flight from the previous one stop applying.
+            currentGlobalOpcodes = list;
+            currentGroupOpcodes.clear();
+        }
+        break;
         case SFZParser::Header::group:
         {
             groupId = ctx.addGroup();
@@ -647,6 +657,13 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             // stray empty `<region>` headers) come through as silent generator
             // zones rather than a sample-load failure.
             std::string sampleFileString = "*silence";
+            for (auto &oc : currentGlobalOpcodes)
+            {
+                if (oc.name == "sample")
+                {
+                    sampleFileString = oc.value;
+                }
+            }
             for (auto &oc : currentGroupOpcodes)
             {
                 if (oc.name == "sample")
@@ -740,6 +757,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             auto loadInfo = engine::Zone::LOOP | engine::Zone::ENDPOINTS | engine::Zone::MAPPING;
 
             opCodeMap_t mergedOpcodes;
+            for (const auto &oc : currentGlobalOpcodes)
+                mergedOpcodes[oc.name] = {oc.value, false};
             for (const auto &oc : currentGroupOpcodes)
                 mergedOpcodes[oc.name] = {oc.value, false};
             for (const auto &oc : list)

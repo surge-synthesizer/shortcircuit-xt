@@ -1,0 +1,20 @@
+// Fixture for <global> opcode inheritance.
+//
+// Two global blocks with different ampeg_sustain. Regions inherit the global
+// in effect at their position, and the second <global> must replace the first
+// rather than accumulate on top of it. The lokey in the first <group> also
+// must not leak past the second <global>.
+
+<global>
+ampeg_sustain=25
+
+<group>
+lokey=60 hikey=60 pitch_keycenter=60
+<region>sample=noise.wav
+
+<global>
+ampeg_sustain=75
+
+<group>
+lokey=62 hikey=62 pitch_keycenter=62
+<region>sample=noise.wav
