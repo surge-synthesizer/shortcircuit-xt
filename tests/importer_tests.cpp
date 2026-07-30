@@ -383,6 +383,33 @@ TEST_CASE("Import SFZ with #include", "[importer]")
     CHECK(rootKeys == std::vector<int>{36, 48, 60, 72});
 }
 
+TEST_CASE("Import SFZ inherits global opcodes", "[importer]")
+{
+    // SFZ inheritance is global -> group -> region. The fixture has two
+    // <global> blocks so this also pins that the second replaces the first
+    // rather than merging on top of it.
+    auto p = fixturePath("sfz-test-subset/global_header.sfz");
+    INFO("fixture=" << p.string());
+    REQUIRE(fs::exists(p));
+
+    ImporterFixture f;
+    f.loadSample(p);
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() == 2);
+
+    REQUIRE(part.getGroups()[0]->getZones().size() == 1);
+    REQUIRE(part.getGroups()[1]->getZones().size() == 1);
+
+    // ampeg_sustain is a percent, so 25 -> 0.25
+    CHECK(part.getGroups()[0]->getZones()[0]->egStorage[0].s == Approx(0.25f));
+    CHECK(part.getGroups()[1]->getZones()[0]->egStorage[0].s == Approx(0.75f));
+
+    // and the per-group mapping still applies on top of the global
+    CHECK(part.getGroups()[0]->getZones()[0]->mapping.rootKey == 60);
+    CHECK(part.getGroups()[1]->getZones()[0]->mapping.rootKey == 62);
+}
+
 TEST_CASE("Import SFZ *square generator", "[importer]")
 {
     auto p = fixturePath("sfz-test-subset/square_generator.sfz");
