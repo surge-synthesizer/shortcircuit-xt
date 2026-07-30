@@ -1,0 +1,12 @@
+// Fixture: an include that resolves to nothing. The expander must warn and
+// drop the directive, leaving the surrounding regions intact.
+
+<group>
+lokey=36 hikey=47 pitch_keycenter=36
+<region>sample=noise.wav
+
+#include "no_such_file.sfz"
+
+<group>
+lokey=48 hikey=59 pitch_keycenter=48
+<region>sample=noise.wav

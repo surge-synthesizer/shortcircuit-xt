@@ -1,0 +1,5 @@
+// Included by include_regions.sfz, which is itself included. Second level.
+
+<group>
+lokey=60 hikey=71 pitch_keycenter=60
+<region>sample=noise.wav

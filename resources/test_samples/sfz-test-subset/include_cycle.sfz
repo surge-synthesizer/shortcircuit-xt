@@ -1,0 +1,8 @@
+// Fixture: a file that includes itself. The expander must warn once and
+// terminate, still yielding the region below.
+
+<group>
+lokey=36 hikey=47 pitch_keycenter=36
+<region>sample=noise.wav
+
+#include "include_cycle.sfz"
