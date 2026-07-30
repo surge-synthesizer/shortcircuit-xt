@@ -355,6 +355,34 @@ TEST_CASE("Import SFZ filter mod fixture", "[importer]")
     CHECK(foundReso73);
 }
 
+TEST_CASE("Import SFZ with #include", "[importer]")
+{
+    // include_main.sfz pulls in includes/include_regions.sfz which in turn
+    // pulls in includes/include_nested.sfz. The four groups only come out at
+    // 36/48/60/72 if each include expanded at the directive's position.
+    auto p = fixturePath("sfz-test-subset/include_main.sfz");
+    INFO("fixture=" << p.string());
+    REQUIRE(fs::exists(p));
+
+    ImporterFixture f;
+    f.loadSample(p);
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() == 4);
+
+    std::vector<int> rootKeys;
+    for (auto &g : part.getGroups())
+    {
+        REQUIRE(g->getZones().size() == 1);
+        auto &z = g->getZones()[0];
+        rootKeys.push_back(z->mapping.rootKey);
+        // every region says sample=noise.wav, which sits next to include_main.sfz
+        // rather than next to the file the region was written in
+        CHECK(z->getNumSampleLoaded() == 1);
+    }
+    CHECK(rootKeys == std::vector<int>{36, 48, 60, 72});
+}
+
 TEST_CASE("Import SFZ *square generator", "[importer]")
 {
     auto p = fixturePath("sfz-test-subset/square_generator.sfz");

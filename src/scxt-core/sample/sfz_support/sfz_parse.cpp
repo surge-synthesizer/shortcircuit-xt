@@ -29,9 +29,221 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <algorithm>
+#include <string_view>
+#include <system_error>
 
 namespace scxt::sfz_support
 {
+
+namespace
+{
+bool readWholeFile(const fs::path &f, std::string &into)
+{
+    std::ifstream ifs;
+    ifs.open(f);
+    if (!ifs.is_open())
+        return false;
+    std::ostringstream sstr;
+    sstr << ifs.rdbuf();
+    into = sstr.str();
+    return true;
+}
+
+fs::path canonicalOrNormal(const fs::path &f)
+{
+    std::error_code ec;
+    auto c = fs::weakly_canonical(f, ec);
+    return ec ? f.lexically_normal() : c;
+}
+
+// Updates the running block-comment flag for one line. We only honor `/*`,
+// `*/` and `//` here; a lone `/` (which the tokenizer does treat as a comment)
+// is ignored so that `sample=foo/bar.wav` doesn't truncate the scan.
+bool advanceCommentState(std::string_view line, bool inBlock)
+{
+    for (size_t i = 0; i < line.size(); ++i)
+    {
+        auto next = (i + 1 < line.size()) ? line[i + 1] : '\0';
+        if (inBlock)
+        {
+            if (line[i] == '*' && next == '/')
+            {
+                inBlock = false;
+                ++i;
+            }
+        }
+        else if (line[i] == '/' && next == '*')
+        {
+            inBlock = true;
+            ++i;
+        }
+        else if (line[i] == '/' && next == '/')
+        {
+            return inBlock;
+        }
+    }
+    return inBlock;
+}
+
+// Matches a leading `#word`, lower-casing the word and handing back the
+// remainder of the line. Leading whitespace is allowed.
+bool matchHashDirective(std::string_view line, std::string &directive, std::string_view &rest)
+{
+    size_t i{0};
+    while (i < line.size() && (line[i] == ' ' || line[i] == '\t'))
+        ++i;
+    if (i >= line.size() || line[i] != '#')
+        return false;
+    ++i;
+    directive.clear();
+    while (i < line.size() &&
+           ((line[i] >= 'a' && line[i] <= 'z') || (line[i] >= 'A' && line[i] <= 'Z')))
+    {
+        auto c = line[i];
+        if (c >= 'A' && c <= 'Z')
+            c = (char)(c - 'A' + 'a');
+        directive += c;
+        ++i;
+    }
+    rest = line.substr(i);
+    return !directive.empty();
+}
+
+// `rest` is everything after `#include`. Prefer the quoted form; fall back to
+// the trimmed remainder since some files in the wild omit the quotes.
+bool extractIncludePath(std::string_view rest, std::string &path)
+{
+    auto q = rest.find('"');
+    if (q != std::string_view::npos)
+    {
+        auto e = rest.find('"', q + 1);
+        if (e == std::string_view::npos)
+            return false;
+        path = std::string(rest.substr(q + 1, e - q - 1));
+    }
+    else
+    {
+        size_t b{0};
+        while (b < rest.size() && (rest[b] == ' ' || rest[b] == '\t'))
+            ++b;
+        auto e = rest.size();
+        while (e > b && (rest[e - 1] == ' ' || rest[e - 1] == '\t' || rest[e - 1] == '\r' ||
+                         rest[e - 1] == '\n'))
+            --e;
+        path = std::string(rest.substr(b, e - b));
+    }
+    return !path.empty();
+}
+
+struct IncludeExpander
+{
+    fs::path rootDir;
+    const std::function<void(const std::string &)> &onError;
+    // Files currently being expanded. A stack rather than a visited-set: a
+    // diamond include is legal and must expand twice; only a cycle is an error.
+    std::vector<fs::path> stack;
+    int fileCount{0};
+
+    void expand(const std::string &contents, const fs::path &includingDir, std::string &out);
+    void expandFile(const fs::path &file, std::string &out);
+};
+
+void IncludeExpander::expandFile(const fs::path &file, std::string &out)
+{
+    auto canon = canonicalOrNormal(file);
+    if (std::find(stack.begin(), stack.end(), canon) != stack.end())
+    {
+        onError("Recursive #include of '" + file.u8string() + "' ignored");
+        return;
+    }
+    if ((int)stack.size() >= SFZParser::maxIncludeDepth)
+    {
+        onError("#include nested deeper than " + std::to_string(SFZParser::maxIncludeDepth) +
+                " at '" + file.u8string() + "'; ignored");
+        return;
+    }
+    if (fileCount >= SFZParser::maxIncludeFiles)
+    {
+        onError("#include expanded more than " + std::to_string(SFZParser::maxIncludeFiles) +
+                " files; ignoring '" + file.u8string() + "'");
+        return;
+    }
+
+    std::string contents;
+    if (!readWholeFile(file, contents))
+    {
+        onError("Unable to read #include '" + file.u8string() + "'");
+        return;
+    }
+
+    fileCount++;
+    stack.push_back(canon);
+    expand(contents, file.parent_path(), out);
+    stack.pop_back();
+}
+
+void IncludeExpander::expand(const std::string &contents, const fs::path &includingDir,
+                             std::string &out)
+{
+    const auto n = contents.size();
+    bool inBlockComment{false};
+    size_t pos{0};
+    std::string directive;
+    std::string_view rest;
+
+    while (pos < n)
+    {
+        auto eol = contents.find('\n', pos);
+        auto lineEnd = (eol == std::string::npos) ? n : eol + 1;
+        auto line = std::string_view(contents).substr(pos, lineEnd - pos);
+        pos = lineEnd;
+
+        // The directive is live only if the line *started* outside a comment;
+        // advance the flag afterwards so a trailing `/*` still carries over.
+        auto wasInComment = inBlockComment;
+        inBlockComment = advanceCommentState(line, inBlockComment);
+
+        if (wasInComment || !matchHashDirective(line, directive, rest))
+        {
+            out += line;
+            continue;
+        }
+
+        if (directive == "include")
+        {
+            std::string raw;
+            if (!extractIncludePath(rest, raw))
+            {
+                onError("Malformed #include directive");
+            }
+            else
+            {
+                // fs handles '/' everywhere, including on windows
+                std::replace(raw.begin(), raw.end(), '\\', '/');
+                auto rel = fs::path{raw};
+                // ARIA resolves against the top level file; fall back to the
+                // including file's own directory so both conventions work.
+                auto cand = (rootDir / rel).lexically_normal();
+                if (!fs::exists(cand))
+                    cand = (includingDir / rel).lexically_normal();
+
+                if (fs::exists(cand))
+                    expandFile(cand, out);
+                else
+                    onError("Unable to resolve #include \"" + raw + "\"");
+            }
+        }
+        else
+        {
+            // #define and friends. Recognized here purely so the tokenizer
+            // never sees the '#' and reports it as a syntax error.
+            onError("Unsupported directive '#" + directive + "' ignored");
+        }
+        out += '\n';
+    }
+}
+} // namespace
 
 SFZParser::document_t SFZParser::parse(const std::string &s)
 {
@@ -225,12 +437,32 @@ SFZParser::document_t SFZParser::parse(const std::string &s)
     return res;
 }
 
-SFZParser::document_t SFZParser::parse(const fs::path &f)
+std::string SFZParser::expandIncludes(const std::string &contents, const fs::path &rootDir)
 {
-    std::ifstream ifs;
-    ifs.open(f);
-    std::ostringstream sstr;
-    sstr << ifs.rdbuf();
-    return parse(sstr.str());
+    IncludeExpander ex{rootDir, onError};
+    std::string res;
+    res.reserve(contents.size());
+    ex.expand(contents, rootDir, res);
+    return res;
 }
+
+std::string SFZParser::preprocessIncludes(const fs::path &f)
+{
+    std::string contents;
+    if (!readWholeFile(f, contents))
+    {
+        onError("Unable to read SFZ file '" + f.u8string() + "'");
+        return {};
+    }
+
+    IncludeExpander ex{f.parent_path(), onError};
+    // Seed the stack so a file which includes itself is caught as a cycle
+    ex.stack.push_back(canonicalOrNormal(f));
+    std::string res;
+    res.reserve(contents.size());
+    ex.expand(contents, f.parent_path(), res);
+    return res;
+}
+
+SFZParser::document_t SFZParser::parse(const fs::path &f) { return parse(preprocessIncludes(f)); }
 } // namespace scxt::sfz_support

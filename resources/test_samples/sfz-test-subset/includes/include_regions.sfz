@@ -1,0 +1,9 @@
+// Included by ../include_main.sfz.
+
+<group>
+lokey=48 hikey=59 pitch_keycenter=48
+<region>sample=noise.wav
+
+// Bare name, and this file is not in the root directory, so this only resolves
+// via the including-file fallback.
+#include "include_nested.sfz"

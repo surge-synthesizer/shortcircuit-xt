@@ -71,6 +71,20 @@ struct SFZParser
     std::function<void(const std::string &)> onError = [](auto s) {
         SCLOG_IF(warnings, "SFZParser error: " << s);
     };
+
+    // ARIA's `#include "path.sfz"` is a pre-tokenize text substitution, so it
+    // gets expanded before the state machine in parse(std::string) ever runs.
+    static constexpr int maxIncludeDepth{16};
+    static constexpr int maxIncludeFiles{4096};
+
+    // Reads `file` and returns its text with every #include recursively expanded.
+    std::string preprocessIncludes(const fs::path &file);
+    // Same expansion over an in-memory buffer; rootDir anchors relative includes.
+    // Public so tests can cover comment/line-ending handling without fixtures.
+    std::string expandIncludes(const std::string &contents, const fs::path &rootDir);
+
+    // Note this overload does NOT expand includes; it has no path to resolve
+    // them against. parse(fs::path) runs preprocessIncludes first.
     document_t parse(const std::string &contents);
     document_t parse(const fs::path &file);
 };

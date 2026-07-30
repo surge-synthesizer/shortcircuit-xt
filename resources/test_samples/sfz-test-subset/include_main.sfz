@@ -1,0 +1,17 @@
+// Fixture for ARIA #include support.
+//
+// Four groups end up at lokey 36 / 48 / 60 / 72, and they only land in that
+// order if the include expands in place rather than being appended. Every
+// sample= stays "noise.wav", which lives next to THIS file and not next to the
+// included ones, pinning the rule that sample paths resolve against the root
+// SFZ directory no matter which file the region came from.
+
+<group>
+lokey=36 hikey=47 pitch_keycenter=36
+<region>sample=noise.wav
+
+#include "includes/include_regions.sfz"
+
+<group>
+lokey=72 hikey=83 pitch_keycenter=72
+<region>sample=noise.wav

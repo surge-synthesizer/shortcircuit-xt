@@ -28,6 +28,41 @@
 #include "catch2/catch2.hpp"
 #include "sample/sfz_support/sfz_parse.h"
 
+#ifndef SCXT_TEST_SOURCE_DIR
+#define SCXT_TEST_SOURCE_DIR ""
+#endif
+
+namespace
+{
+fs::path sfzFixture(const std::string &relative)
+{
+    return fs::path(SCXT_TEST_SOURCE_DIR) / "resources" / "test_samples" / "sfz-test-subset" /
+           relative;
+}
+
+// Parser preconfigured to collect rather than log its errors.
+struct CountingParser
+{
+    scxt::sfz_support::SFZParser p;
+    std::vector<std::string> errors;
+
+    CountingParser()
+    {
+        p.onError = [this](const auto &s) { errors.push_back(s); };
+    }
+};
+
+std::vector<std::string> lokeysOf(const scxt::sfz_support::SFZParser::document_t &doc)
+{
+    std::vector<std::string> res;
+    for (const auto &[hdr, opcodes] : doc)
+        for (const auto &oc : opcodes)
+            if (oc.name == "lokey")
+                res.push_back(oc.value);
+    return res;
+}
+} // namespace
+
 TEST_CASE("SFZ Tokens", "[sfz]")
 {
     SECTION("Just a Comment")
@@ -278,5 +313,91 @@ group=1 off_by=1 off_mode=normal
 )SFZ";
         auto res = p.parse(anSFZ);
         REQUIRE(res.size() == 15);
+    }
+}
+
+TEST_CASE("SFZ Include", "[sfz]")
+{
+    SECTION("Expands nested includes in place")
+    {
+        CountingParser cp;
+        auto doc = cp.p.parse(sfzFixture("include_main.sfz"));
+        INFO("errors: " << cp.errors.size());
+        REQUIRE(cp.errors.empty());
+
+        // group@36, group@48 (included), group@60 (nested), group@72. The
+        // ordering is the assertion: an appended expansion would give 36/72/48/60.
+        REQUIRE(lokeysOf(doc) == std::vector<std::string>{"36", "48", "60", "72"});
+
+        int groups{0}, regions{0};
+        for (const auto &[hdr, opcodes] : doc)
+        {
+            if (hdr.type == scxt::sfz_support::SFZParser::Header::group)
+                groups++;
+            if (hdr.type == scxt::sfz_support::SFZParser::Header::region)
+                regions++;
+        }
+        REQUIRE(groups == 4);
+        REQUIRE(regions == 4);
+    }
+
+    SECTION("Ignores commented out includes")
+    {
+        auto dir = sfzFixture("");
+
+        CountingParser lineCp;
+        auto lineRes =
+            lineCp.p.expandIncludes("// #include \"includes/include_nested.sfz\"\n", dir);
+        REQUIRE(lineCp.errors.empty());
+        REQUIRE(lineRes.find("lokey=60") == std::string::npos);
+
+        CountingParser blockCp;
+        auto blockRes = blockCp.p.expandIncludes(
+            "/*\n#include \"includes/include_nested.sfz\"\n*/\n<region>key=60\n", dir);
+        REQUIRE(blockCp.errors.empty());
+        REQUIRE(blockRes.find("lokey=60") == std::string::npos);
+        // and the block comment must close, so what follows is untouched
+        REQUIRE(blockRes.find("<region>key=60") != std::string::npos);
+    }
+
+    SECTION("Handles CRLF line endings")
+    {
+        // The files that motivated this feature (UI_METAL-GTX) are all CRLF
+        CountingParser cp;
+        auto res = cp.p.expandIncludes(
+            "<region>key=36\r\n#include \"includes/include_nested.sfz\"\r\n", sfzFixture(""));
+        REQUIRE(cp.errors.empty());
+        REQUIRE(res.find("lokey=60") != std::string::npos);
+    }
+
+    SECTION("Warns on an unresolvable include and keeps parsing")
+    {
+        CountingParser cp;
+        auto doc = cp.p.parse(sfzFixture("include_missing.sfz"));
+        REQUIRE(cp.errors.size() == 1);
+        REQUIRE(cp.errors[0].find("no_such_file.sfz") != std::string::npos);
+        REQUIRE(lokeysOf(doc) == std::vector<std::string>{"36", "48"});
+    }
+
+    SECTION("Terminates on a recursive include")
+    {
+        CountingParser cp;
+        auto doc = cp.p.parse(sfzFixture("include_cycle.sfz"));
+        REQUIRE(cp.errors.size() == 1);
+        REQUIRE(cp.errors[0].find("Recursive") != std::string::npos);
+        REQUIRE(lokeysOf(doc) == std::vector<std::string>{"36"});
+    }
+
+    SECTION("Warns rather than mis-parsing an unsupported directive")
+    {
+        // #define is the other ARIA directive; we don't implement it, but the
+        // pre-pass must swallow the line rather than let a bare '#' reach the
+        // tokenizer and come back as "Invalid syntax"
+        CountingParser cp;
+        auto res = cp.p.expandIncludes("#define $NUMOCT 3\n<region>key=60\n", sfzFixture(""));
+        REQUIRE(cp.errors.size() == 1);
+        REQUIRE(cp.errors[0].find("#define") != std::string::npos);
+        REQUIRE(res.find("$NUMOCT") == std::string::npos);
+        REQUIRE(res.find("<region>key=60") != std::string::npos);
     }
 }
