@@ -270,8 +270,11 @@ void PartSidebarCard::showRoutingMenu()
     p.addSectionHeader("Part Routing");
     p.addSeparator();
 
-    for (int i = engine::BusAddress::DEFAULT_BUS; i <= engine::AUX_0 + numAux; ++i)
+    for (int i = engine::BusAddress::DEFAULT_BUS; i < engine::AUX_0 + numAux; ++i)
     {
+        if (i == engine::BusAddress::MAIN_0 || i == engine::BusAddress::PART_0 ||
+            i == engine::AUX_0)
+            p.addSeparator();
         p.addItem(engine::getBusAddressLabel((engine::BusAddress)i, "Part Default"), true, i == ch,
                   makeMenuCallback(i));
     }
