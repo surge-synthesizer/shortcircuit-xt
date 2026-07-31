@@ -32,6 +32,8 @@
 
 #include "configuration.h"
 #include "console_harness.h"
+#include "browser/browser.h"
+#include "sample/compound_file.h"
 #include "dsp/processor/processor.h"
 #include "engine/engine.h"
 #include "engine/macros.h"
@@ -400,6 +402,43 @@ TEST_CASE("Multi sample add coalesces to one undo", "[undo]")
     REQUIRE(f.undoManager().undoStackSize() == baseSize + 1);
 
     // a single undo removes the whole drop, not one zone at a time
+    f.sendUndo(30);
+    REQUIRE(part->getGroups().size() == baseGroups);
+    REQUIRE(f.undoManager().undoStackSize() == baseSize);
+}
+
+TEST_CASE("Multi compound element add coalesces to one undo", "[undo]")
+{
+    namespace fs = std::filesystem;
+    namespace compound = scxt::sample::compound;
+
+    auto sf2P = fs::path(SCXT_TEST_SOURCE_DIR) / "resources" / "test_samples" / "harpsi.sf2";
+    REQUIRE(fs::exists(sf2P));
+
+    // The browser expands an sf2 into its presets plus its raw samples; selecting
+    // several of the samples and dragging them in sends one add per element
+    std::vector<compound::CompoundElement> samples;
+    for (const auto &el : scxt::browser::Browser::expandForBrowser(sf2P))
+        if (el.type == compound::CompoundElement::SAMPLE)
+            samples.push_back(el);
+    REQUIRE(samples.size() >= 3);
+    samples.resize(3);
+
+    UndoFixture f;
+    auto &part = f.engine().getPatch()->getPart(0);
+    auto baseSize = f.undoManager().undoStackSize();
+    auto baseGroups = part->getGroups().size();
+
+    f.send(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
+    for (const auto &el : samples)
+        f.send(cmsg::AddCompoundElementWithRange({el, 60, 48, 72, 0, 127}), 30);
+    f.send(cmsg::EndEdit(false));
+
+    REQUIRE(part->getGroups().size() == baseGroups + 1);
+    REQUIRE(part->getGroup(0)->getZones().size() == 3);
+    REQUIRE(f.undoManager().undoStackSize() == baseSize + 1);
+
+    // a single undo removes the whole drop, not just the first element
     f.sendUndo(30);
     REQUIRE(part->getGroups().size() == baseGroups);
     REQUIRE(f.undoManager().undoStackSize() == baseSize);
