@@ -285,8 +285,18 @@ struct DriveFSRowComponent;
 struct DriveFSArea : juce::Component, HasEditor
 {
     BrowserPane *browserPane{nullptr};
+
+    // Every live row, maintained by the row ctor/dtor. A refresh can destroy row
+    // components, so selection can't be cached as a separate set of pointers - it
+    // is read off the live rows on demand, which keeps the drag-multi state and
+    // the painted selection from drifting apart (#2579). Declared before listView
+    // so it outlives the rows it tracks.
+    std::set<DriveFSRowComponent *> allRows;
+    std::vector<DriveFSRowComponent *> selectedRowsInOrder() const;
+    size_t selectedRowCount() const;
+    void deselectAllRows();
+
     std::unique_ptr<jcmp::ListView> listView;
-    std::set<DriveFSRowComponent *> selectedRows;
 
     DriveFSArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
     {
@@ -334,6 +344,9 @@ struct DriveFSArea : juce::Component, HasEditor
     std::vector<RowContents> contents;
     void recalcContents()
     {
+        // The rows are about to mean something else, so drop the selection
+        deselectAllRows();
+
         // Make a copy for now. this sucks and we should be smarter
         contents.clear();
         auto lcontents = contents;
@@ -416,6 +429,12 @@ struct DriveFSArea : juce::Component, HasEditor
         }
         if (!bestRoot.empty())
         {
+            // Every full engine refresh replays the persisted path (an undo, say),
+            // so don't rebuild rows we are already showing - that would throw away
+            // the selection and scroll position (#2579)
+            if (rootPath == bestRoot && currentPath == p)
+                return;
+
             rootPath = bestRoot;
             currentPath = p;
             recalcContents();
@@ -519,12 +538,18 @@ void DriveArea::DriveAreaRow::mouseDown(const juce::MouseEvent &e)
 struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 {
     bool isSelected{false};
-    int rowNumber;
+    int rowNumber{-1};
     BrowserPane *browserPane{nullptr};
+    DriveFSArea *fsArea{nullptr};
     jcmp::ListView *listView{nullptr};
     static constexpr int32_t glyphSize{14};
 
-    DriveFSRowComponent(BrowserPane *p, jcmp::ListView *v) : browserPane(p), listView(v) {}
+    DriveFSRowComponent(BrowserPane *p, DriveFSArea *a, jcmp::ListView *v)
+        : browserPane(p), fsArea(a), listView(v)
+    {
+        fsArea->allRows.insert(this);
+    }
+    ~DriveFSRowComponent() { fsArea->allRows.erase(this); }
 
     bool isDragging{false};
     bool isMouseDownWithoutDrag{false};
@@ -545,16 +570,8 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
     bool encompassesMultipleSampleInfos() const override { return isDraggingMulti; }
     std::vector<WithSampleInfo *> getMultipleSampleInfos() const override
     {
-        std::vector<DriveFSRowComponent *> r;
         std::vector<WithSampleInfo *> res;
-
-        for (auto q : browserPane->devicesPane->driveFSArea->selectedRows)
-        {
-            r.push_back(q);
-        }
-        std::sort(r.begin(), r.end(), [](auto &a, auto &b) { return a->rowNumber < b->rowNumber; });
-
-        for (auto q : r)
+        for (auto q : fsArea->selectedRowsInOrder())
             res.push_back(q);
         return res;
     }
@@ -639,9 +656,8 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
 
             if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
             {
-                auto &dfs = browserPane->devicesPane->driveFSArea;
-                isDraggingMulti = dfs->selectedRows.size() > 1;
-                const auto &data = browserPane->devicesPane->driveFSArea->contents;
+                isDraggingMulti = fsArea->selectedRowCount() > 1;
+                const auto &data = fsArea->contents;
                 getProperties().set(
                     "DragAndDropSample",
                     juce::String::fromUTF8(data[rowNumber].dirent.path().u8string().c_str()));
@@ -787,8 +803,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
     }
     void paint(juce::Graphics &g) override
     {
-        auto &dfs = browserPane->devicesPane->driveFSArea;
-        const auto &data = dfs->contents;
+        const auto &data = fsArea->contents;
         if (isDraggingMulti && isPaintSnapshot)
         {
             auto width = getWidth();
@@ -806,7 +821,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             g.setColour(fillColor);
             g.fillRect(0, 0, width, height);
             auto r = getLocalBounds().reduced(2, 0);
-            auto txt = std::to_string(dfs->selectedRows.size()) + " items";
+            auto txt = std::to_string(fsArea->selectedRowCount()) + " items";
             g.setColour(textColor);
             g.drawText(txt, r, juce::Justification::centredLeft);
         }
@@ -898,28 +913,53 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
     }
 };
 
+std::vector<DriveFSRowComponent *> DriveFSArea::selectedRowsInOrder() const
+{
+    std::vector<DriveFSRowComponent *> res;
+    for (auto *r : allRows)
+        if (r->isSelected)
+            res.push_back(r);
+    std::sort(res.begin(), res.end(), [](auto &a, auto &b) { return a->rowNumber < b->rowNumber; });
+    return res;
+}
+
+size_t DriveFSArea::selectedRowCount() const
+{
+    return std::count_if(allRows.begin(), allRows.end(), [](auto *r) { return r->isSelected; });
+}
+
+void DriveFSArea::deselectAllRows()
+{
+    auto sel = selectedRowsInOrder();
+    if (sel.empty())
+        return;
+
+    // Route one deselect through the ListView so it drops its row-index set too
+    auto rn = sel.front()->rowNumber;
+    if (rn >= 0 && rn < (int)contents.size())
+        listView->rowSelected(rn, false);
+
+    for (auto *r : sel)
+    {
+        r->isSelected = false;
+        r->repaint();
+    }
+}
+
 void DriveFSArea::setupListView()
 {
     listView->selectionMode = jcmp::ListView::MULTI_SELECTION;
 
-    listView->getRowCount = [this]() -> uint32_t {
-        if (!browserPane || !browserPane->devicesPane || !browserPane->devicesPane->driveFSArea)
-            return 0;
-
-        return browserPane->devicesPane->driveFSArea->contents.size();
-    };
+    listView->getRowCount = [this]() -> uint32_t { return contents.size(); };
     listView->getRowHeight = [this]() { return 18; };
     listView->makeRowComponent = [this]() {
-        return std::make_unique<DriveFSRowComponent>(browserPane, listView.get());
+        return std::make_unique<DriveFSRowComponent>(browserPane, this, listView.get());
     };
     listView->assignComponentToRow = [this](const auto &c, auto r) {
         auto dfs = dynamic_cast<DriveFSRowComponent *>(c.get());
         if (dfs)
         {
             dfs->rowNumber = r;
-            selectedRows.erase(dfs);
-            if (dfs->isSelected)
-                selectedRows.insert(dfs);
             dfs->repaint();
         }
     };
@@ -927,16 +967,10 @@ void DriveFSArea::setupListView()
         auto dfs = dynamic_cast<DriveFSRowComponent *>(c.get());
         if (dfs)
         {
-            if (r)
-                selectedRows.insert(dfs);
-            else
-                selectedRows.erase(dfs);
-
             dfs->isSelected = r;
             dfs->repaint();
         }
     };
-    listView->onRefresh = [this]() { selectedRows.clear(); };
 }
 
 struct FavoritesPane : TempPane
