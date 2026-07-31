@@ -235,6 +235,9 @@ inline void executeBatchDropOnPart(browser_ui::WithSampleInfo *wsi, int targetPa
     namespace cmsg = scxt::messaging::client;
     assert(wsi && wsi->encompassesMultipleSampleInfos());
     editor->sendToSerialization(cmsg::SelectPart(targetPart));
+    // one add message per dropped element; coalesce to one undo entry
+    editor->sendToSerialization(
+        cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
     for (auto *e : wsi->getMultipleSampleInfos())
     {
         if (e->getCompoundElement().has_value())
@@ -244,6 +247,7 @@ inline void executeBatchDropOnPart(browser_ui::WithSampleInfo *wsi, int targetPa
             editor->sendToSerialization(
                 cmsg::AddSampleWithRange({e->getDirEnt()->path().u8string(), 60, 0, 127, 0, 127}));
     }
+    editor->sendToSerialization(cmsg::EndEdit(false));
 }
 
 // Execute a batch drop onto the currently selected group.
@@ -251,6 +255,9 @@ inline void executeBatchDropOnGroup(browser_ui::WithSampleInfo *wsi, HasEditor *
 {
     namespace cmsg = scxt::messaging::client;
     assert(wsi && wsi->encompassesMultipleSampleInfos());
+    // one add message per dropped element; coalesce to one undo entry
+    editor->sendToSerialization(
+        cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
     for (auto *e : wsi->getMultipleSampleInfos())
     {
         if (e->getCompoundElement().has_value())
@@ -259,6 +266,7 @@ inline void executeBatchDropOnGroup(browser_ui::WithSampleInfo *wsi, HasEditor *
         else if (e->getDirEnt().has_value())
             editor->sendToSerialization(cmsg::AddSample(e->getDirEnt()->path().u8string()));
     }
+    editor->sendToSerialization(cmsg::EndEdit(false));
 }
 
 // Execute a batch drop into an explicit group, bypassing selection state.
@@ -267,6 +275,9 @@ inline void executeBatchDropOnGroup(browser_ui::WithSampleInfo *wsi, int part, i
 {
     namespace cmsg = scxt::messaging::client;
     assert(wsi && wsi->encompassesMultipleSampleInfos());
+    // one add message per dropped element; coalesce to one undo entry
+    editor->sendToSerialization(
+        cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
     for (auto *e : wsi->getMultipleSampleInfos())
     {
         if (e->getCompoundElement().has_value())
@@ -276,6 +287,7 @@ inline void executeBatchDropOnGroup(browser_ui::WithSampleInfo *wsi, int part, i
             editor->sendToSerialization(
                 cmsg::AddSampleToGroup({e->getDirEnt()->path().u8string(), part, group}));
     }
+    editor->sendToSerialization(cmsg::EndEdit(false));
 }
 
 } // namespace scxt::ui::app::shared

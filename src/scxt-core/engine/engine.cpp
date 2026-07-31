@@ -819,7 +819,10 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
     // Drop into selected group logic goes here
     auto [sp, sg] = selectionManager->bestPartGroupForNewSample(*this);
 
-    undo::pushZoneAddUndo(*this, sp, sg);
+    // Snapshot the group rather than the zone index, exactly as the plain sample
+    // load below does: a multi-element drop coalesces to this single push, so an
+    // index-based delete would only undo the first element of the batch
+    undo::pushUndo<undo::GroupChangeItem>(*this, sp, sg);
 
     // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
