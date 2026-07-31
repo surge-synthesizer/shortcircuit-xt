@@ -101,6 +101,10 @@ void GroupChangeItem::restore(engine::Engine &e)
             [pi, gi, data = std::move(data)](const auto &engine) {
                 auto &e = const_cast<engine::Engine &>(engine);
                 auto &pt = e.getPatch()->getPart(pi);
+                // The group need not exist: undoing the first sample drop deletes
+                // the group that drop implicitly created, so the redo re-adds it.
+                // Safe here - the audio thread is stopped for this dispatch.
+                pt->guaranteeGroupCount(gi + 1);
                 auto &g = pt->getGroup(gi);
 
                 // Clear existing zones from the group

@@ -407,6 +407,34 @@ TEST_CASE("Multi sample add coalesces to one undo", "[undo]")
     REQUIRE(f.undoManager().undoStackSize() == baseSize);
 }
 
+TEST_CASE("Redo of the first sample add re-creates its group", "[undo]")
+{
+    namespace fs = std::filesystem;
+    auto sampleP =
+        fs::path(SCXT_TEST_SOURCE_DIR) / "resources" / "test_samples" / "next" / "Beep.wav";
+    REQUIRE(fs::exists(sampleP));
+
+    UndoFixture f;
+    auto &part = f.engine().getPatch()->getPart(0);
+    REQUIRE(part->getGroups().empty());
+
+    // The first drop into a blank engine implicitly creates the group, so undo
+    // takes the group with it and redo has to put it back
+    f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}), 30);
+    REQUIRE(part->getGroups().size() == 1);
+    REQUIRE(part->getGroup(0)->getZones().size() == 1);
+
+    f.sendUndo(30);
+    REQUIRE(part->getGroups().empty());
+
+    f.sendRedo(30);
+    REQUIRE(part->getGroups().size() == 1);
+    REQUIRE(part->getGroup(0)->getZones().size() == 1);
+
+    f.sendUndo(30);
+    REQUIRE(part->getGroups().empty());
+}
+
 TEST_CASE("Multi compound element add coalesces to one undo", "[undo]")
 {
     namespace fs = std::filesystem;
