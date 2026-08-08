@@ -34,6 +34,7 @@
 #include "json/engine_traits.h"
 #include "json/datamodel_traits.h"
 #include "selection/selection_manager.h"
+#include "tuning/scl_kbm.h"
 #include "client_macros.h"
 
 namespace scxt::messaging::client
@@ -129,6 +130,73 @@ inline void applyTuningStatusPayload(const tuningStatusPayload_t &payload,
 }
 CLIENT_TO_SERIAL(SetTuningMode, c2s_set_tuning_mode, tuningStatusPayload_t,
                  applyTuningStatusPayload(payload, cont));
+
+// The SCL text, then the KBM text. An empty KBM means the scale's default mapping.
+using sclKbmPayload_t = std::pair<std::string, std::string>;
+SERIAL_TO_CLIENT(SendSclKbm, s2c_send_scl_kbm, sclKbmPayload_t, onSclKbm);
+
+/*
+ * Parsing happens here, on the serialization thread, because the tuning library
+ * allocates and throws. Only the flattened table crosses to audio. A scale which
+ * fails to parse leaves the live tuning alone and reports; we deliberately do not
+ * echo the text back, so the user keeps their half-edited scale to fix.
+ */
+inline void applySclKbmPayload(const sclKbmPayload_t &payload, engine::Engine &engine,
+                               messaging::MessageController &cont)
+{
+    /*
+     * A mapping on its own is a reasonable ask - "put A4 at 432" needs no custom
+     * scale - so a bare KBM means plain 12-TET rather than no tuning at all.
+     * Both empty still clears the tuning.
+     */
+    auto scl = payload.first;
+    if (scl.empty() && !payload.second.empty())
+        scl = tuning::twelveTETSclText();
+
+    tuning::MidikeyRetuner::RetuneTable table;
+    auto haveScale = !scl.empty();
+
+    if (haveScale)
+    {
+        std::string err;
+        if (!tuning::buildRetuneTable(scl, payload.second, table, err))
+        {
+            RAISE_ERROR_CONT(cont, "Tuning Error", err);
+            return;
+        }
+    }
+
+    engine.dawExtraState.sclContents = haveScale ? scl : "";
+    engine.dawExtraState.kbmContents = haveScale ? payload.second : "";
+
+    cont.scheduleAudioThreadCallback(
+        [t = table, haveScale](scxt::engine::Engine &e) {
+            if (haveScale)
+            {
+                e.midikeyRetuner.setSCLKBMTable(t);
+                e.runtimeConfig.tuningMode = engine::Engine::TuningMode::SCL_KBM;
+            }
+            else
+            {
+                e.midikeyRetuner.clearSCLKBM();
+            }
+            // Resolves the mode, and demotes to 12-TET if we just cleared the scale
+            e.resetTuningFromRuntimeConfig();
+        },
+        [](const auto &e) {
+            serializationSendToClient(messaging::client::s2c_send_scl_kbm,
+                                      messaging::client::sclKbmPayload_t{
+                                          e.dawExtraState.sclContents, e.dawExtraState.kbmContents},
+                                      *(e.getMessageController()));
+            serializationSendToClient(
+                messaging::client::s2c_send_tuning_status,
+                messaging::client::tuningStatusPayload_t{e.runtimeConfig.tuningMode,
+                                                         e.runtimeConfig.tuningZoneResolution},
+                *(e.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(SetSclKbm, c2s_set_scl_kbm, sclKbmPayload_t,
+                 applySclKbmPayload(payload, engine, cont));
 
 inline void applyMPETuningAwarenessPayload(const bool &payload, messaging::MessageController &cont)
 {

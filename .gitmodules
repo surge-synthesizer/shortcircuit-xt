@@ -81,3 +81,6 @@
 [submodule "libs/xiph/opusfile"]
 	path = libs/xiph/opusfile
 	url = https://github.com/xiph/opusfile.git
+[submodule "libs/sst/tuning-library"]
+	path = libs/sst/tuning-library
+	url = https://github.com/surge-synthesizer/tuning-library

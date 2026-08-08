@@ -27,6 +27,7 @@
 
 #include "midikey_retuner.h"
 #include "libMTSClient.h"
+#include <algorithm>
 #include <cmath>
 #include "utils.h"
 
@@ -61,6 +62,13 @@ float MidikeyRetuner::offsetKeyBy(int channel, int key)
             return 0.f;
         return MTS_RetuningInSemitones(mtsClient, key, channel);
     }
+    case SCL_KBM:
+    {
+        if (!sclKbmValid)
+            return 0.f;
+        auto idx = std::clamp(key + RetuneTable::midiOffset, 0, RetuneTable::tableSize - 1);
+        return sclKbmTable.semitones[idx];
+    }
     }
     return 0.f;
 }
@@ -81,11 +89,25 @@ int MidikeyRetuner::getRepetitionInterval() const
         else
             return tmp;
     }
+    case SCL_KBM:
+        return sclKbmValid ? sclKbmTable.repetitionInterval : 12;
     }
     return 12;
 }
 
 void MidikeyRetuner::setTuningMode(TuningMode tm) { tuningMode = tm; }
+
+void MidikeyRetuner::setSCLKBMTable(const RetuneTable &t)
+{
+    sclKbmTable = t;
+    sclKbmValid = true;
+}
+
+void MidikeyRetuner::clearSCLKBM()
+{
+    sclKbmTable = RetuneTable();
+    sclKbmValid = false;
+}
 
 int MidikeyRetuner::remapKeyTo(int channel, int key)
 {

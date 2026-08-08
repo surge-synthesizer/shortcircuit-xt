@@ -43,8 +43,6 @@
  * verify the migration in Engine::SC_TO.
  */
 
-using namespace scxt;
-
 namespace
 {
 

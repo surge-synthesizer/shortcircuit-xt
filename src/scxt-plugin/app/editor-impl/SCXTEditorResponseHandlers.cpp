@@ -40,6 +40,7 @@
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/ThemeEditor.h"
+#include "app/other-screens/TuningScreen.h"
 #include "app/browser-ui/BrowserPane.h"
 #include "app/play-screen/PlayScreen.h"
 #include "app/missing-resolution/MissingResolutionScreen.h"
@@ -602,6 +603,14 @@ void SCXTEditorReceiver::onPartKeySwitchDisplay(
 void SCXTEditorReceiver::onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &t)
 {
     editor.tuningStatus = t;
+}
+
+void SCXTEditorReceiver::onSclKbm(const scxt::messaging::client::sclKbmPayload_t &p)
+{
+    editor.sclText = p.first;
+    editor.kbmText = p.second;
+    if (editor.tuningScreen && editor.tuningScreen->isVisible())
+        editor.tuningScreen->setSclKbmFromEngine(p.first, p.second);
 }
 
 void SCXTEditorReceiver::onMpeTuningAwarenessFromEngine(bool a) { editor.tuningAwareMPE = a; }

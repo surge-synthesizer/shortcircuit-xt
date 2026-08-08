@@ -28,6 +28,8 @@
 #ifndef SCXT_SRC_SCXT_CORE_TUNING_MIDIKEY_RETUNER_H
 #define SCXT_SRC_SCXT_CORE_TUNING_MIDIKEY_RETUNER_H
 
+#include <array>
+
 struct MTSClient;
 
 namespace scxt::tuning
@@ -37,13 +39,35 @@ struct MidikeyRetuner
     enum TuningMode
     {
         TWELVE_TET,
-        MTS_ESP
+        MTS_ESP,
+        SCL_KBM
     } tuningMode{TWELVE_TET};
+
+    /*
+     * A flattened tuning, precomputed off the audio thread. Deliberately the same
+     * size and indexing as Tunings::Tuning::N so out of range keys clamp identically.
+     * See tuning/scl_kbm.h for the builder.
+     */
+    struct RetuneTable
+    {
+        static constexpr int tableSize{512};
+        static constexpr int midiOffset{256};
+
+        std::array<float, tableSize> semitones{}; // index is midi note + midiOffset
+        int repetitionInterval{12};
+    };
 
     MidikeyRetuner();
     ~MidikeyRetuner();
 
     void setTuningMode(TuningMode);
+
+    /*
+     * Audio thread. Copies by value; the caller owns the parse.
+     */
+    void setSCLKBMTable(const RetuneTable &);
+    void clearSCLKBM();
+    bool hasSCLKBM() const { return sclKbmValid; }
 
     int getRepetitionInterval() const;
 
@@ -64,6 +88,9 @@ struct MidikeyRetuner
 
   private:
     MTSClient *mtsClient{nullptr};
+
+    RetuneTable sclKbmTable;
+    bool sclKbmValid{false};
 };
 } // namespace scxt::tuning
 

@@ -121,6 +121,7 @@ struct SCXTEditorReceiver
     void onActivityNotification(const scxt::messaging::client::activityNotificationPayload_t &);
 
     void onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &);
+    void onSclKbm(const scxt::messaging::client::sclKbmPayload_t &);
 
     void onMacroFullState(const scxt::messaging::client::macroFullState_t &);
     void onMacroValue(const scxt::messaging::client::macroValue_t &);

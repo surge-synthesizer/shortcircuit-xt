@@ -165,15 +165,13 @@ TEST_CASE("Exclusive Group - different IDs do not choke each other", "[exclusive
 
 TEST_CASE("Exclusive Group - streaming round-trip", "[exclusive_group]")
 {
-    using namespace scxt;
-
-    engine::Group::GroupOutputInfo info;
+    scxt::engine::Group::GroupOutputInfo info;
     info.exclusiveGroup = 3;
 
     auto s = tao::json::to_string(scxt::json::scxt_value(info));
     REQUIRE(s.find("excg") != std::string::npos);
 
-    engine::Group::GroupOutputInfo info2;
+    scxt::engine::Group::GroupOutputInfo info2;
     {
         tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>>
             consumer;
@@ -275,7 +273,6 @@ TEST_CASE("Exclusive Group - old ZoneMappingData JSON loads without crash", "[ex
 {
     // Patches saved before this change had "exclusiveGroup" under ZoneMappingData.
     // The field no longer exists there; it should be silently ignored on load.
-    using namespace scxt;
 
     std::string oldJson =
         R"({"rootKey":60,"keyR":{"keyStart":0,"keyEnd":127,"fadeStart":0,"fadeEnd":0},)"
@@ -283,7 +280,7 @@ TEST_CASE("Exclusive Group - old ZoneMappingData JSON loads without crash", "[ex
         R"("pbDown":-1,"pbUp":-1,"exclusiveGroup":2,"velocitySens":1.0,)"
         R"("amplitude":0.0,"pan":0.0,"pitchOffset":0.0,"tracking":1.0})";
 
-    engine::Zone::ZoneMappingData zmd;
+    scxt::engine::Zone::ZoneMappingData zmd;
     {
         tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>>
             consumer;

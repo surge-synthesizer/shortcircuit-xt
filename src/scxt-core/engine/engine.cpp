@@ -39,6 +39,7 @@
 #include "voice/voice.h"
 #include "dsp/data_tables.h"
 #include "tuning/equal.h"
+#include "tuning/scl_kbm.h"
 #include "messaging/messaging.h"
 #include "messaging/client/detail/client_serial_impl.h"
 #include "messaging/client/enginestatus_messages.h"
@@ -1643,6 +1644,11 @@ void Engine::sendFullRefreshToClient() const
     // to its user-prefs baseline (discard any overlay it may currently show).
     serializationSendToClient(messaging::client::s2c_set_colormap, dawExtraState.editedColormap,
                               *(getMessageController()));
+
+    serializationSendToClient(
+        messaging::client::s2c_send_scl_kbm,
+        messaging::client::sclKbmPayload_t{dawExtraState.sclContents, dawExtraState.kbmContents},
+        *(getMessageController()));
 }
 
 void Engine::clearAll(bool alsoPurge)
@@ -1781,6 +1787,30 @@ void Engine::onDawExtraStateLoaded()
     // to its user-prefs baseline (discard any overlay it may currently show).
     serializationSendToClient(messaging::client::s2c_set_colormap, dawExtraState.editedColormap,
                               *(getMessageController()));
+
+    /*
+     * The engine trait resets the tuning before it reads daw extra state, so the scale
+     * arrives after the mode has already been resolved. Rebuild and resolve again.
+     */
+    std::string err;
+    if (!applySclKbmFromDawExtraState(err))
+    {
+        midikeyRetuner.clearSCLKBM();
+        RAISE_ERROR_ENGINE(*this, "Tuning Error",
+                           "The scale stored in this session did not parse, so tuning has "
+                           "reverted to 12-TET. " +
+                               err);
+    }
+    resetTuningFromRuntimeConfig();
+
+    serializationSendToClient(
+        messaging::client::s2c_send_scl_kbm,
+        messaging::client::sclKbmPayload_t{dawExtraState.sclContents, dawExtraState.kbmContents},
+        *(getMessageController()));
+    serializationSendToClient(messaging::client::s2c_send_tuning_status,
+                              messaging::client::tuningStatusPayload_t{
+                                  runtimeConfig.tuningMode, runtimeConfig.tuningZoneResolution},
+                              *(getMessageController()));
 }
 
 std::string Engine::toStringTuningMode(const TuningMode &m)
@@ -1793,13 +1823,15 @@ std::string Engine::toStringTuningMode(const TuningMode &m)
         return "mts";
     case TuningMode::MTS_NOTE_ON:
         return "mtsno";
+    case TuningMode::SCL_KBM:
+        return "sclkbm";
     }
     return "err";
 }
 Engine::TuningMode Engine::fromStringTuningMode(const std::string &s)
 {
     static auto inverse = makeEnumInverse<Engine::TuningMode, Engine::toStringTuningMode>(
-        Engine::TuningMode::TWELVE_TET, Engine::TuningMode::MTS_NOTE_ON);
+        Engine::TuningMode::TWELVE_TET, Engine::TuningMode::SCL_KBM);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return TuningMode::MTS_CONTINOUS;
@@ -1832,6 +1864,15 @@ Engine::TuningZoneResolution Engine::fromStringTuningZoneResolution(const std::s
 
 void Engine::resetTuningFromRuntimeConfig()
 {
+    /*
+     * The scale itself lives in daw extra state, but the mode streams with a multi too,
+     * so a multi can ask for SCL_KBM with no scale behind it. Demote rather than sound
+     * untuned, and do it here so every path into the mode is covered.
+     */
+    // No logging here - this runs on the audio thread from the SetTuningMode callback
+    if (runtimeConfig.tuningMode == TuningMode::SCL_KBM && !midikeyRetuner.hasSCLKBM())
+        runtimeConfig.tuningMode = TuningMode::TWELVE_TET;
+
     switch (runtimeConfig.tuningMode)
     {
     case TuningMode::TWELVE_TET:
@@ -1841,7 +1882,29 @@ void Engine::resetTuningFromRuntimeConfig()
     case TuningMode::MTS_NOTE_ON:
         midikeyRetuner.setTuningMode(tuning::MidikeyRetuner::MTS_ESP);
         break;
+    case TuningMode::SCL_KBM:
+        midikeyRetuner.setTuningMode(tuning::MidikeyRetuner::SCL_KBM);
+        break;
     }
+}
+
+bool Engine::applySclKbmFromDawExtraState(std::string &errorOut)
+{
+    assert(getMessageController()->threadingChecker.isSerialThread());
+
+    if (dawExtraState.sclContents.empty())
+    {
+        midikeyRetuner.clearSCLKBM();
+        return true;
+    }
+
+    tuning::MidikeyRetuner::RetuneTable table;
+    if (!tuning::buildRetuneTable(dawExtraState.sclContents, dawExtraState.kbmContents, table,
+                                  errorOut))
+        return false;
+
+    midikeyRetuner.setSCLKBMTable(table);
+    return true;
 }
 
 void Engine::setMpeTuningAwareness(bool a) { this->runtimeConfig.tuningAwareMPEGlides = a; }

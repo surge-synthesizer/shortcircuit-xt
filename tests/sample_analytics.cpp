@@ -30,8 +30,6 @@
 #include <limits>
 #include <cmath>
 
-using namespace scxt;
-
 TEST_CASE("Sample Analytics", "[sample]")
 {
     float _scratch; // Create a scratch double for modf
@@ -41,7 +39,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     std::array<float, 1024> sineBuffer{};
     constexpr float sine_amp = 0.6f;
     const float sine_rms = sine_amp / sqrt(2.0f);
-    const auto sineSample = std::make_shared<sample::Sample>();
+    const auto sineSample = std::make_shared<scxt::sample::Sample>();
     sineSample->allocateF32(0, sineBuffer.size());
     for (int i = 0; i < sineBuffer.size(); i++)
     {
@@ -58,7 +56,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     std::array<float, 1024> squareBuffer{};
     constexpr float square_amp = 0.8f;
     constexpr float square_rms = square_amp;
-    const auto squareSample = std::make_shared<sample::Sample>();
+    const auto squareSample = std::make_shared<scxt::sample::Sample>();
     squareSample->allocateF32(0, squareBuffer.size());
     for (int i = 0; i < squareBuffer.size(); i++)
     {
@@ -75,7 +73,7 @@ TEST_CASE("Sample Analytics", "[sample]")
     std::array<int16_t, 1024> sawBuffer{};
     constexpr float saw_amp = 0.3f;
     const float saw_rms = saw_amp / sqrt(3.0f);
-    const auto sawSample = std::make_shared<sample::Sample>();
+    const auto sawSample = std::make_shared<scxt::sample::Sample>();
     sawSample->allocateI16(0, sawBuffer.size());
     sawSample->allocateI16(1, sawBuffer.size());
     for (int i = 0; i < sawBuffer.size(); i++)
@@ -96,21 +94,21 @@ TEST_CASE("Sample Analytics", "[sample]")
 
     SECTION("Peak Analysis")
     {
-        REQUIRE_THAT(dsp::sample_analytics::computePeak(sineSample),
+        REQUIRE_THAT(scxt::dsp::sample_analytics::computePeak(sineSample),
                      Catch::WithinRel(sine_amp, tolerance));
-        REQUIRE_THAT(dsp::sample_analytics::computePeak(squareSample),
+        REQUIRE_THAT(scxt::dsp::sample_analytics::computePeak(squareSample),
                      Catch::WithinRel(square_amp, tolerance));
-        REQUIRE_THAT(dsp::sample_analytics::computePeak(sawSample),
+        REQUIRE_THAT(scxt::dsp::sample_analytics::computePeak(sawSample),
                      Catch::WithinRel(saw_amp, tolerance));
     }
 
     SECTION("RMS Analysis")
     {
-        REQUIRE_THAT(dsp::sample_analytics::computeRMS(sineSample),
+        REQUIRE_THAT(scxt::dsp::sample_analytics::computeRMS(sineSample),
                      Catch::WithinRel(sine_rms, tolerance));
-        REQUIRE_THAT(dsp::sample_analytics::computeRMS(squareSample),
+        REQUIRE_THAT(scxt::dsp::sample_analytics::computeRMS(squareSample),
                      Catch::WithinRel(square_rms, tolerance));
-        REQUIRE_THAT(dsp::sample_analytics::computeRMS(sawSample),
+        REQUIRE_THAT(scxt::dsp::sample_analytics::computeRMS(sawSample),
                      Catch::WithinRel(saw_rms, tolerance));
     }
 }

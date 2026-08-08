@@ -29,6 +29,10 @@
 #define SCXT_SRC_SCXT_PLUGIN_APP_SHARED_UIHELPERS_H
 
 #include <juce_core/juce_core.h>
+#include <fstream>
+#include <optional>
+#include <sstream>
+#include <string>
 #include "filesystem/import.h"
 
 namespace scxt::ui::app::shared
@@ -66,6 +70,17 @@ inline juce::File fsPathToJuceFile(const fs::path &p)
 #else
     return juce::File(p.u8string());
 #endif
+}
+
+// Slurp a text file, or nullopt if it won't open
+inline std::optional<std::string> fileToString(const fs::path &p)
+{
+    std::ifstream t(p);
+    if (!t)
+        return std::nullopt;
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    return buffer.str();
 }
 
 } // namespace scxt::ui::app::shared

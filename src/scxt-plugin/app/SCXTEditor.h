@@ -94,6 +94,7 @@ namespace other_screens
 struct WelcomeScreen;
 struct AboutScreen;
 struct LogScreen;
+struct TuningScreen;
 struct ThemeEditorWindow;
 } // namespace other_screens
 
@@ -179,6 +180,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::unique_ptr<other_screens::AboutScreen> aboutScreen;
     std::unique_ptr<other_screens::WelcomeScreen> welcomeScreen;
     std::unique_ptr<other_screens::LogScreen> logScreen;
+    std::unique_ptr<other_screens::TuningScreen> tuningScreen;
     std::unique_ptr<other_screens::ThemeEditorWindow> themeEditorWindow;
     std::unique_ptr<missing_resolution::MissingResolutionScreen> missingResolutionScreen;
     bool hasMissingSamples{false};
@@ -206,6 +208,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void setActiveScreen(ActiveScreen s);
     void showAboutOverlay();
     void showLogOverlay();
+    void showTuningOverlay();
     void showWelcomeOverlay();
     void showThemeEditorWindow();
     int32_t checkWelcomeCountdown{20};
@@ -260,6 +263,9 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // tuningStatusPayload_t == std::pair<TuningMode, TuningZoneResolution>;
     // inlined here to avoid pulling enginestatus_messages.h.
     std::pair<engine::Engine::TuningMode, engine::Engine::TuningZoneResolution> tuningStatus;
+
+    // Last applied scale and mapping. Empty scl means SCL/KBM tuning is unavailable.
+    std::string sclText, kbmText;
 
     std::array<std::array<scxt::engine::Macro, scxt::macrosPerPart>, scxt::numParts> macroCache;
 
@@ -342,6 +348,11 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     void promptForSaveTheme();
     void promptForLoadTheme();
     void applyThemeFromFile(const fs::path &);
+
+    void promptForLoadSCL();
+    void promptForLoadKBM();
+    // Single point where the "no scale means 12-TET" rule lives
+    void applySclKbmText(const std::string &scl, const std::string &kbm);
 
     void processorBypassToggled(int which);
 
