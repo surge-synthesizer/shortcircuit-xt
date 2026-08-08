@@ -31,6 +31,11 @@ target_compile_definitions(scxt-test PRIVATE
 		SCXT_TEST_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
+# Tests don't unity build. Concatenating them makes each file's file scope
+# visible to the next, which turns a helper or an include in one test into a
+# collision in an unrelated one.
+set_target_properties(scxt-test PROPERTIES UNITY_BUILD OFF)
+
 target_link_libraries(scxt-test
 		fmt
         scxt-core

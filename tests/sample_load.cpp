@@ -35,7 +35,6 @@
 
 #include "test_utils.h"
 
-using namespace scxt;
 namespace fs = std::filesystem;
 
 TEST_CASE("Load Opus sample", "[sample][opus]")
@@ -46,13 +45,13 @@ TEST_CASE("Load Opus sample", "[sample][opus]")
     INFO("fixture=" << p.u8string());
     REQUIRE(fs::exists(p));
 
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.load(p));
 
-    CHECK(s.type == sample::Sample::OPUS_FILE);
+    CHECK(s.type == scxt::sample::Sample::OPUS_FILE);
     CHECK(s.sample_loaded);
     CHECK(s.sample_rate == 48000);
-    CHECK(s.bitDepth == sample::Sample::BD_F32);
+    CHECK(s.bitDepth == scxt::sample::Sample::BD_F32);
     CHECK(s.channels == 2);
     CHECK(s.getSampleLength() > 0);
 
@@ -81,7 +80,7 @@ TEST_CASE("Opus parses from in-memory bytes", "[sample][opus]")
                                std::istreambuf_iterator<char>());
     REQUIRE(!bytes.empty());
 
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parseOpus(bytes.data(), bytes.size()));
     CHECK(s.sample_rate == 48000);
     CHECK(s.channels == 2);
@@ -95,13 +94,13 @@ TEST_CASE("Load extensible wav sample", "[sample][wav]")
     INFO("fixture=" << p.u8string());
     REQUIRE(fs::exists(p));
 
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.load(p));
 
-    CHECK(s.type == sample::Sample::WAV_FILE);
+    CHECK(s.type == scxt::sample::Sample::WAV_FILE);
     CHECK(s.sample_loaded);
     CHECK(s.sample_rate == 48000);
-    CHECK(s.bitDepth == sample::Sample::BD_F32);
+    CHECK(s.bitDepth == scxt::sample::Sample::BD_F32);
     CHECK(s.channels == 2);
     CHECK(s.getSampleLength() > 0);
 

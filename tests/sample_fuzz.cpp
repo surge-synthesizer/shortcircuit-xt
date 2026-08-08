@@ -45,8 +45,6 @@
 #include <cstring>
 #include <vector>
 
-using namespace scxt;
-
 namespace
 {
 // Little-endian appenders + ASCII fourcc, matching what RIFFMemFile reads.
@@ -112,7 +110,7 @@ std::vector<uint8_t> assembleRiff(const std::vector<uint8_t> &body, int64_t size
 TEST_CASE("parse_riff_wave: valid baseline parses", "[sample][fuzz][wav]")
 {
     auto f = assembleRiff(wavBody(32));
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_riff_wave(f.data(), f.size()));
     CHECK(s.channels == 2);
     CHECK(s.sample_rate == 48000);
@@ -133,7 +131,7 @@ TEST_CASE("parse_riff_wave: inflated LIST size cannot read past the buffer", "[s
     body.insert(body.end(), nm, nm + 8);
 
     auto f = assembleRiff(body); // outer RIFF size is honest; the LIST lies
-    sample::Sample s;
+    scxt::sample::Sample s;
     // Must terminate without reading out of bounds; success/failure both fine.
     s.parse_riff_wave(f.data(), f.size());
     SUCCEED();
@@ -156,7 +154,7 @@ TEST_CASE("parse_riff_wave: short un-terminated INAM is copied safely", "[sample
     patchU32(body, listSizeAt, (uint32_t)(4 + 8 + 10));
 
     auto f = assembleRiff(body);
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_riff_wave(f.data(), f.size()));
     // name must be NUL-terminated within its 64-byte buffer
     CHECK(s.name[63] == 0);
@@ -175,7 +173,7 @@ TEST_CASE("parse_riff_wave: huge cue count does not over-allocate", "[sample][fu
         body.push_back(0);
 
     auto f = assembleRiff(body);
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_riff_wave(f.data(), f.size()));
     // clamped to what the chunk can hold (1) => below the >1 threshold => no slices
     CHECK(s.meta.n_slices == 0);
@@ -193,7 +191,7 @@ TEST_CASE("parse_riff_wave: truncated cue chunk leaves no garbage slices", "[sam
         body.push_back((uint8_t)(i & 0xFF)); // only 2 CuePoints actually present
 
     auto f = assembleRiff(body);
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_riff_wave(f.data(), f.size()));
     CHECK(s.meta.n_slices <= 2);
 }
@@ -246,7 +244,7 @@ TEST_CASE("parse_riff_wave: survives truncation at every prefix length", "[sampl
 
     for (size_t n = 1; n <= f.size(); ++n)
     {
-        sample::Sample s;
+        scxt::sample::Sample s;
         // Any return value is acceptable; the requirement is "does not crash /
         // read out of bounds" for an arbitrarily truncated file.
         s.parse_riff_wave(f.data(), n);
@@ -263,7 +261,7 @@ TEST_CASE("parse_riff_wave: byte-flip fuzz of size fields does not crash", "[sam
     {
         auto m = base;
         m[off + 3] ^= 0x80;
-        sample::Sample s;
+        scxt::sample::Sample s;
         s.parse_riff_wave(m.data(), m.size());
     }
     SUCCEED();
@@ -284,7 +282,7 @@ TEST_CASE("parse_riff_wave: 256MB+ data chunk sample count does not overflow",
     body.resize(body.size() + dataBytes, 0);
 
     auto f = assembleRiff(body, /*sizeOverride*/ (int64_t)body.size());
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_riff_wave(f.data(), f.size()));
     CHECK(s.getSampleLength() == dataBytes); // 8 * bytes / 8 == bytes, no wrap
 }
@@ -360,7 +358,7 @@ TEST_CASE("parse_aiff: valid mono 16-bit baseline parses", "[sample][fuzz][aiff]
     putAiffSSND(chunks, 0, rampAudio(32 * 2));
     auto f = assembleAiff(chunks);
 
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_aiff(f.data(), f.size()));
     CHECK(s.channels == 1);
     CHECK(s.sample_rate == 44100);
@@ -377,7 +375,7 @@ TEST_CASE("parse_aiff: COMM frame count exceeding SSND payload is clamped (mono)
     putAiffSSND(chunks, 0, rampAudio(16 * 2));
     auto f = assembleAiff(chunks);
 
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_aiff(f.data(), f.size()));
     CHECK(s.getSampleLength() <= 16);
 }
@@ -391,7 +389,7 @@ TEST_CASE("parse_aiff: COMM frame count exceeding SSND payload is clamped (stere
     putAiffSSND(chunks, 0, rampAudio(8 * 4));
     auto f = assembleAiff(chunks);
 
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_aiff(f.data(), f.size()));
     CHECK(s.channels == 2);
     CHECK(s.getSampleLength() <= 8);
@@ -406,7 +404,7 @@ TEST_CASE("parse_aiff: 24-bit COMM frame count exceeding SSND payload is clamped
     putAiffSSND(chunks, 0, rampAudio(10 * 3));
     auto f = assembleAiff(chunks);
 
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_aiff(f.data(), f.size()));
     CHECK(s.getSampleLength() <= 10);
 }
@@ -431,7 +429,7 @@ TEST_CASE("parse_aiff: huge MARK count does not over-allocate or read past the c
     chunks.insert(chunks.end(), mark.begin(), mark.end());
 
     auto f = assembleAiff(chunks);
-    sample::Sample s;
+    scxt::sample::Sample s;
     s.parse_aiff(f.data(), f.size()); // success/failure both fine; must not OOB
     SUCCEED();
 }
@@ -472,7 +470,7 @@ TEST_CASE("parse_aiff: INST loop referencing an absent marker reads a defined va
     chunks.insert(chunks.end(), inst.begin(), inst.end());
 
     auto f = assembleAiff(chunks);
-    sample::Sample s;
+    scxt::sample::Sample s;
     REQUIRE(s.parse_aiff(f.data(), f.size()));
     CHECK(s.meta.loop_start == 0);
     CHECK(s.meta.loop_end == 1); // absent marker → 0, code stores +1
@@ -517,7 +515,7 @@ TEST_CASE("parse_aiff: survives truncation at every prefix length", "[sample][fu
     auto f = assembleAiff(chunks);
     for (size_t n = 1; n <= f.size(); ++n)
     {
-        sample::Sample s;
+        scxt::sample::Sample s;
         s.parse_aiff(f.data(), n);
     }
     SUCCEED();
