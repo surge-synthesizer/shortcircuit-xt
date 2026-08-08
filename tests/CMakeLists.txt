@@ -24,6 +24,7 @@ add_executable(scxt-test
 		importer_tests.cpp
 		midi_channel_tests.cpp
 		macro_id_tests.cpp
+		tuning_tests.cpp
 )
 
 target_compile_definitions(scxt-test PRIVATE

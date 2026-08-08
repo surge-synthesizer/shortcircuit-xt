@@ -152,20 +152,29 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  to.getPatch()->setupPatchOnUnstream(to);
                  to.onPartConfigurationUpdated();
 
-                 // and reset the tuning
-                 to.resetTuningFromRuntimeConfig();
-
                  // and finally set the sample rate
                  to.getPatch()->setSampleRate(to.getSampleRate());
 
-                 // DAW-only: restore per-instance extra state if present
+                 // DAW-only: restore per-instance extra state if present. This carries the
+                 // SCL/KBM scale, so it has to land before the tuning is resolved - otherwise
+                 // SCL_KBM sees an empty retuner and demotes itself to 12-TET.
                  if (findIf(v, "dawExtraState", to.dawExtraState))
                      to.onDawExtraStateLoaded();
+
+                 // and reset the tuning
+                 to.resetTuningFromRuntimeConfig();
              }))
 
-SC_STREAMDEF(scxt::engine::Engine::DawExtraState,
-             SC_FROM({ v = {{"editedColormap", from.editedColormap}}; }),
-             SC_TO({ findIf(v, "editedColormap", to.editedColormap); }))
+SC_STREAMDEF(scxt::engine::Engine::DawExtraState, SC_FROM({
+                 v = {{"editedColormap", from.editedColormap},
+                      {"sclContents", from.sclContents},
+                      {"kbmContents", from.kbmContents}};
+             }),
+             SC_TO({
+                 findIf(v, "editedColormap", to.editedColormap);
+                 findIf(v, "sclContents", to.sclContents);
+                 findIf(v, "kbmContents", to.kbmContents);
+             }))
 
 SC_STREAMDEF(scxt::engine::Engine::RuntimeConfig, SC_FROM({
                  if (SC_STREAMING_FOR_DAW)

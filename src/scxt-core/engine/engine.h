@@ -265,7 +265,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     {
         TWELVE_TET,
         MTS_CONTINOUS, // if MTS is present, else 12-tet obvs
-        MTS_NOTE_ON
+        MTS_NOTE_ON,
+        SCL_KBM // scala scale, optional keyboard mapping; else 12-tet
     };
     DECLARE_ENUM_STRING(TuningMode);
 
@@ -304,7 +305,16 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     struct DawExtraState
     {
         std::string editedColormap{};
+        std::string sclContents{};
+        std::string kbmContents{};
     } dawExtraState;
+
+    /*
+     * Rebuild the SCL/KBM retuning table from dawExtraState. Serialization thread
+     * only (it parses and allocates). Returns false and fills errorOut on a bad
+     * scale, leaving the prior tuning in place. Empty SCL contents clear the tuning.
+     */
+    bool applySclKbmFromDawExtraState(std::string &errorOut);
 
     void resetTuningFromRuntimeConfig();
     void setMpeTuningAwareness(bool a);

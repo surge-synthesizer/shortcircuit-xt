@@ -57,6 +57,7 @@ add_subdirectory(sst/sst-waveshapers)
 add_subdirectory(sst/sst-effects)
 add_subdirectory(sst/sst-jucegui)
 add_subdirectory(sst/sst-voicemanager)
+add_subdirectory(sst/tuning-library)
 add_subdirectory(sst/libgig-modified)
 
 # Add a catch2 target

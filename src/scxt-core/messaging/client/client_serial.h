@@ -166,6 +166,7 @@ enum ClientToSerializationMessagesIds
     c2s_mute_solo_group,
 
     c2s_set_tuning_mode,
+    c2s_set_scl_kbm,
 
     c2s_noteonoff,
 
@@ -269,6 +270,7 @@ enum SerializationToClientMessageIds
     s2c_compound_import_complete,
 
     s2c_send_tuning_status,
+    s2c_send_scl_kbm,
     s2c_update_mpe_tuning_awareness,
     s2c_update_pitchbend_tuning_awareness,
 

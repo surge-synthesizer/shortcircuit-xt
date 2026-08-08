@@ -58,6 +58,7 @@ add_library(${PROJECT_NAME} STATIC
 
         tuning/equal.cpp
         tuning/midikey_retuner.cpp
+        tuning/scl_kbm.cpp
 
         infrastructure/file_map_view.cpp
 
@@ -110,6 +111,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
         sst-plugininfra::miniz
         sst-plugininfra::version_information
         sst-voicemanager
+        tuning-library
 
         libgig libakai
         mts-esp-client

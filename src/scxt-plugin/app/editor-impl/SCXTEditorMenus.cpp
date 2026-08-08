@@ -53,6 +53,7 @@
 #include "app/other-screens/ThemeEditor.h"
 #include "app/shared/MenuValueTypein.h"
 #include "app/shared/UIHelpers.h"
+#include "tuning/scl_kbm.h"
 
 namespace scxt::ui::app
 {
@@ -306,17 +307,55 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
                       w->sendToSerialization(cmsg::SetTuningMode(s));
                   }
               });
+    // Available only once a scale has been loaded from the SCL/KBM submenu below
+    p.addItem("SCL/KBM Scale", !sclText.empty(), st.first == engine::Engine::TuningMode::SCL_KBM,
+              [st, w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                  {
+                      auto s = st;
+                      s.first = engine::Engine::TuningMode::SCL_KBM;
+                      w->sendToSerialization(cmsg::SetTuningMode(s));
+                  }
+              });
+
     p.addSeparator();
-    p.addItem("Tuning-Aware Pitch Bend", st.first == engine::Engine::TuningMode::MTS_CONTINOUS,
-              tuningAwareMPE, [w = juce::Component::SafePointer(this)]() {
+
+    juce::PopupMenu sclKbm;
+    sclKbm.addItem("Load SCL...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->promptForLoadSCL();
+    });
+    sclKbm.addItem("Load KBM...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->promptForLoadKBM();
+    });
+    sclKbm.addItem("Edit SCL/KBM...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showTuningOverlay();
+    });
+    sclKbm.addSeparator();
+    // Back to a session which never had a scale: no SCL, no KBM, mode off SCL/KBM
+    sclKbm.addItem("Reset to No SCL/KBM", !sclText.empty() || !kbmText.empty(), false,
+                   [w = juce::Component::SafePointer(this)]() {
+                       if (w)
+                           w->applySclKbmText("", "");
+                   });
+    p.addSubMenu("SCL/KBM", sclKbm);
+
+    // Both MTS continuous and SCL/KBM retune per block, so the tuning-aware paths apply
+    auto continuousTuning = st.first == engine::Engine::TuningMode::MTS_CONTINOUS ||
+                            st.first == engine::Engine::TuningMode::SCL_KBM;
+
+    p.addSeparator();
+    p.addItem("Tuning-Aware Pitch Bend", continuousTuning, tuningAwareMPE,
+              [w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
                       w->tuningAwareMPE = !w->tuningAwareMPE;
                       w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
                   }
               });
-    p.addItem("Tuning-Aware MPE/Note Expression glides",
-              st.first == engine::Engine::TuningMode::MTS_CONTINOUS, tuningAwarePitchBends,
+    p.addItem("Tuning-Aware MPE/Note Expression glides", continuousTuning, tuningAwarePitchBends,
               [w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
@@ -692,6 +731,55 @@ void SCXTEditor::promptForLoadTheme()
                                      return;
                                  w->applyThemeFromFile(shared::juceFileToFSPath(result[0]));
                              });
+}
+
+void SCXTEditor::applySclKbmText(const std::string &scl, const std::string &kbm)
+{
+    // The serialization side parses, reports any error, and fills in 12-TET for a bare KBM
+    sendToSerialization(cmsg::SetSclKbm({scl, kbm}));
+}
+
+void SCXTEditor::promptForLoadSCL()
+{
+    fileChooser = std::make_unique<juce::FileChooser>("Load Scale (SCL)", juce::File(), "*.scl");
+    fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            if (!w)
+                return;
+            auto result = c.getResults();
+            if (result.size() != 1)
+                return;
+            auto txt = shared::fileToString(shared::juceFileToFSPath(result[0]));
+            if (!txt.has_value())
+            {
+                w->displayError("Tuning Error", "Unable to open that scale for reading.");
+                return;
+            }
+            w->applySclKbmText(*txt, w->kbmText);
+        });
+}
+
+void SCXTEditor::promptForLoadKBM()
+{
+    fileChooser =
+        std::make_unique<juce::FileChooser>("Load Keyboard Mapping (KBM)", juce::File(), "*.kbm");
+    fileChooser->launchAsync(
+        juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::openMode,
+        [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+            if (!w)
+                return;
+            auto result = c.getResults();
+            if (result.size() != 1)
+                return;
+            auto txt = shared::fileToString(shared::juceFileToFSPath(result[0]));
+            if (!txt.has_value())
+            {
+                w->displayError("Tuning Error", "Unable to open that mapping for reading.");
+                return;
+            }
+            w->applySclKbmText(w->sclText, *txt);
+        });
 }
 
 } // namespace scxt::ui::app

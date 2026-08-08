@@ -46,6 +46,7 @@
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/LogScreen.h"
+#include "app/other-screens/TuningScreen.h"
 #include "app/other-screens/ThemeEditor.h"
 #include "app/other-screens/WelcomeScreen.h"
 #include "app/edit-screen/components/RoutingPane.h"
@@ -116,6 +117,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     logScreen = std::make_unique<other_screens::LogScreen>(this);
     addChildComponent(*logScreen);
+
+    tuningScreen = std::make_unique<other_screens::TuningScreen>(this);
+    addChildComponent(*tuningScreen);
 
     missingResolutionScreen = std::make_unique<missing_resolution::MissingResolutionScreen>(this);
     addChildComponent(*missingResolutionScreen);
@@ -213,6 +217,16 @@ void SCXTEditor::showLogOverlay()
     resized();
 }
 
+void SCXTEditor::showTuningOverlay()
+{
+    tuningScreen->toFront(true);
+    tuningScreen->setVisible(true);
+    aboutScreen->setVisible(false);
+    logScreen->setVisible(false);
+    welcomeScreen->setVisible(false);
+    resized();
+}
+
 void SCXTEditor::showWelcomeOverlay()
 {
     welcomeScreen->toFront(true);
@@ -246,6 +260,8 @@ void SCXTEditor::resized()
         aboutScreen->setBounds(0, headerHeight, edWidth, edHeight - headerHeight);
     if (logScreen->isVisible())
         logScreen->setBounds(0, headerHeight, edWidth, edHeight - headerHeight);
+    if (tuningScreen->isVisible())
+        tuningScreen->setBounds(0, headerHeight, edWidth, edHeight - headerHeight);
     if (welcomeScreen->isVisible())
         welcomeScreen->setBounds(0, 0, edWidth, edHeight);
 }
