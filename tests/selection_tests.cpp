@@ -417,7 +417,7 @@ TEST_CASE("Fold: swap groups remaps fold state")
 
     INFO("Swap group 2 and group 4 (tgt.zone == -1 path)");
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, -1}}));
-    th.stepUI();
+    th.stepUI(30); // the move and its fold remap hop the audio thread
 
     REQUIRE(!sm->isGroupCollapsed(0, 2));
     REQUIRE(sm->isGroupCollapsed(0, 4));
@@ -428,7 +428,7 @@ TEST_CASE("Fold: swap groups remaps fold state")
     REQUIRE(sm->isGroupCollapsed(0, 1));
     REQUIRE(sm->isGroupCollapsed(0, 4));
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 1, -1}, zad{0, 4, -1}}));
-    th.stepUI();
+    th.stepUI(30); // the move and its fold remap hop the audio thread
     REQUIRE(sm->isGroupCollapsed(0, 1));
     REQUIRE(sm->isGroupCollapsed(0, 4));
 }
@@ -455,7 +455,7 @@ TEST_CASE("Fold: moveGroupToAfter remaps fold state (src<tgt)")
     // Layout: 0 1 2 3 4 -> 0 1 3 4 2. Original-2 (collapsed) now sits at index 4.
     // Originals at 3 and 4 shift down to 2 and 3.
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, 0}}));
-    th.stepUI();
+    th.stepUI(30); // the move and its fold remap hop the audio thread
 
     REQUIRE(!sm->isGroupCollapsed(0, 2));
     REQUIRE(!sm->isGroupCollapsed(0, 3));
@@ -485,7 +485,7 @@ TEST_CASE("Fold: moveGroupToAfter remaps fold state (src>tgt)")
     // Layout: 0 1 2 3 4 -> 0 1 4 2 3. Original-4 (collapsed) sits at index 2.
     // Originals at 2,3 shift up to 3,4.
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 4, -1}, zad{0, 1, 0}}));
-    th.stepUI();
+    th.stepUI(30); // the move and its fold remap hop the audio thread
 
     REQUIRE(sm->isGroupCollapsed(0, 2));
     REQUIRE(!sm->isGroupCollapsed(0, 3));
@@ -514,7 +514,7 @@ TEST_CASE("Fold: moveGroupToAfter preserves fold state outside the affected wind
 
     // Move 2 to after 4. Affected window [2, 4] — group 6 must NOT be lost.
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, 0}}));
-    th.stepUI();
+    th.stepUI(30); // the move and its fold remap hop the audio thread
 
     REQUIRE(sm->isGroupCollapsed(0, 1));
     REQUIRE(!sm->isGroupCollapsed(0, 2));

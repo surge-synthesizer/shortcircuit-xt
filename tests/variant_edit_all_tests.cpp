@@ -189,7 +189,7 @@ TEST_CASE("Edit all never crosses positions or identity", "[variants]")
     SECTION("the lead-only offsets really are the per-sample fields")
     {
         // named here so a field rename or reorder cannot silently drop one
-        std::array<size_t, 8> expect{
+        const std::array<size_t, 8> expect{
             VAR_FIELD_OFF(startSample), VAR_FIELD_OFF(endSample),
             VAR_FIELD_OFF(startLoop),   VAR_FIELD_OFF(endLoop),
             VAR_FIELD_OFF(loopFade),    VAR_FIELD_OFF(active),
@@ -534,3 +534,7 @@ TEST_CASE("Edit all is a single undo entry", "[variants][undo]")
     REQUIRE(zone->variantData.variants[0].pan == Approx(0.4f));
     REQUIRE(zone->variantData.variants[1].pan == Approx(0.4f));
 }
+
+// keep the file unity-safe: these must not leak into a batched neighbour
+#undef VAR_FIELD
+#undef VAR_FIELD_OFF
