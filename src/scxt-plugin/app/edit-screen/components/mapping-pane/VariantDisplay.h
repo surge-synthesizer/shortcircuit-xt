@@ -135,7 +135,19 @@ struct VariantDisplay : juce::Component, HasEditor
 
     VariantDisplay(MacroMappingVariantPane *p);
 
-    void rebuildForSelectedVariation(size_t sel, bool rebuildTabs = true);
+    /*
+     * selectedVariation outlives the zone it was chosen in - the pane is not rebuilt when
+     * the selection changes - so a remembered index can point past the variants the new
+     * zone actually has. Restoring lands on the last loaded variant; only clicking the "+"
+     * tab selects the empty slot.
+     */
+    enum struct EmptySlot
+    {
+        Clamp,
+        Allow
+    };
+    void rebuildForSelectedVariation(size_t sel, bool rebuildTabs = true,
+                                     EmptySlot es = EmptySlot::Clamp);
 
     ~VariantDisplay() { reset(); }
 
