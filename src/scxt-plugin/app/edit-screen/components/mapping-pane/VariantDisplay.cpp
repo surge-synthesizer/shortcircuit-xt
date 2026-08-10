@@ -124,9 +124,8 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     rebuildForSelectedVariation(selectedVariation, true);
 }
 
-void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
+void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, EmptySlot es)
 {
-    selectedVariation = sel;
     // assume we are full unless otherwise known
     size_t emptySlot = maxVariantsPerZone;
     for (int i = 0; i < maxVariantsPerZone; ++i)
@@ -137,7 +136,14 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs)
             break;
         }
     }
-    selectedVariation = std::min(emptySlot, sel);
+
+    // the highest tab we may land on. Restoring a remembered index stops at the last
+    // loaded variant, so carrying a selection onto a zone with fewer variants shows a
+    // sample rather than the "+" slot. A zone with none has only "+" to offer.
+    auto maxSel = emptySlot;
+    if (es == EmptySlot::Clamp && emptySlot > 0)
+        maxSel = emptySlot - 1;
+    selectedVariation = std::min(maxSel, sel);
 
     // This wierd pattern is because for some reason we rebuild the components
     // when we select a new variant but not the header.
@@ -720,7 +726,8 @@ void VariantDisplay::MyTabbedComponent::currentTabChanged(int newCurrentTabIndex
     // called with -1 when clearing tabs
     if (newCurrentTabIndex >= 0)
     {
-        display->rebuildForSelectedVariation(newCurrentTabIndex, false);
+        // an explicit click may be on "+", which is how a variant gets added
+        display->rebuildForSelectedVariation(newCurrentTabIndex, false, EmptySlot::Allow);
         display->repaint();
     }
 
