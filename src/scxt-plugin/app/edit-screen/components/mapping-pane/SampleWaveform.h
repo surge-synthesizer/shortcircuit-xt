@@ -72,6 +72,9 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
         HZ_DRAG_LOOPEND,
     } mouseState{MouseState::NONE};
 
+    // the sample point the in-flight drag is editing, or nullptr when not dragging
+    int64_t *draggedPoint();
+
     std::set<int64_t> playbackPositions;
     void addSamplePlaybackPosition(int64_t samplePos);
     void clearSamplePlaybackPositions();

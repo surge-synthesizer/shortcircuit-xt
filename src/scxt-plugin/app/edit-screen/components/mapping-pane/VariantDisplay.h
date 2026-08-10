@@ -35,7 +35,6 @@
 #include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/components/TabbedComponent.h"
 #include "sst/jucegui/components/ToggleButton.h"
-#include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/NamedPanelDivider.h"
@@ -159,7 +158,41 @@ struct VariantDisplay : juce::Component, HasEditor
             c.reset();
     }
 
-    void onSamplePointChangedFromGUI();
+    /*
+     * Send an edit, naming the field by the reference that was just written. The offset
+     * into SingleVariant is what edit-all propagates by, the same way the int and float
+     * update messages address their targets, so nothing here enumerates the field set.
+     */
+    template <typename T> void onVariantFieldChanged(const T &field)
+    {
+        auto &v = variantView.variants[selectedVariation];
+        auto off = (const uint8_t *)&field - (const uint8_t *)&v;
+        onSamplePointChangedFromGUI(off, sizeof(T));
+    }
+    void onSamplePointChangedFromGUI(ptrdiff_t off, size_t sz);
+
+    /*
+     * Continuous edits (a waveform hot-zone drag, a draggable value) bracket
+     * themselves so the whole gesture is one undo entry rather than one per
+     * mouse move. The begin snapshot covers everything until the end.
+     */
+    void beginVariantGesture();
+    void endVariantGesture();
+
+    // wire a draggable widget's edit gesture to the bracket above
+    template <typename W> void bracketGesture(W &w)
+    {
+        w.onBeginEdit = [this]() { beginVariantGesture(); };
+        w.onEndEdit = [this]() { endVariantGesture(); };
+    }
+
+    // key into SCXTEditor::otherTabSelection, so edit-all outlives zone changes and sessions
+    static constexpr const char *editAllTabKey{"variant.editall"};
+    bool editAll{false};
+    // push just the edited field of the selected variant onto every other active one
+    void propagateEditAll(ptrdiff_t off, size_t sz);
+    // is any active variant normalized, for the edit-all clear menu item
+    bool anyVariantNormalized() const;
 
     juce::Rectangle<int> sampleDisplayRegion()
     {
@@ -215,7 +248,7 @@ struct VariantDisplay : juce::Component, HasEditor
     std::unique_ptr<sst::jucegui::components::MenuButton> variantPlaymodeButton, fileButton;
     std::unique_ptr<sst::jucegui::components::Label> variantPlayModeLabel, fileLabel;
     std::unique_ptr<boolToggle_t> fileInfoButton;
-    std::unique_ptr<sst::jucegui::components::TextPushButton> editAllButton;
+    std::unique_ptr<boolToggle_t> editAllButton;
     std::unique_ptr<sst::jucegui::components::GlyphButton> nextFileButton, prevFileButton;
 
     // sidebar section

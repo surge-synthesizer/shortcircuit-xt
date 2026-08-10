@@ -28,6 +28,11 @@
 #define SCXT_SRC_SCXT_CORE_ENGINE_ZONE_H
 
 #include <array>
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <cstring>
+#include <type_traits>
 
 #include "configuration.h"
 #include "utils.h"
@@ -143,6 +148,60 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         std::array<SingleVariant, maxVariantsPerZone> variants;
         VariantPlaybackMode variantPlaybackMode{FORWARD_RR};
     } variantData;
+
+    /*
+     * Edit-all addresses the field an edit touched by its offset in SingleVariant, the same
+     * way the int and float update messages address theirs. Nothing enumerates the fields,
+     * so a setting added later is shared without being listed anywhere.
+     *
+     * The exceptions are listed instead, and they are the short list: absolute frame
+     * positions, which mean different things on samples of different lengths and get their
+     * own copy-endpoints-and-fade-zones gesture later, plus identity and the level derived
+     * from a sample's own peak. A field added here is shared by default, so a new *position*
+     * does need adding to this list.
+     */
+    static constexpr std::array<size_t, 8> variantLeadOnlyOffsets{
+        offsetof(SingleVariant, startSample), offsetof(SingleVariant, endSample),
+        offsetof(SingleVariant, startLoop),   offsetof(SingleVariant, endLoop),
+        offsetof(SingleVariant, loopFade),    offsetof(SingleVariant, active),
+        offsetof(SingleVariant, sampleID),    offsetof(SingleVariant, normalizationAmplitude)};
+
+    static bool variantFieldCrossesVariants(ptrdiff_t off)
+    {
+        return std::find(variantLeadOnlyOffsets.begin(), variantLeadOnlyOffsets.end(),
+                         (size_t)off) == variantLeadOnlyOffsets.end();
+    }
+
+    // Copy the sz-byte field at off from lead onto t, if edit-all may share that field.
+    static void applyVariantEdit(SingleVariant &t, const SingleVariant &lead, ptrdiff_t off,
+                                 size_t sz)
+    {
+        static_assert(std::is_standard_layout_v<SingleVariant>);
+        static_assert(std::is_trivially_copyable_v<SingleVariant>);
+        assert(off >= 0 && off + (ptrdiff_t)sz <= (ptrdiff_t)sizeof(SingleVariant));
+        if (!variantFieldCrossesVariants(off))
+            return;
+        memcpy((uint8_t *)&t + off, (const uint8_t *)&lead + off, sz);
+    }
+
+    /*
+     * Force a variant's [s,e] frame region to be valid on a sample of len frames: an endpoint
+     * carried over from a longer sample can land past its end or above its own other endpoint.
+     * If the result is inverted or too short, slide the start back from the end to leave a
+     * usable window. Not used by edit-all, which leaves frame positions alone - this is here
+     * for the copy-endpoints-and-fade-zones gesture described above.
+     */
+    static void clampVariantRegionToLength(int64_t &s, int64_t &e, int64_t len)
+    {
+        s = std::clamp(s, (int64_t)0, len);
+        e = std::clamp(e, (int64_t)0, len);
+        if (e - s < minimumVariantRegionInSamples)
+        {
+            s = std::max((int64_t)0, e - minimumVariantRegionInSamples);
+            if (e - s < minimumVariantRegionInSamples) // sample shorter than the minimum
+                e = std::min(len, s + minimumVariantRegionInSamples);
+        }
+    }
 
     std::array<std::shared_ptr<sample::Sample>, maxVariantsPerZone> samplePointers;
     int8_t sampleIndex{-1};

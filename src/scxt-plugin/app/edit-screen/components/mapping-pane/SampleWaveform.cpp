@@ -329,7 +329,30 @@ void SampleWaveform::mouseDown(const juce::MouseEvent &e)
     else
         mouseState = MouseState::NONE;
 
+    // one undo entry for the whole drag, not one per mouse move
+    if (mouseState != MouseState::NONE)
+        display->beginVariantGesture();
+
     // TODO cursor change and so on
+}
+
+int64_t *SampleWaveform::draggedPoint()
+{
+    auto &v = display->variantView.variants[display->selectedVariation];
+    switch (mouseState)
+    {
+    case MouseState::HZ_DRAG_SAMPSTART:
+        return &v.startSample;
+    case MouseState::HZ_DRAG_SAMPEND:
+        return &v.endSample;
+    case MouseState::HZ_DRAG_LOOPSTART:
+        return &v.startLoop;
+    case MouseState::HZ_DRAG_LOOPEND:
+        return &v.endLoop;
+    case MouseState::NONE:
+        break;
+    }
+    return nullptr;
 }
 
 void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
@@ -370,17 +393,26 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
     default:
         break;
     }
-    display->onSamplePointChangedFromGUI();
+    if (auto *f = draggedPoint())
+        display->onVariantFieldChanged(*f);
 }
 
 void SampleWaveform::mouseUp(const juce::MouseEvent &e)
 {
+    // close an open drag first: leaving the gesture open would swallow later
+    // edits into this undo entry
+    if (mouseState != MouseState::NONE)
+    {
+        if (auto *f = draggedPoint())
+            display->onVariantFieldChanged(*f);
+        display->endVariantGesture();
+        mouseState = MouseState::NONE;
+        return;
+    }
     if (e.mods.isPopupMenu() && onPopupMenu)
     {
         return;
     }
-    if (mouseState != MouseState::NONE)
-        display->onSamplePointChangedFromGUI();
 }
 
 void SampleWaveform::mouseMove(const juce::MouseEvent &e)

@@ -85,10 +85,15 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
     variantPlaymodeButton->setOnCallback([this]() { showVariantPlaymodeMenu(); });
     addAndMakeVisible(*variantPlaymodeButton);
 
-    editAllButton = std::make_unique<jcmp::TextPushButton>();
-    editAllButton->setLabel("EDIT ALL");
-    editAllButton->setOnCallback(editor->makeComingSoon("Edit All"));
-    addAndMakeVisible(*editAllButton);
+    auto ea = std::make_unique<jcmp::ToggleButton>();
+    ea->setLabel("EDIT ALL");
+    addAndMakeVisible(*ea);
+    auto eab = std::make_unique<boolToggle_t>(ea, editAll);
+    eab->onValueChanged = [w = juce::Component::SafePointer(this)](auto v) {
+        if (w)
+            w->editor->setTabSelection(editAllTabKey, v ? "1" : "0");
+    };
+    editAllButton = std::move(eab);
 
     fileLabel = std::make_unique<jcmp::Label>();
     fileLabel->setText("File");
@@ -186,9 +191,10 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
 
     auto attachSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
         auto at = std::make_unique<connectors::SamplePointDataAttachment>(
-            v, [this](const auto &) { onSamplePointChangedFromGUI(); });
+            v, [this](const auto &a) { onVariantFieldChanged(a.value); });
         auto sl = std::make_unique<jcmp::DraggableTextEditableDiscreteValue>();
         sl->setSource(at.get());
+        bracketGesture(*sl);
         sl->onPopupMenu = [w = juce::Component::SafePointer(sl.get())](auto &) {
             if (w)
                 w->activateEditor();
@@ -208,9 +214,10 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
         auto pmd = scxt::datamodel::describeValue(variantView.variants[selectedVariation], v);
 
         auto at = std::make_unique<floatAttachment_t>(
-            pmd, [this](const auto &) { onSamplePointChangedFromGUI(); }, v);
+            pmd, [this](const auto &a) { onVariantFieldChanged(a.value); }, v);
         auto sl = std::make_unique<jcmp::DraggableTextEditableValue>();
         sl->setSource(at.get());
+        bracketGesture(*sl);
         if (sampleEditors[c])
         {
             removeChildComponent(sampleEditors[c].get());
@@ -317,7 +324,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                 {
-                    w->onSamplePointChangedFromGUI();
+                    w->onVariantFieldChanged(a.value);
                     w->rebuild();
                 }
             },
@@ -341,7 +348,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
             [w = juce::Component::SafePointer(this)](const auto &a) {
                 if (w)
                 {
-                    w->onSamplePointChangedFromGUI();
+                    w->onVariantFieldChanged(a.value);
                 }
             },
             variantView.variants[selectedVariation].playReverse);
@@ -369,12 +376,13 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
         [w = juce::Component::SafePointer(this)](const auto &a) {
             if (w)
             {
-                w->onSamplePointChangedFromGUI();
+                w->onVariantFieldChanged(a.value);
             }
         },
         variantView.variants[selectedVariation].loopCountWhenCounted);
     loopCnt = std::make_unique<jcmp::DraggableTextEditableDiscreteValue>();
     loopCnt->setSource(loopCntAttachment.get());
+    bracketGesture(*loopCnt);
     loopCnt->onPopupMenu = [w = juce::Component::SafePointer(loopCnt.get())](auto &) {
         if (w)
             w->activateEditor();
@@ -533,7 +541,7 @@ void VariantDisplay::resized()
 
     variantPlayModeLabel->setBounds(hP(42));
     variantPlaymodeButton->setBounds(hP(100));
-    editAllButton->setBounds(hP(55));
+    editAllButton->widget->setBounds(hP(55));
     fileInfoButton->widget->setBounds(hP(hl.getHeight()));
     fileLabel->setBounds(hP(20));
     fileButton->setBounds(hP(-14));
@@ -776,11 +784,56 @@ void VariantDisplay::showFileBrowser()
         nullptr);
 }
 
-void VariantDisplay::onSamplePointChangedFromGUI()
+void VariantDisplay::beginVariantGesture()
 {
-    sendToSerialization(cmsg::UpdateLeadZoneSingleVariant{
-        {selectedVariation, variantView.variants[selectedVariation]}});
-    waveforms[selectedVariation].waveform->rebuildHotZones();
+    sendToSerialization(
+        cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::zone_variants, true, (int32_t)-1}));
+}
+
+void VariantDisplay::endVariantGesture() { sendToSerialization(cmsg::EndEdit(true)); }
+
+void VariantDisplay::propagateEditAll(ptrdiff_t off, size_t sz)
+{
+    const auto lead = variantView.variants[selectedVariation];
+    for (auto i = 0U; i < maxVariantsPerZone; ++i)
+    {
+        if (i == selectedVariation || !variantView.variants[i].active)
+            continue;
+        engine::Zone::applyVariantEdit(variantView.variants[i], lead, off, sz);
+    }
+}
+
+bool VariantDisplay::anyVariantNormalized() const
+{
+    for (const auto &v : variantView.variants)
+    {
+        if (v.active && v.normalizationAmplitude != 1.0)
+            return true;
+    }
+    return false;
+}
+
+void VariantDisplay::onSamplePointChangedFromGUI(ptrdiff_t off, size_t sz)
+{
+    // sample and loop positions are lead-only, so an edit that touches one falls through
+    // to the single-variant send even with edit-all on
+    if (editAll && engine::Zone::variantFieldCrossesVariants(off) &&
+        variantView.variants[selectedVariation].active)
+    {
+        propagateEditAll(off, sz);
+        sendToSerialization(cmsg::UpdateLeadZoneAllVariants{variantView.variants});
+        for (auto i = 0U; i < maxVariantsPerZone; ++i)
+        {
+            if (variantView.variants[i].active)
+                waveforms[i].waveform->rebuildHotZones();
+        }
+    }
+    else
+    {
+        sendToSerialization(cmsg::UpdateLeadZoneSingleVariant{
+            {selectedVariation, variantView.variants[selectedVariation]}});
+        waveforms[selectedVariation].waveform->rebuildHotZones();
+    }
     waveforms[selectedVariation].waveform->repaint();
     repaint();
 }
@@ -803,7 +856,7 @@ void VariantDisplay::showPlayModeMenu()
     auto add = [&p, this](auto e, auto n) {
         p.addItem(n, true, variantView.variants[selectedVariation].playMode == e, [this, e]() {
             variantView.variants[selectedVariation].playMode = e;
-            onSamplePointChangedFromGUI();
+            onVariantFieldChanged(variantView.variants[selectedVariation].playMode);
             rebuild();
         });
     };
@@ -830,11 +883,16 @@ void VariantDisplay::showLoopModeMenu()
                   [w = juce::Component::SafePointer(that), e, alt]() {
                       if (!w)
                           return;
-                      w->variantView.variants[w->selectedVariation].loopMode = e;
-                      w->variantView.variants[w->selectedVariation].loopDirection =
-                          (alt ? engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS
-                               : engine::Zone::LoopDirection::FORWARD_ONLY);
-                      w->onSamplePointChangedFromGUI();
+                      auto &v = w->variantView.variants[w->selectedVariation];
+                      v.loopMode = e;
+                      v.loopDirection = (alt ? engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS
+                                             : engine::Zone::LoopDirection::FORWARD_ONLY);
+                      // two fields, so two sends; bracket them to keep the menu pick one
+                      // undo entry
+                      w->beginVariantGesture();
+                      w->onVariantFieldChanged(v.loopMode);
+                      w->onVariantFieldChanged(v.loopDirection);
+                      w->endVariantGesture();
                       w->rebuild();
                   });
     };
@@ -857,8 +915,8 @@ void VariantDisplay::showSRCMenu()
         p.addItem(
             n, true, variantView.variants[selectedVariation].interpolationType == e, [this, e]() {
                 variantView.variants[selectedVariation].interpolationType = e;
-                connectors::updateSingleValue<cmsg::UpdateZoneVariantsInt16TValue>(
-                    variantView, variantView.variants[selectedVariation].interpolationType, this);
+                // TODO restore applying across a multi-zone selection when that lands
+                onVariantFieldChanged(variantView.variants[selectedVariation].interpolationType);
                 rebuild();
             });
     };
@@ -1148,26 +1206,36 @@ void VariantDisplay::showVariantTabMenu(int variantIdx)
             w->sendToSerialization(cmsg::DeleteVariant(variantIdx));
         });
         p.addSeparator();
-        p.addItem("Normalize Variant " + std::to_string(variantIdx + 1),
-                  [variantIdx, w = juce::Component::SafePointer(this)]() {
-                      if (!w)
-                          return;
-                      w->sendToSerialization(cmsg::NormalizeVariantAmplitude({variantIdx, true}));
-                  });
+        // under edit-all each variant normalizes against its own sample, so only offer the
+        // all-variants form
+        if (!editAll)
+        {
+            p.addItem("Normalize Variant " + std::to_string(variantIdx + 1),
+                      [variantIdx, w = juce::Component::SafePointer(this)]() {
+                          if (!w)
+                              return;
+                          w->sendToSerialization(
+                              cmsg::NormalizeVariantAmplitude({variantIdx, true}));
+                      });
+        }
         p.addItem("Normalize All Variants", [variantIdx, w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;
             w->sendToSerialization(cmsg::NormalizeVariantAmplitude({-1, true}));
         });
 
-        p.addItem("Clear Variant " + std::to_string(variantIdx + 1) + " Normalization",
-                  var.normalizationAmplitude != 1.0, false,
-                  [variantIdx, w = juce::Component::SafePointer(this)]() {
-                      if (!w)
-                          return;
-                      w->sendToSerialization(cmsg::ClearVariantAmplitudeNormalization(variantIdx));
-                  });
-        p.addItem("Clear All Variant Normalization",
+        if (!editAll)
+        {
+            p.addItem("Clear Variant " + std::to_string(variantIdx + 1) + " Normalization",
+                      var.normalizationAmplitude != 1.0, false,
+                      [variantIdx, w = juce::Component::SafePointer(this)]() {
+                          if (!w)
+                              return;
+                          w->sendToSerialization(
+                              cmsg::ClearVariantAmplitudeNormalization(variantIdx));
+                      });
+        }
+        p.addItem("Clear All Variant Normalization", anyVariantNormalized(), false,
                   [variantIdx, w = juce::Component::SafePointer(this)]() {
                       if (!w)
                           return;

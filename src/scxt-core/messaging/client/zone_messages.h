@@ -212,6 +212,43 @@ CLIENT_TO_SERIAL(UpdateLeadZoneSingleVariant, c2s_update_lead_zone_single_varian
                  updateLeadZoneSingleVariantPayload_t,
                  doUpdateLeadZoneSingleVariant(payload, engine, cont));
 
+/*
+ * Edit-all: the client has already fanned the lead variant's edit out across the other
+ * variants (clamping frame positions to each sample's length) so this is one message and
+ * one undo entry for the whole gesture.
+ */
+using updateLeadZoneAllVariantsPayload_t =
+    std::array<engine::Zone::SingleVariant, maxVariantsPerZone>;
+inline void doUpdateLeadZoneAllVariants(const updateLeadZoneAllVariantsPayload_t &payload,
+                                        engine::Engine &engine, MessageController &cont)
+{
+    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sz.has_value())
+    {
+        undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
+        auto [ps, gs, zs] = *sz;
+        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = payload](auto &eng) {
+            auto &vd = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->variantData;
+            for (auto i = 0U; i < maxVariantsPerZone; ++i)
+            {
+                auto &dest = vd.variants[i];
+                if (!dest.active)
+                    continue;
+                // identity and normalization belong to the engine's copy, not the edit
+                auto id = dest.sampleID;
+                auto norm = dest.normalizationAmplitude;
+                dest = sampv[i];
+                dest.active = true;
+                dest.sampleID = id;
+                dest.normalizationAmplitude = norm;
+            }
+        });
+    }
+}
+CLIENT_TO_SERIAL(UpdateLeadZoneAllVariants, c2s_update_lead_zone_all_variants,
+                 updateLeadZoneAllVariantsPayload_t,
+                 doUpdateLeadZoneAllVariants(payload, engine, cont));
+
 using normalizeVariantAmplitudePayload_t = std::tuple<size_t, bool>;
 inline void doNormalizeVariantAmplitude(const normalizeVariantAmplitudePayload_t &payload,
                                         engine::Engine &engine, MessageController &cont)
