@@ -168,6 +168,11 @@ void MacroMappingVariantPane::setMappingLockFromModel(bool b)
     mappingDisplay->zoneHeader->lockButton->setValueFromModel(b);
 }
 
+void MacroMappingVariantPane::setEditAllFromModel(bool b)
+{
+    sampleDisplay->editAllButton->setValueFromModel(b);
+}
+
 void MacroMappingVariantPane::editorSelectionChanged()
 {
     if (editor->currentLeadZoneSelection.has_value())

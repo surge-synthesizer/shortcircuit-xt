@@ -77,11 +77,12 @@ CLIENT_TO_SERIAL(UpdateOtherTabSelection, c2s_set_othertab_selection, updateOthe
  */
 enum struct EditSubtree : int32_t
 {
-    none = 0,     // gesture has no undo subtree (yet); begin is a no-op
-    zone_mapping, // forZone implicit
-    output_info,  // zone or group by forZone
-    eg,           // index = which envelope
-    mod_storage,  // index = which modulator
+    none = 0,      // gesture has no undo subtree (yet); begin is a no-op
+    zone_mapping,  // forZone implicit
+    zone_variants, // forZone implicit; sample/loop point drags in the sample tab
+    output_info,   // zone or group by forZone
+    eg,            // index = which envelope
+    mod_storage,   // index = which modulator
     misc_mod,
     audio_mod,
     processor,      // index = slot
@@ -111,6 +112,9 @@ inline void doBeginEdit(const editGestureBegin_t &payload, engine::Engine &engin
         break;
     case EditSubtree::zone_mapping:
         undo::pushPayloadUndo<undo::ZoneMappingSpec>(engine, -1, B);
+        break;
+    case EditSubtree::zone_variants:
+        undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine, -1, B);
         break;
     case EditSubtree::output_info:
         undo::pushZoneOrGroupPayloadUndo<undo::ZoneOutputInfoSpec, undo::GroupOutputInfoSpec>(

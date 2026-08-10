@@ -38,6 +38,7 @@
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/shared/HeaderRegion.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
+#include "app/edit-screen/components/mapping-pane/VariantDisplay.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/ThemeEditor.h"
 #include "app/other-screens/TuningScreen.h"
@@ -529,6 +530,12 @@ void SCXTEditorReceiver::onOtherTabSelection(
     if (!ml.empty() && editor.editScreen && editor.editScreen->mappingPane)
     {
         editor.editScreen->mappingPane->setMappingLockFromModel(std::atoi(ml.c_str()) != 0);
+    }
+
+    auto ea = editor.queryTabSelection(edit_screen::VariantDisplay::editAllTabKey);
+    if (!ea.empty() && editor.editScreen && editor.editScreen->mappingPane)
+    {
+        editor.editScreen->mappingPane->setEditAllFromModel(std::atoi(ea.c_str()) != 0);
     }
 }
 

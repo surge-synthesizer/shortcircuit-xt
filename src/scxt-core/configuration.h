@@ -69,6 +69,8 @@ static constexpr size_t maxProcessorIntParams{5};
 static constexpr uint16_t lfosPerZone{4};
 static constexpr uint16_t egsPerZone{5};
 static constexpr uint16_t maxVariantsPerZone{16};
+// smallest region edit-all will collapse a variant to when the lead's points overrun it
+static constexpr int64_t minimumVariantRegionInSamples{16};
 
 static constexpr uint16_t lfosPerGroup{4};
 static constexpr uint16_t egsPerGroup{2};
