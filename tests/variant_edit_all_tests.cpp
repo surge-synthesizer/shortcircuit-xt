@@ -160,25 +160,18 @@ std::string testSample(const std::string &n)
 }
 
 /*
- * The real fan-out: the same core call VariantDisplay::propagateEditAll makes, so a test
- * exercises the shipped policy rather than a copy of it. Fields are addressed by offset,
- * exactly as the UI addresses the control the user just moved.
+ * Exactly what a control fires: the field named by its offset and size in SingleVariant,
+ * with the variant the user was looking at as the source to copy the value from. Nothing
+ * here decides where it lands - that is the engine's, so a test exercises the shipped
+ * policy rather than a copy of it.
  */
 #define VAR_FIELD_OFF(f) offsetof(Zone::SingleVariant, f)
 #define VAR_FIELD(f) VAR_FIELD_OFF(f), sizeof(Zone::SingleVariant::f)
 
-std::array<Zone::SingleVariant, maxVariantsPerZone> fanOut(const Zone &zone, size_t lead,
-                                                           ptrdiff_t off, size_t sz)
+cmsg::updateVariantFieldPayload_t fieldEdit(const Zone::SingleVariant &edited, size_t variantIndex,
+                                            bool editAll, ptrdiff_t off, size_t sz)
 {
-    auto out = zone.variantData.variants;
-    const auto leadVar = out[lead];
-    for (auto i = 0U; i < maxVariantsPerZone; ++i)
-    {
-        if (i == lead || !out[i].active)
-            continue;
-        Zone::applyVariantEdit(out[i], leadVar, off, sz);
-    }
-    return out;
+    return {variantIndex, editAll, off, sz, edited};
 }
 } // namespace
 
@@ -296,8 +289,9 @@ TEST_CASE("Edit all applies one field without disturbing the rest", "[variants]"
         loopStarts[i] = v.startLoop;
     }
 
-    zone->variantData.variants[0].pan = 0.6f;
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 0, VAR_FIELD(pan))));
+    auto edited = zone->variantData.variants[0];
+    edited.pan = 0.6f;
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 0, true, VAR_FIELD(pan))));
 
     for (int i = 0; i < 7; ++i)
     {
@@ -328,18 +322,18 @@ TEST_CASE("Edit all leaves sample and loop positions on the lead", "[variants]")
     const auto before = follower;
 
     // drag every position on the lead, with edit-all on
-    auto &lead = zone->variantData.variants[1];
-    lead.startSample = 9000;
-    lead.endSample = 90000;
-    lead.startLoop = 9500;
-    lead.endLoop = 80000;
-    lead.loopFade = 4096;
+    auto edited = zone->variantData.variants[1];
+    edited.startSample = 9000;
+    edited.endSample = 90000;
+    edited.startLoop = 9500;
+    edited.endLoop = 80000;
+    edited.loopFade = 4096;
 
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(startSample))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(endSample))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(startLoop))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(endLoop))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(loopFade))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(startSample))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(endSample))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(startLoop))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(endLoop))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(loopFade))));
 
     REQUIRE(follower.startSample == before.startSample);
     REQUIRE(follower.endSample == before.endSample);
@@ -373,29 +367,29 @@ TEST_CASE("Edit all applies across variants and preserves identity", "[variants]
     REQUIRE(keptNorm != 1.f);
     auto keptId = zone->variantData.variants[0].sampleID;
 
-    auto &lead = zone->variantData.variants[1];
-    lead.loopActive = true;
-    lead.playReverse = true;
-    lead.loopMode = Zone::LoopMode::LOOP_WHILE_GATED;
-    lead.loopDirection = Zone::LoopDirection::ALTERNATE_DIRECTIONS;
-    lead.interpolationType = scxt::dsp::InterpolationTypes::Linear;
-    lead.loopCountWhenCounted = 4;
-    lead.playMode = Zone::PlayMode::ON_RELEASE;
-    lead.pan = 0.25f;
-    lead.pitchOffset = -7.f;
-    lead.amplitude = 0.5f;
+    auto edited = zone->variantData.variants[1];
+    edited.loopActive = true;
+    edited.playReverse = true;
+    edited.loopMode = Zone::LoopMode::LOOP_WHILE_GATED;
+    edited.loopDirection = Zone::LoopDirection::ALTERNATE_DIRECTIONS;
+    edited.interpolationType = scxt::dsp::InterpolationTypes::Linear;
+    edited.loopCountWhenCounted = 4;
+    edited.playMode = Zone::PlayMode::ON_RELEASE;
+    edited.pan = 0.25f;
+    edited.pitchOffset = -7.f;
+    edited.amplitude = 0.5f;
 
     // each control is its own edit, so each is its own send
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(loopActive))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(playReverse))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(loopMode))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(loopDirection))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(interpolationType))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(loopCountWhenCounted))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(playMode))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(pan))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(pitchOffset))));
-    f.send(cmsg::UpdateLeadZoneAllVariants(fanOut(*zone, 1, VAR_FIELD(amplitude))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(loopActive))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(playReverse))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(loopMode))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(loopDirection))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(interpolationType))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(loopCountWhenCounted))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(playMode))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(pan))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(pitchOffset))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 1, true, VAR_FIELD(amplitude))));
 
     const auto &shrt = zone->variantData.variants[0];
     REQUIRE(shrt.loopActive);
@@ -422,18 +416,14 @@ TEST_CASE("Edit all does not write inactive variants", "[variants]")
     auto &zone = f.engine().getPatch()->getPart(0)->getGroup(0)->getZone(0);
     f.send(cmsg::ApplySelectActions({{0, 0, 0, true, true, true}}));
 
-    auto payload = zone->variantData.variants;
+    auto edited = zone->variantData.variants[0];
+    edited.pan = 0.75f;
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 0, true, VAR_FIELD(pan))));
+
+    REQUIRE(zone->variantData.variants[0].pan == Approx(0.75f));
     for (auto i = 1U; i < maxVariantsPerZone; ++i)
     {
-        // an active-looking payload for a slot the engine knows is empty
-        payload[i].active = true;
-        payload[i].pan = 0.75f;
-    }
-
-    f.send(cmsg::UpdateLeadZoneAllVariants(payload));
-
-    for (auto i = 1U; i < maxVariantsPerZone; ++i)
-    {
+        INFO("variant " << i);
         REQUIRE(!zone->variantData.variants[i].active);
         REQUIRE(zone->variantData.variants[i].pan == Approx(0.f));
     }
@@ -457,7 +447,7 @@ TEST_CASE("A variant drag gesture is a single undo entry", "[variants][undo]")
     {
         auto v = zone->variantData.variants[0];
         v.endSample = originalEnd - 10 * (i + 1);
-        f.send(cmsg::UpdateLeadZoneSingleVariant({0, v}));
+        f.send(cmsg::UpdateVariantField(fieldEdit(v, 0, false, VAR_FIELD(endSample))));
     }
     f.send(cmsg::EndEdit(true));
 
@@ -483,12 +473,12 @@ TEST_CASE("A variant gesture closes so the next edit is its own entry", "[varian
     f.send(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::zone_variants, true, (int32_t)-1}));
     auto v = zone->variantData.variants[0];
     v.endSample = originalEnd - 100;
-    f.send(cmsg::UpdateLeadZoneSingleVariant({0, v}));
+    f.send(cmsg::UpdateVariantField(fieldEdit(v, 0, false, VAR_FIELD(endSample))));
     f.send(cmsg::EndEdit(true));
 
     // a later edit outside any gesture must not fold into the drag's entry
     v.pan = 0.3f;
-    f.send(cmsg::UpdateLeadZoneSingleVariant({0, v}));
+    f.send(cmsg::UpdateVariantField(fieldEdit(v, 0, false, VAR_FIELD(pan))));
     REQUIRE(f.engine().undoManager.undoStackSize() == depthBefore + 2);
 
     f.sendUndo();
@@ -511,14 +501,13 @@ TEST_CASE("Edit all is a single undo entry", "[variants][undo]")
     auto before0 = zone->variantData.variants[0].pan;
     auto before1 = zone->variantData.variants[1].pan;
 
-    auto payload = zone->variantData.variants;
-    payload[0].pan = 0.4f;
-    payload[1].pan = 0.4f;
+    auto edited = zone->variantData.variants[0];
+    edited.pan = 0.4f;
 
     // don't drain the stack: undoing past the sample adds destroys the zone this refers to
     auto depthBefore = f.engine().undoManager.undoStackSize();
 
-    f.send(cmsg::UpdateLeadZoneAllVariants(payload));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 0, true, VAR_FIELD(pan))));
     REQUIRE(zone->variantData.variants[0].pan == Approx(0.4f));
     REQUIRE(zone->variantData.variants[1].pan == Approx(0.4f));
 
@@ -533,6 +522,191 @@ TEST_CASE("Edit all is a single undo entry", "[variants][undo]")
     f.send(cmsg::Redo(true));
     REQUIRE(zone->variantData.variants[0].pan == Approx(0.4f));
     REQUIRE(zone->variantData.variants[1].pan == Approx(0.4f));
+}
+
+TEST_CASE("A variant edit spans the zone selection", "[variants]")
+{
+    EditAllFixture f;
+
+    // the easy case: three one-variant zones, all selected
+    for (int z = 0; z < 3; ++z)
+        f.send(
+            cmsg::AddSampleWithRange({testSample("Beep.wav"), 60, 48 + 5 * z, 52 + 5 * z, 0, 127}));
+
+    auto &grp = f.engine().getPatch()->getPart(0)->getGroup(0);
+    REQUIRE(grp->getZones().size() == 3);
+
+    f.send(cmsg::ApplySelectActions({{0, 0, 0, true, true, true}}));
+    f.send(cmsg::ApplySelectActions({{0, 0, 1, true, false, false}}));
+    f.send(cmsg::ApplySelectActions({{0, 0, 2, true, false, false}}));
+    REQUIRE(f.engine().getSelectionManager()->currentlySelectedZones().size() == 3);
+
+    auto edited = grp->getZone(0)->variantData.variants[0];
+    edited.pan = 0.35f;
+    edited.pitchOffset = 5.f;
+
+    // edit-all off, and every zone still follows: one variant each is the whole selection
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 0, false, VAR_FIELD(pan))));
+    f.send(cmsg::UpdateVariantField(fieldEdit(edited, 0, false, VAR_FIELD(pitchOffset))));
+
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(grp->getZone(z)->variantData.variants[0].pan == Approx(0.35f));
+        REQUIRE(grp->getZone(z)->variantData.variants[0].pitchOffset == Approx(5.f));
+    }
+}
+
+namespace
+{
+/*
+ * The user's case for uneven selections: three zones with four, two and three variants,
+ * all selected, the three-variant one leading.
+ */
+struct UnevenSelection
+{
+    EditAllFixture f;
+    static constexpr int lead{2};
+    static constexpr std::array<int, 3> variantCount{4, 2, 3};
+
+    UnevenSelection()
+    {
+        for (int z = 0; z < 3; ++z)
+        {
+            f.send(cmsg::AddSampleWithRange(
+                {testSample("Beep.wav"), 60, 48 + 5 * z, 52 + 5 * z, 0, 127}));
+            for (int v = 1; v < variantCount[z]; ++v)
+                f.send(cmsg::AddSampleInZone({testSample("Beep.wav"), 0, 0, z, v}));
+        }
+
+        f.send(cmsg::ApplySelectActions({{0, 0, lead, true, true, true}}));
+        for (int z = 0; z < 3; ++z)
+            if (z != lead)
+                f.send(cmsg::ApplySelectActions({{0, 0, z, true, false, false}}));
+
+        auto &grp = f.engine().getPatch()->getPart(0)->getGroup(0);
+        REQUIRE(grp->getZones().size() == 3);
+        for (int z = 0; z < 3; ++z)
+            REQUIRE(grp->getZone(z)->getNumSampleLoaded() == variantCount[z]);
+
+        const auto &sm = f.engine().getSelectionManager();
+        REQUIRE(sm->currentlySelectedZones().size() == 3);
+        REQUIRE(sm->currentLeadZone(f.engine())->zone == lead);
+    }
+
+    scxt::engine::Zone &zone(int z)
+    {
+        return *f.engine().getPatch()->getPart(0)->getGroup(0)->getZone(z);
+    }
+};
+} // namespace
+
+TEST_CASE("Variant N skips selected zones which have no variant N", "[variants]")
+{
+    UnevenSelection u;
+
+    // the third variant of the lead: the four-variant zone has one, the two-variant zone does not
+    auto edited = u.zone(UnevenSelection::lead).variantData.variants[2];
+    edited.pan = 0.45f;
+    u.f.send(cmsg::UpdateVariantField(fieldEdit(edited, 2, false, VAR_FIELD(pan))));
+
+    REQUIRE(u.zone(2).variantData.variants[2].pan == Approx(0.45f));
+    REQUIRE(u.zone(0).variantData.variants[2].pan == Approx(0.45f));
+
+    // the short zone gets nothing at all, not even in the slot it does have
+    REQUIRE(!u.zone(1).variantData.variants[2].active);
+    REQUIRE(u.zone(1).variantData.variants[2].pan == Approx(0.f));
+    REQUIRE(u.zone(1).variantData.variants[0].pan == Approx(0.f));
+    REQUIRE(u.zone(1).variantData.variants[1].pan == Approx(0.f));
+
+    // and the other variants of the zones which did take it are untouched
+    for (auto z : {0, 2})
+        for (auto v : {0, 1})
+        {
+            INFO("zone " << z << " variant " << v);
+            REQUIRE(u.zone(z).variantData.variants[v].pan == Approx(0.f));
+        }
+}
+
+TEST_CASE("Edit all reaches every variant of every selected zone", "[variants]")
+{
+    UnevenSelection u;
+
+    // the same edit on the same variant, with edit-all on
+    auto edited = u.zone(UnevenSelection::lead).variantData.variants[2];
+    edited.pan = 0.45f;
+    edited.loopMode = Zone::LoopMode::LOOP_WHILE_GATED;
+    u.f.send(cmsg::UpdateVariantField(fieldEdit(edited, 2, true, VAR_FIELD(pan))));
+    u.f.send(cmsg::UpdateVariantField(fieldEdit(edited, 2, true, VAR_FIELD(loopMode))));
+
+    for (int z = 0; z < 3; ++z)
+    {
+        for (int v = 0; v < UnevenSelection::variantCount[z]; ++v)
+        {
+            INFO("zone " << z << " variant " << v);
+            REQUIRE(u.zone(z).variantData.variants[v].pan == Approx(0.45f));
+            REQUIRE(u.zone(z).variantData.variants[v].loopMode == Zone::LoopMode::LOOP_WHILE_GATED);
+        }
+        // empty slots stay empty
+        for (auto v = UnevenSelection::variantCount[z]; v < (int)maxVariantsPerZone; ++v)
+        {
+            INFO("zone " << z << " empty slot " << v);
+            REQUIRE(u.zone(z).variantData.variants[v].pan == Approx(0.f));
+        }
+    }
+}
+
+TEST_CASE("Sample positions stay on the edited variant across a selection", "[variants]")
+{
+    UnevenSelection u;
+
+    auto edited = u.zone(UnevenSelection::lead).variantData.variants[2];
+    edited.startSample = 777;
+    edited.endLoop = 4321;
+
+    // edit-all on, which is the widest this can go, and it still goes nowhere else
+    u.f.send(cmsg::UpdateVariantField(fieldEdit(edited, 2, true, VAR_FIELD(startSample))));
+    u.f.send(cmsg::UpdateVariantField(fieldEdit(edited, 2, true, VAR_FIELD(endLoop))));
+
+    REQUIRE(u.zone(2).variantData.variants[2].startSample == 777);
+    REQUIRE(u.zone(2).variantData.variants[2].endLoop == 4321);
+
+    for (int z = 0; z < 3; ++z)
+    {
+        for (int v = 0; v < UnevenSelection::variantCount[z]; ++v)
+        {
+            if (z == UnevenSelection::lead && v == 2)
+                continue;
+            INFO("zone " << z << " variant " << v);
+            REQUIRE(u.zone(z).variantData.variants[v].startSample != 777);
+            REQUIRE(u.zone(z).variantData.variants[v].endLoop != 4321);
+        }
+    }
+}
+
+TEST_CASE("An edit across a selection is one undo entry", "[variants][undo]")
+{
+    UnevenSelection u;
+
+    auto depthBefore = u.f.engine().undoManager.undoStackSize();
+
+    auto edited = u.zone(UnevenSelection::lead).variantData.variants[2];
+    edited.pan = 0.45f;
+    u.f.send(cmsg::UpdateVariantField(fieldEdit(edited, 2, true, VAR_FIELD(pan))));
+
+    REQUIRE(u.zone(0).variantData.variants[0].pan == Approx(0.45f));
+    REQUIRE(u.zone(1).variantData.variants[0].pan == Approx(0.45f));
+    REQUIRE(u.zone(2).variantData.variants[0].pan == Approx(0.45f));
+    // three zones, eight touched variants, one entry
+    REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore + 1);
+
+    u.f.sendUndo();
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(u.zone(z).variantData.variants[0].pan == Approx(0.f));
+    }
+    REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore);
 }
 
 // keep the file unity-safe: these must not leak into a batched neighbour
