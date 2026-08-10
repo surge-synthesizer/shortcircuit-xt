@@ -150,9 +150,10 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     } variantData;
 
     /*
-     * Edit-all addresses the field an edit touched by its offset in SingleVariant, the same
+     * A variant edit addresses the field it touched by its offset in SingleVariant, the same
      * way the int and float update messages address theirs. Nothing enumerates the fields,
-     * so a setting added later is shared without being listed anywhere.
+     * so a setting added later is shared - across variants and across a zone selection -
+     * without being listed anywhere.
      *
      * The exceptions are listed instead, and they are the short list: absolute frame
      * positions, which mean different things on samples of different lengths and get their
@@ -172,16 +173,55 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
                          (size_t)off) == variantLeadOnlyOffsets.end();
     }
 
-    // Copy the sz-byte field at off from lead onto t, if edit-all may share that field.
-    static void applyVariantEdit(SingleVariant &t, const SingleVariant &lead, ptrdiff_t off,
+    // Copy the sz-byte field at off from lead onto t
+    static void copyVariantField(SingleVariant &t, const SingleVariant &lead, ptrdiff_t off,
                                  size_t sz)
     {
         static_assert(std::is_standard_layout_v<SingleVariant>);
         static_assert(std::is_trivially_copyable_v<SingleVariant>);
         assert(off >= 0 && off + (ptrdiff_t)sz <= (ptrdiff_t)sizeof(SingleVariant));
+        memcpy((uint8_t *)&t + off, (const uint8_t *)&lead + off, sz);
+    }
+
+    // As above, but only for a field edit-all may share.
+    static void applyVariantEdit(SingleVariant &t, const SingleVariant &lead, ptrdiff_t off,
+                                 size_t sz)
+    {
         if (!variantFieldCrossesVariants(off))
             return;
-        memcpy((uint8_t *)&t + off, (const uint8_t *)&lead + off, sz);
+        copyVariantField(t, lead, off, sz);
+    }
+
+    /*
+     * Land one field edit on a zone's variants. It is every variant when edit-all is on and
+     * variant variantIndex otherwise, in this zone and in every other selected zone alike; a
+     * zone with too few variants for variantIndex just drops it.
+     *
+     * The one asymmetry is not a third mode: a field which does not cross variants still has
+     * to be written where the user typed it, so the variant whose control moved takes the
+     * edit whatever the field. isEditedZone marks the zone that variant is in.
+     */
+    static void applyVariantFieldEdit(Variants &vd, const SingleVariant &lead, ptrdiff_t off,
+                                      size_t sz, size_t variantIndex, bool editAll,
+                                      bool isEditedZone)
+    {
+        auto applyTo = [&](size_t i) {
+            auto &t = vd.variants[i];
+            if (isEditedZone && i == variantIndex)
+                copyVariantField(t, lead, off, sz);
+            else if (t.active)
+                applyVariantEdit(t, lead, off, sz);
+        };
+
+        if (editAll)
+        {
+            for (auto i = 0U; i < maxVariantsPerZone; ++i)
+                applyTo(i);
+        }
+        else if (variantIndex < maxVariantsPerZone)
+        {
+            applyTo(variantIndex);
+        }
     }
 
     /*

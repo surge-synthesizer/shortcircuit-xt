@@ -815,13 +815,14 @@ bool VariantDisplay::anyVariantNormalized() const
 
 void VariantDisplay::onSamplePointChangedFromGUI(ptrdiff_t off, size_t sz)
 {
-    // sample and loop positions are lead-only, so an edit that touches one falls through
-    // to the single-variant send even with edit-all on
-    if (editAll && engine::Zone::variantFieldCrossesVariants(off) &&
-        variantView.variants[selectedVariation].active)
+    /*
+     * The engine fans this out - across variants and across the zone selection, which the UI
+     * only holds the lead of. All that is left here is keeping the local view of the lead
+     * zone's other variants in step, so switching tabs shows the edit without a round trip.
+     */
+    if (editAll && engine::Zone::variantFieldCrossesVariants(off))
     {
         propagateEditAll(off, sz);
-        sendToSerialization(cmsg::UpdateLeadZoneAllVariants{variantView.variants});
         for (auto i = 0U; i < maxVariantsPerZone; ++i)
         {
             if (variantView.variants[i].active)
@@ -830,10 +831,11 @@ void VariantDisplay::onSamplePointChangedFromGUI(ptrdiff_t off, size_t sz)
     }
     else
     {
-        sendToSerialization(cmsg::UpdateLeadZoneSingleVariant{
-            {selectedVariation, variantView.variants[selectedVariation]}});
         waveforms[selectedVariation].waveform->rebuildHotZones();
     }
+
+    sendToSerialization(cmsg::UpdateVariantField{
+        {selectedVariation, editAll, off, sz, variantView.variants[selectedVariation]}});
     waveforms[selectedVariation].waveform->repaint();
     repaint();
 }
@@ -915,7 +917,6 @@ void VariantDisplay::showSRCMenu()
         p.addItem(
             n, true, variantView.variants[selectedVariation].interpolationType == e, [this, e]() {
                 variantView.variants[selectedVariation].interpolationType = e;
-                // TODO restore applying across a multi-zone selection when that lands
                 onVariantFieldChanged(variantView.variants[selectedVariation].interpolationType);
                 rebuild();
             });

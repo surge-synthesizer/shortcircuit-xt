@@ -189,7 +189,7 @@ struct VariantDisplay : juce::Component, HasEditor
     // key into SCXTEditor::otherTabSelection, so edit-all outlives zone changes and sessions
     static constexpr const char *editAllTabKey{"variant.editall"};
     bool editAll{false};
-    // push just the edited field of the selected variant onto every other active one
+    // the engine's fan-out replayed on the local view, so the other tabs read right at once
     void propagateEditAll(ptrdiff_t off, size_t sz);
     // is any active variant normalized, for the edit-all clear menu item
     bool anyVariantNormalized() const;

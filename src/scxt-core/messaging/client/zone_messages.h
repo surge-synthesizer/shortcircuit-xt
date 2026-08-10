@@ -191,63 +191,39 @@ typedef std::tuple<bool, engine::Zone::Variants> sampleSelectedZoneViewResposne_
 SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,
                  onSamplesUpdated);
 
-using updateLeadZoneSingleVariantPayload_t = std::tuple<size_t, engine::Zone::SingleVariant>;
-inline void doUpdateLeadZoneSingleVariant(const updateLeadZoneSingleVariantPayload_t &payload,
-                                          engine::Engine &engine, MessageController &cont)
-{
-    // TODO Selected Zone State
-    const auto &samples = payload;
-    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
-    if (sz.has_value())
-    {
-        undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
-        auto [ps, gs, zs] = *sz;
-        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = samples](auto &eng) {
-            auto &[idx, smp] = sampv;
-            eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->variantData.variants[idx] = smp;
-        });
-    }
-}
-CLIENT_TO_SERIAL(UpdateLeadZoneSingleVariant, c2s_update_lead_zone_single_variant,
-                 updateLeadZoneSingleVariantPayload_t,
-                 doUpdateLeadZoneSingleVariant(payload, engine, cont));
-
 /*
- * Edit-all: the client has already fanned the lead variant's edit out across the other
- * variants (clamping frame positions to each sample's length) so this is one message and
- * one undo entry for the whole gesture.
+ * One control moved on one variant of the lead zone. The field is named by its offset and
+ * size in SingleVariant, and the whole edited variant rides along as the source to copy it
+ * from - which is what lets a single message serve the whole family of variant settings.
+ *
+ * Where it lands is Zone::applyVariantFieldEdit's business - all variants of every selected
+ * zone, or variant N of every selected zone - and it is one message and one undo entry
+ * however wide that turns out to be.
  */
-using updateLeadZoneAllVariantsPayload_t =
-    std::array<engine::Zone::SingleVariant, maxVariantsPerZone>;
-inline void doUpdateLeadZoneAllVariants(const updateLeadZoneAllVariantsPayload_t &payload,
-                                        engine::Engine &engine, MessageController &cont)
+using updateVariantFieldPayload_t =
+    std::tuple<size_t, bool, ptrdiff_t, size_t,
+               engine::Zone::SingleVariant>; // variant, edit-all, offset, size, edited variant
+inline void doUpdateVariantField(const updateVariantFieldPayload_t &payload, engine::Engine &engine,
+                                 MessageController &cont)
 {
-    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
-    if (sz.has_value())
-    {
-        undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
-        auto [ps, gs, zs] = *sz;
-        cont.scheduleAudioThreadCallback([p = ps, g = gs, z = zs, sampv = payload](auto &eng) {
-            auto &vd = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->variantData;
-            for (auto i = 0U; i < maxVariantsPerZone; ++i)
-            {
-                auto &dest = vd.variants[i];
-                if (!dest.active)
-                    continue;
-                // identity and normalization belong to the engine's copy, not the edit
-                auto id = dest.sampleID;
-                auto norm = dest.normalizationAmplitude;
-                dest = sampv[i];
-                dest.active = true;
-                dest.sampleID = id;
-                dest.normalizationAmplitude = norm;
-            }
-        });
-    }
+    auto sel = engine.getSelectionManager()->currentlySelectedZones();
+    if (sel.empty())
+        return;
+
+    undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
+    auto lead = engine.getSelectionManager()->currentLeadZone(engine);
+    cont.scheduleAudioThreadCallback([zs = sel, lz = lead, pl = payload](auto &eng) {
+        const auto &[idx, editAll, off, sz, var] = pl;
+        for (const auto &za : zs)
+        {
+            auto &zn = eng.getPatch()->getPart(za.part)->getGroup(za.group)->getZone(za.zone);
+            engine::Zone::applyVariantFieldEdit(zn->variantData, var, off, sz, idx, editAll,
+                                                lz.has_value() && *lz == za);
+        }
+    });
 }
-CLIENT_TO_SERIAL(UpdateLeadZoneAllVariants, c2s_update_lead_zone_all_variants,
-                 updateLeadZoneAllVariantsPayload_t,
-                 doUpdateLeadZoneAllVariants(payload, engine, cont));
+CLIENT_TO_SERIAL(UpdateVariantField, c2s_update_variant_field, updateVariantFieldPayload_t,
+                 doUpdateVariantField(payload, engine, cont));
 
 using normalizeVariantAmplitudePayload_t = std::tuple<size_t, bool>;
 inline void doNormalizeVariantAmplitude(const normalizeVariantAmplitudePayload_t &payload,
