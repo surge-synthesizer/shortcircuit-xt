@@ -27,6 +27,7 @@ add_executable(scxt-test
 		tuning_tests.cpp
 		variant_edit_all_tests.cpp
 		mapping_selection_tests.cpp
+		value_edit_lag_tests.cpp
 )
 
 target_compile_definitions(scxt-test PRIVATE
