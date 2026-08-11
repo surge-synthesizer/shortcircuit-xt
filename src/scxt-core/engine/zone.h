@@ -33,6 +33,7 @@
 #include <cstddef>
 #include <cstring>
 #include <type_traits>
+#include <utility>
 
 #include "configuration.h"
 #include "utils.h"
@@ -339,6 +340,32 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         float tracking{1.0};    // straight multiplier
 
     } mapping;
+
+    /*
+     * A mapping edit names its field by offset the same way a variant edit does. It crosses a
+     * zone selection by default, so a scalar added above is shared without being listed here.
+     *
+     * The exclusions are the key and velocity geometry, which has its own delta path and
+     * refuses a gesture no selected zone can take, and the zone's key center, which belongs
+     * to the sample the zone plays rather than to the edit. They are spans rather than
+     * offsets because an edit addresses a field *inside* the two range structs.
+     */
+    static constexpr std::array<std::pair<size_t, size_t>, 3> mappingLeadOnlySpans{
+        {{offsetof(ZoneMappingData, rootKey), sizeof(ZoneMappingData::rootKey)},
+         {offsetof(ZoneMappingData, keyboardRange), sizeof(KeyboardRange)},
+         {offsetof(ZoneMappingData, velocityRange), sizeof(VelocityRange)}}};
+
+    static bool mappingFieldCrossesZones(ptrdiff_t off, size_t sz)
+    {
+        static_assert(std::is_standard_layout_v<ZoneMappingData>);
+        assert(off >= 0 && off + (ptrdiff_t)sz <= (ptrdiff_t)sizeof(ZoneMappingData));
+        for (const auto &[spanOff, spanSz] : mappingLeadOnlySpans)
+        {
+            if ((size_t)off < spanOff + spanSz && spanOff < (size_t)off + sz)
+                return false;
+        }
+        return true;
+    }
 
     Group *parentGroup{nullptr};
 

@@ -37,49 +37,38 @@ namespace scxt::messaging::client::detail
 
 template <typename VT> using diffMsg_t = std::tuple<ptrdiff_t, VT>;
 
+/*
+ * One field write into a zone payload, addressed by its offset: floats ramp through the UI
+ * lag while the zone is sounding so an edit mid-note does not click, everything else pokes
+ * straight in. Every zone value helper below writes through here.
+ */
+template <typename VT, typename Z, typename DAT>
+inline void pokeZoneMemberValue(Z &zn, DAT &dat, ptrdiff_t d, VT v)
+{
+    static_assert(std::is_standard_layout_v<std::remove_reference_t<DAT>>);
+    assert(d >= 0);
+    assert(d <= (ptrdiff_t)(sizeof(dat) - sizeof(v)));
+    if constexpr (std::is_same_v<VT, float>)
+    {
+        if (!zn->isActive())
+        {
+            *(VT *)(((uint8_t *)&dat) + d) = v;
+        }
+        else
+        {
+            zn->mUILag.setNewDestination((VT *)(((uint8_t *)&dat) + d), v);
+        }
+    }
+    else
+    {
+        *(VT *)(((uint8_t *)&dat) + d) = v;
+    }
+}
+
 // These helpers each record the matching undo step before scheduling the
 // value write. The undo Spec is the leading template argument - the leaf
 // helpers push it; the zone-or-group wrappers just forward the right spec to
 // the leaf so every value edit records exactly one undo entry.
-template <typename Spec, typename VT, typename M>
-inline void
-updateZoneLeadMemberValue(M m, const diffMsg_t<VT> &payload, engine::Engine &engine,
-                          MessageController &cont,
-                          std::function<void(const engine::Engine &)> responseCB = nullptr)
-{
-    undo::pushPayloadUndo<Spec>(engine);
-    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
-    if (sz.has_value())
-    {
-        cont.scheduleAudioThreadCallback(
-            [zs = sz, payload, m](auto &eng) {
-                auto [d, v] = payload;
-                auto [p, g, z] = *zs; // did had value check before we started
-                auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-                auto &dat = *zn.*m;
-                static_assert(std::is_standard_layout_v<std::remove_reference_t<decltype(dat)>>);
-                assert(d <= sizeof(dat) - sizeof(v));
-                assert(d >= 0);
-                if constexpr (std::is_same_v<VT, float>)
-                {
-                    if (!zn->isActive())
-                    {
-                        *(VT *)(((uint8_t *)&dat) + d) = v;
-                    }
-                    else
-                    {
-                        zn->mUILag.setNewDestination((VT *)(((uint8_t *)&dat) + d), v);
-                    }
-                }
-                else
-                {
-                    *(VT *)(((uint8_t *)&dat) + d) = v;
-                }
-            },
-            responseCB);
-    }
-}
-
 template <typename Spec, typename VT, typename M>
 inline void updateZoneMemberValue(M m, const diffMsg_t<VT> &payload, engine::Engine &engine,
                                   MessageController &cont,
@@ -95,26 +84,50 @@ inline void updateZoneMemberValue(M m, const diffMsg_t<VT> &payload, engine::Eng
                 for (const auto &[p, g, z] : zs)
                 {
                     auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-                    auto &dat = *zn.*m;
-                    static_assert(
-                        std::is_standard_layout_v<std::remove_reference_t<decltype(dat)>>);
-                    assert(d <= sizeof(dat) - sizeof(v));
-                    assert(d >= 0);
-                    if constexpr (std::is_same_v<VT, float>)
-                    {
-                        if (!zn->isActive())
-                        {
-                            *(VT *)(((uint8_t *)&dat) + d) = v;
-                        }
-                        else
-                        {
-                            zn->mUILag.setNewDestination((VT *)(((uint8_t *)&dat) + d), v);
-                        }
-                    }
-                    else
-                    {
-                        *(VT *)(((uint8_t *)&dat) + d) = v;
-                    }
+                    pokeZoneMemberValue<VT>(zn, *zn.*m, d, v);
+                }
+            },
+            responseCB);
+    }
+}
+
+/*
+ * A zone value edit whose field may not mean the same thing on every selected zone. The lead
+ * always takes it - it is the control the user moved - and the rest of the selection takes it
+ * only where crosses() allows. Same rule, and the same reason for the one exception, as
+ * Zone::applyVariantFieldEdit.
+ *
+ * crosses is a plain function pointer rather than a std::function because this rides into an
+ * audio thread callback.
+ */
+template <typename Spec, typename VT, typename M>
+inline void
+updateZoneMemberValueGated(M m, const diffMsg_t<VT> &payload, engine::Engine &engine,
+                           MessageController &cont, bool (*crosses)(ptrdiff_t, size_t),
+                           std::function<void(const engine::Engine &)> responseCB = nullptr)
+{
+    undo::pushPayloadUndo<Spec>(engine);
+    auto sz = engine.getSelectionManager()->currentlySelectedZones();
+    auto lead = engine.getSelectionManager()->currentLeadZone(engine);
+    if (!sz.empty() || lead.has_value())
+    {
+        cont.scheduleAudioThreadCallback(
+            [zs = sz, lz = lead, payload, m, crosses](auto &eng) {
+                auto [d, v] = payload;
+                auto poke = [&](const auto &za) {
+                    auto &zn =
+                        eng.getPatch()->getPart(za.part)->getGroup(za.group)->getZone(za.zone);
+                    pokeZoneMemberValue<VT>(zn, *zn.*m, d, v);
+                };
+
+                if (lz.has_value())
+                    poke(*lz);
+                if (!crosses(d, sizeof(VT)))
+                    return;
+                for (const auto &za : zs)
+                {
+                    if (!lz.has_value() || za != *lz)
+                        poke(za);
                 }
             },
             responseCB);
@@ -204,26 +217,7 @@ inline void updateZoneIndexedMemberValue(
                 for (const auto &[p, g, z] : zs)
                 {
                     auto &zn = eng.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-                    auto &dat = (*zn.*m)[idx];
-                    static_assert(
-                        std::is_standard_layout_v<std::remove_reference_t<decltype(dat)>>);
-                    assert(d <= sizeof(dat) - sizeof(v));
-                    assert(d >= 0);
-                    if constexpr (std::is_same_v<VT, float>)
-                    {
-                        if (!zn->isActive())
-                        {
-                            *(VT *)(((uint8_t *)&dat) + d) = v;
-                        }
-                        else
-                        {
-                            zn->mUILag.setNewDestination((VT *)(((uint8_t *)&dat) + d), v);
-                        }
-                    }
-                    else
-                    {
-                        *(VT *)(((uint8_t *)&dat) + d) = v;
-                    }
+                    pokeZoneMemberValue<VT>(zn, (*zn.*m)[idx], d, v);
                 }
                 if (onEngineExtra)
                     onEngineExtra(eng, zs);
