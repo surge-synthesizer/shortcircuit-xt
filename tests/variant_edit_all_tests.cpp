@@ -250,7 +250,7 @@ TEST_CASE("Edit all never crosses positions or identity", "[variants]")
         SV lead, t;
         lead.pan = 0.5f;
         lead.pitchOffset = 3.f;
-        lead.playMode = Zone::PlayMode::ONE_SHOT;
+        lead.playMode = Zone::PlayMode::ON_RELEASE;
         const auto before = t;
 
         Zone::applyVariantEdit(t, lead, VAR_FIELD(pan));
@@ -260,7 +260,7 @@ TEST_CASE("Edit all never crosses positions or identity", "[variants]")
         REQUIRE(t.playMode == before.playMode);
 
         Zone::applyVariantEdit(t, lead, VAR_FIELD(playMode));
-        REQUIRE(t.playMode == Zone::PlayMode::ONE_SHOT);
+        REQUIRE(t.playMode == Zone::PlayMode::ON_RELEASE);
         REQUIRE(t.pitchOffset == Approx(before.pitchOffset));
     }
 }

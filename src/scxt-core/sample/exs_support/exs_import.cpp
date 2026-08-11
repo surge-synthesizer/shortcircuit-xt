@@ -1385,7 +1385,8 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         if (exsGroupPtr && exsGroupPtr->releaseTrigger)
             variant.playMode = engine::Zone::PlayMode::ON_RELEASE;
         else if (z.oneshot)
-            variant.playMode = engine::Zone::PlayMode::ONE_SHOT;
+            zone->egStorage[0].gateMode =
+                modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
 
         if (z.loopOn)
         {

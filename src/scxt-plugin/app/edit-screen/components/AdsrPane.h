@@ -61,8 +61,7 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     UIStore<sst::jucegui::components::Label> labels;
     UIStore<sst::jucegui::components::Knob> knobs;
 
-    // used by group
-    std::unique_ptr<sst::jucegui::components::ToggleButton> gateToggle;
+    // used by group; driven only from the hamburger menu
     std::unique_ptr<boolAttachment_t> gateToggleA;
 
     // blanket temposync toggle (all-or-none) shown in the panel header
@@ -89,7 +88,9 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     void adsrChangedFromModel(const modulation::modulators::AdsrStorage &, int index);
     void adsrDeactivated();
     void tabChanged(int newIndex, bool updateState);
-    void updateSustainBreakpoint();
+    // the sustain slider's meaning and, for the zone AEG, the panel title both follow gateMode
+    void updateForGateMode();
+    void setGateMode(modulation::modulators::AdsrStorage::GateMode);
 
     void rebuildPanelComponents(int newIndex);
 

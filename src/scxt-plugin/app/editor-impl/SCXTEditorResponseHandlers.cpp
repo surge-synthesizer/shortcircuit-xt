@@ -67,6 +67,15 @@ void SCXTEditorReceiver::onGroupOrZoneEnvelopeUpdated(
             {
                 editor.editScreen->getZoneElements()->eg[which]->adsrDeactivated();
             }
+
+            /*
+             * A sample gated AEG takes the open ended loop modes away from every variant, so
+             * the sample pane redraws whenever the lead zone's AEG lands.
+             */
+            editor.zoneAegGateMode =
+                active ? env.gateMode : modulation::modulators::AdsrStorage::GateMode::GATED;
+            if (editor.editScreen->mappingPane && editor.editScreen->mappingPane->sampleDisplay)
+                editor.editScreen->mappingPane->sampleDisplay->rebuild();
         }
         else
         {

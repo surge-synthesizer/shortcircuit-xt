@@ -783,6 +783,50 @@ SC_STREAMDEF(scxt::engine::Zone::Variants, SC_FROM({
                  findIf(v, "variantPlaybackMode", result.variantPlaybackMode);
              }));
 
+/*
+ * "oneshot" was a per-variant play mode until August 2026. One shot describes the whole
+ * zone rather than one of its variants, so it now lives on the AEG as SAMPLE_GATED and a
+ * zone with any one-shot variant unstreams onto that. This reads the raw json because the
+ * enum no longer has a value to unstream "oneshot" into.
+ *
+ * This is checked with the streaming versoin stream guard and when we made this change
+ * we updated the version.
+ */
+template <template <typename...> class Traits>
+inline bool anyVariantStreamedAsOneShot(const tao::json::basic_value<Traits> &v)
+{
+    if (!(SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'08'11)))
+        return false;
+    if (!v.is_object())
+        return false;
+    const auto *vd = v.find("variantData");
+    if (!vd)
+        vd = v.find("sampleData");
+    if (!vd || !vd->is_object())
+        return false;
+
+    const auto *vars = vd->find("variants");
+    if (!vars)
+        vars = vd->find("samples");
+    if (!vars || !vars->is_array())
+        return false;
+
+    for (const auto &var : vars->get_array())
+    {
+        if (!var.is_object())
+            continue;
+        const auto *pm = var.find("playMode");
+        if (!pm || !pm->is_object())
+            continue;
+
+        std::string mode;
+        // "e" since streaming version 0x2024'08'04; the enum name before that
+        if (findIf(*pm, {"e", "engine::Zone::PlayMode"}, mode) && mode == "oneshot")
+            return true;
+    }
+    return false;
+}
+
 SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  // special case. before given name for empty samples we used id.
                  // crystalize this name for old patches. You can probably remove this
@@ -830,6 +874,11 @@ SC_STREAMDEF(scxt::engine::Zone, SC_FROM({
                  else
                  {
                      SCLOG_IF(warnings, "No EG storage in zone");
+                 }
+                 if (anyVariantStreamedAsOneShot(v))
+                 {
+                     zone.egStorage[0].gateMode =
+                         modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
                  }
                  findOrSet(v, "givenName", "", zone.givenName);
                  zone.onRoutingChanged();
