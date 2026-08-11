@@ -297,6 +297,9 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     bool isAnyGeneratorRunning{};
     bool isAEGRunning{false};
 
+    // PlayMode::ON_RELEASE parks the sample until the AEG releases; latched at voice start
+    bool holdSampleUntilAegRelease{false};
+
     bool isVoicePlaying{false};
     bool isVoiceAssigned{false};
 

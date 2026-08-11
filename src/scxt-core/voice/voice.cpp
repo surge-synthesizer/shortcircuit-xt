@@ -193,14 +193,32 @@ void Voice::voiceStarted()
     }
 
     auto &aegp = endpoints->egTarget[0];
-    if (*aegp.dlyP < 1e-5)
-    {
-        aeg.attackFrom(0.0, *(aegp.aP) == 0.0); // TODO Envelope Legato Mode
-    }
-    else
-    {
-        aeg.attackFromWithDelay(0.0, *aegp.dlyP, *aegp.aP);
-    }
+    /*
+     * See Zone::aegStartsInRelease. Opening in release at full level is the whole of what On
+     * Release plus a sample gated AEG means, and it needs no gate: release is only ever entered
+     * from an earlier stage, so nothing pulls the envelope back out of it.
+     */
+    auto openInRelease = sampleIndex >= 0 && engine::Zone::aegStartsInRelease(
+                                                 zone->variantData.variants[sampleIndex].playMode,
+                                                 zone->egStorage[0].gateMode);
+    auto startAeg = [openInRelease, &aegp](auto &env) {
+        if (openInRelease)
+        {
+            env.releaseStartValue = 1.f;
+            env.outBlock0 = 1.f;
+            env.phase = 0.f;
+            env.stage = std::remove_reference_t<decltype(env)>::s_release;
+        }
+        else if (*aegp.dlyP < 1e-5)
+        {
+            env.attackFrom(0.0, *(aegp.aP) == 0.0); // TODO Envelope Legato Mode
+        }
+        else
+        {
+            env.attackFromWithDelay(0.0, *aegp.dlyP, *aegp.aP);
+        }
+    };
+    startAeg(aeg);
     for (int i = 1; i < egsPerZone; ++i)
     {
         if (egsActive[i])
@@ -218,12 +236,7 @@ void Voice::voiceStarted()
     }
     if (forceOversample)
     {
-        if (*aegp.dlyP < 1e-5)
-            aegOS.attackFrom(0.0, *(aegp.aP) == 0.0); // TODO Envelope Legato Mode
-        else
-        {
-            aegOS.attackFromWithDelay(0.0, *aegp.dlyP, *aegp.aP);
-        }
+        startAeg(aegOS);
         // only the AEG needs oversampling since EG2 3 4 is only used at endpoint
     }
 
@@ -290,14 +303,11 @@ template <bool OS> bool Voice::processWithOS()
         return true;
     }
 
+    /*
+     * The play mode no longer steers the env gate - GateMode::SAMPLE_GATED is how an envelope
+     * follows the sample now, and ON_RELEASE moves the sample rather than the envelope.
+     */
     bool envGate{isGated};
-    if (sampleIndex >= 0)
-    {
-        auto &vdata = zone->variantData.variants[sampleIndex];
-
-        envGate = (vdata.playMode == engine::Zone::NORMAL && isGated) ||
-                  (vdata.playMode == engine::Zone::ON_RELEASE && isAnyGeneratorRunning);
-    }
 
     /*
      * Voice always runs the AEG which is default routed, so ignore
@@ -368,6 +378,17 @@ template <bool OS> bool Voice::processWithOS()
     modMatrix->process();
 
     bool samplePlaying = *endpoints->sampleTarget.playSampleP > 0.1;
+
+    /*
+     * ON_RELEASE sounds the voice from note on but parks the sample at its start point until
+     * the AEG releases, so the sample plays under the release rather than under the key. The
+     * generator simply doesn't run until then, which leaves firstSamplePlayback set to place
+     * the read head at the start point on the block the release begins.
+     */
+    if (holdSampleUntilAegRelease && aeg.stage < ahdsrenv_t::s_release)
+    {
+        samplePlaying = false;
+    }
 
     if (firstSamplePlayback && samplePlaying)
     {
@@ -982,6 +1003,7 @@ void Voice::initializeGenerator()
     numGeneratorsActive = 0;
     allGeneratorsMono = true;
     isAnyGeneratorRunning = false;
+    holdSampleUntilAegRelease = false;
 
     if (sampleIndex < 0)
     {
@@ -1007,6 +1029,10 @@ void Voice::initializeGenerator()
      */
     auto aegSampleGated = zone->egStorage[0].gateMode ==
                           scxt::modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
+
+    // fixed for the life of the voice, the same way the loop decision above is
+    holdSampleUntilAegRelease =
+        zone->variantData.variants[sampleIndex].playMode == engine::Zone::ON_RELEASE;
 
     int currGen{0};
     allGeneratorsMono = true;

@@ -95,10 +95,22 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
      */
     enum PlayMode
     {
-        NORMAL,     // AEG gates; play on note on
-        ON_RELEASE, // SAMPLE playback gates. play on note off
+        NORMAL,     // play on note on
+        ON_RELEASE, // voice runs from note on, sample waits at its start for the AEG release
     };
     DECLARE_ENUM_STRING(PlayMode);
+
+    /*
+     * ON_RELEASE parks the sample at its start point until the AEG releases, and a sample gated
+     * AEG takes its gate from the sample - so taken separately the two would wait on each other
+     * forever. Together they mean one thing instead: the AEG opens in its release stage at full
+     * level, which starts the sample at note on and plays it out under the release curve.
+     */
+    static bool aegStartsInRelease(PlayMode pm, modulation::modulators::AdsrStorage::GateMode gm)
+    {
+        return pm == ON_RELEASE &&
+               gm == modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
+    }
 
     enum LoopMode
     {

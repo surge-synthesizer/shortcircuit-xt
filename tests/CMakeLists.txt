@@ -21,6 +21,7 @@ add_executable(scxt-test
 		glide_tests.cpp
 		legato_tests.cpp
 		sample_gated_tests.cpp
+		play_mode_tests.cpp
 		undo_tests.cpp
 		importer_tests.cpp
 		midi_channel_tests.cpp

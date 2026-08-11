@@ -885,7 +885,7 @@ void VariantDisplay::showPlayModeMenu()
         });
     };
     add(engine::Zone::PlayMode::NORMAL, "Normal");
-    add(engine::Zone::PlayMode::ON_RELEASE, "On Release (t/k)");
+    add(engine::Zone::PlayMode::ON_RELEASE, "On Release");
 
     /*
      * One shot used to be a play mode here. It is a property of the whole zone rather than of
