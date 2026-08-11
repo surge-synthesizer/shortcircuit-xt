@@ -197,6 +197,11 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     panicButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (!w)
             return;
+        w->sendToSerialization(cmsg::StopSounds{true});
+    });
+    panicButton->setOnRightMouseCallback([w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
         juce::PopupMenu p;
         p.addSectionHeader("Panic");
         p.addSeparator();
