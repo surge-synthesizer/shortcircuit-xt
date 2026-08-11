@@ -88,10 +88,14 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     };
     DECLARE_ENUM_STRING(VariantPlaybackMode);
 
+    /*
+     * One shot used to live here. It is a property of the whole zone rather than of one
+     * variant, so it now lives on the AEG as GateMode::SAMPLE_GATED and old streams
+     * migrate onto that.
+     */
     enum PlayMode
     {
         NORMAL,     // AEG gates; play on note on
-        ONE_SHOT,   // SAMPLE playback gates; play on note on
         ON_RELEASE, // SAMPLE playback gates. play on note off
     };
     DECLARE_ENUM_STRING(PlayMode);

@@ -27,6 +27,8 @@
 
 #include "VariantDisplay.h"
 #include "app/SCXTEditor.h"
+#include "app/edit-screen/EditScreen.h"
+#include "app/edit-screen/components/AdsrPane.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/structure_messages.h"
 #include "SampleWaveform.h"
@@ -556,15 +558,17 @@ void VariantDisplay::resized()
     noSelectionOverlay->setBounds(getLocalBounds());
 }
 
+bool VariantDisplay::aegIsSampleGated() const
+{
+    return editor->zoneAegGateMode == modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
+}
+
 void VariantDisplay::rebuild()
 {
     switch (variantView.variants[selectedVariation].playMode)
     {
     case engine::Zone::NORMAL:
         playModeButton->setLabel("NORMAL");
-        break;
-    case engine::Zone::ONE_SHOT:
-        playModeButton->setLabel("ONE-SHOT");
         break;
     case engine::Zone::ON_RELEASE:
         playModeButton->setLabel("ON RELEASE");
@@ -647,6 +651,15 @@ void VariantDisplay::rebuild()
     }
 
     bool hasLoop = variantView.variants[selectedVariation].loopActive;
+
+    /*
+     * A sample gated AEG ends the voice with the sample, so a loop with no end would hold it
+     * open forever and the engine ignores it. A counted loop does end, so the loop power and
+     * the mode menu stay live and only the loop's own points gray out.
+     */
+    bool loopRuns = !aegIsSampleGated() || variantView.variants[selectedVariation].loopMode ==
+                                               engine::Zone::LoopMode::LOOP_COUNT;
+
     loopModeButton->setEnabled(hasLoop);
     loopCnt->setEnabled(hasLoop);
     discreteSampleEditors[startL]->setVisible(hasLoop);
@@ -659,6 +672,15 @@ void VariantDisplay::rebuild()
     labels[endL]->setVisible(hasLoop);
     labels[fadeL]->setVisible(hasLoop);
     glyphLabels[curve]->setVisible(hasLoop);
+
+    for (const auto c : {startL, endL, fadeL})
+    {
+        discreteSampleEditors[c]->setEnabled(loopRuns);
+        labels[c]->setEnabled(loopRuns);
+    }
+    sampleEditors[curve]->setEnabled(loopRuns);
+    glyphLabels[curve]->setEnabled(loopRuns);
+    zoomButton->setEnabled(loopRuns);
 
     loopCnt->setVisible(variantView.variants[selectedVariation].loopMode ==
                         engine::Zone::LoopMode::LOOP_COUNT);
@@ -863,8 +885,24 @@ void VariantDisplay::showPlayModeMenu()
         });
     };
     add(engine::Zone::PlayMode::NORMAL, "Normal");
-    add(engine::Zone::PlayMode::ONE_SHOT, "OneShot");
     add(engine::Zone::PlayMode::ON_RELEASE, "On Release (t/k)");
+
+    /*
+     * One shot used to be a play mode here. It is a property of the whole zone rather than of
+     * one variant, so it is the AEG's sample gated mode now and this is the shortcut to it.
+     */
+    p.addSeparator();
+    p.addItem("Set AMP EG to Sample Gated", true, aegIsSampleGated(),
+              [sg = aegIsSampleGated(), w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  const auto &aeg = w->editor->editScreen->getZoneElements()->eg[0];
+                  if (!aeg)
+                      return;
+                  using gm_t = modulation::modulators::AdsrStorage::GateMode;
+                  // ticking it off puts the AMP EG back to plain gated
+                  aeg->setGateMode(sg ? gm_t::GATED : gm_t::SAMPLE_GATED);
+              });
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
@@ -875,9 +913,13 @@ void VariantDisplay::showLoopModeMenu()
     p.addSectionHeader("Loop Mode");
     p.addSeparator();
 
-    auto add = [&p, this](auto e, bool alt, auto n) {
+    // A sample gated AEG lasts exactly as long as the sample, so only a loop that counts
+    // itself out still ends; the open ended modes are unreachable while it is on.
+    auto openEndedOK = !aegIsSampleGated();
+
+    auto add = [&p, this, openEndedOK](auto e, bool alt, auto n) {
         auto that = this;
-        p.addItem(n, true,
+        p.addItem(n, openEndedOK || e == engine::Zone::LoopMode::LOOP_COUNT,
                   variantView.variants[selectedVariation].loopMode == e &&
                       variantView.variants[selectedVariation].loopDirection ==
                           (alt ? engine::Zone::LoopDirection::ALTERNATE_DIRECTIONS

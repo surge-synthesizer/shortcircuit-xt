@@ -158,6 +158,58 @@ TEST_CASE("Stream scxt::engine::Zone")
     // TODO: Expand this test
 }
 
+TEST_CASE("A one shot variant unstreams as a sample gated AEG")
+{
+    namespace mm = scxt::modulation::modulators;
+    using pm_t = scxt::engine::Zone::PlayMode;
+
+    scxt::engine::Zone k1;
+    k1.variantData.variants[0].active = true;
+    k1.variantData.variants[0].playMode = pm_t::ON_RELEASE;
+    REQUIRE(k1.egStorage[0].gateMode == mm::AdsrStorage::GateMode::GATED);
+
+    auto s = testStream(k1);
+    auto at = s.find("onrelease");
+    REQUIRE(at != std::string::npos);
+
+    // what a pre-August-2026 patch with a one shot variant looks like
+    auto old = s;
+    old.replace(at, std::string("onrelease").size(), "oneshot");
+
+    SECTION("A play mode we still have round trips untouched")
+    {
+        scxt::engine::Zone k2;
+        testUnstream(s, k2);
+        REQUIRE(k2.variantData.variants[0].playMode == pm_t::ON_RELEASE);
+        REQUIRE(k2.egStorage[0].gateMode == mm::AdsrStorage::GateMode::GATED);
+    }
+
+    SECTION("A one shot variant lands on the AEG instead")
+    {
+        scxt::engine::Engine::UnstreamGuard sg(0x2026'07'24);
+
+        scxt::engine::Zone k2;
+        testUnstream(old, k2);
+        // the play mode is gone, so it falls back to normal
+        REQUIRE(k2.variantData.variants[0].playMode == pm_t::NORMAL);
+        REQUIRE(k2.egStorage[0].gateMode == mm::AdsrStorage::GateMode::SAMPLE_GATED);
+    }
+
+    SECTION("Only an old stream is searched for it")
+    {
+        // no guard, so this reads as an in-process stream from this build
+        scxt::engine::Zone k2;
+        testUnstream(old, k2);
+        REQUIRE(k2.egStorage[0].gateMode == mm::AdsrStorage::GateMode::GATED);
+
+        // and neither is one streamed at or past the version that dropped it
+        scxt::engine::Engine::UnstreamGuard sg(scxt::currentStreamingVersion);
+        scxt::engine::Zone k3;
+        testUnstream(old, k3);
+        REQUIRE(k3.egStorage[0].gateMode == mm::AdsrStorage::GateMode::GATED);
+    }
+}
+
 // TODO: Add test for Group streaming
 // TODO: Add test for Part streaming
 // TODO: Add test for Patch streaming

@@ -296,7 +296,6 @@ template <bool OS> bool Voice::processWithOS()
         auto &vdata = zone->variantData.variants[sampleIndex];
 
         envGate = (vdata.playMode == engine::Zone::NORMAL && isGated) ||
-                  (vdata.playMode == engine::Zone::ONE_SHOT && isAnyGeneratorRunning) ||
                   (vdata.playMode == engine::Zone::ON_RELEASE && isAnyGeneratorRunning);
     }
 
@@ -1001,6 +1000,14 @@ void Voice::initializeGenerator()
     }
     numGeneratorsActive = lastIndex - firstIndex;
 
+    /*
+     * A sample gated AEG holds the voice open for exactly as long as the sample plays, so a
+     * loop that never ends would hold it open forever. A counted loop does end, so it still
+     * runs; the open ended modes are ignored and the UI grays them out to say so.
+     */
+    auto aegSampleGated = zone->egStorage[0].gateMode ==
+                          scxt::modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
+
     int currGen{0};
     allGeneratorsMono = true;
     for (auto currIndex = firstIndex; currIndex < lastIndex; currIndex++)
@@ -1008,6 +1015,9 @@ void Voice::initializeGenerator()
         auto &s = zone->samplePointers[currIndex];
 
         auto &variantData = zone->variantData.variants[currIndex];
+        auto loopActive =
+            variantData.loopActive &&
+            (!aegSampleGated || variantData.loopMode == engine::Zone::LoopMode::LOOP_COUNT);
 
         GDIO[currGen].outputL = output[0];
         GDIO[currGen].outputR = output[1];
@@ -1037,7 +1047,7 @@ void Voice::initializeGenerator()
         GD[currGen].direction = 1;
         GD[currGen].isFinished = false;
 
-        if (variantData.loopActive)
+        if (loopActive)
         {
             GD[currGen].loopLowerBound = variantData.startLoop;
             GD[currGen].loopUpperBound = variantData.endLoop;
@@ -1067,7 +1077,7 @@ void Voice::initializeGenerator()
         allGeneratorsMono = allGeneratorsMono && monoGenerator[currGen] &&
                             (variantData.pan < 0.01f && variantData.pan > -0.01f);
         Generator[currGen] = dsp::GetFPtrGeneratorSample(
-            !monoGenerator[currGen], s->bitDepth == sample::Sample::BD_F32, variantData.loopActive,
+            !monoGenerator[currGen], s->bitDepth == sample::Sample::BD_F32, loopActive,
             variantData.loopDirection == engine::Zone::FORWARD_ONLY,
 
             // We doo loop count by gating on loopCount < maxLoopCount

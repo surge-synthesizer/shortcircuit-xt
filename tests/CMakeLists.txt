@@ -20,6 +20,7 @@ add_executable(scxt-test
 		group_trigger_tests.cpp
 		glide_tests.cpp
 		legato_tests.cpp
+		sample_gated_tests.cpp
 		undo_tests.cpp
 		importer_tests.cpp
 		midi_channel_tests.cpp

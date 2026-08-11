@@ -370,8 +370,6 @@ std::string Zone::toStringPlayMode(const PlayMode &p)
     {
     case NORMAL:
         return "normal";
-    case ONE_SHOT:
-        return "oneshot";
     case ON_RELEASE:
         return "onrelease";
     }

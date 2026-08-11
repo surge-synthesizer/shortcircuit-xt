@@ -269,6 +269,11 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
 
     std::array<std::array<scxt::engine::Macro, scxt::macrosPerPart>, scxt::numParts> macroCache;
 
+    // The lead zone's AEG gate mode reaches past the EG pane - a sample gated AEG changes what
+    // the variant loop controls can do - so the last one sent for the lead zone lives here.
+    modulation::modulators::AdsrStorage::GateMode zoneAegGateMode{
+        modulation::modulators::AdsrStorage::GateMode::GATED};
+
     // Keyswitch keys per part, so the mapping keyboard can mark every switch in the part
     // rather than only the selected group's
     std::array<scxt::engine::partKeySwitchDisplay_t, scxt::numParts> keySwitchDisplay{};

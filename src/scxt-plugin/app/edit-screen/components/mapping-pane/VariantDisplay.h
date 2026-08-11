@@ -232,6 +232,9 @@ struct VariantDisplay : juce::Component, HasEditor
         fileInfos->setVisible(show);
     }
 
+    // one shot is the zone AEG's sample gated mode now, and it governs what looping can do
+    bool aegIsSampleGated() const;
+
     void showPlayModeMenu();
     void showLoopModeMenu();
     void showVariantPlaymodeMenu();
