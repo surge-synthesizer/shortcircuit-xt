@@ -170,16 +170,21 @@ CLIENT_TO_SERIAL(RequestZoneMapping, c2s_request_zone_mapping, int,
                  doRequestZoneMapping(payload, engine, cont));
 
 // Updating mapping rather than try and calculate the image client side just
-// resend the resulting mapped zones with selection state back to the UI
+// resend the resulting mapped zones with selection state back to the UI.
+// Zone::mappingFieldCrossesZones decides how much of the selection each edit reaches: the
+// pitch bend range, level, pan, pitch and keytrack all of it, the key and velocity geometry
+// and the zone's key center only the lead.
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneMappingFloatValue, c2s_update_zone_mapping_float,
                              detail::diffMsg_t<float>, engine::Zone::ZoneMappingData,
-                             detail::updateZoneLeadMemberValue<undo::ZoneMappingSpec>(
-                                 &engine::Zone::mapping, payload, engine, cont));
+                             detail::updateZoneMemberValueGated<undo::ZoneMappingSpec>(
+                                 &engine::Zone::mapping, payload, engine, cont,
+                                 &engine::Zone::mappingFieldCrossesZones));
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneMappingInt16TValue, c2s_update_zone_mapping_int16_t, detail::diffMsg_t<int16_t>,
     engine::Zone::ZoneMappingData,
-    detail::updateZoneLeadMemberValue<undo::ZoneMappingSpec>(
-        &engine::Zone::mapping, payload, engine, cont, [](const auto &eng) {
+    detail::updateZoneMemberValueGated<undo::ZoneMappingSpec>(
+        &engine::Zone::mapping, payload, engine, cont, &engine::Zone::mappingFieldCrossesZones,
+        [](const auto &eng) {
             auto pt = eng.getSelectionManager()->currentlySelectedPart(eng);
             serializationSendToClient(
                 messaging::client::s2c_send_selected_group_zone_mapping_summary,
