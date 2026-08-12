@@ -85,6 +85,15 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     juce::Path upperStroke[2], lowerStroke[2], upperFill[2], lowerFill[2];
     void rebuildEnvelopePaths();
 
+    /*
+     * A reversed variant plays from endSample back down to startSample, so the sample is drawn
+     * mirrored and playback still reads left to right. Everything the zoom container hands us -
+     * pctStart, zoomFactor, mouse x - stays in display space, where 0 is always the left edge;
+     * only flipPct crosses into sample space, and it is its own inverse.
+     */
+    bool isReversed() const;
+    float flipPct(float p) const { return isReversed() ? 1.f - p : p; }
+
     int64_t sampleForXPixel(float xpos);
     int xPixelForSample(int64_t samplePos, bool doClamp = true);
     int yPixelForAmplitude(float amp, float zeroPoint, float extraScale);

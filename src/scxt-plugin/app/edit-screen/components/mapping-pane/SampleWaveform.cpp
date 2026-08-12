@@ -35,6 +35,13 @@ namespace scxt::ui::app::edit_screen
 
 SampleWaveform::SampleWaveform(VariantDisplay *d) : display(d), HasEditor(d->editor) {}
 
+bool SampleWaveform::isReversed() const
+{
+    if (display->selectedVariation >= maxVariantsPerZone)
+        return false;
+    return display->variantView.variants[display->selectedVariation].playReverse;
+}
+
 void SampleWaveform::rebuildHotZones()
 {
     rebuildEnvelopePaths();
@@ -53,14 +60,22 @@ void SampleWaveform::rebuildHotZones()
     auto ls = xPixelForSample(v.startLoop);
     auto le = xPixelForSample(v.endLoop);
 
-    startSampleHZ =
-        juce::Rectangle<int>(start, r.getBottom() - hotZoneSize, hotZoneSize, hotZoneSize);
-    endSampleHZ = juce::Rectangle<int>(end - hotZoneSize, r.getBottom() - hotZoneSize, hotZoneSize,
-                                       hotZoneSize);
-    startLoopHZ = juce::Rectangle<int>(ls, r.getY(), hotZoneSize, hotZoneSize);
-    endLoopHZ = juce::Rectangle<int>(le - hotZoneSize, r.getY(), hotZoneSize, hotZoneSize);
+    /*
+     * A grab box hangs off the inside of its marker, and mirroring puts the inside of a range
+     * on the other side of both of its ends.
+     */
+    auto rangeStartBox = [this](int px) { return isReversed() ? px - hotZoneSize : px; };
+    auto rangeEndBox = [this](int px) { return isReversed() ? px : px - hotZoneSize; };
 
-    fadeLoopHz = juce::Rectangle<int>(ls - fade, r.getY(), fade, r.getHeight());
+    startSampleHZ = juce::Rectangle<int>(rangeStartBox(start), r.getBottom() - hotZoneSize,
+                                         hotZoneSize, hotZoneSize);
+    endSampleHZ = juce::Rectangle<int>(rangeEndBox(end), r.getBottom() - hotZoneSize, hotZoneSize,
+                                       hotZoneSize);
+    startLoopHZ = juce::Rectangle<int>(rangeStartBox(ls), r.getY(), hotZoneSize, hotZoneSize);
+    endLoopHZ = juce::Rectangle<int>(rangeEndBox(le), r.getY(), hotZoneSize, hotZoneSize);
+
+    // the fade runs up to the loop start, so it sits on the far side of it when mirrored
+    fadeLoopHz = juce::Rectangle<int>(isReversed() ? ls : ls - fade, r.getY(), fade, r.getHeight());
     repaint();
 
     slicePixelAndSamplePositions.clear();
@@ -85,7 +100,8 @@ int64_t SampleWaveform::sampleForXPixel(float xpos)
     // (px / (zf * width) + start) * l = sp
 
     auto l = samp->getSampleLength();
-    auto res = ((xpos - r.getX()) / (zoomFactor * r.getWidth()) + pctStart) * l;
+    auto dPct = (xpos - r.getX()) / (zoomFactor * r.getWidth()) + pctStart;
+    auto res = flipPct(dPct) * l;
     return (int64_t)std::clamp(res, 0.f, l * 1.f);
 }
 
@@ -112,7 +128,7 @@ int SampleWaveform::xPixelForSample(int64_t samplePos, bool doClamp)
     if (sample)
     {
         auto l = sample->getSampleLength();
-        float sPct = 1.0 * samplePos / l;
+        float sPct = flipPct(1.0 * samplePos / l);
         sPct -= pctStart;
         sPct *= zoomFactor;
 
@@ -160,9 +176,14 @@ void SampleWaveform::rebuildEnvelopePaths()
      */
     auto l = samp->getSampleLength();
     int samplePad{10}; // a fudge for very very high zooms stops start glitches
-    auto startSample = std::clamp((int)std::floor(l * pctStart) - samplePad, 0, (int)l);
-    auto numSamples = (int)std::ceil(1.f * l / zoomFactor);
-    auto endSample = std::clamp(startSample + numSamples + 2 * samplePad, 0, (int)l);
+    // the visible window is display space, so mirroring swaps which of its edges is the low sample
+    auto s0 = flipPct(pctStart) * (double)l;
+    auto s1 = flipPct(pctStart + 1.f / zoomFactor) * (double)l;
+    if (s0 > s1)
+        std::swap(s0, s1);
+    auto startSample = std::clamp((int)std::floor(s0) - samplePad, 0, (int)l);
+    auto endSample = std::clamp((int)std::ceil(s1) + samplePad, 0, (int)l);
+    auto numSamples = (int)std::ceil(s1 - s0);
     auto fac = std::max(1.0 * numSamples / r.getWidth(), 1.0);
 
     for (int ch = 0; ch < usedChannels; ++ch)
@@ -485,6 +506,8 @@ void SampleWaveform::paint(juce::Graphics &g)
 
     auto ssp = xPixelForSample(v.startSample);
     auto esp = xPixelForSample(v.endSample);
+    // clipping wants the played range by screen side, and mirroring puts the start on the right
+    auto lsp = std::min(ssp, esp), hsp = std::max(ssp, esp);
 
     auto a1a = editor->themeColor(theme::ColorMap::accent_1a);
     auto a1b = editor->themeColor(theme::ColorMap::accent_1b);
@@ -526,10 +549,10 @@ void SampleWaveform::paint(juce::Graphics &g)
         auto sTop = juce::ColourGradient{a1a, 0, gStart, a1a.withAlpha(0.32f), 0, gCenter, false};
         auto sBot = juce::ColourGradient{a1a.withAlpha(0.32f), 0, gCenter, a1a, 0, gEnd, false};
 
-        if (ssp >= 0)
+        if (lsp >= 0)
         {
             juce::Graphics::ScopedSaveState gs(g);
-            auto cr = r.withRight(ssp);
+            auto cr = r.withRight(lsp);
             g.reduceClipRegion(cr);
 
             g.setGradientFill(gTop);
@@ -538,10 +561,10 @@ void SampleWaveform::paint(juce::Graphics &g)
             g.setGradientFill(gBot);
             g.fillPath(lowerFill[ch]);
         }
-        if (esp <= getWidth())
+        if (hsp <= getWidth())
         {
             juce::Graphics::ScopedSaveState gs(g);
-            auto cr = r.withTrimmedLeft(esp - 2);
+            auto cr = r.withTrimmedLeft(hsp - 2);
             g.reduceClipRegion(cr);
 
             g.setGradientFill(gTop);
@@ -551,8 +574,8 @@ void SampleWaveform::paint(juce::Graphics &g)
             g.fillPath(lowerFill[ch]);
         }
 
-        auto spC = std::clamp(ssp, 0, getWidth());
-        auto epC = std::clamp(esp, 0, getWidth());
+        auto spC = std::clamp(lsp, 0, getWidth());
+        auto epC = std::clamp(hsp, 0, getWidth());
         {
             juce::Graphics::ScopedSaveState gs(g);
             auto cr = r.withLeft(spC).withRight(epC);
@@ -574,7 +597,7 @@ void SampleWaveform::paint(juce::Graphics &g)
         auto ls = std::clamp(xPixelForSample(v.startLoop), 0, getWidth());
         auto le = std::clamp(xPixelForSample(v.endLoop), 0, getWidth());
         auto a2b = editor->themeColor(theme::ColorMap::accent_2b);
-        auto dr = r.withLeft(ls).withRight(le);
+        auto dr = r.withLeft(std::min(ls, le)).withRight(std::max(ls, le));
 
         g.setColour(editor->themeColor(theme::ColorMap::bg_2));
         g.fillRect(dr);
@@ -621,6 +644,15 @@ void SampleWaveform::paint(juce::Graphics &g)
     auto bg1 = editor->themeColor(theme::ColorMap::bg_1);
     auto imf = editor->themeApplier.interBoldFor(10);
 
+    /*
+     * A range end is up-to, so its line comes back a pixel into the range - the other way when
+     * mirrored. The letters swap with it: playback still runs left to right, so whichever marker
+     * is on the left is the one it starts from.
+     */
+    auto endNudge = isReversed() ? 1 : -1;
+    auto startLetter = isReversed() ? "E" : "S";
+    auto endLetter = isReversed() ? "S" : "E";
+
     // this order matters. We want the fade line below the hot zones
     if (v.loopActive && v.loopFade > 0 &&
         ((fe >= 0 && fe <= getWidth()) || (fs >= 0 && fs <= getWidth())))
@@ -650,17 +682,16 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.fillRect(startSampleHZ);
         g.setColour(bg1);
         g.setFont(imf);
-        g.drawText("S", startSampleHZ, juce::Justification::centred);
+        g.drawText(startLetter, startSampleHZ, juce::Justification::centred);
     }
     if (se > 0 && se <= getWidth())
     {
-        // end points are up-to so bring back by one px
         g.setColour(a1a);
-        g.drawVerticalLine(se - 1, r.getY(), r.getBottom());
+        g.drawVerticalLine(se + endNudge, r.getY(), r.getBottom());
         g.fillRect(endSampleHZ);
         g.setColour(bg1);
         g.setFont(imf);
-        g.drawText("E", endSampleHZ, juce::Justification::centred);
+        g.drawText(endLetter, endSampleHZ, juce::Justification::centred);
     }
     if (v.loopActive)
     {
@@ -674,9 +705,12 @@ void SampleWaveform::paint(juce::Graphics &g)
 
             g.setColour(bg1);
             g.setFont(imf);
+            // the chevron points into the loop, which is the other way when mirrored
             auto bx = startLoopHZ.reduced(3, 3);
-            g.drawLine(bx.getX(), bx.getY(), bx.getRight(), bx.getCentreY());
-            g.drawLine(bx.getX(), bx.getBottom(), bx.getRight(), bx.getCentreY());
+            auto tip = isReversed() ? bx.getX() : bx.getRight();
+            auto tail = isReversed() ? bx.getRight() : bx.getX();
+            g.drawLine(tail, bx.getY(), tip, bx.getCentreY());
+            g.drawLine(tail, bx.getBottom(), tip, bx.getCentreY());
         }
         if (le > 0 && le <= getWidth())
         {
@@ -684,14 +718,16 @@ void SampleWaveform::paint(juce::Graphics &g)
 
             g.fillRect(endLoopHZ);
             // See above
-            g.drawVerticalLine(le - 1, r.getY(), r.getBottom());
+            g.drawVerticalLine(le + endNudge, r.getY(), r.getBottom());
 
             g.setColour(bg1);
             g.setFont(imf);
 
             auto bx = endLoopHZ.reduced(3, 3);
-            g.drawLine(bx.getRight(), bx.getY(), bx.getX(), bx.getCentreY());
-            g.drawLine(bx.getRight(), bx.getBottom(), bx.getX(), bx.getCentreY());
+            auto tip = isReversed() ? bx.getRight() : bx.getX();
+            auto tail = isReversed() ? bx.getX() : bx.getRight();
+            g.drawLine(tail, bx.getY(), tip, bx.getCentreY());
+            g.drawLine(tail, bx.getBottom(), tip, bx.getCentreY());
         }
     }
 

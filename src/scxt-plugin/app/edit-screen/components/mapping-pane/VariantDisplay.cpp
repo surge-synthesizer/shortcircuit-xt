@@ -163,7 +163,8 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
 
     playModeLabel = std::make_unique<jcmp::Label>();
     playModeLabel->setText("Play");
-    addAndMakeVisible(*playModeLabel);
+    // No longer show play mode (but keep the code since I bet we change our mind again)
+    // addAndMakeVisible(*playModeLabel);
 
     if (playModeButton)
     {
@@ -172,7 +173,8 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
     }
     playModeButton = std::make_unique<jcmp::MenuButton>();
     playModeButton->setOnCallback([this]() { showPlayModeMenu(); });
-    addAndMakeVisible(*playModeButton);
+    // No longer show play mode (but keep the code since I bet we change our mind again)
+    // addAndMakeVisible(*playModeButton);
 
     if (loopModeButton)
     {
@@ -351,6 +353,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
                 if (w)
                 {
                     w->onVariantFieldChanged(a.value);
+                    w->mirrorWaveformViewports();
                 }
             },
             variantView.variants[selectedVariation].playReverse);
@@ -465,14 +468,21 @@ void VariantDisplay::resized()
         row = p;
     };
 
-    ofRow(playModeLabel, 27);
-    ofRow(playModeButton, 87);
-    ofRow(reverseActive, 14);
-    newRow("playMode");
+    // Old layout for playmode button
+    // ofRow(playModeLabel, 27);
+    // ofRow(playModeButton, 87);
+    // ofRow(reverseActive, 14);
+    // newRow("playMode");
 
     for (const auto m : {startP, endP})
     {
-        ofRow(labels[m], p.getWidth() - 72 - padding);
+        int off{0};
+        if (m == startP)
+        {
+            ofRow(reverseActive, 14);
+            off = 14;
+        }
+        ofRow(labels[m], p.getWidth() - 72 - padding - off);
         ofRow(discreteSampleEditors[m], 72);
         newRow("ctrl");
     }
@@ -561,6 +571,32 @@ void VariantDisplay::resized()
 bool VariantDisplay::aegIsSampleGated() const
 {
     return editor->zoneAegGateMode == modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
+}
+
+void VariantDisplay::mirrorWaveformViewports()
+{
+    auto mirrorOne = [this](size_t i) {
+        const auto &vp = waveforms[i].waveformViewport;
+        if (!vp || !vp->hScroll)
+            return;
+        auto &sb = *vp->hScroll;
+        auto sz = sb.getCurrentRangeSize();
+        // sync, so the waveform repaints with the flipped window inside this edit rather than after
+        sb.setCurrentRangeStart(std::clamp(1.0 - sb.getCurrentRangeStart() - sz, 0.0, 1.0 - sz),
+                                juce::NotificationType::sendNotificationSync);
+    };
+
+    mirrorOne(selectedVariation);
+
+    // playReverse is not a lead-only field, so edit-all just mirrored every other variant too
+    if (editAll)
+    {
+        for (auto i = 0U; i < maxVariantsPerZone; ++i)
+        {
+            if (i != selectedVariation && variantView.variants[i].active)
+                mirrorOne(i);
+        }
+    }
 }
 
 void VariantDisplay::rebuild()
