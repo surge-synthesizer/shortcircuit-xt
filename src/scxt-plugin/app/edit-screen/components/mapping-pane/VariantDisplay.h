@@ -223,6 +223,13 @@ struct VariantDisplay : juce::Component, HasEditor
         repaint();
     }
 
+    /*
+     * A reversed variant draws mirrored, so the visible window mirrors with it and the same audio
+     * stays on screen rather than a zoomed in view jumping head to tail. The window lives in the
+     * ZoomContainer's scrollbar, which is the one piece of the flip the waveform cannot do itself.
+     */
+    void mirrorWaveformViewports();
+
     void rebuild();
     void selectNextFile(bool selectForward);
     void showFileBrowser();
