@@ -96,6 +96,21 @@ using roundRobinMask_t = std::array<uint32_t, numRoundRobinKinds>;
 std::string toStringGroupTriggerID(const GroupTriggerID &p);
 GroupTriggerID fromStringGroupTriggerID(const std::string &p);
 
+/*
+ * When a group makes its voices. ON_NOTE_ON is what everything has always done. ON_NOTE_OFF
+ * makes the press do nothing but be remembered, and sounds the group when the key comes back
+ * up, playing it at the velocity it was pressed with. More modes (sustain pedal release and
+ * friends) are coming, hence an enum rather than a bool - see issue #2186.
+ */
+enum struct VoiceCreationMode : int32_t
+{
+    ON_NOTE_ON = 0,
+    ON_NOTE_OFF
+};
+
+std::string toStringVoiceCreationMode(const VoiceCreationMode &p);
+VoiceCreationMode fromStringVoiceCreationMode(const std::string &p);
+
 /**
  * Maintain the state of keys ccs etc... for a particular instrument
  */
@@ -204,6 +219,17 @@ struct GroupTriggerConditions
     }
     std::array<GroupTriggerStorage, scxt::triggerConditionsPerGroup> storage{};
     std::array<bool, scxt::triggerConditionsPerGroup> active{};
+
+    /*
+     * Not a condition - the conditions decide whether the group sounds, this decides which
+     * note event asks them. It lives here because it is the same question ("when does this
+     * group trigger") and it shares the client's trigger payload and undo entry.
+     */
+    VoiceCreationMode voiceCreationMode{VoiceCreationMode::ON_NOTE_ON};
+    bool createsVoicesOnRelease() const
+    {
+        return voiceCreationMode == VoiceCreationMode::ON_NOTE_OFF;
+    }
 
     bool alwaysReturnsTrue{true};
     bool containsKeySwitchLatch{false};

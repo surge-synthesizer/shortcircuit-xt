@@ -368,8 +368,50 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
     std::array<std::unique_ptr<jcmp::DraggableTextEditableDiscreteValue>, numArgs> argDM;
     std::array<juce::Component *, numArgs> argM{};
 };
+/*
+ * Just the toggle and its attachment. Nested and defined here for the same reason ConditionRow
+ * is - it keeps the attachment types out of the header.
+ */
+struct GroupTriggersCard::ReleaseRow
+{
+    using booleanAttachment_t =
+        connectors::BooleanPayloadDataAttachment<scxt::engine::GroupTriggerConditions>;
+
+    ReleaseRow(GroupTriggersCard *p) : parent(p)
+    {
+        attachment = std::make_unique<booleanAttachment_t>(
+            "Release Trigger",
+            [w = juce::Component::SafePointer(p)](const auto &a) {
+                if (!w)
+                    return;
+                w->cond.voiceCreationMode = w->releaseTriggerOn
+                                                ? engine::VoiceCreationMode::ON_NOTE_OFF
+                                                : engine::VoiceCreationMode::ON_NOTE_ON;
+                w->pushUpdate();
+            },
+            p->releaseTriggerOn);
+
+        button = std::make_unique<jcmp::ToggleButton>();
+        button->setLabel("RELEASE TRIGGER");
+        button->setSource(attachment.get());
+        p->addAndMakeVisible(*button);
+    }
+
+    void setupValuesFromData()
+    {
+        parent->releaseTriggerOn = parent->cond.createsVoicesOnRelease();
+        button->repaint();
+    }
+
+    GroupTriggersCard *parent{nullptr};
+    std::unique_ptr<booleanAttachment_t> attachment;
+    std::unique_ptr<jcmp::ToggleButton> button;
+};
+
 GroupTriggersCard::GroupTriggersCard(SCXTEditor *e) : HasEditor(e)
 {
+    releaseRow = std::make_unique<ReleaseRow>(this);
+
     for (int i = 0; i < scxt::triggerConditionsPerGroup; ++i)
     {
         rows[i] = std::make_unique<ConditionRow>(this, i, i != scxt::triggerConditionsPerGroup - 1);
@@ -384,7 +426,9 @@ void GroupTriggersCard::resized()
     int componentHeight = 16;
     auto b = getLocalBounds().withTrimmedTop(rowHeight - 4);
 
-    auto r = b.withHeight(componentHeight);
+    releaseRow->button->setBounds(b.withHeight(componentHeight));
+
+    auto r = b.withTrimmedTop(releaseBlockHeight).withHeight(componentHeight);
     for (int i = 0; i < scxt::triggerConditionsPerGroup; ++i)
     {
         rows[i]->setBounds(r);
@@ -399,11 +443,17 @@ void GroupTriggersCard::paint(juce::Graphics &g)
     g.setFont(ft);
     g.setColour(co);
     g.drawText("TRIGGER CONDITIONS", getLocalBounds(), juce::Justification::topLeft);
+
+    // rule between the release trigger and the conditions it decides the timing of
+    auto ruleY = 20 + releaseBlockHeight - 5;
+    g.setColour(co.withAlpha(0.4f));
+    g.drawHorizontalLine(ruleY, 0.f, (float)getWidth());
 }
 
 void GroupTriggersCard::setGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &c)
 {
     cond = c;
+    releaseRow->setupValuesFromData();
     for (auto &r : rows)
         r->setupValuesFromData();
     repaint();

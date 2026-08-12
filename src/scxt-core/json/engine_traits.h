@@ -440,6 +440,9 @@ STREAM_ENUM(engine::GroupTriggerConditions::Conjunction,
             engine::GroupTriggerConditions::toStringGroupConditionsConjunction,
             engine::GroupTriggerConditions::fromStringConditionsConjunction);
 
+STREAM_ENUM(engine::VoiceCreationMode, engine::toStringVoiceCreationMode,
+            engine::fromStringVoiceCreationMode);
+
 SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  bool anyConfigured{false};
                  for (const auto &c : from.storage)
@@ -454,11 +457,16 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  {
                      v = tao::json::empty_object;
                  }
+                 // Almost every group triggers on note on, so only the odd one out costs bytes
+                 addUnlessDefault<val_t>(v, "vcm", scxt::engine::VoiceCreationMode::ON_NOTE_ON,
+                                         from.voiceCreationMode);
              }),
              SC_TO({
                  findIf(v, "st", to.storage);
                  findIf(v, "ac", to.active);
                  findIf(v, "conj", to.conjunctions);
+                 findOrSet(v, "vcm", scxt::engine::VoiceCreationMode::ON_NOTE_ON,
+                           to.voiceCreationMode);
              }));
 
 STREAM_ENUM(engine::Group::GlideRateMode, engine::Group::toStringGlideRateMode,

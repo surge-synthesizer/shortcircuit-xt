@@ -347,6 +347,8 @@ void Engine::immediatelyTerminateAllVoices()
             tc->cleanupVoice();
         }
     }
+    // Nothing is sounding, so nothing is held; a later stray note-off must not trigger anything
+    heldNotes.clear();
     forceVoiceUpdate = true;
 }
 
@@ -1698,12 +1700,37 @@ void Engine::setMacro01ValueFromPlugin(int part, int index, float value01)
 
 void Engine::processMIDI1Event(uint16_t idx, const uint8_t data[3])
 {
+    auto msg = data[0] & 0xf0;
+    auto chan = data[0] & 0x0f;
+
     // The voice manager has no notion of program change, so peel it off here
-    if ((data[0] & 0xf0) == 0xc0)
+    if (msg == 0xc0)
     {
-        processProgramChangeEvent(idx, data[0] & 0x0f, data[1] & 0x7f);
+        processProgramChangeEvent(idx, chan, data[1] & 0x7f);
         return;
     }
+
+    /*
+     * Notes go through our own entry points rather than straight to the voice manager, so that
+     * a MIDI 1 host and a CLAP host reach release triggers by the same road. Velocity zero on a
+     * note-on is a note-off, as everywhere.
+     */
+    auto vel = sst::voicemanager::midiToFloatVelocity(data[2]);
+    if (msg == 0x90 && data[2] != 0)
+    {
+        processNoteOnEvent(idx, chan, data[1], -1, vel, 0.f);
+        return;
+    }
+    if (msg == 0x80 || msg == 0x90)
+    {
+        processNoteOffEvent(idx, chan, data[1], -1, vel);
+        return;
+    }
+
+    // 120 all sounds off / 123 all notes off leave nothing held to release
+    if (msg == 0xb0 && (data[1] == 120 || data[1] == 123))
+        heldNotes.clear();
+
     sst::voicemanager::applyMidi1Message(voiceManager, idx, data);
 }
 
@@ -1721,12 +1748,48 @@ void Engine::processProgramChangeEvent(int16_t port, int16_t channel, int16_t pr
 void Engine::processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
                                 double velocity, float retune)
 {
+    heldNotes.noteOn(channel, key, note_id, (float)velocity);
     voiceManager.processNoteOnEvent(port, channel, key, note_id, velocity, retune);
 }
+
 void Engine::processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
                                  double velocity)
 {
+    fireReleaseTriggers(port, channel, key, note_id);
     voiceManager.processNoteOffEvent(port, channel, key, note_id, velocity);
+}
+
+bool Engine::anyGroupCreatesVoicesOnRelease() const
+{
+    for (const auto &part : *patch)
+    {
+        if (!part->configuration.active)
+            continue;
+        for (const auto &group : *part)
+            if (group->triggerConditions.createsVoicesOnRelease())
+                return true;
+    }
+    return false;
+}
+
+void Engine::fireReleaseTriggers(int16_t port, int16_t channel, int16_t key, int32_t note_id)
+{
+    /*
+     * releaseNote consumes, so it has to run whether or not anyone is listening - otherwise a
+     * patch which gains a release group mid-session would find the table full of stale presses.
+     * The velocity is the one the note came in with: that is what the release voice plays at,
+     * and what decides which of its zones the note lands in.
+     */
+    auto velocity = heldNotes.releaseNote(channel, key, note_id);
+    if (velocity < 0.f)
+        return;
+
+    if (!anyGroupCreatesVoicesOnRelease())
+        return;
+
+    inReleaseTriggerPass = true;
+    voiceManager.processNoteOnEvent(port, channel, key, note_id, velocity, 0.f);
+    inReleaseTriggerPass = false;
 }
 
 void Engine::onPartConfigurationUpdated()

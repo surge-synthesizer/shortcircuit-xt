@@ -100,15 +100,16 @@ inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engin
 
     if (onoff)
     {
+        // via the engine, not straight to the voice manager, so the onscreen keyboard
+        // reaches release triggers the same way a MIDI or CLAP note does
         cont.scheduleAudioThreadCallback([ch, vel = v, note = n](auto &eng) {
-            eng.voiceManager.processNoteOnEvent(0, ch, note, -1, vel, 0.f);
+            eng.processNoteOnEvent(0, ch, note, -1, vel, 0.f);
         });
     }
     else
     {
-        cont.scheduleAudioThreadCallback([ch, vel = v, note = n](auto &eng) {
-            eng.voiceManager.processNoteOffEvent(0, ch, note, -1, vel);
-        });
+        cont.scheduleAudioThreadCallback(
+            [ch, vel = v, note = n](auto &eng) { eng.processNoteOffEvent(0, ch, note, -1, vel); });
     }
 }
 CLIENT_TO_SERIAL(NoteFromGUI, c2s_noteonoff, noteOnOff_t, processMidiFromGUI(payload, engine, cont))

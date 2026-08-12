@@ -53,6 +53,7 @@
 
 #include "selection/selection_manager.h"
 #include "memory_pool.h"
+#include "held_notes.h"
 #include "tuning/midikey_retuner.h"
 #include "sst/basic-blocks/dsp/RNG.h"
 
@@ -129,6 +130,19 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
                              double velocity);
 
+    /*
+     * Groups which create voices on release. The press is remembered in heldNotes so the
+     * release can play it at the velocity it arrived with; fireReleaseTriggers then runs a
+     * second note-on through the voice manager just before the note-off which lets it go, with
+     * inReleaseTriggerPass telling findZone to look at exactly those groups. Making the voices
+     * a hair before the note-off means the voice manager does its ordinary bookkeeping for one
+     * press rather than being handed a voice it never saw start.
+     */
+    HeldNotes heldNotes;
+    bool inReleaseTriggerPass{false};
+    void fireReleaseTriggers(int16_t port, int16_t channel, int16_t key, int32_t note_id);
+    bool anyGroupCreatesVoicesOnRelease() const;
+
     struct pathToZone_t
     {
         pathToZone_t() {}
@@ -152,6 +166,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * key is post-retune, so zone mapping follows MTS-ESP and friends. midiKey is what the MIDI
      * stream actually sent; group trigger conditions use it so a keyswitch stays put on the
      * keyboard no matter what the tuning does.
+     *
+     * Runs over half the groups at a time. On a note-on it skips groups which create their
+     * voices on release, and on the release pass (see fireReleaseTriggers) it considers only
+     * those, so one note event never sounds a group twice.
      */
     size_t findZone(int16_t channel, int16_t key, int16_t midiKey, int32_t noteId, int16_t velocity,
                     std::array<pathToZone_t, maxVoices> &res)
@@ -168,11 +186,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
                 /*
                  * Round robin is a question about a whole set of groups at once, so the part
-                 * settles which slot is live before any group's conditions get asked.
+                 * settles which slot is live before any group's conditions get asked. The press
+                 * settles it for both passes - a release group reads back the slot its own
+                 * note-on chose rather than spending a second one on the way up.
                  */
-                part->advanceRoundRobinSets(*this, part->roundRobinSetsForNote(*this, channel, key,
-                                                                               midiKey, velocity,
-                                                                               (int16_t)kt));
+                if (!inReleaseTriggerPass)
+                    part->advanceRoundRobinSets(
+                        *this, part->roundRobinSetsForNote(*this, channel, key, midiKey, velocity,
+                                                           (int16_t)kt));
 
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {
@@ -194,22 +215,33 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                                                                            << group->id.to_string()
                                                                            << " " << group->name);
 
-                            // This second iteration is a wee bit annoying but
-                            for (auto &gkt : *part)
+                            /*
+                             * Only the press moves the switch. The release comes back through
+                             * here on its own pass and must leave the articulation where the
+                             * press put it - but it is still a switch key, so it is consumed
+                             * either way rather than sounding anybody.
+                             */
+                            if (!inReleaseTriggerPass)
                             {
-                                SCLOG_IF(groupTrigggers, "Checking group " << gkt->id.to_string());
-                                if (!gkt->triggerConditions.containsKeySwitchLatch)
+                                // This second iteration is a wee bit annoying but
+                                for (auto &gkt : *part)
                                 {
-                                    SCLOG_IF(groupTrigggers, "   Not a keyswitch - mute false");
-                                    gkt->mutedByLatch = false;
-                                    continue;
+                                    SCLOG_IF(groupTrigggers,
+                                             "Checking group " << gkt->id.to_string());
+                                    if (!gkt->triggerConditions.containsKeySwitchLatch)
+                                    {
+                                        SCLOG_IF(groupTrigggers, "   Not a keyswitch - mute false");
+                                        gkt->mutedByLatch = false;
+                                        continue;
+                                    }
+                                    // Several groups can share a switch key, so bring up
+                                    // everything latched to this key rather than only the group
+                                    // we matched
+                                    gkt->mutedByLatch = !gkt->triggerConditions.keySwitchLatchHolds(
+                                        *this, *gkt, channel, midiKey);
+                                    SCLOG_IF(groupTrigggers,
+                                             "   Muted by latch: " << gkt->mutedByLatch);
                                 }
-                                // Several groups can share a switch key, so bring up everything
-                                // latched to this key rather than only the group we matched
-                                gkt->mutedByLatch = !gkt->triggerConditions.keySwitchLatchHolds(
-                                    *this, *gkt, channel, midiKey);
-                                SCLOG_IF(groupTrigggers,
-                                         "   Muted by latch: " << gkt->mutedByLatch);
                             }
 
                             // Ignore any voices found here
@@ -232,6 +264,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                     {
                         continue;
                     }
+
+                    /*
+                     * Everything above is about whether the group is live at all, and both
+                     * passes need the same answer. Only voice creation splits: the press makes
+                     * voices for note-on groups, the release for release groups.
+                     */
+                    if (group->triggerConditions.createsVoicesOnRelease() != inReleaseTriggerPass)
+                        continue;
 
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
                     {
