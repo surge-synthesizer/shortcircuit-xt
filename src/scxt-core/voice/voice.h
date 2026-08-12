@@ -301,6 +301,14 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     bool isVoiceAssigned{false};
 
     /*
+     * Set when a release trigger made this voice. Its key is already up, so no envelope here
+     * can wait on the gate: the AEG follows the sample and the modulation EGs run one shot -
+     * see ReleaseGateSubstitution. Captured at attack rather than read back off the group, so
+     * editing the group mid-note can't cut a sounding voice short.
+     */
+    bool createdByReleaseTrigger{false};
+
+    /*
      * A voice in a LEGATO group which runs out of sound doesn't die - it parks. It stays
      * assigned and registered with the voice manager, runs its modulators but none of its
      * audio chain, and can be re-attacked in place by a subsequent legato move. That keeps

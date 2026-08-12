@@ -18,6 +18,7 @@ add_executable(scxt-test
 		exclusive_group_tests.cpp
 		keyswitch_tests.cpp
 		group_trigger_tests.cpp
+		release_trigger_tests.cpp
 		glide_tests.cpp
 		legato_tests.cpp
 		sample_gated_tests.cpp

@@ -99,6 +99,10 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             v->startGlideFrom(voiceInstructionBuffer[idx].continuationData.pitch);
     };
 
+    // A release trigger's voices are let go by the very note-off which made them, so no
+    // envelope on them can wait on the gate - see Voice::createdByReleaseTrigger
+    auto byReleaseTrigger = engine.inReleaseTriggerPass;
+
     for (auto idx = 0; idx < nts; ++idx)
     {
         if (voiceInstructionBuffer[idx].instruction ==
@@ -126,6 +130,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->velocity = velocity;
                 v->originalMidiKey = key;
 
+                v->createdByReleaseTrigger = byReleaseTrigger;
                 v->attack();
                 glideFromPriorVoice(v, idx);
 
@@ -158,6 +163,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                         (int16_t)std::clamp(velocity * 127.0, 0., 127.));
 
                     v->originalMidiKey = key;
+                    v->createdByReleaseTrigger = byReleaseTrigger;
                     v->attack();
                     glideFromPriorVoice(v, idx);
 

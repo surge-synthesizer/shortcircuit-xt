@@ -211,13 +211,20 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
     phasorEvaluator.step(e.transport, miscSourceStorage);
 
+    // Voices this group makes on release come up already let go, so its own EGs run as one
+    // shots too - otherwise they would release under a gate that was never held. These are
+    // all modulation EGs with no sample of their own, so one shot rather than sample gated.
+    auto egSub = triggerConditions.createsVoicesOnRelease()
+                     ? scxt::modulation::shared::ReleaseGateSubstitution::ONE_SHOT
+                     : scxt::modulation::shared::ReleaseGateSubstitution::NONE;
+
     for (int i = 0; i < egsPerGroup; ++i)
     {
         bool envGate = gated;
         if (gegStorage[i].gateGroupEGOnAnyPlaying)
             envGate = (fVoiceCount > 0);
 
-        auto egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage, false);
+        auto egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage, false, egSub);
 
         if (egsActive[i])
         {
@@ -226,7 +233,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
             {
                 doEGRetrigger[i] = false;
                 eg[i].attackFromWithDelay(eg[i].outBlock0, *aegp.dlyP, *aegp.aP);
-                egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage, false);
+                egiGate = getEnvSpecificGate(envGate, gegStorage[i], eg[i].stage, false, egSub);
             }
             auto egiRM = dsp::twoToTheXTable.twoToThe(*aegp.rateMulP);
             eg[i].processBlockWithDelayAndRateMul(

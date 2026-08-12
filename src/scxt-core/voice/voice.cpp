@@ -290,6 +290,17 @@ template <bool OS> bool Voice::processWithOS()
         return true;
     }
 
+    /*
+     * A release trigger's voice was let go by the same note off which made it, so no envelope
+     * here can wait on the gate. The AEG follows the sample; the modulation EGs, which have no
+     * sample to follow, run their one shot shape.
+     */
+    namespace mshared = scxt::modulation::shared;
+    auto aegSub = createdByReleaseTrigger ? mshared::ReleaseGateSubstitution::SAMPLE_GATED
+                                          : mshared::ReleaseGateSubstitution::NONE;
+    auto egSub = createdByReleaseTrigger ? mshared::ReleaseGateSubstitution::ONE_SHOT
+                                         : mshared::ReleaseGateSubstitution::NONE;
+
     bool envGate{isGated};
     if (sampleIndex >= 0)
     {
@@ -307,16 +318,16 @@ template <bool OS> bool Voice::processWithOS()
     auto rtaeg = doEGRetrigger[0];
     doEGRetrigger[0] = false;
     auto aegGate =
-        getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage, isAnyGeneratorRunning);
+        getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage, isAnyGeneratorRunning, aegSub);
     auto aegRM = dsp::twoToTheXTable.twoToThe(*aegp.rateMulP);
     if constexpr (OS)
     {
         if (rtaeg)
         {
             aegOS.attackFromWithDelay(aegOS.outBlock0, *aegp.dlyP, *aegp.aP);
-            aegGate =
-                getEnvSpecificGate(envGate, zone->egStorage[0],
-                                   (ahdsrenv_t::Stage)((int)aegOS.stage), isAnyGeneratorRunning);
+            aegGate = getEnvSpecificGate(envGate, zone->egStorage[0],
+                                         (ahdsrenv_t::Stage)((int)aegOS.stage),
+                                         isAnyGeneratorRunning, aegSub);
         }
         // we need the aegOS for the curve in oversample space
         aegOS.processBlockWithDelayAndRateMul(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP,
@@ -329,7 +340,8 @@ template <bool OS> bool Voice::processWithOS()
     if (rtaeg)
     {
         aeg.attackFromWithDelay(aeg.outBlock0, *aegp.dlyP, *aegp.aP);
-        aegGate = getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage, isAnyGeneratorRunning);
+        aegGate = getEnvSpecificGate(envGate, zone->egStorage[0], aeg.stage, isAnyGeneratorRunning,
+                                     aegSub);
     }
     aeg.processBlockWithDelayAndRateMul(*aegp.dlyP, *aegp.aP, *aegp.hP, *aegp.dP, *aegp.sP,
                                         *aegp.rP, *aegp.asP, *aegp.dsP, *aegp.rsP, aegRM, aegGate,
@@ -344,15 +356,15 @@ template <bool OS> bool Voice::processWithOS()
         {
             auto &eg2p = endpoints->egTarget[i];
 
-            auto egiGate =
-                getEnvSpecificGate(envGate, zone->egStorage[i], eg[i].stage, isAnyGeneratorRunning);
+            auto egiGate = getEnvSpecificGate(envGate, zone->egStorage[i], eg[i].stage,
+                                              isAnyGeneratorRunning, egSub);
 
             if (doEGRetrigger[i])
             {
                 doEGRetrigger[i] = false;
                 eg[i].attackFromWithDelay(eg[i].outBlock0, *eg2p.dlyP, *eg2p.aP);
                 egiGate = getEnvSpecificGate(envGate, zone->egStorage[i], eg[i].stage,
-                                             isAnyGeneratorRunning);
+                                             isAnyGeneratorRunning, egSub);
             }
 
             auto egiRM = dsp::twoToTheXTable.twoToThe(*eg2p.rateMulP);

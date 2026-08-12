@@ -47,6 +47,19 @@ namespace scxt::modulation::shared
 static_assert(lfosPerGroup == lfosPerZone,
               "If this is false you need to template out the count below");
 
+/*
+ * What a gate-following envelope should run as when nothing is holding the key down - the
+ * release trigger case, where the voice is made by the key coming up. The AEG follows the
+ * sample, since a release trigger is a sound of its own length rather than one somebody is
+ * holding; the modulation EGs have no sample to follow and run their one shot shape.
+ */
+enum struct ReleaseGateSubstitution
+{
+    NONE = 0,
+    ONE_SHOT,
+    SAMPLE_GATED
+};
+
 template <typename T, size_t egsPerObject> struct HasModulators
 {
     struct DoubleRate
@@ -378,10 +391,27 @@ template <typename T, size_t egsPerObject> struct HasModulators
         return keyGate;
     }
 
+    /*
+     * sub rewrites the gate mode for anything triggered by a key coming up rather than going
+     * down: with no gate to wait on, a GATED or SEMI_GATED envelope would release the instant
+     * it started. Modes which never look at the gate are already right and are left alone, so
+     * an envelope somebody deliberately set to one shot or sample gated keeps what it was given.
+     */
     bool getEnvSpecificGate(bool keyGate, const modulation::modulators::AdsrStorage &adsr,
-                            ahdsrenv_t::Stage stage, bool samplePlaying = false)
+                            ahdsrenv_t::Stage stage, bool samplePlaying = false,
+                            ReleaseGateSubstitution sub = ReleaseGateSubstitution::NONE)
     {
-        return evaluateGate(keyGate, adsr.gateMode, stage, samplePlaying);
+        using gm_t = modulation::modulators::AdsrStorage::GateMode;
+
+        auto mode = adsr.gateMode;
+        if (sub != ReleaseGateSubstitution::NONE &&
+            (mode == gm_t::GATED || mode == gm_t::SEMI_GATED))
+        {
+            mode =
+                (sub == ReleaseGateSubstitution::SAMPLE_GATED) ? gm_t::SAMPLE_GATED : gm_t::ONESHOT;
+        }
+
+        return evaluateGate(keyGate, mode, stage, samplePlaying);
     }
 };
 } // namespace scxt::modulation::shared

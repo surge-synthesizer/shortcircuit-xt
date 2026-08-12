@@ -629,7 +629,8 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
     void resized() override
     {
         auto b = baseResize();
-        auto trigHeight = 116;
+        // the release trigger and its rule sit above the condition stack
+        auto trigHeight = 116 + GroupTriggersCard::releaseBlockHeight;
         auto settingsHeight = 146;
         auto dividerHeight = 8;
 

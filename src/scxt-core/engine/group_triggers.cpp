@@ -87,6 +87,27 @@ GroupTriggerID fromStringGroupTriggerID(const std::string &s)
     return p->second;
 }
 
+std::string toStringVoiceCreationMode(const VoiceCreationMode &p)
+{
+    switch (p)
+    {
+    case VoiceCreationMode::ON_NOTE_ON:
+        return "on";
+    case VoiceCreationMode::ON_NOTE_OFF:
+        return "off";
+    }
+    return "on";
+}
+VoiceCreationMode fromStringVoiceCreationMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<VoiceCreationMode, toStringVoiceCreationMode>(
+        VoiceCreationMode::ON_NOTE_ON, VoiceCreationMode::ON_NOTE_OFF);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return VoiceCreationMode::ON_NOTE_ON;
+    return p->second;
+}
+
 std::string GroupTriggerConditions::toStringGroupConditionsConjunction(const Conjunction &p)
 {
     switch (p)
