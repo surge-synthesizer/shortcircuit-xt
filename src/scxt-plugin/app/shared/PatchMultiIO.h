@@ -31,10 +31,35 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "patch_io/patch_io.h"
 #include "messaging/client/patch_io_messages.h"
+#include "infrastructure/user_defaults.h"
 #include "UIHelpers.h"
 
 namespace scxt::ui::app::shared
 {
+// Save choosers open where the user last saved, not always in the user patch
+// directory (#1839). Falls back to the patch directory if unset or stale.
+template <typename T> juce::File lastSaveDirectory(T *that)
+{
+    auto lp = that->editor->defaultsProvider.getUserDefaultPath(
+        infrastructure::DefaultKeys::lastSavedPath, fs::path{});
+    if (!lp.empty())
+    {
+        auto f = fsPathToJuceFile(lp);
+        if (f.isDirectory())
+            return f;
+    }
+    return fsPathToJuceFile(that->editor->browser.patchIODirectory);
+}
+
+template <typename T> void rememberSaveDirectory(T *that, const juce::File &result)
+{
+    // In directory-select mode the result is the directory; in save mode it is the
+    // (not yet created) target file.
+    auto dir = result.isDirectory() ? result : result.getParentDirectory();
+    that->editor->defaultsProvider.updateUserDefaultPath(infrastructure::DefaultKeys::lastSavedPath,
+                                                         juceFileToFSPath(dir));
+}
+
 template <typename T>
 void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
                  patch_io::SaveStyles style)
@@ -56,8 +81,7 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
         flags = juce::FileBrowserComponent::canSelectDirectories;
         title = "Collect Samples";
     }
-    fileChooser = std::make_unique<juce::FileChooser>(
-        title, juce::File(that->editor->browser.patchIODirectory.u8string()), "*.scm");
+    fileChooser = std::make_unique<juce::FileChooser>(title, lastSaveDirectory(that), "*.scm");
     fileChooser->launchAsync(
         flags, [style, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
             if (!w)
@@ -67,6 +91,7 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
             {
                 return;
             }
+            rememberSaveDirectory(w.getComponent(), result[0]);
             // send a 'save multi' message
             auto fsp = juceFileToFSPath(result[0]);
             w->sendToSerialization(cmsg::SaveMulti({fsp.u8string(), (int)style}));
@@ -115,8 +140,7 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
         title = "Collect Samples";
     }
 
-    fileChooser = std::make_unique<juce::FileChooser>(
-        title, juce::File(that->editor->browser.patchIODirectory.u8string()), ext);
+    fileChooser = std::make_unique<juce::FileChooser>(title, lastSaveDirectory(that), ext);
     fileChooser->launchAsync(
         flags, [style, part, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
             if (!w)
@@ -126,6 +150,7 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
             {
                 return;
             }
+            rememberSaveDirectory(w.getComponent(), result[0]);
             // send a 'save multi' message
             auto fsp = juceFileToFSPath(result[0]);
             w->sendToSerialization(cmsg::SavePart({fsp.u8string(), part, (int)style}));
