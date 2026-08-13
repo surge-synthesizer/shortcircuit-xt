@@ -210,6 +210,45 @@ TEST_CASE("A one shot variant unstreams as a sample gated AEG")
     }
 }
 
+TEST_CASE("fromIndexedArray is bounded by the target")
+{
+    auto parse = [](const std::string &s) {
+        tao::json::events::transformer<tao::json::events::to_basic_value<scxt::json::scxt_traits>>
+            consumer;
+        tao::json::events::from_string(consumer, s);
+        return std::move(consumer.value);
+    };
+
+    SECTION("In range indices land where they say")
+    {
+        auto v = parse(R"([{"idx":0,"entry":11},{"idx":2,"entry":13}])");
+        std::array<int, 3> t{0, 0, 0};
+        fromIndexedArray(v, t);
+        REQUIRE(t[0] == 11);
+        REQUIRE(t[1] == 0);
+        REQUIRE(t[2] == 13);
+    }
+
+    SECTION("An out of range index is dropped rather than written")
+    {
+        auto v = parse(R"([{"idx":0,"entry":11},{"idx":7,"entry":99},{"idx":1,"entry":12}])");
+        std::array<int, 3> t{0, 0, 0};
+        REQUIRE_NOTHROW(fromIndexedArray(v, t));
+        REQUIRE(t[0] == 11);
+        REQUIRE(t[1] == 12);
+        REQUIRE(t[2] == 0);
+    }
+
+    SECTION("A round trip through toIndexedArrayIf is unchanged")
+    {
+        std::array<int, 4> src{7, 0, 9, 0};
+        auto v = toIndexedArrayIf<scxt::json::scxt_traits>(src, [](auto e) { return e != 0; });
+        std::array<int, 4> t{0, 0, 0, 0};
+        fromIndexedArray(v, t);
+        REQUIRE(t == src);
+    }
+}
+
 // TODO: Add test for Group streaming
 // TODO: Add test for Part streaming
 // TODO: Add test for Patch streaming

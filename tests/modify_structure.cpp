@@ -184,3 +184,50 @@ TEST_CASE("Paste Group Does Nothing When Clipboard Holds Zone")
     // Still one group
     REQUIRE(part->getGroups().size() == 1);
 }
+
+TEST_CASE("Create Group In An Out Of Range Part Falls Back To Part 0")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    auto n = part->getGroups().size();
+
+    // numParts is one past the last valid part index
+    th.sendToSerialization(cmsg::CreateGroup((int)scxt::numParts));
+    th.stepUI();
+
+    REQUIRE(part->getGroups().size() == n + 1);
+}
+
+TEST_CASE("Delete Group With An Out Of Range Index Is A No-op")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    th.stepUI();
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(part->getGroups().size() == 1);
+
+    // group == size() is one past the end
+    th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, 1, -1}));
+    th.stepUI();
+    REQUIRE(part->getGroups().size() == 1);
+
+    th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, 74, -1}));
+    th.stepUI();
+    REQUIRE(part->getGroups().size() == 1);
+
+    th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, -1, -1}));
+    th.stepUI();
+    REQUIRE(part->getGroups().size() == 1);
+
+    // and the in-range one still works
+    th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, 0, -1}));
+    th.stepUI();
+    REQUIRE(part->getGroups().empty());
+}
