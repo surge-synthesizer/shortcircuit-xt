@@ -85,7 +85,7 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
         RESCAN_PARAM_IVT = 1 << 0,
         STATE_MARK_DIRTY = 1 << 1,
     };
-    std::atomic<uint64_t> nextMainThreadAction;
+    std::atomic<uint64_t> nextMainThreadAction{0};
     void onMainThread() noexcept override;
 
     bool implementsAudioPorts() const noexcept override { return true; }
