@@ -579,9 +579,8 @@ void SCXTPlugin::handleParamValueEvent(const clap_event_param_value *pev)
 }
 void SCXTPlugin::onMainThread() noexcept
 {
-    // Fixme - better atomics
-    uint64_t a = nextMainThreadAction;
-    nextMainThreadAction = 0;
+    // read-and-clear in one step so a flag OR'd in from the audio thread isn't dropped
+    uint64_t a = nextMainThreadAction.exchange(0);
     if (a & RESCAN_PARAM_IVT)
     {
         if (_host.canUseParams())
