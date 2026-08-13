@@ -72,9 +72,6 @@ void MessageController::parseAudioMessageOnSerializationThread(
     case audio::a2s_pointer_complete:
         returnAudioThreadCallback(static_cast<AudioThreadCallback *>(as.payload.p));
         break;
-    case audio::a2s_note_on:
-    case audio::a2s_note_off:
-        throw std::logic_error("Implement this");
     case audio::a2s_structure_refresh:
         // TODO: Factor this a bit better
         serializationSendToClient(client::s2c_send_pgz_structure,
