@@ -48,8 +48,6 @@ enum AudioToSerializationMessageId
 {
     a2s_none,
     a2s_pointer_complete,
-    a2s_note_on,
-    a2s_note_off,
     a2s_structure_refresh,
     a2s_processor_refresh,
     a2s_macro_updated,
