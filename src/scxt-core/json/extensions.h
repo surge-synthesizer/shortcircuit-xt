@@ -61,6 +61,8 @@ void fromIndexedArray(const tao::json::basic_value<Traits> &s, Target &t)
         auto elo = arr[i].get_object();
         size_t idx;
         elo.at("idx").to(idx);
+        if (idx >= t.size()) // stream is wider than the target; drop rather than write OOB
+            continue;
         elo.at("entry").to(t[idx]);
     }
 }

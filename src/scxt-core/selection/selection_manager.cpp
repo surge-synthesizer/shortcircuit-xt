@@ -1151,7 +1151,8 @@ bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck
     if (forZone)
     {
         auto &lza = state[selectedPart].leadZone;
-        if (!lza.isInWithPartials(engine))
+        // isIn not isInWithPartials; a partial address has no zone to dereference
+        if (!lza.isIn(engine))
             return true;
 
         const auto &lz =
@@ -1159,7 +1160,7 @@ bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck
 
         for (auto &s : state[selectedPart].selectedZones)
         {
-            if (!s.isInWithPartials(engine))
+            if (!s.isIn(engine))
                 continue;
             const auto &it = engine.getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
             if (!doCheck(lz, it))

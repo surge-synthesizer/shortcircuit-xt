@@ -176,7 +176,7 @@ CLIENT_TO_SERIAL(AddCompoundElementInZone, c2s_add_compound_element_in_zone,
 
 inline void createGroupIn(int partNumber, engine::Engine &engine, MessageController &cont)
 {
-    if (partNumber < 0 || partNumber > numParts)
+    if (partNumber < 0 || partNumber >= numParts)
         partNumber = 0;
     SCLOG_IF(groupZoneMutation, "Creating group in part " << partNumber);
 
@@ -316,7 +316,7 @@ inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a
                 if (part->getGroup(g)->getZones().empty())
                     addrs.emplace_back((int16_t)a.part, g);
         }
-        else if (a.group < (int32_t)part->getGroups().size())
+        else if (a.group >= 0 && a.group < (int32_t)part->getGroups().size())
         {
             addrs.emplace_back((int16_t)a.part, a.group);
         }
@@ -347,7 +347,8 @@ inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a
             }
             else
             {
-                if (e.getPatch()->getPart(s.part)->getGroups().size() < s.group)
+                if (s.group < 0 ||
+                    s.group >= (int32_t)e.getPatch()->getPart(s.part)->getGroups().size())
                     return;
                 deleteOneGroup(s.group);
             }
