@@ -131,10 +131,11 @@ void PartEditScreen::onPartEffectFullData(
         partPanes[slot]->rebuild();
 }
 
-void PartEditScreen::swapEffects(int bus1, int slot1, int bus2, int slot2, bool swapVsMove)
+void PartEditScreen::swapEffects(int bus1, int slot1, int bus2, int slot2,
+                                 messaging::client::FXSlotDragAction act)
 {
     namespace cmsg = scxt::messaging::client;
-    sendToSerialization(cmsg::SwapPartFX({bus1, slot1, bus2, slot2, swapVsMove}));
+    sendToSerialization(cmsg::SwapPartFX({bus1, slot1, bus2, slot2, act}));
 }
 
 } // namespace scxt::ui::app::edit_screen

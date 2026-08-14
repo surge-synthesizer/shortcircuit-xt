@@ -28,6 +28,8 @@
 #ifndef SCXT_SRC_SCXT_PLUGIN_APP_SHARED_FXSLOTBEARING_H
 #define SCXT_SRC_SCXT_PLUGIN_APP_SHARED_FXSLOTBEARING_H
 
+#include "messaging/client/client_serial.h"
+
 namespace scxt::ui::app::shared
 {
 struct FXSlotBearing
@@ -37,6 +39,22 @@ struct FXSlotBearing
     int fxSlot{0};
     int busAddressOrPart{0};
     bool busEffect{true};
+    // set by the drag source at drag start; the drop site reads it off the source
+    scxt::messaging::client::FXSlotDragAction dragAction{scxt::messaging::client::fx_swap};
 };
+
+/*
+ * A plain drag swaps the two slots, shift moves, and command (control off the mac) copies.
+ * Takes the modifier states rather than a juce::ModifierKeys so this header stays free of
+ * juce - both drag sources ask the same question.
+ */
+inline scxt::messaging::client::FXSlotDragAction fxDragActionFor(bool commandDown, bool shiftDown)
+{
+    if (commandDown)
+        return scxt::messaging::client::fx_copy;
+    if (shiftDown)
+        return scxt::messaging::client::fx_move;
+    return scxt::messaging::client::fx_swap;
+}
 } // namespace scxt::ui::app::shared
 #endif // FXSLOTBEARING_H

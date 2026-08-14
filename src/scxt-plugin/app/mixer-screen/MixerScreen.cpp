@@ -205,10 +205,11 @@ void MixerScreen::setAllBussesToUniqueOutput()
     repaint();
 }
 
-void MixerScreen::swapEffects(int bus1, int slot1, int bus2, int slot2, bool swapVsMove)
+void MixerScreen::swapEffects(int bus1, int slot1, int bus2, int slot2,
+                              messaging::client::FXSlotDragAction act)
 {
     namespace cmsg = scxt::messaging::client;
-    sendToSerialization(cmsg::SwapBusFX({bus1, slot1, bus2, slot2, swapVsMove}));
+    sendToSerialization(cmsg::SwapBusFX({bus1, slot1, bus2, slot2, act}));
 }
 
 } // namespace scxt::ui::app::mixer_screen

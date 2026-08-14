@@ -122,11 +122,11 @@ struct PartEffectsPane : public HasEditor,
 
     void paintMetadata(juce::Graphics &g, const juce::Rectangle<int> &into);
 
-    bool isDragging{false}, swapFX{true};
+    bool isDragging{false};
     void mouseDown(const juce::MouseEvent &event) override
     {
         isDragging = false;
-        swapFX = true;
+        dragAction = scxt::messaging::client::fx_swap;
         NamedPanel::mouseDown(event);
     }
     void mouseDrag(const juce::MouseEvent &event) override;

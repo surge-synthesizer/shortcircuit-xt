@@ -34,6 +34,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "engine/engine.h"
 #include "datamodel/metadata.h"
+#include "messaging/client/client_serial.h"
 
 namespace scxt::ui::app
 {
@@ -84,7 +85,9 @@ struct MixerScreen : juce::Component, HasEditor
     void setFXSlotToType(int bus, int slot, engine::AvailableBusEffects t);
     void sendBusSendStorage(int bus);
 
-    void swapEffects(int bus1, int slot1, int bus2, int slot2, bool swapVsMove = true);
+    void
+    swapEffects(int bus1, int slot1, int bus2, int slot2,
+                scxt::messaging::client::FXSlotDragAction act = scxt::messaging::client::fx_swap);
 
     void setAllBussesToMain();
     void setAllBussesToUniqueOutput();
