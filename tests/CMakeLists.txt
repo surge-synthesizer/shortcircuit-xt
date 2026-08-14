@@ -29,6 +29,7 @@ add_executable(scxt-test
 		macro_id_tests.cpp
 		tuning_tests.cpp
 		variant_edit_all_tests.cpp
+		variant_rr_tests.cpp
 		mapping_selection_tests.cpp
 		value_edit_lag_tests.cpp
 )

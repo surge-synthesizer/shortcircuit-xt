@@ -482,8 +482,9 @@ int8_t Zone::advanceVariantIndex()
             nextAvail = rng.unifInt(0, numAvail);
             if (rrs[nextAvail] == lastPlayed)
             {
-                // the -1 here makes sure we don't re-reach ourselves
-                nextAvail = (nextAvail + (rng.unifInt(0, numAvail - 1))) % numAvail;
+                // unifInt is [min, max) so this offset is [1, numAvail-1], which is
+                // non-zero and so can't re-reach ourselves
+                nextAvail = (nextAvail + (rng.unifInt(1, numAvail))) % numAvail;
             }
         }
         else
