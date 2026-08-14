@@ -231,3 +231,71 @@ TEST_CASE("Delete Group With An Out Of Range Index Is A No-op")
     th.stepUI();
     REQUIRE(part->getGroups().empty());
 }
+
+TEST_CASE("Moving Zones To Another Group Keeps Them Selected")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    // three zones in group 0, an empty group 1 to move into
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 73, 84, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI(20);
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(part->getGroups().size() == 2);
+    REQUIRE(part->getGroup(0)->getZones().size() == 3);
+
+    // move the first two into group 1; -1 means append
+    th.sendToSerialization(cmsg::MoveZonesFromTo(
+        {{ZoneAddress{0, 0, 0}, ZoneAddress{0, 0, 1}}, ZoneAddress{0, 1, -1}}));
+    th.stepUI(30);
+
+    REQUIRE(part->getGroup(0)->getZones().size() == 1);
+    REQUIRE(part->getGroup(1)->getZones().size() == 2);
+
+    // the move appends, so the moved zones are the last two of the target group and the
+    // selection should have followed them there
+    auto sel = th.engine->getSelectionManager()->currentlySelectedZones();
+    REQUIRE(sel.size() == 2);
+    REQUIRE(sel.find(ZoneAddress{0, 1, 0}) != sel.end());
+    REQUIRE(sel.find(ZoneAddress{0, 1, 1}) != sel.end());
+
+    auto lead = th.engine->getSelectionManager()->currentLeadZone(*th.engine);
+    REQUIRE(lead.has_value());
+    REQUIRE(lead->group == 1);
+}
+
+TEST_CASE("Moving Zones Into A Group Which Already Has Zones Keeps Them Selected")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI(20);
+    th.sendToSerialization(cmsg::AddBlankZone({0, 1, 24, 36, 0, 127}));
+    th.stepUI(20);
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(part->getGroup(0)->getZones().size() == 2);
+    REQUIRE(part->getGroup(1)->getZones().size() == 1);
+
+    th.sendToSerialization(cmsg::MoveZonesFromTo(
+        {{ZoneAddress{0, 0, 0}, ZoneAddress{0, 0, 1}}, ZoneAddress{0, 1, -1}}));
+    th.stepUI(30);
+
+    REQUIRE(part->getGroup(0)->getZones().empty());
+    REQUIRE(part->getGroup(1)->getZones().size() == 3);
+
+    // appended after the zone group 1 already had, so indices 1 and 2
+    auto sel = th.engine->getSelectionManager()->currentlySelectedZones();
+    REQUIRE(sel.size() == 2);
+    REQUIRE(sel.find(ZoneAddress{0, 1, 1}) != sel.end());
+    REQUIRE(sel.find(ZoneAddress{0, 1, 2}) != sel.end());
+}

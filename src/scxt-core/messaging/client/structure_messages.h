@@ -504,9 +504,10 @@ inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &
             if (needsReselect)
             {
                 // they've all been added at the end
-                auto zc = engine.getPatch()->getPart(t.part)->getGroup(t.group)->getZones().size() -
-                          -ss.size();
-                for (int i = 0; i < ss.size(); i++)
+                auto zc =
+                    (int)engine.getPatch()->getPart(t.part)->getGroup(t.group)->getZones().size() -
+                    (int)ss.size();
+                for (int i = 0; i < (int)ss.size(); i++)
                 {
                     // retain the selection set
                     auto tc = t;
