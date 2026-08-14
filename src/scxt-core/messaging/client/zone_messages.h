@@ -81,6 +81,11 @@ inline void doApplyZoneDelta(const applyZoneDeltaPayload_t &payload, engine::Eng
                              MessageController &cont)
 {
     auto part = std::get<2>(payload);
+    if (part < 0 || part >= numParts)
+    {
+        SCLOG_IF(warnings, "Invalid part in doApplyZoneDelta: " << part);
+        return;
+    }
     auto &sc = engine.getSelectionManager()->state[part].selectedZones;
     auto lz = engine.getSelectionManager()->currentLeadZone(engine);
     if (!sc.empty())
@@ -211,6 +216,18 @@ using updateVariantFieldPayload_t =
 inline void doUpdateVariantField(const updateVariantFieldPayload_t &payload, engine::Engine &engine,
                                  MessageController &cont)
 {
+    // the offset/size name a field of SingleVariant and end up in a memcpy, so bound them
+    // here rather than on the audio thread
+    const auto &foff = std::get<2>(payload);
+    const auto &fsz = std::get<3>(payload);
+    if (foff < 0 || fsz > sizeof(engine::Zone::SingleVariant) ||
+        foff + (ptrdiff_t)fsz > (ptrdiff_t)sizeof(engine::Zone::SingleVariant))
+    {
+        SCLOG_IF(warnings,
+                 "Invalid field offset/size in doUpdateVariantField: " << foff << "/" << fsz);
+        return;
+    }
+
     auto sel = engine.getSelectionManager()->currentlySelectedZones();
     if (sel.empty())
         return;

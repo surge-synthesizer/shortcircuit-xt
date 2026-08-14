@@ -127,6 +127,12 @@ CLIENT_TO_SERIAL(SetMacroFullState, c2s_set_macro_full_state, macroFullState_t,
 inline void updateMacroValue(const macroValue_t &t, engine::Engine &engine, MessageController &cont)
 {
     const auto &[p, i, f] = t;
+    if (p < 0 || p >= numParts || i < 0 || i >= macrosPerPart)
+    {
+        SCLOG_IF(warnings, "Invalid part/index in updateMacroValue: " << p << "/" << i);
+        return;
+    }
+
     undo::pushUndoTagged<undo::MacroFullStateItem>(engine, macroGestureTag(p, i),
                                                    undo::UndoGesture::Discrete, p, i);
     cont.scheduleAudioThreadCallback(
@@ -159,6 +165,11 @@ inline void doMacroBeginEndEdit(const macroBeginEndEdit_t &payload, engine::Engi
                                 messaging::MessageController &cont)
 {
     auto [doIt, part, index] = payload;
+    if (part < 0 || part >= numParts || index < 0 || index >= macrosPerPart)
+    {
+        SCLOG_IF(warnings, "Invalid part/index in doMacroBeginEndEdit: " << part << "/" << index);
+        return;
+    }
 
     if (doIt)
     {

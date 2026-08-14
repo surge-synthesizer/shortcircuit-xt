@@ -210,6 +210,26 @@ TEST_CASE("A one shot variant unstreams as a sample gated AEG")
     }
 }
 
+TEST_CASE("A patch stream with too many parts is truncated")
+{
+    scxt::engine::Patch p1;
+    p1.getPart(0)->configuration.channel = 3;
+    p1.getPart(1)->configuration.channel = 5;
+
+    auto v = scxt::json::scxt_value(p1);
+    auto &parts = v.at("parts").get_array();
+    REQUIRE(parts.size() == scxt::numParts);
+
+    // a corrupt or future-format file with more parts than this build has
+    while (parts.size() < scxt::numParts + 4)
+        parts.push_back(parts[0]);
+
+    scxt::engine::Patch p2;
+    REQUIRE_NOTHROW(v.to(p2));
+    REQUIRE(p2.getPart(0)->configuration.channel == 3);
+    REQUIRE(p2.getPart(1)->configuration.channel == 5);
+}
+
 TEST_CASE("fromIndexedArray is bounded by the target")
 {
     auto parse = [](const std::string &s) {

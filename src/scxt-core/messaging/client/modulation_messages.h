@@ -279,6 +279,13 @@ inline void doReorderModRow(const modRowReorderPayload_t &payload, engine::Engin
 {
     const auto &[forZone, fromRow, toRow, isMove] = payload;
 
+    auto nRows = (int)(forZone ? modMatrixRowsPerZone : modMatrixRowsPerGroup);
+    if (fromRow < 0 || fromRow >= nRows || toRow < 0 || toRow >= nRows)
+    {
+        SCLOG_IF(warnings, "Invalid row in doReorderModRow: " << fromRow << "/" << toRow);
+        return;
+    }
+
     if (forZone)
     {
         auto sz = engine.getSelectionManager()->currentlySelectedZones();
