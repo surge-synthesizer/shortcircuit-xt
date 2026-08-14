@@ -1230,7 +1230,9 @@ void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generator
     GD.ratio = (int32_t)((1 << 24) * fac * zone->samplePointers[sampleIndex]->sample_rate * sampleRateInv *
                          (1.0 + modMatrix->getValue(modulation::vmd_Sample_Playback_Ratio, 0)));
 #endif
-    auto &var = zone->variantData.variants[sampleIndex];
+    // the variant this generator is playing, which is only the voice's sampleIndex outside
+    // unison - a unison stack runs one generator per variant off the one voice
+    auto &var = zone->variantData.variants[cSampleIndex];
     // pitch already has keytrack in
     auto kd = (pitch - zone->mapping.rootKey);
 
