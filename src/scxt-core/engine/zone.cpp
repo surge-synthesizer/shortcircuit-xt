@@ -845,7 +845,7 @@ bool Zone::canApplyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY,
     }
     if (dim == VEL_RANGE_END)
     {
-        return newY >= 0 && newY < 127 && newY > vr.velStart;
+        return newY >= 0 && newY <= 127 && newY > vr.velStart;
     }
     if (dim == KEY_RANGE_START)
     {
@@ -853,7 +853,8 @@ bool Zone::canApplyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY,
     }
     if (dim == KEY_RANGE_END)
     {
-        return newY >= 0 && newY <= 127 && newX >= kr.keyStart;
+        // the key dimensions carry their value in newX; newY is zero on this path
+        return newX >= 0 && newX <= 127 && newX >= kr.keyStart;
     }
     if (dim == KEY_FADE_START)
     {
@@ -882,7 +883,8 @@ void Zone::applyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY, Keybo
 
     if (dim == VEL_RANGE_START)
     {
-        if (newY >= 0 && newY <= 127 && newY < vr.velEnd - 1)
+        // same bound as canApply above, else the edit validates and then silently does nothing
+        if (newY >= 0 && newY <= 127 && newY <= vr.velEnd - 1)
             vr.velStart = newY;
     }
     if (dim == VEL_RANGE_END)
@@ -897,7 +899,7 @@ void Zone::applyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY, Keybo
     }
     if (dim == KEY_RANGE_END)
     {
-        if (newY >= 0 && newY <= 127 && newX >= kr.keyStart)
+        if (newX >= 0 && newX <= 127 && newX >= kr.keyStart)
             kr.keyEnd = newX;
     }
     if (dim == KEY_FADE_START)

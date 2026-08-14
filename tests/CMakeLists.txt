@@ -30,6 +30,7 @@ add_executable(scxt-test
 		tuning_tests.cpp
 		variant_edit_all_tests.cpp
 		variant_rr_tests.cpp
+		zone_bound_edit_tests.cpp
 		mapping_selection_tests.cpp
 		value_edit_lag_tests.cpp
 )
