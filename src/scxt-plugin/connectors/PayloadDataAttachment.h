@@ -209,15 +209,18 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     {
         if (isTemposynced && isTemposynced(*this))
         {
+            // setValueFromGUI snaps a temposynced value itself, so don't quantize on top of it
             setValueFromGUI(f);
         }
-        if (description.supportsQuantization())
+        else if (description.supportsQuantization())
         {
             setValueFromGUI(description.quantize(f));
         }
         else
         {
-            auto g = std::round((int)(f / 12) * 12);
+            // nearest octave. Round before scaling back up, else the cast truncates and
+            // the round has nothing left to do
+            auto g = std::round(f / 12) * 12;
             setValueFromGUI(g);
         }
     }
