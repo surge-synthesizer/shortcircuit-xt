@@ -231,6 +231,11 @@ bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
         info->channel_count = 2;
         info->port_type = CLAP_PORT_STEREO;
     }
+    else
+    {
+        SCLOG_IF(debug, "Invalid port index: " << (int)index);
+        return false;
+    }
 
     return true;
 }
