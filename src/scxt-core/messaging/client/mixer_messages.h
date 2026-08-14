@@ -144,21 +144,38 @@ inline void doBusSwapFX(const busFxSwap_t &payload, engine::Engine &engine,
                          "Bus Swap FX had same bus/slot location");
         return;
     }
+    if (!isValidFXSlotDragAction(smc))
+    {
+        SCLOG_IF(warnings, "Unknown drag action in doBusSwapFX: " << smc);
+        return;
+    }
 
     undo::pushPayloadUndoFor<undo::BusEffectSpec>(engine, {{-1, bs1, sl1}, {-1, bs2, sl2}});
 
     cont.scheduleAudioThreadCallback(
-        [bs1, bs2, sl1, sl2](auto &engine) {
+        [bs1, bs2, sl1, sl2, act = (FXSlotDragAction)smc](auto &engine) {
             auto &b1 = engine.getPatch()->busses.busByAddress((engine::BusAddress)bs1);
             auto &b2 = engine.getPatch()->busses.busByAddress((engine::BusAddress)bs2);
             auto fs = b1.busEffectStorage[sl1];
             auto ts = b2.busEffectStorage[sl2];
 
-            b1.setBusEffectType(engine, sl1, ts.type);
+            // setBusEffectType rebuilds the effect against the slot's storage and fills it
+            // with defaults, so the storage copy has to come after it in every case
             b2.setBusEffectType(engine, sl2, fs.type);
-
-            b1.busEffectStorage[sl1] = ts;
             b2.busEffectStorage[sl2] = fs;
+
+            if (act == fx_swap)
+            {
+                b1.setBusEffectType(engine, sl1, ts.type);
+                b1.busEffectStorage[sl1] = ts;
+            }
+            else if (act == fx_move)
+            {
+                auto empty = engine::BusEffectStorage();
+                b1.setBusEffectType(engine, sl1, empty.type);
+                b1.busEffectStorage[sl1] = empty;
+            }
+            // fx_copy leaves the source alone
         },
         [bs1, sl1, bs2, sl2](const auto &engine) {
             engine.getPatch()

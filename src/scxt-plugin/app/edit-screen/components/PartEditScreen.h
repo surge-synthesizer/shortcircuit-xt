@@ -33,6 +33,7 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "configuration.h"
 #include "engine/bus_effect.h"
+#include "messaging/client/client_serial.h"
 
 namespace scxt::ui::app
 {
@@ -74,7 +75,9 @@ struct PartEditScreen : juce::Component, HasEditor
         const std::array<datamodel::pmd, engine::BusEffectStorage::maxBusEffectParams> &pmd,
         const engine::BusEffectStorage &bes);
 
-    void swapEffects(int bus1, int slot1, int bus2, int slot2, bool swapVsMove = true);
+    void
+    swapEffects(int bus1, int slot1, int bus2, int slot2,
+                scxt::messaging::client::FXSlotDragAction act = scxt::messaging::client::fx_swap);
 };
 } // namespace edit_screen
 } // namespace scxt::ui::app

@@ -742,7 +742,8 @@ template <bool forBus> void PartEffectsPane<forBus>::mouseDrag(const juce::Mouse
             {
                 container->startDragging("BusEffect", this);
                 isDragging = true;
-                swapFX = !event.mods.isShiftDown();
+                dragAction =
+                    shared::fxDragActionFor(event.mods.isCommandDown(), event.mods.isShiftDown());
             }
         }
     }
@@ -759,7 +760,8 @@ void PartEffectsPane<forBus>::itemDropped(const SourceDetails &dragSourceDetails
         auto fc = dynamic_cast<FXSlotBearing *>(fxs);
         if (fc && fc != this)
         {
-            parent->swapEffects(fc->busAddressOrPart, fc->fxSlot, busAddressOrPart, fxSlot);
+            parent->swapEffects(fc->busAddressOrPart, fc->fxSlot, busAddressOrPart, fxSlot,
+                                fc->dragAction);
         }
     }
 }

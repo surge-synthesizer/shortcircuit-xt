@@ -46,8 +46,6 @@ struct DraggableMenuButton : jcmp::MenuButton, juce::DragAndDropTarget, shared::
     bool isDragging{false};
     bool needsCBOnUp{false};
 
-    bool swapFX{false};
-
     void mouseDown(const juce::MouseEvent &e) override
     {
         isDragging = false;
@@ -72,7 +70,8 @@ struct DraggableMenuButton : jcmp::MenuButton, juce::DragAndDropTarget, shared::
                 {
                     container->startDragging("BusEffect", this);
                     isDragging = true;
-                    swapFX = !e.mods.isShiftDown();
+                    dragAction =
+                        shared::fxDragActionFor(e.mods.isCommandDown(), e.mods.isShiftDown());
                 }
             }
         }
@@ -130,14 +129,11 @@ struct DraggableMenuButton : jcmp::MenuButton, juce::DragAndDropTarget, shared::
         if (c.get() == this)
             return;
 
-        auto mc = dynamic_cast<DraggableMenuButton *>(c.get());
         auto fc = dynamic_cast<FXSlotBearing *>(c.get());
-        bool swap = true;
-        if (mc)
-            swap = mc->swapFX;
         if (fc && fc->busEffect)
         {
-            mixer->swapEffects(fc->busAddressOrPart, fc->fxSlot, busAddressOrPart, fxSlot, swap);
+            mixer->swapEffects(fc->busAddressOrPart, fc->fxSlot, busAddressOrPart, fxSlot,
+                               fc->dragAction);
         }
     }
 };

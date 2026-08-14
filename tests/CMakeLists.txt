@@ -31,6 +31,7 @@ add_executable(scxt-test
 		variant_edit_all_tests.cpp
 		variant_rr_tests.cpp
 		zone_bound_edit_tests.cpp
+		fx_slot_drag_tests.cpp
 		mapping_selection_tests.cpp
 		value_edit_lag_tests.cpp
 )

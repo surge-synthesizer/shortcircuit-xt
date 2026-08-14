@@ -294,6 +294,19 @@ inline bool cacheSerializationMessagesAbsentClient(SerializationToClientMessageI
     return false;
 }
 
+/*
+ * How dragging an effect from one slot onto another resolves. Carried as the last field of
+ * the swap-fx payloads, which is why it is int16_t sized.
+ */
+enum FXSlotDragAction : int16_t
+{
+    fx_swap = 0, // the two slots exchange contents
+    fx_move = 1, // the target takes the source and the source is cleared
+    fx_copy = 2  // the target takes the source and the source is left alone
+};
+
+inline bool isValidFXSlotDragAction(int16_t a) { return a >= fx_swap && a <= fx_copy; }
+
 typedef uint8_t unimpl_t;
 template <ClientToSerializationMessagesIds id> struct ClientToSerializationType
 {

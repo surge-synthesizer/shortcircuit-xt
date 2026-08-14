@@ -61,7 +61,7 @@ inline void updatePartFullConfig(const partConfigurationPayload_t &p, engine::En
 CLIENT_TO_SERIAL(UpdatePartFullConfig, c2s_send_full_part_config, partConfigurationPayload_t,
                  updatePartFullConfig(payload, engine, cont));
 
-// part, b1, part2 b2, swap (0), move (1) or copy (2)
+// part, b1, part2 b2, FXSlotDragAction
 using partFxSwap_t = std::tuple<int16_t, int16_t, int16_t, int16_t, int16_t>;
 inline void doPartSwapFX(const partFxSwap_t &payload, engine::Engine &engine,
                          messaging::MessageController &cont)
@@ -78,19 +78,37 @@ inline void doPartSwapFX(const partFxSwap_t &payload, engine::Engine &engine,
         RAISE_ERROR_CONT(cont, "Cant move part onto itself", "Part Swap FX had same bus location");
         return;
     }
+    if (!isValidFXSlotDragAction(smc))
+    {
+        SCLOG_IF(warnings, "Unknown drag action in doPartSwapFX: " << smc);
+        return;
+    }
 
     undo::pushPayloadUndoFor<undo::BusEffectSpec>(engine, {{p1, -1, b1}, {p1, -1, b2}});
 
     cont.scheduleAudioThreadCallback(
-        [pti = p1, b1, b2](auto &engine) {
+        [pti = p1, b1, b2, act = (FXSlotDragAction)smc](auto &engine) {
             const auto &pt = engine.getPatch()->getPart(pti);
             auto fs = pt->partEffectStorage[b1];
             auto ts = pt->partEffectStorage[b2];
 
-            pt->setBusEffectType(engine, b1, ts.type);
+            // setBusEffectType rebuilds the effect against the slot's storage and fills it
+            // with defaults, so the storage copy has to come after it in every case
             pt->setBusEffectType(engine, b2, fs.type);
-            pt->partEffectStorage[b1] = ts;
             pt->partEffectStorage[b2] = fs;
+
+            if (act == fx_swap)
+            {
+                pt->setBusEffectType(engine, b1, ts.type);
+                pt->partEffectStorage[b1] = ts;
+            }
+            else if (act == fx_move)
+            {
+                auto empty = engine::BusEffectStorage();
+                pt->setBusEffectType(engine, b1, empty.type);
+                pt->partEffectStorage[b1] = empty;
+            }
+            // fx_copy leaves the source alone
         },
         [pti = p1, b1, b2](const auto &engine) {
             engine.getPatch()->getPart(pti)->sendBusEffectInfoToClient(engine, b1);
