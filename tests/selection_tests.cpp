@@ -30,8 +30,10 @@
 #include "engine/feature_enums.h"
 #include "engine/zone.h"
 #include "patch_io/patch_io.h"
+#include "json/selection_traits.h"
 
 #include "console_harness.h"
+#include "test_utils.h"
 
 #include <filesystem>
 
@@ -611,4 +613,17 @@ TEST_CASE("SCP preserves selection across parts", "[selection]")
     }
 
     std::filesystem::remove(tmp);
+}
+
+TEST_CASE("An out of range streamed selectedPart is clamped", "[selection]")
+{
+    // a bare engine, so the unstream runs right here rather than on a serialization thread
+    auto e = std::unique_ptr<scxt::engine::Engine>(makeEngine());
+    auto &sm = e->getSelectionManager();
+
+    auto v = scxt::json::scxt_value(*sm);
+    v["selectedPart"] = (int16_t)(scxt::numParts + 3);
+
+    REQUIRE_NOTHROW(v.to(*sm));
+    REQUIRE(sm->selectedPart == 0);
 }

@@ -214,6 +214,9 @@ SC_STREAMDEF(scxt::engine::Patch,
                  size_t idx{0};
                  for (const auto vz : vzones)
                  {
+                     // a corrupt or future-format stream can carry more parts than we have
+                     if (idx >= numParts)
+                         break;
                      vz.to(*(patch.getPart(idx)));
                      idx++;
                  }

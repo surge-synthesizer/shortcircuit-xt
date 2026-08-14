@@ -12,6 +12,7 @@ add_executable(scxt-test
 		ui_basics.cpp
 
 		selection_tests.cpp
+		message_bounds_tests.cpp
 		modify_structure.cpp
 		modulator_tests.cpp
 		mod_matrix_operations_tests.cpp

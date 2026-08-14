@@ -141,6 +141,10 @@ SC_STREAMDEF(
             findIf(v, "state", z.state);
         }
 
+        // selectedPart comes from the stream and indexes state below
+        if (z.selectedPart < 0 || z.selectedPart >= (int)scxt::numParts)
+            z.selectedPart = 0;
+
         if (!z.state[z.selectedPart].selectedZones.empty())
         {
             selection::SelectionManager::SelectActionContents sac{z.state[z.selectedPart].leadZone};

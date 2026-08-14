@@ -184,7 +184,12 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     {
         static_assert(std::is_standard_layout_v<SingleVariant>);
         static_assert(std::is_trivially_copyable_v<SingleVariant>);
-        assert(off >= 0 && off + (ptrdiff_t)sz <= (ptrdiff_t)sizeof(SingleVariant));
+        assert(off >= 0 && sz <= sizeof(SingleVariant) &&
+               off + (ptrdiff_t)sz <= (ptrdiff_t)sizeof(SingleVariant));
+        // off/sz arrive from a client message, so bound them in release too
+        if (off < 0 || sz > sizeof(SingleVariant) ||
+            off + (ptrdiff_t)sz > (ptrdiff_t)sizeof(SingleVariant))
+            return;
         memcpy((uint8_t *)&t + off, (const uint8_t *)&lead + off, sz);
     }
 
