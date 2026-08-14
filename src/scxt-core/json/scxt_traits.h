@@ -227,15 +227,17 @@ inline fs::path unstreamPathFromString(const std::string &s)
     // to keep the same-store-os case working properly.
     //
     // Also handle the \\server\foo case here
-    if (s.length() > 2 && (s[1] == ':' && (s[2] == '\\') || (s[2] == '/')) ||
-        (s[0] == s[1] && (s[0] == '\\' || s[0] == '/')))
+    auto hasDriveLetter = s.length() > 2 && s[1] == ':' && (s[2] == '\\' || s[2] == '/');
+    auto isUNC = s.length() > 1 && s[0] == s[1] && (s[0] == '\\' || s[0] == '/');
+
+    if (hasDriveLetter || isUNC)
     {
         // We know at this point we are a windows path, so
         // any \ in the string are a separator, unlike posix
         // where \ can be part of a filename
         std::string r, mnt;
 
-        if (s[1] == ':')
+        if (hasDriveLetter)
         {
             // c:\foo\bar
             auto drv = s.substr(0, 1);
@@ -244,8 +246,8 @@ inline fs::path unstreamPathFromString(const std::string &s)
         }
         else
         {
-            // //server/foo/bar
-            r = r.substr(1);
+            // \\server\foo\bar
+            r = s.substr(1);
             mnt = "";
         }
 

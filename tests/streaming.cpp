@@ -210,6 +210,86 @@ TEST_CASE("A one shot variant unstreams as a sample gated AEG")
     }
 }
 
+TEST_CASE("Only a real windows path is remapped on unstream")
+{
+    auto un = [](const std::string &s) { return scxt::json::unstreamPathFromString(s).string(); };
+    auto sentinel = std::string(scxt::relativeSentinel);
+
+    // Every shape the unstream has to sort out. On windows none of them move; the remap
+    // is what a mac or linux host does to a path a windows host wrote.
+    const std::vector<std::string> everyShape{"My/sample.wav",
+                                              "/a/b.wav",
+                                              "ab/c/d.wav",
+                                              "/Users/paul/samples/kick.wav",
+                                              "",
+                                              "a",
+                                              "ab",
+                                              "a/b",
+                                              "C:\\foo\\bar.wav",
+                                              "C:/foo/bar.wav",
+                                              "d:\\x.wav",
+                                              "\\\\server\\share\\x.wav",
+                                              "//server/share/x.wav",
+                                              sentinel + "\\x.wav",
+                                              sentinel + "/x.wav"};
+
+#if defined(WINDOWS) && WINDOWS
+    SECTION("On windows nothing is rewritten")
+    {
+        for (const auto &p : everyShape)
+        {
+            INFO(p);
+            REQUIRE(un(p) == p);
+        }
+    }
+#else
+    SECTION("Nothing throws")
+    {
+        for (const auto &p : everyShape)
+        {
+            INFO(p);
+            REQUIRE_NOTHROW(un(p));
+        }
+    }
+
+    SECTION("A posix path is left alone")
+    {
+        // any of these has a '/' third character, which used to be enough to call it windows
+        REQUIRE(un("My/sample.wav") == "My/sample.wav");
+        REQUIRE(un("/a/b.wav") == "/a/b.wav");
+        REQUIRE(un("ab/c/d.wav") == "ab/c/d.wav");
+        REQUIRE(un("/Users/paul/samples/kick.wav") == "/Users/paul/samples/kick.wav");
+    }
+
+    SECTION("Short and empty strings do not index off the end")
+    {
+        REQUIRE(un("") == "");
+        REQUIRE(un("a") == "a");
+        REQUIRE(un("ab") == "ab");
+        REQUIRE(un("a/b") == "a/b");
+    }
+
+    SECTION("A drive letter path is mounted")
+    {
+        REQUIRE(un("C:\\foo\\bar.wav") == "/mnt/C/foo/bar.wav");
+        REQUIRE(un("C:/foo/bar.wav") == "/mnt/C/foo/bar.wav");
+        REQUIRE(un("d:\\x.wav") == "/mnt/d/x.wav");
+    }
+
+    SECTION("A UNC path drops one leading separator")
+    {
+        REQUIRE(un("\\\\server\\share\\x.wav") == "/server/share/x.wav");
+        REQUIRE(un("//server/share/x.wav") == "/server/share/x.wav");
+    }
+
+    SECTION("The relative sentinel still takes its own branch")
+    {
+        REQUIRE(un(sentinel + "\\x.wav") == sentinel + "/x.wav");
+        REQUIRE(un(sentinel + "/x.wav") == sentinel + "/x.wav");
+    }
+#endif
+}
+
 TEST_CASE("A patch stream with too many parts is truncated")
 {
     scxt::engine::Patch p1;
