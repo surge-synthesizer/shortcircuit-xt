@@ -114,9 +114,11 @@ void Part::process(Engine &e)
         }
     }
 
-    if (noGroups)
+    // active groups which all route elsewhere leave defOut unwritten, and the silence
+    // check below reads it either way
+    if (!defaultAssigned)
         memset(defOut, 0, sizeof(defOut));
-    else
+    if (!noGroups)
         silenceTime = 0;
 
     if (defaultAssigned || noGroups)
