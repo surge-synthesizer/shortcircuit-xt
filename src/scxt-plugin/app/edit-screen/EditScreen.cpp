@@ -263,18 +263,21 @@ void EditScreen::onOtherTabSelection()
     else
         partSidebar->setSelectedTab(2); // default to zone on unknown
 
+    // These are all stored as 0 based tab indices, and each pane's tab list is longer than
+    // the count of things it modulates - the LFO panes carry MISC and AUDIO too - so bound
+    // against the pane rather than against the configuration constant
     auto gts = editor->queryTabSelection(tabKey("multi.group.lfo"));
     if (!gts.empty())
     {
         auto gt = std::atoi(gts.c_str());
-        if (gt >= 0 && gt < lfosPerGroup + 1) // for misc
+        if (gt >= 0 && gt < (int)groupElements->lfo->tabNames.size())
             groupElements->lfo->selectTab(gt);
     }
     auto zts = editor->queryTabSelection(tabKey("multi.zone.lfo"));
     if (!zts.empty())
     {
         auto zt = std::atoi(zts.c_str());
-        if (zt >= 0 && zt < lfosPerZone + 1) // for misc
+        if (zt >= 0 && zt < (int)zoneElements->lfo->tabNames.size())
             zoneElements->lfo->selectTab(zt);
     }
 
@@ -282,7 +285,8 @@ void EditScreen::onOtherTabSelection()
     if (!zeg.empty())
     {
         auto zt = std::atoi(zeg.c_str());
-        if (zt >= 1 && zt < egsPerZone + 1) // for misc
+        // eg[1] tabs EG2 up, so its tab 0 is the first restorable one
+        if (zt >= 0 && zt < (int)zoneElements->eg[1]->tabNames.size())
             zoneElements->eg[1]->selectTab(zt);
     }
 
