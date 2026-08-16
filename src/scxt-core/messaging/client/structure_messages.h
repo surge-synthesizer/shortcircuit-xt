@@ -416,6 +416,14 @@ inline void moveZonesFromTo(const zoneAddressFromTo_t &payload, engine::Engine &
         auto sz = engine.getSelectionManager()->currentlySelectedZones();
         src = std::set<selection::SelectionManager::ZoneAddress>(sz.begin(), sz.end());
         SCLOG_IF(groupZoneMutation, "Empty src so we populated it with " << src.size() << " zones");
+        if (src.empty())
+        {
+            cont.reportErrorToClient(
+                "Software Error",
+                "Somehow you tried to initiate a zone move with zero source zones", __FILE__,
+                __LINE__);
+            return;
+        }
     }
     assert(src.begin()->part == tgt.part);
 
