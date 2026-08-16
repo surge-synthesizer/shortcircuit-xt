@@ -235,6 +235,94 @@ void Voice::voiceStarted()
     zone->addVoice(this);
 }
 
+/*
+ * Everything a generator's block needs once the generator has filled it: the variant's own
+ * normalization, amplitude and pan, then the fold down into the voice's stereo output.
+ *
+ * genBlock is how much the generator wrote, which is twice blockSize whenever this voice
+ * oversamples - whether the group asked for it or the voice reached for it on its own because
+ * the note is pitched up far enough to alias. The group's answer is the OS template argument
+ * on processWithOS; the voice's is useOversampling, and this side of the halfRate decimation
+ * it is the voice's that counts.
+ */
+template <int genBlock>
+void Voice::foldGeneratorIntoOutput(int gidx, int variantIndex, float *loutL, float *loutR)
+{
+    namespace mech = sst::basic_blocks::mechanics;
+
+    const auto &variantData = zone->variantData.variants[variantIndex];
+
+    // generator zero writes the voice output directly; the rest land in scratch and accumulate
+    auto *sl = (gidx == 0 ? output[0] : loutL);
+    auto *sr = (gidx == 0 ? output[1] : loutR);
+
+    if (variantData.normalizationAmplitude != 1.0 || variantData.amplitude != 1.0)
+    {
+        auto normBy = variantData.normalizationAmplitude * variantData.amplitude *
+                      variantData.amplitude * variantData.amplitude;
+        if (monoGenerator[gidx])
+        {
+            mech::scale_by<genBlock>(normBy, sl);
+        }
+        else
+        {
+            mech::scale_by<genBlock>(normBy, sl, sr);
+        }
+    }
+
+    bool panOverridesMono{false};
+    if (variantData.pan > 0.001f || variantData.pan < -0.001f)
+    {
+        namespace pl = sst::basic_blocks::dsp::pan_laws;
+
+        panOverridesMono = true;
+        auto pv = std::clamp(variantData.pan, -1.f, 1.f) * 0.5 + 0.5;
+        pl::panmatrix_t pmat{1, 1, 0, 0};
+
+        if (monoGenerator[gidx])
+        {
+            pl::monoEqualPowerUnityGainAtExtrema(pv, pmat);
+            for (int i = 0; i < genBlock; ++i)
+            {
+                sr[i] = sl[i] * pmat[3];
+                sl[i] = sl[i] * pmat[0];
+            }
+        }
+        else
+        {
+            pl::stereoEqualPower(pv, pmat);
+
+            for (int i = 0; i < genBlock; ++i)
+            {
+                auto il = sl[i];
+                auto ir = sr[i];
+                sl[i] = pmat[0] * il + pmat[2] * ir;
+                sr[i] = pmat[1] * ir + pmat[3] * il;
+            }
+        }
+    }
+
+    if (gidx == 0)
+    {
+        if (monoGenerator[gidx] && !allGeneratorsMono && !panOverridesMono)
+        {
+            mech::copy_from_to<genBlock>(output[0], output[1]);
+        }
+    }
+    else
+    {
+        mech::accumulate_from_to<genBlock>(loutL, output[0]);
+        if (!monoGenerator[gidx] && !panOverridesMono)
+        {
+            mech::accumulate_from_to<genBlock>(loutR, output[1]);
+        }
+        else if (!allGeneratorsMono || panOverridesMono)
+        {
+            mech::accumulate_from_to<genBlock>(loutL, output[1]);
+        }
+    }
+}
+
 bool Voice::process()
 {
     if (forceOversample)
@@ -505,79 +593,12 @@ template <bool OS> bool Voice::processWithOS()
                     isGeneratorRunning[gidx] = !GD[gidx].isFinished;
                     isAnyGeneratorRunning = isAnyGeneratorRunning || isGeneratorRunning[gidx];
 
-                    if (variantData.normalizationAmplitude != 1.0 || variantData.amplitude != 1.0)
-                    {
-                        auto normBy = variantData.normalizationAmplitude * variantData.amplitude *
-                                      variantData.amplitude * variantData.amplitude;
-                        auto *sl = (gidx == 0 ? output[0] : loutput[0]);
-                        auto *sr = (gidx == 0 ? output[1] : loutput[1]);
-                        if (monoGenerator[gidx])
-                        {
-                            mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(normBy, sl);
-                        }
-                        else
-                        {
-                            mech::scale_by<scxt::blockSize << (OS ? 1 : 0)>(normBy, sl, sr);
-                        }
-                    }
-
-                    bool panOverridesMono{false};
-                    if (variantData.pan > 0.001f || variantData.pan < -0.001f)
-                    {
-                        namespace pl = sst::basic_blocks::dsp::pan_laws;
-
-                        panOverridesMono = true;
-                        auto pv = std::clamp(variantData.pan, -1.f, 1.f) * 0.5 + 0.5;
-                        pl::panmatrix_t pmat{1, 1, 0, 0};
-
-                        auto *sl = (gidx == 0 ? output[0] : loutput[0]);
-                        auto *sr = (gidx == 0 ? output[1] : loutput[1]);
-                        if (monoGenerator[gidx])
-                        {
-                            pl::monoEqualPowerUnityGainAtExtrema(pv, pmat);
-                            for (int i = 0; i < blockSize << (OS ? 1 : 0); ++i)
-                            {
-                                sr[i] = sl[i] * pmat[3];
-                                sl[i] = sl[i] * pmat[0];
-                            }
-                        }
-                        else
-                        {
-                            pl::stereoEqualPower(pv, pmat);
-
-                            for (int i = 0; i < blockSize << (forceOversample ? 1 : 0); ++i)
-                            {
-                                auto il = sl[i];
-                                auto ir = sr[i];
-                                sl[i] = pmat[0] * il + pmat[2] * ir;
-                                sr[i] = pmat[1] * ir + pmat[3] * il;
-                            }
-                        }
-                    }
-
-                    if (gidx == 0)
-                    {
-                        if (monoGenerator[gidx] && !allGeneratorsMono && !panOverridesMono)
-                        {
-                            mech::copy_from_to<scxt::blockSize << (OS ? 1 : 0)>(output[0],
-                                                                                output[1]);
-                        }
-                    }
+                    // sized by this voice's rate, not the group's - see the decimation below
+                    if (useOversampling)
+                        foldGeneratorIntoOutput<scxt::blockSize << 1>(gidx, idx, loutput[0],
+                                                                      loutput[1]);
                     else
-                    {
-                        mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
-                                                                                  output[0]);
-                        if (!monoGenerator[gidx] && !panOverridesMono)
-                        {
-                            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[1],
-                                                                                      output[1]);
-                        }
-                        else if (!allGeneratorsMono || panOverridesMono)
-                        {
-                            mech::accumulate_from_to<scxt::blockSize << (OS ? 1 : 0)>(loutput[0],
-                                                                                      output[1]);
-                        }
-                    }
+                        foldGeneratorIntoOutput<scxt::blockSize>(gidx, idx, loutput[0], loutput[1]);
                 }
             }
 
@@ -994,6 +1015,8 @@ void Voice::initializeGenerator()
     numGeneratorsActive = 0;
     allGeneratorsMono = true;
     isAnyGeneratorRunning = false;
+    // the group's answer is the floor; a generator below can only raise it
+    useOversampling = forceOversample;
 
     if (sampleIndex < 0)
     {
@@ -1076,12 +1099,14 @@ void Voice::initializeGenerator()
 
         // TODO: This constant came from SC. Wonder why it is this value. There was a comment
         // comparing with 167777216 so any speedup at all.
-        useOversampling = std::abs(GD[currGen].ratio) > 18000000 || forceOversample;
-        GD[currGen].blockSize = blockSize * (useOversampling ? 2 : 1);
+        auto fastEnoughToAlias = std::abs(GD[currGen].ratio) > 18000000;
 
-        if (!forceOversample && (variantData.interpolationType == dsp::ZeroOrderHold ||
-                                 variantData.interpolationType == dsp::ZOHAA))
-            useOversampling = false;
+        // zero order hold is a deliberate lo-fi effect, so don't antialias it away
+        if (variantData.interpolationType == dsp::ZeroOrderHold ||
+            variantData.interpolationType == dsp::ZOHAA)
+            fastEnoughToAlias = false;
+
+        useOversampling = useOversampling || fastEnoughToAlias;
 
         Generator[currGen] = nullptr;
 
@@ -1107,6 +1132,14 @@ void Voice::initializeGenerator()
 
         currGen++;
     }
+
+    /*
+     * One block length for the whole voice. The generators share an output buffer and a single
+     * decimation at the end of the block, so a stack cannot have one running long and another
+     * short - the decision above is taken across all of them and lands on all of them here.
+     */
+    for (int i = 0; i < numGeneratorsActive; ++i)
+        GD[i].blockSize = blockSize * (useOversampling ? 2 : 1);
 }
 
 float Voice::calculateVoicePitch()

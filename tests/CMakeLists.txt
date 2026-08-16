@@ -35,6 +35,7 @@ add_executable(scxt-test
 		fx_slot_drag_tests.cpp
 		mapping_selection_tests.cpp
 		value_edit_lag_tests.cpp
+		voice_oversampling_tests.cpp
 )
 
 target_compile_definitions(scxt-test PRIVATE
