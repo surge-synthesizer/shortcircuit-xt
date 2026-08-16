@@ -229,6 +229,14 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     template <bool OS> bool processWithOS();
 
     /**
+     * Apply one generator's variant gain and pan and fold it into the voice output.
+     * genBlock is what the generator wrote, which is twice blockSize when this voice
+     * oversamples - which a pitched up voice does whatever its group asked for.
+     */
+    template <int genBlock>
+    void foldGeneratorIntoOutput(int gidx, int variantIndex, float *loutL, float *loutR);
+
+    /**
      * Voice Setup
      */
     void voiceStarted();
