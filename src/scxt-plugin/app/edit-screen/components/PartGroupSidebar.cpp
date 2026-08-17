@@ -541,8 +541,31 @@ struct GroupZoneSidebarBase : juce::Component,
             if (w)
                 w->showPartSelectorMenu();
         });
+        partSelector->setOnJogCallback([w = juce::Component::SafePointer(this)](int dir) {
+            if (w)
+                w->jogSelectedPart(dir);
+        });
         partSelector->setLabel("Part 1");
         addAndMakeVisible(*partSelector);
+    }
+
+    // dir is a list delta, so +1 walks towards Part 16. Only active parts are
+    // offered in the menu, so only active parts are jogged to, and we stop at
+    // the ends rather than wrapping round.
+    void jogSelectedPart(int dir)
+    {
+        if (dir == 0)
+            return;
+
+        auto step = dir > 0 ? 1 : -1;
+        for (auto p = editor->selectedPart + step; p >= 0 && p < scxt::numParts; p += step)
+        {
+            if (editor->partConfigurations[p].active)
+            {
+                sendToSerialization(cmsg::SelectPart(p));
+                return;
+            }
+        }
     }
 
     void showPartSelectorMenu()

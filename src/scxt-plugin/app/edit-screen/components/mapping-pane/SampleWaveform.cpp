@@ -337,6 +337,14 @@ void SampleWaveform::mouseDown(const juce::MouseEvent &e)
         onPopupMenu();
         return;
     }
+
+    // middle drag pans the zoom container, so don't grab a marker under it
+    if (e.mods.isMiddleButtonDown())
+    {
+        mouseState = MouseState::NONE;
+        return;
+    }
+
     auto posi = e.position.roundToInt();
     if (startSampleHZ.contains(posi))
         mouseState = MouseState::HZ_DRAG_SAMPSTART;

@@ -41,6 +41,12 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     if (!display)
         return;
     mouseState = NONE;
+
+    // middle drag pans the zoom container, so stay out of its way. leaving
+    // mouseState at NONE is what makes the subsequent drag inert here.
+    if (e.mods.isMiddleButtonDown())
+        return;
+
     display->mayBeAboutToMutate = true;
 
     if (e.mods.isPopupMenu())
