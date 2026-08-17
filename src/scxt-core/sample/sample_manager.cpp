@@ -151,11 +151,14 @@ std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
     SCLOG_IF(sampleLoadAndPurge, "Loading sample by path '" << p.u8string() << "'");
     assert(threadingChecker.isSerialThread());
 
-    for (const auto &[alreadyId, sm] : samples)
     {
-        if (sm->getPath() == p)
+        auto lk = acquireMapLock();
+        for (const auto &[alreadyId, sm] : samples)
         {
-            return alreadyId;
+            if (sm->getPath() == p)
+            {
+                return alreadyId;
+            }
         }
     }
 
@@ -168,7 +171,7 @@ std::optional<SampleID> SampleManager::loadSampleByPath(const fs::path &p)
         return std::nullopt;
     }
 
-    samples[sp->id] = sp;
+    storeSample(sp);
     SCLOG_IF(sampleLoadAndPurge, "Loading : " << p.u8string());
     SCLOG_IF(sampleLoadAndPurge, "        : " << sp->id.to_string());
 
@@ -447,11 +450,15 @@ std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &
                                                                 const std::string &md5, int idx,
                                                                 void *data, size_t dataSize)
 {
+    if (!data || dataSize == 0)
+        return std::nullopt;
+
     auto sp = std::make_shared<Sample>();
     sp->id.setAsMD5WithAddress(md5, idx, -1, -1);
     sp->id.setPathHash(p);
 
-    sp->parse_riff_wave(data, dataSize);
+    if (!sp->parse_riff_wave(data, dataSize))
+        return std::nullopt;
     sp->type = Sample::MULTISAMPLE_FILE;
     sp->region = idx;
     sp->mFileName = p;
@@ -476,10 +483,23 @@ std::optional<SampleID> SampleManager::loadSampleFromMultiSample(const fs::path 
     sp->id.setAsMD5WithAddress(md5, idx, -1, -1);
     sp->id.setPathHash(p);
 
-    size_t ssize;
+    size_t ssize{0};
     auto data = mz_zip_reader_extract_to_heap(&za->zip_archive, idx, &ssize, 0);
+    if (!data)
+    {
+        raiseError("Sample Load Failed", "Unable to extract entry " + std::to_string(idx) +
+                                             " from multisample " + p.u8string());
+        return std::nullopt;
+    }
 
-    sp->parse_riff_wave(data, ssize);
+    auto parsed = sp->parse_riff_wave(data, ssize);
+    free(data);
+    if (!parsed)
+    {
+        raiseError("Sample Load Failed", "Unable to parse entry " + std::to_string(idx) +
+                                             " of multisample " + p.u8string());
+        return std::nullopt;
+    }
     sp->type = Sample::MULTISAMPLE_FILE;
     sp->region = idx;
     sp->mFileName = p;
