@@ -36,6 +36,7 @@
 #include "sst/plugininfra/version_information.h"
 #include "sst/jucegui/component-adapters/ComponentTags.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/util/WheelCalibration.h"
 #include "sst/clap_juce_shim/menu_helper.h"
 
 #include "app/SCXTEditor.h"
@@ -480,7 +481,7 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
                       w->defaultsProvider.updateUserDefaultValue(
                           infrastructure::DefaultKeys::invertScroll, newScrollBehavior ? 1 : 0);
 
-                      w->editScreen->mappingPane->invertScroll(newScrollBehavior);
+                      sst::jucegui::util::setWheelInverted(newScrollBehavior);
                   }
               });
 

@@ -37,6 +37,7 @@
 
 #include "app/play-screen/PlayScreen.h"
 #include "sst/jucegui/style/StyleSheet.h"
+#include "sst/jucegui/util/WheelCalibration.h"
 
 #include "infrastructure/user_defaults.h"
 
@@ -85,6 +86,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
 
     sst::basic_blocks::params::ParamMetaData::defaultMidiNoteOctaveOffset =
         defaultsProvider.getUserDefaultValue(infrastructure::octave0, 0);
+
+    sst::jucegui::util::setWheelInverted(
+        defaultsProvider.getUserDefaultValue(infrastructure::invertScroll, 0) == 1);
 
     setStyle(sst::jucegui::style::StyleSheet::getBuiltInStyleSheet(
         sst::jucegui::style::StyleSheet::EMPTY));

@@ -70,9 +70,6 @@ struct MacroMappingVariantPane : sst::jucegui::components::NamedPanel, HasEditor
     void addSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos);
     void clearSamplePlaybackPositions();
 
-    void invertScroll(bool invert);
-    bool invertScroll() const;
-
     void showHamburgerMenu();
 };
 } // namespace scxt::ui::app::edit_screen

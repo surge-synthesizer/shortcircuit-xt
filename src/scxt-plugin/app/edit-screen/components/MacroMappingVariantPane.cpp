@@ -182,16 +182,6 @@ void MacroMappingVariantPane::editorSelectionChanged()
     repaint();
 }
 
-void MacroMappingVariantPane::invertScroll(bool invert)
-{
-    SCLOG_IF(debug, "InvertScroll todo");
-    // mappingDisplay->mappingViewport->invertScroll(invert);
-    for (auto &w : sampleDisplay->waveforms)
-    {
-        // w.waveformViewport->invertScroll(invert);
-    }
-}
-
 void MacroMappingVariantPane::addSamplePlaybackPosition(size_t sampleIndex, int64_t samplePos)
 {
     if (sampleDisplay->isVisible() && sampleIndex == sampleDisplay->selectedVariation)
