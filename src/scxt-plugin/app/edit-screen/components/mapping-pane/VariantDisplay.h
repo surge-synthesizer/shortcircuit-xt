@@ -218,6 +218,15 @@ struct VariantDisplay : juce::Component, HasEditor
         for (const auto &[k, l] : labels)
             l->setVisible(b);
 
+        /*
+         * With no sample there is nothing in the waveform to look at, so zooming
+         * it is meaningless. This hides the scrollbars and the magnifier and
+         * stops the wheel and middle drag acting on an empty view.
+         */
+        for (auto &w : waveforms)
+            if (w.waveformViewport)
+                w.waveformViewport->setZoomEnabled(b);
+
         if (active)
             rebuild();
         repaint();
