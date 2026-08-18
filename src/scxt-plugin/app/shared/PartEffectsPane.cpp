@@ -815,6 +815,11 @@ void PartEffectsPane<forBus>::createBindAndPosition(
     if (ctrl.binding.has_value() && ctrl.binding->type == "float")
     {
         auto pidx = ctrl.binding->index;
+        if (pidx < 0 || pidx >= scxt::maxBusEffectParams)
+        {
+            onError("Index " + std::to_string(pidx) + " is out of range on " + ctrl.name);
+            return;
+        }
         auto &data = getPartFXStorage();
         auto &pmd = data.first[pidx];
         auto onGuiChange = [w = juce::Component::SafePointer(this), pidx](auto &a) {
