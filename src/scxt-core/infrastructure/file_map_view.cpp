@@ -67,15 +67,28 @@ struct WinImpl : FileMapView::Impl
 
         hf = CreateFileW(fname.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
                          FILE_FLAG_SEQUENTIAL_SCAN, NULL);
-        if (!hf)
+        if (hf == INVALID_HANDLE_VALUE) // a failed open is INVALID_HANDLE_VALUE, not NULL
+        {
+            hf = nullptr;
             return;
-        dataSize = GetFileSize(hf, NULL);
+        }
+
+        // GetFileSize truncates past 4GB and reports failure in band
+        LARGE_INTEGER fsz;
+        if (!GetFileSizeEx(hf, &fsz) || fsz.QuadPart <= 0)
+        {
+            CloseHandle(hf);
+            hf = nullptr;
+            return;
+        }
+        dataSize = (size_t)fsz.QuadPart;
 
         hmf = CreateFileMappingW(hf, 0, PAGE_READONLY, 0, 0, 0);
         if (!hmf)
         {
             dataSize = 0;
             CloseHandle(hf);
+            hf = nullptr; // or the destructor closes it a second time
             return;
         }
 
@@ -84,6 +97,10 @@ struct WinImpl : FileMapView::Impl
         if (!data)
         {
             dataSize = 0;
+            CloseHandle(hmf);
+            hmf = nullptr;
+            CloseHandle(hf);
+            hf = nullptr;
             return;
         }
         isMapped = true;
@@ -92,9 +109,7 @@ struct WinImpl : FileMapView::Impl
     size_t dataSize = 0;
     bool isMapped = false;
 
-    HANDLE hf = 0, hmf = 0;
-
-    int fd = 0;
+    HANDLE hf = nullptr, hmf = nullptr;
 };
 
 WinImpl *as(FileMapView::Impl *imp) { return reinterpret_cast<WinImpl *>(imp); }
@@ -115,17 +130,28 @@ struct posixImpl : FileMapView::Impl
     {
         struct stat sb;
         fd = open(fname.u8string().c_str(), O_RDONLY);
-        if (!fd)
+        if (fd < 0) // a failed open is -1, not 0
         {
+            fd = -1;
             isMapped = false;
             return;
         }
-        fstat(fd, &sb);
-        data = mmap(nullptr, sb.st_size, PROT_WRITE, MAP_PRIVATE, fd, 0);
+
+        // an unchecked fstat leaves st_size indeterminate, and mmap of nothing fails anyway
+        if (fstat(fd, &sb) != 0 || sb.st_size <= 0)
+        {
+            close(fd);
+            fd = -1;
+            isMapped = false;
+            return;
+        }
+
+        data = mmap(nullptr, sb.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
         if (data == MAP_FAILED)
         {
             isMapped = false;
             close(fd);
+            fd = -1;
             data = nullptr;
             dataSize = 0;
             return;
@@ -137,7 +163,7 @@ struct posixImpl : FileMapView::Impl
     size_t dataSize = 0;
     bool isMapped = false;
 
-    int fd = 0;
+    int fd = -1;
 };
 
 posixImpl *as(FileMapView::Impl *imp) { return reinterpret_cast<posixImpl *>(imp); }
