@@ -56,7 +56,11 @@ struct ScanWorker
 
     ~ScanWorker()
     {
-        keepRunning = false;
+        {
+            // set under the lock or the worker can miss the wakeup and never join
+            std::lock_guard<std::mutex> g(qLock);
+            keepRunning = false;
+        }
         qCV.notify_all();
         qThread.join();
         for (auto *q : pathQLow)
@@ -73,8 +77,8 @@ struct ScanWorker
             EnQAble *p = nullptr;
             {
                 std::unique_lock<std::mutex> g(qLock);
-                if (pathQ.empty() && pathQLow.empty())
-                    qCV.wait(g);
+                qCV.wait(g,
+                         [this]() { return !keepRunning || !pathQ.empty() || !pathQLow.empty(); });
                 if (keepRunning)
                 {
                     if (!pathQ.empty())

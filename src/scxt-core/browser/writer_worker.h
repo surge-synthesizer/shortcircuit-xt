@@ -300,23 +300,26 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         haveOpenedForWriteOnce = true;
         qThread = std::thread([this]() { this->loadQueueFunction(); });
 
-        {
-            std::lock_guard<std::mutex> g(qLock);
-            pathQ.push_back(new EnQSetup());
-        }
+        std::unique_lock<std::mutex> lk(qLock);
+        pathQ.push_back(new EnQSetup());
         qCV.notify_all();
-        while (!waiting)
-        {
-        }
+        waitingCV.wait(lk, [this]() { return waiting.load(); });
     }
 
     ~WriterWorker()
     {
         if (haveOpenedForWriteOnce)
         {
-            keepRunning = false;
+            {
+                // set under the lock or the worker can miss the wakeup and never join
+                std::lock_guard<std::mutex> g(qLock);
+                keepRunning = false;
+            }
             qCV.notify_all();
             qThread.join();
+            for (auto *q : pathQ)
+                delete q;
+            pathQ.clear();
             // clean up all the prepared statements
             if (dbh)
                 sqlite3_close(dbh);
@@ -354,6 +357,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
                     if (dbh)
                         closeDb();
                     waiting = true;
+                    waitingCV.notify_all();
                     qCV.wait(lk);
                     waiting = false;
                 }
@@ -540,6 +544,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
     std::thread qThread;
     std::mutex qLock;
     std::condition_variable qCV;
+    std::condition_variable waitingCV; // worker announces it has gone idle
     std::deque<EnQAble *> pathQ;
     std::atomic<bool> keepRunning{true};
 
