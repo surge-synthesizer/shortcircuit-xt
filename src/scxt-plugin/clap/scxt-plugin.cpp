@@ -27,6 +27,7 @@
 
 #include <cassert>
 #include <chrono>
+#include <cstring>
 
 #include "sst/basic-blocks/modulators/Transport.h"
 
@@ -40,6 +41,15 @@
 
 namespace scxt::clap_first::scxt_plugin
 {
+// strncpy leaves the destination unterminated whenever the source doesn't fit
+static void copyToFixedBuffer(char *dest, size_t sz, const char *src)
+{
+    if (sz == 0)
+        return;
+    strncpy(dest, src, sz - 1);
+    dest[sz - 1] = 0;
+}
+
 const clap_plugin_descriptor *getDescription()
 {
     static const char *features[] = {CLAP_PLUGIN_FEATURE_INSTRUMENT, CLAP_PLUGIN_FEATURE_SAMPLER,
@@ -135,7 +145,7 @@ bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
         while (s > 0)
         {
             auto r = ostream->write(ostream, c, s);
-            if (r < 0)
+            if (r <= 0) // a host which keeps returning 0 would spin here forever
                 return false;
             s -= r;
             c += r;
@@ -211,7 +221,7 @@ bool SCXTPlugin::audioPortsInfo(uint32_t index, bool isInput,
     {
         info->id = 0;
         info->in_place_pair = CLAP_INVALID_ID;
-        strncpy(info->name, "Main Out", sizeof(info->name));
+        copyToFixedBuffer(info->name, sizeof(info->name), "Main Out");
         info->flags = CLAP_AUDIO_PORT_IS_MAIN;
         info->channel_count = 2;
         info->port_type = CLAP_PORT_STEREO;
@@ -250,7 +260,7 @@ bool SCXTPlugin::notePortsInfo(uint32_t index, bool isInput,
         info->supported_dialects =
             CLAP_NOTE_DIALECT_MIDI | CLAP_NOTE_DIALECT_MIDI_MPE | CLAP_NOTE_DIALECT_CLAP;
         info->preferred_dialect = CLAP_NOTE_DIALECT_CLAP;
-        strncpy(info->name, "Note Input", CLAP_NAME_SIZE - 1);
+        copyToFixedBuffer(info->name, sizeof(info->name), "Note Input");
         return true;
     }
     else
@@ -514,9 +524,10 @@ bool SCXTPlugin::paramsInfo(uint32_t paramIndex, clap_param_info *info) const no
         info->flags = CLAP_PARAM_IS_AUTOMATABLE;
         info->cookie = nullptr; // super easy to reverse engineer
         const auto &macro = engine->getPatch()->getPart(part)->macros[index];
-        strncpy(info->name, macro.pluginParameterNameFor(part, index).c_str(), CLAP_NAME_SIZE);
+        copyToFixedBuffer(info->name, sizeof(info->name),
+                          macro.pluginParameterNameFor(part, index).c_str());
         std::string moduleName = "Part " + std::to_string(part + 1) + " / Macros";
-        strncpy(info->module, moduleName.c_str(), CLAP_NAME_SIZE);
+        copyToFixedBuffer(info->module, sizeof(info->module), moduleName.c_str());
         info->min_value = 0;
         info->max_value = 1;
         info->default_value = (macro.isBipolar() ? 0.5 : 0);
@@ -554,7 +565,7 @@ bool SCXTPlugin::paramsValueToText(clap_id paramId, double value, char *display,
     {
         auto fs = macroFor(paramId).value01ToString(value);
 
-        strncpy(display, fs.c_str(), size);
+        copyToFixedBuffer(display, size, fs.c_str());
         return true;
     }
     return false;
