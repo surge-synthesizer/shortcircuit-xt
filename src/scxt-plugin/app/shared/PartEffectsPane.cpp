@@ -30,6 +30,7 @@
 #include "messaging/client/mixer_messages.h"
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/edit-screen/components/PartEditScreen.h"
+#include "app/shared/UIHelpers.h"
 
 #include "connectors/JsonLayoutEngineSupport.h"
 
@@ -636,11 +637,12 @@ template <bool forBus> void PartEffectsPane<forBus>::savePreset()
             {
                 return;
             }
+            auto f = guaranteeExtension(result[0], "*.busfx");
             auto ppa = PresetProviderAdapter<forBus>(*w);
             auto psv = sst::effects::presets::toPreset(ppa);
             if (!psv.empty())
             {
-                if (!result[0].replaceWithText(psv))
+                if (!f.replaceWithText(psv))
                 {
                     w->editor->displayError("File Save", "Unable to save file");
                 }

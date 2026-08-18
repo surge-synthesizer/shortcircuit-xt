@@ -37,6 +37,7 @@ add_executable(scxt-test
 		value_edit_lag_tests.cpp
 		voice_oversampling_tests.cpp
 		file_map_view_tests.cpp
+		extension_guarantee_tests.cpp
 )
 
 target_compile_definitions(scxt-test PRIVATE

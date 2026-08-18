@@ -420,11 +420,12 @@ void ProcessorPane::savePreset()
             {
                 return;
             }
+            auto f = shared::guaranteeExtension(result[0], "*.vcfx");
             auto ppa = PresetProviderAdapter(*w);
             auto psv = sst::voice_effects::presets::toPreset(ppa);
             if (!psv.empty())
             {
-                if (!result[0].replaceWithText(psv))
+                if (!f.replaceWithText(psv))
                 {
                     w->editor->displayError("File Save", "Unable to save file");
                 }

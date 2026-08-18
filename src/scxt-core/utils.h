@@ -416,6 +416,41 @@ inline bool extensionMatches(const fs::path &p, const std::string &s)
     return extensionStringMatches(pes, s);
 }
 
+/*
+ * Native save dialogs don't all append the filter's extension to the name the
+ * user typed - the GTK one on linux hands back "FooBaz" verbatim - which
+ * leaves a patch the browser will never match again. So force it on at every
+ * save-as and export site.
+ *
+ * This appends rather than replacing. The two only differ once the typed name
+ * contains a dot, and there replace_extension discards everything after the
+ * last one: a user saving "Bass 3.2" gets "Bass 3.scm" and loses half the name
+ * they typed. Appending gives "Bass 3.2.scm" and can never destroy input.
+ *
+ * `ext` takes "scm", ".scm" or a file chooser's own "*.scm" filter, so a call
+ * site can hand over the exact string it built the chooser with and the two
+ * can't drift apart. A single extension only, not a ";" pattern list.
+ */
+inline fs::path guaranteeExtension(const fs::path &p, const std::string &ext)
+{
+    auto dotted = ext;
+    if (!dotted.empty() && dotted.front() == '*')
+        dotted = dotted.substr(1);
+    if (!dotted.empty() && dotted.front() != '.')
+        dotted = "." + dotted;
+
+    // Nothing to guarantee, or nothing to guarantee it onto
+    if (dotted.size() < 2 || p.empty() || p.filename().empty())
+        return p;
+
+    if (extensionMatches(p, dotted))
+        return p;
+
+    auto res = p;
+    res += dotted;
+    return res;
+}
+
 inline std::string humanReadableVersion(uint64_t v)
 {
     return fmt::format("{:04x}-{:02x}-{:02x}", (v >> 16) & 0xFFFF, (v >> 8) & 0xFF, v & 0xFF);
