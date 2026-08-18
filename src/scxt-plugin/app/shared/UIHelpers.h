@@ -34,6 +34,7 @@
 #include <sstream>
 #include <string>
 #include "filesystem/import.h"
+#include "utils.h"
 
 namespace scxt::ui::app::shared
 {
@@ -70,6 +71,12 @@ inline juce::File fsPathToJuceFile(const fs::path &p)
 #else
     return juce::File(p.u8string());
 #endif
+}
+
+// Force the save-as extension on, see scxt::guaranteeExtension
+inline juce::File guaranteeExtension(const juce::File &f, const std::string &ext)
+{
+    return fsPathToJuceFile(scxt::guaranteeExtension(juceFileToFSPath(f), ext));
 }
 
 // Slurp a text file, or nullopt if it won't open

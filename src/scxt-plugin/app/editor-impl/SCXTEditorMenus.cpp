@@ -699,8 +699,9 @@ void SCXTEditor::promptForSaveTheme()
             auto result = c.getResults();
             if (result.isEmpty() || result.size() > 1)
                 return;
+            auto f = shared::guaranteeExtension(result[0], "*.sctheme");
             auto &cm = w->themeApplier.currentColorMap();
-            result[0].replaceWithText(cm.toJson());
+            f.replaceWithText(cm.toJson());
             // Save promotes the current (likely custom) map to a file-backed
             // one: tag the id, persist the path, and drop the edited DES so a
             // subsequent reload picks up the saved file as the baseline. Any
@@ -713,7 +714,7 @@ void SCXTEditor::promptForSaveTheme()
                                                        theme::ColorMap::FILE_COLORMAP_ID);
             w->defaultsProvider.updateUserDefaultValue(
                 infrastructure::DefaultKeys::colormapPathIfFile,
-                shared::juceFileToFSPath(result[0]).u8string());
+                shared::juceFileToFSPath(f).u8string());
             w->sendToSerialization(cmsg::StoreColormap{std::string{}});
         });
 }

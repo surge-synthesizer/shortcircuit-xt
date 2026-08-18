@@ -49,6 +49,7 @@
 #include "modulation/modulators/steplfo.h"
 #include "app/edit-screen/EditScreen.h"
 #include "app/shared/MenuValueTypein.h"
+#include "app/shared/UIHelpers.h"
 #include "sst/jucegui/components/TextPushButton.h"
 
 #include <tao/json/to_string.hpp>
@@ -2025,7 +2026,7 @@ void LfoPane::doSavePreset()
                                  {
                                      return;
                                  }
-                                 auto f = result.getFirst();
+                                 auto f = shared::guaranteeExtension(result.getFirst(), "*.scmod");
                                  if (f.existsAsFile() || f.create())
                                  {
                                      auto s = w->streamToJSON();

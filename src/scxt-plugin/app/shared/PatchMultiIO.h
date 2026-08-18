@@ -60,6 +60,13 @@ template <typename T> void rememberSaveDirectory(T *that, const juce::File &resu
                                                          juceFileToFSPath(dir));
 }
 
+inline std::string multiExtension() { return "*.scm"; }
+
+inline std::string partExtension(patch_io::SaveStyles style)
+{
+    return style == patch_io::SaveStyles::AS_SFZ ? "*.sfz" : "*.scp";
+}
+
 template <typename T>
 void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
                  patch_io::SaveStyles style)
@@ -69,7 +76,6 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
     auto flags = juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
                  juce::FileBrowserComponent::warnAboutOverwriting;
 
-    std::string ext = "*.scm";
     std::string title = "Save Multi";
     if (style == patch_io::SaveStyles::AS_SFZ)
     {
@@ -81,7 +87,8 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
         flags = juce::FileBrowserComponent::canSelectDirectories;
         title = "Collect Samples";
     }
-    fileChooser = std::make_unique<juce::FileChooser>(title, lastSaveDirectory(that), "*.scm");
+    fileChooser =
+        std::make_unique<juce::FileChooser>(title, lastSaveDirectory(that), multiExtension());
     fileChooser->launchAsync(
         flags, [style, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
             if (!w)
@@ -94,6 +101,9 @@ void doSaveMulti(T *that, std::unique_ptr<juce::FileChooser> &fileChooser,
             rememberSaveDirectory(w.getComponent(), result[0]);
             // send a 'save multi' message
             auto fsp = juceFileToFSPath(result[0]);
+            // ONLY_COLLECT picks a directory, every other style names a file
+            if (style != patch_io::SaveStyles::ONLY_COLLECT)
+                fsp = scxt::guaranteeExtension(fsp, multiExtension());
             w->sendToSerialization(cmsg::SaveMulti({fsp.u8string(), (int)style}));
         });
 }
@@ -127,11 +137,9 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
 
     auto flags = juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::saveMode |
                  juce::FileBrowserComponent::warnAboutOverwriting;
-    std::string ext = "*.scp";
     std::string title = "Save Part";
     if (style == patch_io::SaveStyles::AS_SFZ)
     {
-        ext = "*.sfz";
         title = "Export to SFZ";
     }
     if (style == patch_io::SaveStyles::ONLY_COLLECT)
@@ -140,7 +148,8 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
         title = "Collect Samples";
     }
 
-    fileChooser = std::make_unique<juce::FileChooser>(title, lastSaveDirectory(that), ext);
+    fileChooser =
+        std::make_unique<juce::FileChooser>(title, lastSaveDirectory(that), partExtension(style));
     fileChooser->launchAsync(
         flags, [style, part, w = juce::Component::SafePointer(that)](const juce::FileChooser &c) {
             if (!w)
@@ -153,6 +162,9 @@ void doSavePart(T *that, std::unique_ptr<juce::FileChooser> &fileChooser, int pa
             rememberSaveDirectory(w.getComponent(), result[0]);
             // send a 'save multi' message
             auto fsp = juceFileToFSPath(result[0]);
+            // ONLY_COLLECT picks a directory, every other style names a file
+            if (style != patch_io::SaveStyles::ONLY_COLLECT)
+                fsp = scxt::guaranteeExtension(fsp, partExtension(style));
             w->sendToSerialization(cmsg::SavePart({fsp.u8string(), part, (int)style}));
         });
 }
