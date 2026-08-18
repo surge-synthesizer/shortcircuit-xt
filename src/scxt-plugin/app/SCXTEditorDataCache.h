@@ -70,8 +70,9 @@ struct SCXTEditorDataCache
     void addNotificationCallback(void *el, std::function<void()>);
     template <typename P> void fireAllNotificationsFor(const P &p)
     {
-        auto st = &p;
-        auto end = &p + sizeof(P);
+        // byte arithmetic: &p + sizeof(P) would advance sizeof(P) elements
+        auto st = (const uint8_t *)&p;
+        auto end = st + sizeof(P);
         fireAllNotificationsBetween((void *)st, (void *)end);
     }
 

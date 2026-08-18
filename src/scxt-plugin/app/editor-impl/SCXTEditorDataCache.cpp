@@ -113,7 +113,7 @@ void SCXTEditorDataCache::fireAllNotificationsBetween(void *st, void *end)
 {
     for (auto &[da, ds] : fsubs)
     {
-        if (da >= st && da <= end)
+        if (da >= st && da < end)
         {
             for (auto &d : ds)
             {
@@ -124,7 +124,7 @@ void SCXTEditorDataCache::fireAllNotificationsBetween(void *st, void *end)
 
     for (auto &[da, ds] : dsubs)
     {
-        if (da >= st && da <= end)
+        if (da >= st && da < end)
         {
             auto dsp = dsizes.find(da);
             size_t size{4};
@@ -164,7 +164,7 @@ void SCXTEditorDataCache::fireAllNotificationsBetween(void *st, void *end)
 
     for (auto &[da, ds] : csubs)
     {
-        if (da >= st && da <= end)
+        if (da >= st && da < end)
         {
             for (auto &d : ds)
             {

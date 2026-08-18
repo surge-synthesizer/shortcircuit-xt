@@ -505,7 +505,8 @@ template <typename W, typename A> inline void HasEditor::setupIntWidget(W *w, co
 template <typename P, typename A> void HasEditor::addSubscription(const P &p, A &a)
 {
     auto *dc = &editor->editorDataCache;
-    auto dce = dc + sizeof(SCXTEditorDataCache);
+    // byte arithmetic: dc + sizeof(...) would advance sizeof(...) elements
+    auto dce = (const uint8_t *)dc + sizeof(SCXTEditorDataCache);
     if ((size_t)&p >= (size_t)dc && (size_t)&p < (size_t)dce)
     {
         auto *edCopy = editor;
