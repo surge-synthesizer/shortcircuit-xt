@@ -122,7 +122,7 @@ struct Statement
         if (!s)
             throw Exception(-1, "Statement not initialized in bind");
 
-        auto rc = sqlite3_bind_text(s, c, val.c_str(), val.length(), SQLITE_STATIC);
+        auto rc = sqlite3_bind_text(s, c, val.c_str(), val.length(), SQLITE_TRANSIENT);
         if (rc != SQLITE_OK)
             throw Exception(h);
     }
