@@ -67,11 +67,30 @@ struct Patch : MoveableOnly<Patch>, SampleRateSupport
             }
             reconfigureSolo();
             reconfigureOutputBusses();
+
+            // resetBus leaves the audio buffers alone, so establish the zero
+            // which busUsed being false everywhere now claims
+            clearAll();
         }
 
+        /*
+         * Per block. Patch::process skips the part busses which are not used, so
+         * they are still zero from the last clearAll and need no clearing here.
+         * The aux busses run every block whatever busUsed says, and the main bus
+         * is always accumulated onto, so both always clear.
+         */
         inline void clear()
         {
-            // TODO - be more parsimonious - only clear things in use
+            mainBus.clear();
+            for (auto &b : partBusses)
+                if (busUsed[b.address])
+                    b.clear();
+            for (auto &b : auxBusses)
+                b.clear();
+        }
+
+        inline void clearAll()
+        {
             mainBus.clear();
             for (auto &b : partBusses)
                 b.clear();
