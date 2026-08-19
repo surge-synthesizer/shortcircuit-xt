@@ -415,8 +415,6 @@ struct MessageController : MoveableOnly<MessageController>
     std::mutex clientToSerializationMutex;
     std::condition_variable clientToSerializationConditionVar;
 
-    int serializationToClientCallback;
-
     std::atomic<int> clientCount{0};
     std::atomic<bool> shouldRun{false};
 

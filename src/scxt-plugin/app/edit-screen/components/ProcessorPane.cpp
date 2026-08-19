@@ -1207,6 +1207,7 @@ void ProcessorPane::createBindAndPosition(const sst::jucegui::layouts::json_docu
 
         if (deactivateAttachments[idx])
         {
+            // deliberate: the deactivate toggle wins over enabledIf
             en = deactivateAttachments[idx]->getValue();
             auto pt = std::make_unique<jcmp::ToggleButton>();
             pt->setDrawMode(jcmp::ToggleButton::DrawMode::DUAL_GLYPH);
