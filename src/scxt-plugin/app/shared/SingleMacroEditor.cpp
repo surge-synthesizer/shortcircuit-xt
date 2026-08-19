@@ -242,8 +242,11 @@ SingleMacroEditor::~SingleMacroEditor() {}
 void SingleMacroEditor::changePart(int p, int i)
 {
     valueAttachment->part = p;
+    valueAttachment->index = i;
     toggleAttachment->part = p;
+    toggleAttachment->index = i;
     part = p;
+    index = i;
     sst::jucegui::component_adapters::setClapParamId(knob.get(),
                                                      engine::Macro::partIndexToMacroID(p, i));
     sst::jucegui::component_adapters::setClapParamId(toggleButton.get(),
