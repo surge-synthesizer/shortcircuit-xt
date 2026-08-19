@@ -467,7 +467,8 @@ void SCXTEditorReceiver::onMacroFullState(const scxt::messaging::client::macroFu
     {
         editor.editScreen->macroDataChanged(part, index);
     }
-    editor.playScreen->macroDataChanged(part, index);
+    if (editor.playScreen)
+        editor.playScreen->macroDataChanged(part, index);
 }
 
 void SCXTEditorReceiver::onMacroValue(const scxt::messaging::client::macroValue_t &s)
@@ -479,11 +480,16 @@ void SCXTEditorReceiver::onMacroValue(const scxt::messaging::client::macroValue_
     {
         editor.editScreen->macroDataChanged(part, index);
     }
-    editor.playScreen->macroDataChanged(part, index);
+    if (editor.playScreen)
+        editor.playScreen->macroDataChanged(part, index);
 
-    editor.editScreen->mappingPane->repaint();
-    editor.editScreen->partSidebar->repaint();
-    editor.playScreen->repaint();
+    if (editor.editScreen)
+    {
+        editor.editScreen->mappingPane->repaint();
+        editor.editScreen->partSidebar->repaint();
+    }
+    if (editor.playScreen)
+        editor.playScreen->repaint();
 }
 
 void SCXTEditorReceiver::onOtherTabSelection(
@@ -555,9 +561,12 @@ void SCXTEditorReceiver::onPartConfiguration(
     assert(pt >= 0 && pt < scxt::numParts);
     editor.partConfigurations[pt] = c;
     // When I have active show/hide i will need to rewrite this i bet
-    if (editor.playScreen && editor.playScreen->partSidebars[pt])
-        editor.playScreen->partSidebars[pt]->resetFromEditorCache();
-    editor.playScreen->partConfigurationChanged();
+    if (editor.playScreen)
+    {
+        if (editor.playScreen->partSidebars[pt])
+            editor.playScreen->partSidebars[pt]->resetFromEditorCache();
+        editor.playScreen->partConfigurationChanged();
+    }
 
     if (editor.editScreen && editor.editScreen->partSidebar)
         editor.editScreen->partSidebar->partConfigurationChanged(pt);
