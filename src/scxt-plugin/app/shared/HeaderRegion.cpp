@@ -351,7 +351,7 @@ void HeaderRegion::setCPULevel(float lev)
     {
         if (cpuLevValue != 0)
         {
-            cpuLevValue = lev;
+            cpuLevValue = 0;
             cpuLevel->setText(fmt::format("{:.0f} %", 0.0));
         }
         return;
