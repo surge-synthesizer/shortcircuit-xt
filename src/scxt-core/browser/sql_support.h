@@ -36,37 +36,23 @@ namespace scxt::browser::SQL
 
 struct Exception : public std::runtime_error
 {
-    explicit Exception(sqlite3 *h) : std::runtime_error(sqlite3_errmsg(h)), rc(sqlite3_errcode(h))
-    {
-        // printStackTrace();
-    }
-    Exception(int rc, const std::string &msg) : std::runtime_error(msg), rc(rc)
-    {
-        // printStackTrace();
-    }
-    const char *what() const noexcept override
-    {
-        static char msg[1024];
-        snprintf(msg, 1024, "SQL Error[%d]: %s", rc, std::runtime_error::what());
-        return msg;
-    }
+    explicit Exception(sqlite3 *h) : Exception(sqlite3_errcode(h), sqlite3_errmsg(h)) {}
+    Exception(int rc, const std::string &msg) : Exception("SQL Error", rc, msg) {}
     int rc;
+
+  protected:
+    // the message is composed here so what() is the stable one runtime_error owns
+    Exception(const char *tag, int rc, const std::string &msg)
+        : std::runtime_error(std::string(tag) + "[" + std::to_string(rc) + "]: " + msg), rc(rc)
+    {
+        // printStackTrace();
+    }
 };
 
 struct LockedException : public Exception
 {
-    explicit LockedException(sqlite3 *h) : Exception(h)
-    {
-        // Surge::Debug::stackTraceToStdout();
-    }
-    LockedException(int rc, const std::string &msg) : Exception(rc, msg) {}
-    const char *what() const noexcept override
-    {
-        static char msg[1024];
-        snprintf(msg, 1024, "SQL Locked Error[%d]: %s", rc, std::runtime_error::what());
-        return msg;
-    }
-    int rc;
+    explicit LockedException(sqlite3 *h) : LockedException(sqlite3_errcode(h), sqlite3_errmsg(h)) {}
+    LockedException(int rc, const std::string &msg) : Exception("SQL Locked Error", rc, msg) {}
 };
 
 inline void Exec(sqlite3 *h, const std::string &statement)
@@ -86,30 +72,37 @@ inline void Exec(sqlite3 *h, const std::string &statement)
  */
 struct Statement
 {
-    bool prepared{false};
-    std::string statementCopy;
-    Statement(sqlite3 *h, const std::string &statement) : h(h), statementCopy(statement)
+    Statement(sqlite3 *h, const std::string &statement) : h(h)
     {
         auto rc = sqlite3_prepare_v2(h, statement.c_str(), -1, &s, nullptr);
         if (rc != SQLITE_OK)
             throw Exception(rc, "Unable to prepare statement [" + statement + "]");
-        prepared = true;
     }
-    ~Statement()
-    {
-        if (prepared)
-        {
-            std::cout << "ERROR: Prepared Statement never Finalized \n"
-                      << statementCopy << "\n"
-                      << std::endl;
-        }
-    }
-    void finalize()
+    ~Statement() { abandon(); }
+
+    Statement(const Statement &) = delete; // makes non-copyable
+    Statement &operator=(const Statement &) = delete;
+
+    /*
+     * sqlite3_finalize frees the statement whatever it returns; a non-OK code is
+     * just the last step() error resurfacing. So the unwind path can drop it, which
+     * lets the destructor reclaim statements abandoned by an in-flight exception.
+     */
+    void abandon() noexcept
     {
         if (s)
-            if (sqlite3_finalize(s) != SQLITE_OK)
-                throw Exception(h);
-        prepared = false;
+            sqlite3_finalize(s);
+        s = nullptr;
+    }
+
+    void finalize()
+    {
+        if (!s)
+            return;
+        auto rc = sqlite3_finalize(s);
+        s = nullptr;
+        if (rc != SQLITE_OK)
+            throw Exception(h);
     }
 
     int col_int(int c) const { return sqlite3_column_int(s, c); }
@@ -118,7 +111,11 @@ struct Statement
     {
         return reinterpret_cast<const char *>(sqlite3_column_text(s, c));
     }
-    std::string col_str(int c) const { return col_charstar(c); }
+    std::string col_str(int c) const
+    {
+        auto r = col_charstar(c);
+        return r ? r : "";
+    }
 
     void bind(int c, const std::string &val)
     {
