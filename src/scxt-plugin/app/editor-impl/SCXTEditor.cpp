@@ -293,14 +293,10 @@ void SCXTEditor::idle()
         }
     }
 
-    /*
-     * This basically doesn't work.
-     */
     if (editScreen->isVisible() && editScreen->mappingPane->sampleDisplay->isVisible())
     {
         if (currentLeadZoneSelection.has_value())
         {
-            bool anyActive{false};
             editScreen->clearSamplePlaybackPositions();
             for (const auto &v : sharedUiMemoryState.voiceDisplayItems)
             {
@@ -308,7 +304,6 @@ void SCXTEditor::idle()
                     v.part == currentLeadZoneSelection->part &&
                     v.zone == currentLeadZoneSelection->zone)
                 {
-                    anyActive = true;
                     editScreen->addSamplePlaybackPosition(v.sample, v.samplePos);
                 }
             }
