@@ -35,11 +35,7 @@ void Patch::process(Engine &e)
     namespace mech = sst::basic_blocks::mechanics;
 
     // Clear the busses
-    busses.mainBus.clear();
-    for (auto &b : busses.partBusses)
-        b.clear();
-    for (auto &b : busses.auxBusses)
-        b.clear();
+    busses.clear();
 
     // Run each of the parts, accumulating onto the engine busses
     for (const auto &part : parts)
