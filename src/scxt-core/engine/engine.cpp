@@ -373,13 +373,14 @@ bool Engine::processAudio()
 
     drainSerialToEngineQueue();
 
-    getPatch()->busses.clear();
-
     if (stopEngineRequests > 0)
     {
+        // the host still reads the busses, so hand it silence
+        getPatch()->busses.clear();
         return true;
     }
 
+    // process clears the busses it is about to accumulate onto
     getPatch()->process(*this);
 
     if (previewVoice->isActive)
