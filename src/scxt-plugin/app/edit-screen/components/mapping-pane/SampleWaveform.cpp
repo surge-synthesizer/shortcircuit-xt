@@ -358,9 +358,15 @@ void SampleWaveform::mouseDown(const juce::MouseEvent &e)
     else
         mouseState = MouseState::NONE;
 
+    dragGrabOffsetPx = 0.f;
+
     // one undo entry for the whole drag, not one per mouse move
     if (mouseState != MouseState::NONE)
+    {
+        if (auto *f = draggedPoint())
+            dragGrabOffsetPx = e.position.x - xPixelForSample(*f);
         display->beginVariantGesture();
+    }
 
     // TODO cursor change and so on
 }
@@ -389,7 +395,7 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
     if (mouseState == MouseState::NONE)
         return;
 
-    auto xpos = e.position.x;
+    auto xpos = e.position.x - dragGrabOffsetPx;
     auto samplePos = sampleForXPixel(xpos);
     int sliceDistance{getWidth() * 2};
     for (const auto &[pix, smp] : slicePixelAndSamplePositions)

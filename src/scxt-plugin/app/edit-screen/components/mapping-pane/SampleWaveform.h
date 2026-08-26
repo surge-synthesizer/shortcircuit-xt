@@ -72,6 +72,9 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
         HZ_DRAG_LOOPEND,
     } mouseState{MouseState::NONE};
 
+    // where in the grab box the mouse landed, so the marker doesn't jump to the cursor
+    float dragGrabOffsetPx{0.f};
+
     // the sample point the in-flight drag is editing, or nullptr when not dragging
     int64_t *draggedPoint();
 
