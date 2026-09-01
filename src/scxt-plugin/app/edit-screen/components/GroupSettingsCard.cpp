@@ -344,7 +344,7 @@ void GroupSettingsCard::showMidiChannelMenu()
     {
         std::string nm{"PART"};
         if (i >= 0)
-            nm = "Ch. " + std::to_string(i + 1);
+            nm = "Channel " + std::to_string(i + 1);
         p.addItem(nm, true, info.midiChannel == i, [i, w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;

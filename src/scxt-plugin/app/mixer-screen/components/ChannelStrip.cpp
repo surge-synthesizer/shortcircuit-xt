@@ -153,7 +153,7 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
     };
 
     centeredHeader = true;
-    std::string nm = "PART " + std::to_string(bi);
+    std::string nm = "BUS " + std::to_string(bi);
     if (t == BusType::MAIN)
         nm = "MAIN";
     if (t == BusType::AUX)
@@ -180,7 +180,7 @@ ChannelStrip::ChannelStrip(SCXTEditor *e, MixerScreen *m, int bi, BusType t)
         {
             fxmb = std::make_unique<DraggableMenuButton>();
             fxmb->mixer = mixer;
-            fxmb->setLabel("-");
+            fxmb->setLabel("");
             fxmb->setOnCallback([idx, w = juce::Component::SafePointer(this)]() {
                 shared::PartEffectsPane<true>::showFXSelectionMenu(w->mixer, w->busIndex, idx);
             });

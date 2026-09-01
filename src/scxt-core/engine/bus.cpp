@@ -71,13 +71,13 @@ std::string getBusAddressLabel(BusAddress rt, const std::string &defaultName, bo
     else if (rt < scxt::engine::BusAddress::AUX_0)
     {
         if (shortName)
-            return "PT" + std::to_string(rt - scxt::engine::BusAddress::PART_0 + 1);
-        return "Part " + std::to_string(rt - scxt::engine::BusAddress::PART_0 + 1);
+            return "BUS " + std::to_string(rt - scxt::engine::BusAddress::PART_0 + 1);
+        return "Bus " + std::to_string(rt - scxt::engine::BusAddress::PART_0 + 1);
     }
     else
     {
         if (shortName)
-            return "AX" + std::to_string(rt - scxt::engine::BusAddress::AUX_0 + 1);
+            return "AUX" + std::to_string(rt - scxt::engine::BusAddress::AUX_0 + 1);
         return "Aux " + std::to_string(rt - scxt::engine::BusAddress::AUX_0 + 1);
     }
 }

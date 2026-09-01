@@ -33,7 +33,7 @@ namespace scxt::ui::app::mixer_screen
 {
 
 BusPane::BusPane(SCXTEditor *e, MixerScreen *m)
-    : HasEditor(e), mixer(m), sst::jucegui::components::NamedPanel("BUSSES")
+    : HasEditor(e), mixer(m), sst::jucegui::components::NamedPanel("OUTPUTS")
 {
     partBusViewport = std::make_unique<sst::jucegui::components::Viewport>();
     partBusContainer = std::make_unique<juce::Component>();

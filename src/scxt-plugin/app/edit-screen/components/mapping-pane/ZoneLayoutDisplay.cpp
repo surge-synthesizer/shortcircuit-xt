@@ -1284,11 +1284,11 @@ void ZoneLayoutDisplay::updateTooltipContents(bool andShow, const juce::Point<in
     // TODO: Format these as midi notes not note numbers
     keyRow.leftAlignText = std::to_string(cacheLastZone->kr.keyStart);
     keyRow.rightAlignText = std::to_string(cacheLastZone->kr.keyEnd);
-    keyRow.centerAlignText = "key";
+    keyRow.centerAlignText = "Key";
 
     velRow.leftAlignText = std::to_string(cacheLastZone->vr.velStart);
     velRow.rightAlignText = std::to_string(cacheLastZone->vr.velEnd);
-    velRow.centerAlignText = "vel";
+    velRow.centerAlignText = "Vel";
 
     editor->setTooltipContents(cacheLastZone->name, {keyRow, velRow});
 }

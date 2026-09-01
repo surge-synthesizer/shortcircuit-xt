@@ -340,7 +340,7 @@ void PartSidebarCard::showMidiModeMenu()
     p.addSeparator();
     for (int i = 0; i < 16; ++i)
     {
-        p.addItem("Ch. " + std::to_string(i + 1), true, ch == i, makeMenuCallback(i));
+        p.addItem("Channel " + std::to_string(i + 1), true, ch == i, makeMenuCallback(i));
     }
     p.showMenuAsync(editor->defaultPopupMenuOptions(midiMode.get()));
 }

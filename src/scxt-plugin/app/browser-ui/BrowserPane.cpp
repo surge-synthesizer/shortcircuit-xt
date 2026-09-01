@@ -1244,11 +1244,11 @@ void BrowserPane::setIndexWorkload(std::pair<int32_t, int32_t> v)
 
     if (fJobs == 0 && dbJobs == 0)
     {
-        setName("Browser");
+        setName("BROWSER");
     }
     else
     {
-        setName("Browser (" + std::to_string(fJobs) + "; " + std::to_string(dbJobs) + ")");
+        setName("BROWSER (" + std::to_string(fJobs) + "; " + std::to_string(dbJobs) + ")");
     }
     repaint();
 }

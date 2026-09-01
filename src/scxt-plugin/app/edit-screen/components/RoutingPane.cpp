@@ -286,7 +286,7 @@ struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::
 
         auto nb = rside.withHeight(22);
         velocitySensitivityLabel->setBounds(nb.withWidth(22));
-        velocitySensitivityLabel->setText("vel");
+        velocitySensitivityLabel->setText("Vel");
         nb.setHeight(12);
         velocitySensitivitySlider->setBounds(
             nb.withTrimmedLeft(28).withWidth(80).translated(0, 5.));
