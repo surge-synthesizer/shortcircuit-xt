@@ -257,7 +257,8 @@ struct StepLFOPane : juce::Component, app::HasEditor
             float rate{3.f}; // 8 steps a second
             float stepSamples{renderSR * msCopy.stepLfoStorage.repeat / std::pow(2.0f, rate) /
                               blockSize}; // how many samples in a step
-            int sampleEvery = std::min((int)(stepSamples / (getWidth() * 3)), 1);
+            // a stride below one makes the modulo below an integer divide by zero
+            int sampleEvery = std::max((int)(stepSamples / std::max(getWidth() * 3, 1)), 1);
 
             sst::basic_blocks::modulators::Transport td{};
             sst::basic_blocks::dsp::RNG gen;
