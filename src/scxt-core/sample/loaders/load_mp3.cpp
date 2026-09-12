@@ -31,8 +31,17 @@
 #define MINIMP3_IMPLEMENTATION
 
 #include <fstream>
+
+// arm64ec defines __ARM_ARCH but not _M_ARM64, so minimp3 takes its armv6 gcc asm path
+#if defined(_M_ARM64EC)
+#pragma push_macro("__ARM_ARCH")
+#undef __ARM_ARCH
+#endif
 #include "minimp3.h"
 #include "minimp3_ex.h"
+#if defined(_M_ARM64EC)
+#pragma pop_macro("__ARM_ARCH")
+#endif
 namespace scxt::sample
 {
 bool Sample::parseMP3(const uint8_t *data, size_t len)

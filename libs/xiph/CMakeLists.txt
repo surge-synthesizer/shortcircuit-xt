@@ -10,6 +10,10 @@ if (${SCXT_USE_FLAC})
     set(INSTALL_CMAKE_CONFIG_MODULE OFF CACHE BOOL "Install CMake package-config module" FORCE)
     set(WITH_OGG OFF CACHE BOOL "ogg support (default: test for libogg)" FORCE)
     set(WITH_AVX OFF CACHE BOOL "scxt is sse4.2 not ACXX" FORCE)
+    if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
+        # arm64ec defines _M_X64, so flac picks its x86 cpuid and sse paths
+        set(WITH_ASM OFF CACHE BOOL "No x86 intrinsics on arm64ec" FORCE)
+    endif()
 
     add_subdirectory(flac EXCLUDE_FROM_ALL)
     target_compile_definitions(FLAC++ PUBLIC SCXT_USE_FLAC=1)
@@ -34,6 +38,10 @@ if (${SCXT_USE_OPUS})
     set(OPUS_BUILD_TESTING OFF CACHE BOOL "" FORCE)
     set(OPUS_INSTALL_PKG_CONFIG_MODULE OFF CACHE BOOL "" FORCE)
     set(OPUS_INSTALL_CMAKE_CONFIG_MODULE OFF CACHE BOOL "" FORCE)
+    if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
+        # CMAKE_SYSTEM_PROCESSOR reads AMD64 here so opus builds its celt/x86 tree
+        set(OPUS_DISABLE_INTRINSICS ON CACHE BOOL "No x86 intrinsics on arm64ec" FORCE)
+    endif()
 
     add_subdirectory(ogg EXCLUDE_FROM_ALL)
     add_subdirectory(opus EXCLUDE_FROM_ALL)
