@@ -52,6 +52,20 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel,
     void editorSelectionChanged();
     void selectedPartChanged();
 
+    // Tree refresh is coalesced onto the editor idle. Handlers say how much
+    // changed; idle services the highest pending level once per frame. A burst
+    // of structure messages then costs one pass over the rows, not one each.
+    enum TreeRefreshLevel
+    {
+        trlNone = 0,
+        trlSelection, // rows are right, their selected state is not
+        trlVisible,   // fold state changed
+        trlStructure  // gzData itself changed
+    };
+    void markTreeRefresh(TreeRefreshLevel l);
+    void serviceTreeRefresh();
+    int pendingTreeRefresh{trlNone};
+
     void selectParts() {}
     void selectGroups() {}
 
