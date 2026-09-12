@@ -124,6 +124,28 @@ inline void addSampleToGroupFn(const addSampleToGroupPayload_t &payload, engine:
 CLIENT_TO_SERIAL(AddSampleToGroup, c2s_add_sample_to_group, addSampleToGroupPayload_t,
                  addSampleToGroupFn(payload, engine, cont);)
 
+// sample, root, midi start end, vel start end, sample range info overrides the arguments
+using addSampleSpec_t = std::tuple<std::string, int, int, int, int, int, bool>;
+// samples, part, group; one message so a multi file drop refreshes the client once
+using addSamplesPayload_t = std::tuple<std::vector<addSampleSpec_t>, int, int>;
+inline void addSamples(const addSamplesPayload_t &payload, engine::Engine &engine,
+                       MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    const auto &[specs, part, group] = payload;
+    std::vector<engine::Engine::SampleToAdd> samples;
+    samples.reserve(specs.size());
+    for (const auto &[path, root, keyLo, keyHi, velLo, velHi, rangeInfoWins] : specs)
+    {
+        samples.push_back({fs::path(fs::u8path(path)), (int16_t)root,
+                           engine::KeyboardRange(keyLo, keyHi), engine::VelocityRange(velLo, velHi),
+                           rangeInfoWins});
+    }
+    engine.loadSamplesIntoPartAndGroup(samples, part, group);
+}
+CLIENT_TO_SERIAL(AddSamples, c2s_add_samples, addSamplesPayload_t,
+                 addSamples(payload, engine, cont);)
+
 using addCompoundElementWithRange_t =
     std::tuple<sample::compound::CompoundElement, int, int, int, int, int>;
 inline void addCompoundElementWithRange(const addCompoundElementWithRange_t &payload,

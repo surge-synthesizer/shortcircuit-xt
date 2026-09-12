@@ -510,6 +510,8 @@ struct GroupZoneSidebarBase : juce::Component,
             groupAddr = gzTreeControl->groupAddressForDropPosition(x - treePos.x, y - treePos.y);
         }
 
+        // the same per-file mapping as dropAsZoneInGroup and dropAsZoneInCurrentGroup
+        std::vector<cmsg::addSampleSpec_t> samples;
         for (const auto &f : files)
         {
             shared::SampleDropSource src;
@@ -525,10 +527,17 @@ struct GroupZoneSidebarBase : juce::Component,
                 continue;
 
             if (groupAddr.has_value())
-                src.dropAsZoneInGroup(groupAddr->part, groupAddr->group, this);
+                samples.push_back({src.pathStr, 60, 0, 127, 0, 127, true});
             else
-                src.dropAsZoneInCurrentGroup(this);
+                samples.push_back({src.pathStr, 60, 48, 72, 0, 127, true});
         }
+
+        if (samples.empty())
+            return;
+        if (groupAddr.has_value())
+            sendToSerialization(cmsg::AddSamples({samples, groupAddr->part, groupAddr->group}));
+        else
+            sendToSerialization(cmsg::AddSamples({samples, -1, -1}));
     }
 
     void postInit()

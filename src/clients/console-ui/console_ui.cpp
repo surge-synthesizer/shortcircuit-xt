@@ -76,6 +76,7 @@ void ConsoleUI::drainQueue()
         if (itemsToDrain)
         {
             assert(msgCont.threadingChecker.isClientThread());
+            receivedByteCount += queueMsg.size();
             cmsg::clientThreadExecuteSerializationMessage(queueMsg, this);
         }
     }

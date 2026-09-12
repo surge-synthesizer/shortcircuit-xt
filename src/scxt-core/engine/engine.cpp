@@ -1132,6 +1132,80 @@ void Engine::loadSampleIntoGroup(const fs::path &p, int part, int group)
         });
 }
 
+void Engine::loadSamplesIntoPartAndGroup(const std::vector<SampleToAdd> &samples, int part,
+                                         int group)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+
+    bool explicitGroup = part >= 0 && group >= 0;
+    std::vector<std::unique_ptr<Zone>> zones;
+    for (const auto &s : samples)
+    {
+        // containers go through their importers, which already refresh once per file
+        if (!browser::Browser::isLoadableSingleSample(s.path))
+        {
+            if (explicitGroup)
+                loadSampleIntoGroup(s.path, part, group);
+            else
+                loadSampleIntoSelectedPartAndGroup(s.path, s.rootKey, s.krange, s.vrange,
+                                                   s.sampleRangeInfoOverridesArguments);
+            continue;
+        }
+
+        auto sid = sampleManager->loadSampleByPath(s.path);
+        if (!sid.has_value())
+        {
+            RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
+                             "Sample load failed:\n\n" + s.path.u8string() + "\n\n" +
+                                 "It is either an unsupported format or invalid file. "
+                                 "More information may be available in the log file (menu/log)");
+            continue;
+        }
+
+        auto zptr = std::make_unique<Zone>(*sid);
+        zptr->mapping.keyboardRange = s.krange;
+        zptr->mapping.velocityRange = s.vrange;
+        zptr->mapping.rootKey = s.rootKey;
+
+        auto sir = (int)Zone::SampleInformationRead::ALL;
+        if (!s.sampleRangeInfoOverridesArguments)
+            sir = (int)Zone::SampleInformationRead::LOOP |
+                  (int)Zone::SampleInformationRead::ENDPOINTS;
+        zptr->attachToSample(*sampleManager, 0, sir);
+        zones.push_back(std::move(zptr));
+    }
+
+    if (zones.empty())
+        return;
+
+    auto sp = part, sg = group;
+    if (!explicitGroup)
+        std::tie(sp, sg) = selectionManager->bestPartGroupForNewSample(*this);
+
+    undo::pushUndo<undo::GroupChangeItem>(*this, sp, sg);
+
+    // one hop for the whole drop; the list is freed back on this thread, not the audio one
+    auto *toAdd = new std::vector<Zone *>();
+    toAdd->reserve(zones.size());
+    for (auto &z : zones)
+        toAdd->push_back(z.release());
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp, sg, toAdd](auto &e) {
+            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            for (auto *z : *toAdd)
+                g->addZone(std::unique_ptr<Zone>(z));
+            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
+        },
+        [sp, sg, toAdd](auto &e) {
+            delete toAdd;
+            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
+            int32_t zi = g->getZones().size() - 1;
+            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
+        });
+}
+
 void Engine::createEmptyZone(int partN, int groupN, scxt::engine::KeyboardRange krange,
                              scxt::engine::VelocityRange vrange)
 {

@@ -680,6 +680,17 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     // Drop a single audio file into an explicit group, bypassing selection
     void loadSampleIntoGroup(const fs::path &p, int part, int group);
 
+    struct SampleToAdd
+    {
+        fs::path path;
+        int16_t rootKey{60};
+        KeyboardRange krange{48, 72};
+        VelocityRange vrange{0, 127};
+        bool sampleRangeInfoOverridesArguments{false};
+    };
+    // a zone per sample; a part or group of -1 picks the best group for a new sample
+    void loadSamplesIntoPartAndGroup(const std::vector<SampleToAdd> &samples, int part, int group);
+
     // Build a single new zone in the selected part/group whose variants are the given
     // plain sample files (Alt-drop stacking). Paths beyond maxVariantsPerZone are ignored.
     void loadSamplesIntoNewZoneAsVariants(const std::vector<fs::path> &paths, int16_t rootKey,
