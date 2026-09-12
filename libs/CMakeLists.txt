@@ -79,6 +79,10 @@ if (${SCXT_USE_MP3})
     # minimpe doesn't have a cmake but is header only
     target_include_directories(minimp3 INTERFACE minimp3)
     target_compile_definitions(minimp3 INTERFACE SCXT_USE_MP3=1)
+    if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
+        # arm64ec defines _M_X64, so minimp3 reaches for immintrin and __cpuid
+        target_compile_definitions(minimp3 INTERFACE MINIMP3_NO_SIMD=1)
+    endif()
 endif()
 
 add_subdirectory (melatonin_inspector)
