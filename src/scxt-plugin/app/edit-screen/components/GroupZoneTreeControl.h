@@ -246,28 +246,38 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             }
         }
 
+        // Rows are recycled across refreshes, so build the mute widget once and
+        // retarget it. Rebuilding it here allocates on every row assignment.
         void complete()
         {
             if (!isZone())
             {
                 const auto &tgl = lbm->gzData;
                 const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
+                bool mv = sg.features & engine::GroupZoneFeatures::MUTED;
 
-                muteValue = sg.features & engine::GroupZoneFeatures::MUTED;
-                muteProvider = std::make_unique<bdm_t>(muteValue);
-                muteProvider->widget->setLabel("M");
-                muteProvider->setup();
-                muteProvider->onValueChanged = [this](bool v) {
-                    auto shift = juce::ModifierKeys::getCurrentModifiers().isShiftDown();
-                    setMuteTo(v, !shift);
-                };
-                addAndMakeVisible(*muteProvider->widget);
-                resized();
+                if (!muteProvider)
+                {
+                    muteValue = mv;
+                    muteProvider = std::make_unique<bdm_t>(muteValue);
+                    muteProvider->widget->setLabel("M");
+                    muteProvider->setup();
+                    muteProvider->onValueChanged = [this](bool v) {
+                        auto shift = juce::ModifierKeys::getCurrentModifiers().isShiftDown();
+                        setMuteTo(v, !shift);
+                    };
+                    addAndMakeVisible(*muteProvider->widget);
+                    resized();
+                }
+                else
+                {
+                    muteProvider->setValueFromModel(mv);
+                    muteProvider->widget->setVisible(true);
+                }
             }
             else if (muteProvider && muteProvider->widget)
             {
-                removeChildComponent(muteProvider->widget.get());
-                muteProvider.reset();
+                muteProvider->widget->setVisible(false);
             }
         }
 

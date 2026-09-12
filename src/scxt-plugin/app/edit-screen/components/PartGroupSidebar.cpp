@@ -604,11 +604,12 @@ struct GroupZoneSidebarBase : juce::Component,
         auto &mc = partGroupSidebar->editor->msgCont;
         partGroupSidebar->sendToSerialization(cmsg::CreateGroup(editor->selectedPart));
     }
+    // Copies the editor's selection into the tree. Does not touch the rows —
+    // serviceTreeRefresh drives that once, so a refresh here would be redundant.
     void updateSelectionFrom(const selection::SelectionManager::selectedZones_t &sel)
     {
         gzTreeControl->selectedZones =
             std::set<selection::SelectionManager::ZoneAddress>(sel.begin(), sel.end());
-        gzTreeControl->reassignAllComponents();
     }
 
     bool isLeadZone(const selection::SelectionManager::ZoneAddress &za)
@@ -1003,53 +1004,63 @@ void PartGroupSidebar::setPartGroupZoneStructure(const engine::Engine::pgzStruct
     }
 #endif
 
-    groupSidebar->gzTreeControl->rebuild();
-    groupSidebar->gzTreeControl->refresh();
-    zoneSidebar->gzTreeControl->rebuild();
-    zoneSidebar->gzTreeControl->refresh();
-
-    editorSelectionChanged();
-    repaint();
+    markTreeRefresh(trlStructure);
 }
 
-void PartGroupSidebar::collapsedGroupsChanged()
-{
-    if (groupSidebar && groupSidebar->gzTreeControl)
-    {
-        groupSidebar->gzTreeControl->rebuildVisible();
-        groupSidebar->gzTreeControl->refresh();
-    }
-    if (zoneSidebar && zoneSidebar->gzTreeControl)
-    {
-        zoneSidebar->gzTreeControl->rebuildVisible();
-        zoneSidebar->gzTreeControl->refresh();
-    }
-}
+void PartGroupSidebar::collapsedGroupsChanged() { markTreeRefresh(trlVisible); }
 
 void PartGroupSidebar::selectedPartChanged()
 {
-    groupSidebar->showSelectedPart(editor->selectedPart);
-    groupSidebar->gzTreeControl->rebuild();
-    groupSidebar->gzTreeControl->refresh();
+    if (groupSidebar)
+        groupSidebar->showSelectedPart(editor->selectedPart);
+    if (zoneSidebar)
+        zoneSidebar->showSelectedPart(editor->selectedPart);
 
-    zoneSidebar->showSelectedPart(editor->selectedPart);
-    zoneSidebar->gzTreeControl->rebuild();
-    zoneSidebar->gzTreeControl->refresh();
-
-    editorSelectionChanged();
-    repaint();
+    markTreeRefresh(trlStructure);
 }
 
 void PartGroupSidebar::editorSelectionChanged()
 {
+    // The state copy is cheap and callers can read it back immediately, so only
+    // the row pass is deferred.
     if (groupSidebar)
-    {
         groupSidebar->updateSelection();
-    }
     if (zoneSidebar)
-    {
         zoneSidebar->updateSelection();
-    }
+
+    markTreeRefresh(trlSelection);
+}
+
+void PartGroupSidebar::markTreeRefresh(TreeRefreshLevel l)
+{
+    pendingTreeRefresh = std::max(pendingTreeRefresh, (int)l);
+}
+
+void PartGroupSidebar::serviceTreeRefresh()
+{
+    if (pendingTreeRefresh == trlNone)
+        return;
+
+    auto level = pendingTreeRefresh;
+    pendingTreeRefresh = trlNone;
+
+    auto service = [level](auto &sb) {
+        if (!sb || !sb->gzTreeControl)
+            return;
+        auto &t = sb->gzTreeControl;
+        if (level == trlStructure)
+            t->rebuild();
+        else if (level == trlVisible)
+            t->rebuildVisible();
+
+        if (level == trlSelection)
+            t->reassignAllComponents();
+        else
+            t->refresh();
+    };
+    service(groupSidebar);
+    service(zoneSidebar);
+
     repaint();
 }
 

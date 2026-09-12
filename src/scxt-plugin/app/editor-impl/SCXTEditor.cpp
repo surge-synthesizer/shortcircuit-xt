@@ -277,6 +277,12 @@ void SCXTEditor::idle()
      * not for handling events which the message controller does
      * immediately
      */
+
+    // the group/zone trees coalesce their rebuilds to here, so a burst of
+    // structure messages costs one pass over the rows rather than one each
+    if (editScreen && editScreen->partSidebar)
+        editScreen->partSidebar->serviceTreeRefresh();
+
     if (sharedUiMemoryState.voiceDisplayStateWriteCounter != lastVoiceDisplayWriteCounter)
     {
         lastVoiceDisplayWriteCounter = sharedUiMemoryState.voiceDisplayStateWriteCounter;
