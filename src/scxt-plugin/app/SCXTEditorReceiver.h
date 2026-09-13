@@ -68,6 +68,9 @@ struct SCXTEditorReceiver
     SCXTEditor &editor;
     explicit SCXTEditorReceiver(SCXTEditor &e) : editor(e) {}
 
+    // every selection action resends the part, so remember which one the edit screen is on
+    int16_t editScreenPart{-1};
+
     // Serialization to Client Messages
     void onErrorFromEngine(const scxt::messaging::client::s2cError_t &);
     void onUnusedItemsFromEngine(const scxt::messaging::client::s2cUnusedItems_t &);

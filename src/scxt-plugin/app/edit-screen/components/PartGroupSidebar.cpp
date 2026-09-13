@@ -613,8 +613,8 @@ struct GroupZoneSidebarBase : juce::Component,
         auto &mc = partGroupSidebar->editor->msgCont;
         partGroupSidebar->sendToSerialization(cmsg::CreateGroup(editor->selectedPart));
     }
-    // Copies the editor's selection into the tree. Does not touch the rows —
-    // serviceTreeRefresh drives that once, so a refresh here would be redundant.
+    // Copies the editor's selection into the tree. Rows read it as they paint,
+    // so serviceTreeRefresh only has to repaint.
     void updateSelectionFrom(const selection::SelectionManager::selectedZones_t &sel)
     {
         gzTreeControl->selectedZones =
@@ -1031,7 +1031,7 @@ void PartGroupSidebar::selectedPartChanged()
 void PartGroupSidebar::editorSelectionChanged()
 {
     // The state copy is cheap and callers can read it back immediately, so only
-    // the row pass is deferred.
+    // the repaint and lead reveal are deferred.
     if (groupSidebar)
         groupSidebar->updateSelection();
     if (zoneSidebar)
@@ -1062,10 +1062,11 @@ void PartGroupSidebar::serviceTreeRefresh()
         else if (level == trlVisible)
             t->rebuildVisible();
 
-        if (level == trlSelection)
-            t->reassignAllComponents();
-        else
+        // rows paint selection from the tree, so a selection change is only the repaint below
+        if (level != trlSelection)
             t->refresh();
+
+        t->revealLead();
     };
     service(groupSidebar);
     service(zoneSidebar);

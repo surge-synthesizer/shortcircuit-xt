@@ -110,23 +110,14 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                     rc->gzRow->rowNumber = row;
                     rc->gzRow->lbm = this;
                     rc->gzRow->gsb = sidebar;
-                    rc->gzRow->isSelected =
-                        selectedZones.find(gzData[gzIndexForRow(row)].address) !=
-                        selectedZones.end();
                     rc->gzRow->complete();
                 }
                 rc->resized();
                 rc->repaint();
             }
         };
-        setRowSelection = [this](auto &c, bool isSel) {
-            auto rc = dynamic_cast<rowTopComponent *>(c.get());
-            if (rc && rc->gzRow)
-            {
-                rc->gzRow->isSelected = isSel;
-                repaint();
-            }
-        };
+        // rows read selection from selectedZones as they paint
+        setRowSelection = [this](auto &, bool) { repaint(); };
     }
     void rebuild()
     {
@@ -169,6 +160,51 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         return gzData[gzIndexForRow(rowNumber)].address;
     }
 
+    // a folded-away zone resolves to its group's row
+    std::optional<int> rowForAddress(const selection::SelectionManager::ZoneAddress &a) const
+    {
+        std::optional<int> groupRow;
+        for (int r = 0; r < (int)visibleRows.size(); ++r)
+        {
+            const auto &addr = gzData[visibleRows[r]].address;
+            if (addr == a)
+                return r;
+            if (addr.zone < 0 && addr.part == a.part && addr.group == a.group)
+                groupRow = r;
+        }
+        return groupRow;
+    }
+
+    std::optional<selection::SelectionManager::ZoneAddress> revealedLead;
+
+    // only a changed lead scrolls, so a manual scroll away from it is left alone
+    void revealLead()
+    {
+        const auto &lead = forZone ? sidebar->editor->currentLeadZoneSelection
+                                   : sidebar->editor->currentLeadGroupSelection;
+        if (lead == revealedLead)
+            return;
+
+        auto vh = viewPort->getViewHeight();
+        auto row = lead.has_value() ? rowForAddress(*lead) : std::nullopt;
+
+        // structure or layout not here yet, so retry on a later pass
+        if (lead.has_value() && (!row.has_value() || vh <= 0))
+            return;
+
+        revealedLead = lead;
+        if (!row.has_value())
+            return;
+
+        auto rh = (int)getRowHeight();
+        auto top = *row * rh;
+        auto vy = viewPort->getViewPositionY();
+        if (top + rh > vy && top < vy + vh)
+            return;
+
+        viewPort->setViewPosition(viewPort->getViewPositionX(), top - (vh - rh) / 2);
+    }
+
     // Returns the group ZoneAddress (zone==-1) for the row at position (x,y) in this widget's
     // local coordinate space, accounting for scrolling. If the position falls on a zone row the
     // parent group address is returned. Returns an empty optional if out of bounds.
@@ -196,7 +232,6 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
     struct rowComponent : juce::Component, juce::DragAndDropTarget, juce::TextEditor::Listener
     {
         int rowNumber{-1};
-        bool isSelected{false};
         GroupZoneSidebarWidget<SidebarParent, forZone> *lbm{nullptr};
         SidebarParent *gsb{nullptr};
 
@@ -312,6 +347,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
             bool isLeadZone = isZone() && gsb->isLeadZone(sg.address);
             bool isLeadGroup = isGroup() && gsb->isLeadGroup(sg.address);
+            bool rowSelected = isSelected();
 
             auto editor = gsb->partGroupSidebar->editor;
 
@@ -333,7 +369,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
             if (forZone)
             {
-                if (isSelected && isZone())
+                if (rowSelected && isZone())
                 {
                     fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.2);
                     textColor = editor->themeColor(theme::ColorMap::generic_content_high);
@@ -356,7 +392,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                     textColor = editor->themeColor(theme::ColorMap::generic_content_highest);
                     lowTextColor = editor->themeColor(theme::ColorMap::accent_1a);
                 }
-                else if (isSelected && isGroup())
+                else if (rowSelected && isGroup())
                 {
                     fillColor = editor->themeColor(theme::ColorMap::accent_1b, 0.2);
                     textColor = editor->themeColor(theme::ColorMap::generic_content_medium);
@@ -466,6 +502,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         }
         bool isZone() { return getZoneAddress().zone >= 0; }
         bool isGroup() { return getZoneAddress().zone == -1; }
+        bool isSelected() { return lbm && lbm->selectedZones.count(getZoneAddress()) > 0; }
 
         void mouseDown(const juce::MouseEvent &e) override
         {
@@ -602,7 +639,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             {
                 if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
                 {
-                    if (isSelected && lbm->selectedZones.size() > 1 && !e.mods.isShiftDown())
+                    if (isSelected() && lbm->selectedZones.size() > 1 && !e.mods.isShiftDown())
                     {
                         isDragMulti = true;
                     }
@@ -643,7 +680,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             }
 
             auto za = getZoneAddress();
-            gsb->onRowClicked(za, isSelected, event.mods);
+            gsb->onRowClicked(za, isSelected(), event.mods);
         }
 
         bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
