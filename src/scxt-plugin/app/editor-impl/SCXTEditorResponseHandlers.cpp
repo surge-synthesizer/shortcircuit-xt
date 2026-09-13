@@ -363,8 +363,9 @@ void SCXTEditorReceiver::onSelectedPart(const int16_t p)
 {
     editor.selectedPart =
         p; // I presume I will shortly get structure messages so don't do anything else
-    if (editor.editScreen)
+    if (editor.editScreen && p != editScreenPart)
     {
+        editScreenPart = p;
         editor.editScreen->selectedPartChanged();
         editor.editScreen->onOtherTabSelection();
     }

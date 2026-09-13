@@ -58,7 +58,7 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel,
     enum TreeRefreshLevel
     {
         trlNone = 0,
-        trlSelection, // rows are right, their selected state is not
+        trlSelection, // rows are right, only the highlight moved
         trlVisible,   // fold state changed
         trlStructure  // gzData itself changed
     };
