@@ -217,6 +217,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_store_colormap,
 
+    c2s_add_samples,
+
     num_clientToSerializationMessages
 };
 

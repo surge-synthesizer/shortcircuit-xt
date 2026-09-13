@@ -177,7 +177,17 @@ struct ConsoleUI
     onMappingUpdated(const scxt::messaging::client::mappingSelectedZoneViewResposne_t &) ON_STUB;
     void
     onSamplesUpdated(const scxt::messaging::client::sampleSelectedZoneViewResposne_t &) ON_STUB;
-    void onStructureUpdated(const engine::Engine::pgzStructure_t &) ON_STUB;
+    // lets tests bound how much a single gesture sends back
+    int structureUpdateCount{0};
+    int selectionStateCount{0};
+    size_t receivedByteCount{0};
+
+    void onStructureUpdated(const engine::Engine::pgzStructure_t &)
+    {
+        structureUpdateCount++;
+        if (logMessages)
+            SCLOG_WFUNC_IF(cliTools, "Message");
+    }
     void onGroupOrZoneEnvelopeUpdated(
         const scxt::messaging::client::adsrViewResponsePayload_t &payload) ON_STUB;
     void onGroupOrZoneProcessorDataAndMetadata(
@@ -203,7 +213,12 @@ struct ConsoleUI
     onGroupOutputInfoUpdated(const scxt::messaging::client::groupOutputInfoUpdate_t &p) ON_STUB;
 
     void onGroupZoneMappingSummary(const scxt::engine::Part::zoneMappingSummary_t &) ON_STUB;
-    void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &) ON_STUB;
+    void onSelectionState(const scxt::messaging::client::selectedStateMessage_t &)
+    {
+        selectionStateCount++;
+        if (logMessages)
+            SCLOG_WFUNC_IF(cliTools, "Message");
+    }
     void onSelectedPart(const int16_t) ON_STUB;
 
     void onPartConfiguration(const scxt::messaging::client::partConfigurationPayload_t &) ON_STUB;

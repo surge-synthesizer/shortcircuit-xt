@@ -492,27 +492,28 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
             else
             {
                 assert(r.size() == dropElementCount);
-                // one add message per dropped element; coalesce to one undo entry
-                sendToSerialization(
-                    cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
+                std::vector<cmsg::addCompoundElementWithRange_t> compounds;
+                std::vector<cmsg::addSampleSpec_t> samples;
                 int idx{0};
                 for (auto e : els)
                 {
                     auto &loc = r[std::min(idx++, (int)nEls - 1)];
 
                     if (e->getCompoundElement().has_value())
-                    {
-                        sendToSerialization(
-                            cmsg::AddCompoundElementWithRange({*e->getCompoundElement(), loc.root,
-                                                               loc.lo, loc.hi, loc.vlo, loc.vhi}));
-                    }
+                        compounds.push_back(
+                            {*e->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi});
                     else if (e->getDirEnt().has_value())
-                    {
-                        sendToSerialization(
-                            cmsg::AddSampleWithRange({e->getDirEnt()->path().u8string(), loc.root,
-                                                      loc.lo, loc.hi, loc.vlo, loc.vhi}));
-                    }
+                        samples.push_back({e->getDirEnt()->path().u8string(), loc.root, loc.lo,
+                                           loc.hi, loc.vlo, loc.vhi, false});
                 }
+
+                // a container file among the samples still imports on its own
+                sendToSerialization(
+                    cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
+                for (const auto &c : compounds)
+                    sendToSerialization(cmsg::AddCompoundElementWithRange(c));
+                if (!samples.empty())
+                    sendToSerialization(cmsg::AddSamples({samples, -1, -1}));
                 sendToSerialization(cmsg::EndEdit(false));
             }
         }
@@ -784,33 +785,25 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
     }
 
     int lidx{0};
-    // Dropping several plain samples fires one add message per file. Bracket
-    // them so the whole drop coalesces to a single undo entry. Opened lazily
-    // before the first plain sample so an all-instrument drop adds nothing.
-    bool openedBatch{false};
+    std::vector<cmsg::addSampleSpec_t> samples;
     for (auto f : files)
     {
         auto &loc = regions[std::min(lidx++, (int)regions.size() - 1)];
         auto p = fs::path{(const char *)(f.toUTF8())};
         auto inst = browser::Browser::getMultiInstrumentElements(p);
         if (inst.empty())
-        {
-            if (!openedBatch)
-            {
-                sendToSerialization(
-                    cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
-                openedBatch = true;
-            }
-            sendToSerialization(cmsg::AddSampleWithRange(
-                {f.toStdString(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
-        }
+            samples.push_back({f.toStdString(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi, false});
         else
-        {
             promptForMultiInstrument(inst);
-        }
     }
-    if (openedBatch)
+    if (!samples.empty())
+    {
+        // anything here which is not a plain sample still imports on its own
+        sendToSerialization(
+            cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
+        sendToSerialization(cmsg::AddSamples({samples, -1, -1}));
         sendToSerialization(cmsg::EndEdit(false));
+    }
     if (editor->editScreen->partSidebar)
         editor->editScreen->partSidebar->setSelectedTab(2);
     repaint();
