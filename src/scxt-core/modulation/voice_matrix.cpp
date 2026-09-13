@@ -91,14 +91,24 @@ void MatrixEndpoints::EGTarget::bind(scxt::voice::modulation::Matrix &m, engine:
 // on the audio thread.
 namespace
 {
-const datamodel::pmd playbackRatioMetadata =
-    datamodel::pmd().asFloat().withRange(0, 2).withLinearScaleFormatting("x");
 const datamodel::pmd startPosMetadata =
     datamodel::pmd().asPercentBipolar().withName("Start Pos Adjustment");
 const datamodel::pmd playSampleMetadata =
     datamodel::pmd().asOnOffBool().withName("Sample Playing Gate");
-const datamodel::pmd sampleTuneMetadata =
-    datamodel::pmd().asSemitoneRange().withName("Sample Tune").withDefault(0.0);
+const datamodel::pmd pitchShiftMetadata =
+    datamodel::pmd()
+        .asSemitoneRange(-MatrixEndpoints::SampleTarget::pitchShiftRange,
+                         MatrixEndpoints::SampleTarget::pitchShiftRange)
+        .withName("Pitch Shift");
+const datamodel::pmd finePitchShiftMetadata =
+    datamodel::pmd()
+        .asFloat()
+        .withRange(-MatrixEndpoints::SampleTarget::finePitchShiftRange,
+                   MatrixEndpoints::SampleTarget::finePitchShiftRange)
+        .withDefault(0)
+        .withLinearScaleFormatting("cents")
+        .withDecimalPlaces(1)
+        .withName("Fine Pitch Shift");
 } // namespace
 
 void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -108,8 +118,6 @@ void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, en
     shmo::bindEl(m, mt, pitchOffsetT, mt.pitchOffset, pitchOffsetP);
     shmo::bindEl(m, mt, ampT, mt.amplitude, ampP);
     shmo::bindEl(m, mt, panT, mt.pan, panP);
-    // This is a true oddity. We can modulate but not specify it
-    shmo::bindEl(m, mt, playbackRatioT, zeroBase, playbackRatioP, &playbackRatioMetadata);
 }
 
 void MatrixEndpoints::OutputTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -125,7 +133,8 @@ void MatrixEndpoints::SampleTarget::bind(Matrix &m, engine::Zone &z)
     shmo::bindEl(m, mt, startPosT, zeroBase, startPosP, &startPosMetadata);
     // need a bindEl with an extra nonmod default value
     shmo::bindEl(m, mt, playSampleT, zeroBase, oneBase, playSampleP, &playSampleMetadata);
-    shmo::bindEl(m, mt, sampleTuneT, zeroBase, sampleTuneP, &sampleTuneMetadata);
+    shmo::bindEl(m, mt, pitchShiftT, zeroBase, pitchShiftP, &pitchShiftMetadata);
+    shmo::bindEl(m, mt, finePitchShiftT, zeroBase, finePitchShiftP, &finePitchShiftMetadata);
 }
 
 void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)

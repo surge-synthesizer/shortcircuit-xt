@@ -506,14 +506,15 @@ template <bool OS> bool Voice::processWithOS()
         auto [firstIndex, lastIndex] = sampleIndexRange();
         if (firstIndex >= 0)
         {
+            auto samplePitch = fpitch + *endpoints->sampleTarget.pitchShiftP +
+                               *endpoints->sampleTarget.finePitchShiftP * 0.01f;
             for (auto i = firstIndex; i < lastIndex; ++i)
             {
                 assert(i >= 0);
                 assert(i < zone->samplePointers.size());
                 if (zone->samplePointers[i])
                 {
-                    calculateGeneratorRatio(fpitch + *endpoints->sampleTarget.sampleTuneP, i,
-                                            i - firstIndex);
+                    calculateGeneratorRatio(samplePitch, i, i - firstIndex);
                 }
             }
         }
@@ -1275,7 +1276,7 @@ void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generator
 
     GD[generatorIndex].ratio =
         (int32_t)((1 << 24) * fac * zone->samplePointers[cSampleIndex]->sample_rate *
-                  sampleRateInv * (1.0 + *endpoints->mappingTarget.playbackRatioP));
+                  sampleRateInv);
 }
 
 void Voice::initializeProcessors()
