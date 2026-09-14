@@ -80,8 +80,9 @@ template <typename T> struct HasGroupZoneProcessors
                                                   dsp::processor::ProcessorType type, uint8_t *mem,
                                                   float *pfp, int *ifp, bool initFromDefaults);
 
-    // Returns true if I changed anything
-    bool checkOrAdjustIntConsistency(int whichProcessor, bool notifySerial);
+    // if checked, refreshes metadata and clamps floats; a known changed int can remap first
+    bool checkOrAdjustIntConsistency(int whichProcessor, bool notifySerial,
+                                     int changedIntIndex = -1, int32_t oldIntValue = 0);
     bool checkOrAdjustBoolConsistency(int whichProcessor, bool notifySerial);
     void updateRoutingTableAfterProcessorSwap(size_t f, size_t t);
     static void notifySerialOfProcessorRefresh(const engine::Engine &, int whichProcessor);
