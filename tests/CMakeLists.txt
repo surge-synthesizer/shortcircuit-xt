@@ -35,6 +35,7 @@ add_executable(scxt-test
 		variant_edit_all_tests.cpp
 		unison_variant_pitch_tests.cpp
 		sample_pitch_shift_tests.cpp
+		unknown_mod_endpoint_tests.cpp
 		variant_rr_tests.cpp
 		zone_bound_edit_tests.cpp
 		fx_slot_drag_tests.cpp

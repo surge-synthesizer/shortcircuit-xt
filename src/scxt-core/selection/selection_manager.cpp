@@ -891,21 +891,18 @@ void SelectionManager::configureMatrixInternal(bool forZone, Mat &mat, RT &rt)
     {
         r.extraPayload = typename Config::RoutingExtraPayload();
 
-        if (r.target.has_value())
+        if (r.target.has_value() && Config::isTargetModMatrixDepth(*r.target))
         {
-            if (Config::isTargetModMatrixDepth(*r.target))
-            {
-                auto rti = Config::getTargetModMatrixElement(*r.target);
-                r.extraPayload->targetBaseValue = rt.routes[rti].depth;
-                r.extraPayload->targetMetadata =
-                    datamodel::pmd().asPercent().withName("Row " + std::to_string(rti + 1));
-            }
-            else
-            {
-                r.extraPayload->targetMetadata = mat.activeTargetsToPMD.at(*r.target);
-                r.extraPayload->targetBaseValue = mat.activeTargetsToBaseValue.at(*r.target);
-                r.extraPayload->targetFeatureState = mat.activeTargetsToFeatureState.at(*r.target);
-            }
+            auto rti = Config::getTargetModMatrixElement(*r.target);
+            r.extraPayload->targetBaseValue = rt.routes[rti].depth;
+            r.extraPayload->targetMetadata =
+                datamodel::pmd().asPercent().withName("Row " + std::to_string(rti + 1));
+        }
+        else if (r.target.has_value() && mat.activeTargetsToPMD.count(*r.target))
+        {
+            r.extraPayload->targetMetadata = mat.activeTargetsToPMD.at(*r.target);
+            r.extraPayload->targetBaseValue = mat.activeTargetsToBaseValue.at(*r.target);
+            r.extraPayload->targetFeatureState = mat.activeTargetsToFeatureState.at(*r.target);
         }
         else
         {

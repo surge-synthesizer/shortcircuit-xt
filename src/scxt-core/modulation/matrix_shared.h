@@ -33,6 +33,8 @@
 #include <ostream>
 #include <string>
 
+#include "mod_curves.h"
+
 namespace scxt::engine
 {
 struct Engine;
@@ -148,6 +150,27 @@ template <typename T> static std::size_t identifierToHash(const T &t)
     auto h2 = std::hash<uint32_t>{}((int)t.tid);
     auto h3 = std::hash<uint32_t>{}((int)t.index);
     return h1 ^ (h2 << 2) ^ (h3 << 5);
+}
+
+// state from a newer build can name endpoints we don't have, and binding those throws
+template <typename RT, typename SourceMap, typename TargetMap>
+int clearRoutesWithUnknownEndpoints(RT &rt, const SourceMap &sources, const TargetMap &targets)
+{
+    auto unknown = [](const auto &id, const auto &known) {
+        return id.has_value() && known.find(*id) == known.end();
+    };
+
+    int cleared{0};
+    for (auto &r : rt.routes)
+    {
+        if (unknown(r.source, sources) || unknown(r.sourceVia, sources) ||
+            unknown(r.target, targets) || unknown(r.curve, ModulationCurves::curveImpls))
+        {
+            r = typename RT::Routing();
+            cleared++;
+        }
+    }
+    return cleared;
 }
 
 template <typename TG, uint32_t gn> struct EGTargetEndpointData

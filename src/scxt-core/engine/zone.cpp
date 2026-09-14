@@ -267,6 +267,15 @@ void Zone::setupOnUnstream(const engine::Engine &e)
     {
         setupProcessorControlDescriptions(p, processorStorage[p].type);
     }
+
+    auto cleared = modulation::shared::clearRoutesWithUnknownEndpoints(
+        routingTable, e.voiceModSources, e.voiceModTargets);
+    if (cleared > 0)
+    {
+        SCLOG_IF(warnings, getName() << " : Cleared " << cleared
+                                     << " mod rows with unknown sources or targets");
+        onRoutingChanged();
+    }
 }
 
 bool Zone::attachToSample(const sample::SampleManager &manager, int index, int sir)
