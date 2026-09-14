@@ -28,6 +28,9 @@
 #ifndef SCXT_SRC_SCXT_CORE_JSON_MODULATION_TRAITS_H
 #define SCXT_SRC_SCXT_CORE_JSON_MODULATION_TRAITS_H
 
+#include <algorithm>
+#include <cmath>
+
 #include <tao/json/contrib/traits.hpp>
 
 #include "modulation/voice_matrix.h"
@@ -291,6 +294,29 @@ SC_STREAMDEF(scxt::modulation::shared::RoutingExtraPayload, SC_FROM({
                  findIf(v, "targetFS", result.targetFeatureState);
              }));
 
+// sample tune and playback ratio both became the sample pitch shift
+inline void unstreamPriorSamplePitchRoute(scxt::voice::modulation::Matrix::RoutingTable::Routing &r)
+{
+    using st = scxt::voice::modulation::MatrixEndpoints::SampleTarget;
+    using mt = scxt::voice::modulation::MatrixEndpoints::MappingTarget;
+    if (!r.target.has_value())
+        return;
+
+    static constexpr float priorTuneWidth{192.f};
+    const float width{2 * st::pitchShiftRange};
+    if (*r.target == st::pitchShiftA)
+    {
+        r.depth = std::clamp(r.depth * priorTuneWidth / width, -1.f, 1.f);
+    }
+    else if (*r.target == mt::legacyPlaybackRatioA)
+    {
+        // rate was 1 + 2 * depth at a full source; match that and mirror negative depths
+        auto semis = 12.f * std::log2(1.f + 2.f * std::fabs(r.depth));
+        r.target = st::pitchShiftA;
+        r.depth = std::clamp(std::copysign(semis, r.depth) / width, -1.f, 1.f);
+    }
+}
+
 // Its a mild bummer we have to dup this for group and zone but they differ by trait so have
 // distinct types Ahh well. Fixable with an annoying refactor but leave it for now
 SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable::Routing, SC_FROM({
@@ -324,6 +350,8 @@ SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable::Routing, SC_FROM({
                  findOrSet(v, "srcLE", true, result.sourceLagExp);
                  findOrSet(v, "srVLE", true, result.sourceViaLagExp);
                  findOrSet(v, "appm", 0, result.applicationMode);
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'09'13))
+                     unstreamPriorSamplePitchRoute(result);
              }));
 
 SC_STREAMDEF(scxt::voice::modulation::Matrix::RoutingTable,

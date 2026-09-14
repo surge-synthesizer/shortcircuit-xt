@@ -177,26 +177,22 @@ struct MatrixEndpoints
         static constexpr TG pitchOffsetA{'zmap', 'ptof', 0};
         static constexpr TG panA{'zmap', 'pan ', 0};
         static constexpr TG ampA{'zmap', 'ampl', 0};
-        static constexpr TG playbackRatioA{'zmap', 'pbrt', 0};
-        MappingTarget(engine::Engine *e)
-            : pitchOffsetT(pitchOffsetA), panT(panA), ampT(ampA), playbackRatioT(playbackRatioA)
+        // unregistered; kept so old routes to it can unstream onto pitch shift
+        static constexpr TG legacyPlaybackRatioA{'zmap', 'pbrt', 0};
+        MappingTarget(engine::Engine *e) : pitchOffsetT(pitchOffsetA), panT(panA), ampT(ampA)
         {
             if (e)
             {
                 registerVoiceModTarget(e, pitchOffsetT, "Zone", "Tune");
                 registerVoiceModTarget(e, panT, "Zone", "Pan");
                 registerVoiceModTarget(e, ampT, "Zone", "Amplitude", true);
-                registerVoiceModTarget(e, playbackRatioT, "Zone", "Playback Ratio");
             }
         }
-        TG pitchOffsetT, panT, ampT, playbackRatioT;
+        TG pitchOffsetT, panT, ampT;
 
-        const float *pitchOffsetP{nullptr}, *panP{nullptr}, *ampP{nullptr},
-            *playbackRatioP{nullptr};
+        const float *pitchOffsetP{nullptr}, *panP{nullptr}, *ampP{nullptr};
 
         void bind(Matrix &m, engine::Zone &z);
-
-        float zeroBase{0.f}; // this is a base zero value for things which are not in the mod map
     } mappingTarget;
 
     struct OutputTarget
@@ -241,19 +237,28 @@ struct MatrixEndpoints
 
     struct SampleTarget
     {
+        // ids are streamed, so this one keeps the name it had as sample tune
+        static constexpr TG pitchShiftA{'samp', 'tune', 0};
+        static constexpr TG finePitchShiftA{'samp', 'fine', 0};
+        static constexpr float pitchShiftRange{48.f};      // semitones
+        static constexpr float finePitchShiftRange{100.f}; // cents
         SampleTarget(engine::Engine *e)
             : startPosT('samp', 'spos', 0), playSampleT('samp', 'plsm', 0),
-              sampleTuneT('samp', 'tune', 0)
+              pitchShiftT(pitchShiftA), finePitchShiftT(finePitchShiftA)
         {
+            auto orderGuard = scxt::modulation::shared::ExplicitMenuOrder(e);
             registerVoiceModTarget(e, startPosT, "Sample", "Start Pos");
             registerVoiceModTarget(e, playSampleT, "Sample", "Play Sample (Gate)");
-            registerVoiceModTarget(e, sampleTuneT, "Sample", "Tune");
+            orderGuard.separator();
+            registerVoiceModTarget(e, pitchShiftT, "Sample", "Pitch Shift");
+            registerVoiceModTarget(e, finePitchShiftT, "Sample", "Fine Pitch Shift");
         }
         void bind(Matrix &m, engine::Zone &z);
 
-        TG startPosT, playSampleT, sampleTuneT;
+        TG startPosT, playSampleT, pitchShiftT, finePitchShiftT;
 
-        const float *startPosP{nullptr}, *playSampleP{nullptr}, *sampleTuneP{nullptr};
+        const float *startPosP{nullptr}, *playSampleP{nullptr}, *pitchShiftP{nullptr},
+            *finePitchShiftP{nullptr};
 
         float zeroBase{0.f}; // this is a base zero value for things which are not in the mod map
         float oneBase{1.f};  // and this is for gates with a separate unmod value

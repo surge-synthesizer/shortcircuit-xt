@@ -924,7 +924,7 @@ void dumpAkaiToLog(const fs::path &path)
  *    KeyTrack, PitchTrack, NoteExpression. Required for AKP mod routes AND
  *    SF2 modulators block AND SFZ *_oncc* family — landing this unlocks
  *    Phase B progress on three formats at once.
- *  - Extend ImportedTargetKind: Pan, Amplitude, PlaybackRatio, LFORate,
+ *  - Extend ImportedTargetKind: Pan, Amplitude, PitchShift, LFORate,
  *    LFODepth, EGStage, SampleStartPos.
  */
 
