@@ -560,6 +560,14 @@ const engine::Engine *Group::getEngine() const
 
 void Group::setupOnUnstream(engine::Engine &e)
 {
+    auto cleared = modulation::shared::clearRoutesWithUnknownEndpoints(
+        routingTable, e.groupModSources, e.groupModTargets);
+    if (cleared > 0)
+    {
+        SCLOG_IF(warnings,
+                 name << " : Cleared " << cleared << " mod rows with unknown sources or targets");
+    }
+
     onRoutingChanged();
     onGroupMidiChannelSubscriptionChanged();
     rePrepareAndBindGroupMatrix();

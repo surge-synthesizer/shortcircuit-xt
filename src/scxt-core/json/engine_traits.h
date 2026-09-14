@@ -65,6 +65,18 @@ STREAM_ENUM(engine::Engine::TuningMode, engine::Engine::toStringTuningMode,
 STREAM_ENUM(engine::Engine::OmniFlavor, engine::Engine::toStringOmniFlavor,
             engine::Engine::fromStringOmniFlavor);
 
+inline void warnIfStreamedByNewerVersion(messaging::MessageController &cont, uint64_t sv)
+{
+    if (sv <= currentStreamingVersion)
+        return;
+
+    RAISE_WARN_CONT(cont, "Saved by a newer Shortcircuit XT",
+                    "This was saved by a newer version of Shortcircuit XT (stream version " +
+                        humanReadableVersion(sv) + ") than this one (" +
+                        humanReadableVersion(currentStreamingVersion) +
+                        "). Some settings may not load. Update Shortcircuit XT to load it fully.");
+}
+
 SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  if (SC_STREAMING_FOR_IN_PROCESS)
                  {
@@ -95,6 +107,7 @@ SC_STREAMDEF(scxt::engine::Engine, SC_FROM({
                  findIf(v, "streamingVersion", sv);
                  SCLOG_IF(always, "Unstreaming engine state. Stream version : "
                                       << scxt::humanReadableVersion(sv));
+                 warnIfStreamedByNewerVersion(*to.getMessageController(), sv);
 
                  engine::Engine::UnstreamGuard sg(sv);
 
@@ -370,6 +383,8 @@ SC_STREAMDEF(
             findIf(v, "streamingVersion", partStreamingVersion);
             SCLOG_IF(streaming, "Unstreaming part state. Stream version : "
                                     << scxt::humanReadableVersion(partStreamingVersion));
+            warnIfStreamedByNewerVersion(*to.parentPatch->parentEngine->getMessageController(),
+                                         partStreamingVersion);
 
             scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
             findIf(v, "samplesUsedByPart", samples);
