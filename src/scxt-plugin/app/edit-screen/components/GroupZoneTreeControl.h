@@ -92,7 +92,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         rebuild();
         setSelectionMode(jcmp::ListView::SelectionMode::MULTI_SELECTION);
         getRowCount = [this]() { return visibleRows.size() + 1; };
-        getRowHeight = [this]() { return 18; };
+        getRowHeight = [this]() { return 15; };
         makeRowComponent = [this]() { return std::make_unique<rowTopComponent>(); };
         assignComponentToRow = [this](const std::unique_ptr<juce::Component> &c, uint32_t row) {
             auto rc = dynamic_cast<rowTopComponent *>(c.get());
@@ -406,10 +406,10 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 g.fillRect(getLocalBounds());
 
                 g.setColour(borderColor);
-                g.drawLine(0, getHeight(), getWidth(), getHeight());
+                g.drawHorizontalLine(getHeight() - 1, 0, getWidth());
 
                 auto bx = getLocalBounds().withWidth(grouplabelPad);
-                auto nb = getLocalBounds().withTrimmedLeft(grouplabelPad);
+                auto nb = getLocalBounds().withTrimmedLeft(grouplabelPad).withTrimmedBottom(1);
                 auto glyphColor = lowTextColor;
                 bool groupIsSelected =
                     editor->allGroupSelections.find(sg.address) != editor->allGroupSelections.end();
@@ -452,8 +452,8 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 g.setColour(fillColor);
                 g.fillRect(bx);
                 g.setColour(borderColor);
-                g.drawLine(zonePad, 0, zonePad, getHeight());
-                g.drawLine(zonePad, getHeight(), getWidth(), getHeight());
+                g.drawVerticalLine(zonePad, 0, getHeight());
+                g.drawHorizontalLine(getHeight() - 1, zonePad, getWidth());
 
                 g.setColour(textColor);
                 if (sg.features & engine::GroupZoneFeatures::MISSING_SAMPLE)
@@ -475,7 +475,8 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                                juce::Justification::centredLeft);
                     return;
                 }
-                g.drawText(sg.name, getLocalBounds().translated(zonePad + 2, 0),
+                g.drawText(sg.name,
+                           getLocalBounds().translated(zonePad + 2, 0).withTrimmedBottom(1),
                            juce::Justification::centredLeft);
 
                 if (voiceCount > 0)
@@ -777,7 +778,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             if (muteProvider && muteProvider->widget)
             {
                 muteProvider->widget->setBounds(
-                    getLocalBounds().withTrimmedLeft(getWidth() - getHeight() + 2).reduced(2));
+                    getLocalBounds().withTrimmedLeft(getWidth() - getHeight() + 2).reduced(1));
             }
         }
 
