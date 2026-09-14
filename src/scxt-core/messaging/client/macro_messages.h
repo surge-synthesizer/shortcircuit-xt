@@ -55,6 +55,7 @@ inline void updateMacroFullStateApply(int16_t part, int16_t index, const engine:
     cont.scheduleAudioThreadCallback(
         [part, index, macro = macroR, fromUndo](auto &e) {
             engine::Macro macroCopy = macro;
+            macroCopy.steps = engine::Macro::validSteps(macroCopy.steps);
             if (!fromUndo)
             {
                 // Set everything except the value except when undoing (to avoid colliding with
@@ -140,8 +141,9 @@ inline void updateMacroValue(const macroValue_t &t, engine::Engine &engine, Mess
             // Set the value
             auto &partO = e.getPatch()->getPart(part); // ->macros[index];
             partO->macroLagHandler.setTargetOnMacro(index, value);
-            // toggles switch immediately; lagging a two state value just delays it
-            if (!partO->isActive() || partO->macros[index].isToggle())
+            // toggles and steps switch immediately; lagging them just walks through the steps
+            if (!partO->isActive() || partO->macros[index].isToggle() ||
+                partO->macros[index].isStepped())
                 partO->macroLagHandler.instantlySnap();
             // macro.setValueConstrained(value);
         },

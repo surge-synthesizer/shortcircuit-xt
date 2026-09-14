@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <fmt/core.h>
 
@@ -56,22 +57,62 @@ struct Macro
     } mode{UNIPOLAR};
     DECLARE_ENUM_STRING(Mode);
 
+    // count of values a unipolar or bipolar macro snaps to; 0 means not stepped
+    int16_t steps{0};
+    // one step has nowhere to go and would divide by zero
+    static constexpr int16_t minSteps{2};
+    // 1/256 unipolar, 1/128 bipolar
+    static constexpr int16_t maxSteps{257};
+
+    // 0 means not stepped, so anything below minSteps becomes 0
+    static int16_t validSteps(int s)
+    {
+        if (s < minSteps)
+            return 0;
+        return (int16_t)std::min(s, (int)maxSteps);
+    }
+
     std::string name{};
 
     bool isBipolar() const { return mode == BIPOLAR; }
     bool isToggle() const { return mode == TOGGLE; }
+    bool isStepped() const { return mode != TOGGLE && steps >= minSteps; }
 
-    void setMode(Mode m)
+    void setMode(Mode m, int16_t s = 0)
     {
         mode = m;
+        steps = (m == TOGGLE) ? 0 : validSteps(s);
         setValueConstrained(value);
     }
+
+    // equal width buckets across the range so every step gets the same knob travel
+    int stepIndexFor01(float f01) const
+    {
+        assert(isStepped());
+        return std::clamp((int)(f01 * steps), 0, steps - 1);
+    }
+    float value01ForStepIndex(int idx) const
+    {
+        assert(isStepped());
+        return (float)std::clamp(idx, 0, steps - 1) / (steps - 1);
+    }
+    float valueForStepIndex(int idx) const
+    {
+        auto f = value01ForStepIndex(idx);
+        return isBipolar() ? f * 2 - 1 : f;
+    }
+    int stepIndex() const { return stepIndexFor01(getValue01()); }
+
     void setValueConstrained(float f)
     {
         if (mode == TOGGLE)
+        {
             value = (f > 0.5f ? 1.f : 0.f);
-        else
-            value = std::clamp(f, isBipolar() ? -1.f : 0.f, 1.f);
+            return;
+        }
+        value = std::clamp(f, isBipolar() ? -1.f : 0.f, 1.f);
+        if (isStepped())
+            value = valueForStepIndex(stepIndexFor01(getValue01()));
     }
     void setValue01(float f)
     {
@@ -100,8 +141,34 @@ struct Macro
     {
         if (mode == TOGGLE)
             return boolFromString(s) ? 1.f : 0.f;
-        auto sv = std::atof(s.c_str());
-        return std::clamp((float)sv, isBipolar() ? -1.f : 0.f, 1.f);
+        auto lo = isBipolar() ? -1.f : 0.f;
+        auto v = std::clamp(numberFromString(s), lo, 1.f);
+        if (isStepped())
+        {
+            // typed text names a target so it goes to the nearest step, not the bucket
+            auto idx = (int)std::round((v - lo) / (1 - lo) * (steps - 1));
+            v = valueForStepIndex(idx);
+        }
+        return v;
+    }
+
+    // reads our own "-7/12 (-.5833)" as well as a plain or bracketed number
+    static float numberFromString(const std::string &s)
+    {
+        auto start = s.find_first_not_of(" \t(");
+        if (start == std::string::npos)
+            return 0.f;
+        auto t = s.substr(start);
+
+        double res = std::atof(t.c_str());
+        auto slash = t.find('/');
+        if (slash != std::string::npos && slash < t.find('('))
+        {
+            auto den = std::atof(t.c_str() + slash + 1);
+            if (den != 0)
+                res = res / den;
+        }
+        return std::isfinite(res) ? (float)res : 0.f;
     }
 
     float value01FromString(const std::string &s) const
@@ -116,10 +183,36 @@ struct Macro
     {
         if (mode == TOGGLE)
             return dv > 0.5f ? "On" : "Off";
+        if (isStepped())
+            return stepIndexToString(stepIndexFor01(std::clamp(dv, 0.f, 1.f)));
         auto fv = dv;
         if (isBipolar())
             fv = fv * 2 - 1;
         return fmt::format("{:.4f}", fv);
+    }
+
+    // "-7/12 (-.5833)"; shared by the host and the ui, and read back by valueFromString
+    std::string stepIndexToString(int idx) const
+    {
+        assert(isStepped());
+        idx = std::clamp(idx, 0, steps - 1);
+        int den = steps - 1;
+        int num = idx;
+        if (isBipolar())
+        {
+            num = 2 * idx - den;
+            if (den % 2 == 0)
+            {
+                num /= 2;
+                den /= 2;
+            }
+        }
+        auto dec = fmt::format("{:.4f}", num == 0 ? 0.f : valueForStepIndex(idx));
+        if (dec.rfind("0.", 0) == 0)
+            dec.erase(0, 1);
+        else if (dec.rfind("-0.", 0) == 0)
+            dec.erase(1, 1);
+        return fmt::format("{}/{} ({})", num, den, dec);
     }
 
     static bool boolFromString(const std::string &s)

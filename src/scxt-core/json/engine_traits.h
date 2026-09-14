@@ -238,6 +238,7 @@ SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
                  v = {{"p", t.part}, {"i", t.index}, {"v", t.value}};
 
                  addUnlessDefault<val_t>(v, "md", scxt::engine::Macro::UNIPOLAR, t.mode);
+                 addUnlessDefault<val_t>(v, "st", (int16_t)0, t.steps);
                  addUnlessDefault<val_t>(v, "nm", scxt::engine::Macro::defaultNameFor(t.index),
                                          t.name);
              }),
@@ -252,6 +253,8 @@ SC_STREAMDEF(scxt::engine::Macro, SC_FROM({
                            legacyBipolar ? scxt::engine::Macro::BIPOLAR
                                          : scxt::engine::Macro::UNIPOLAR,
                            result.mode);
+                 findOrSet(v, "st", (int16_t)0, result.steps);
+                 result.steps = scxt::engine::Macro::validSteps(result.steps);
                  findOrSet(v, "nm", scxt::engine::Macro::defaultNameFor(result.index), result.name);
              }));
 

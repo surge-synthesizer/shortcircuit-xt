@@ -30,6 +30,7 @@ add_executable(scxt-test
 		missing_sample_save_tests.cpp
 		midi_channel_tests.cpp
 		macro_id_tests.cpp
+		stepped_macro_tests.cpp
 		tuning_tests.cpp
 		variant_edit_all_tests.cpp
 		unison_variant_pitch_tests.cpp
