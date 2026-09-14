@@ -228,31 +228,71 @@ CLIENT_TO_SERIAL_CONSTRAINED(
     detail::updateZoneOrGroupIndexedMemberValue<undo::ZoneProcessorSpec, undo::GroupProcessorSpec>(
         &engine::Zone::processorStorage, &engine::Group::processorStorage, payload, engine, cont));
 
-CLIENT_TO_SERIAL_CONSTRAINED(
-    UpdateZoneOrGroupProcessorInt32TValue, c2s_update_single_processor_int32_t_value,
-    detail::indexedZoneOrGroupDiffMsg_t<int32_t>, dsp::processor::ProcessorStorage,
-    detail::updateZoneOrGroupIndexedMemberValue<undo::ZoneProcessorSpec, undo::GroupProcessorSpec>(
-        &engine::Zone::processorStorage, &engine::Group::processorStorage, payload, engine, cont,
-        nullptr,
-        [payload](auto &e, auto &sz) {
-            auto wp = std::get<1>(payload);
-            for (const auto &a : sz)
-            {
-                const auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-                z->checkOrAdjustIntConsistency(wp, false);
-            }
+// the int param index at a processor storage offset, or -1 if it is some other field
+inline int processorIntParamIndexAt(ptrdiff_t offset)
+{
+    auto rel = offset - (ptrdiff_t)offsetof(dsp::processor::ProcessorStorage, intParams);
+    auto sz = (ptrdiff_t)sizeof(int32_t);
+    if (rel < 0 || rel % sz != 0 || rel / sz >= dsp::processor::maxProcessorIntParams)
+        return -1;
+    return (int)(rel / sz);
+}
 
-            engine::Zone::notifySerialOfProcessorRefresh(e, wp);
-        },
-        [payload](auto &e, auto &sg) {
-            auto wp = std::get<1>(payload);
-            for (const auto &a : sg)
-            {
-                const auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
-                g->checkOrAdjustIntConsistency(wp, false);
-            }
-            engine::Group::notifySerialOfProcessorRefresh(e, wp);
-        }));
+// each target's old value is read before the write, since a multi selection need not agree
+template <typename GZ>
+inline void applyProcessorIntValue(GZ &gz, int32_t which, ptrdiff_t offset, int32_t value)
+{
+    auto &ps = gz.processorStorage[which];
+    auto *field = (int32_t *)(((uint8_t *)&ps) + offset);
+    auto oldValue = *field;
+    *field = value;
+    gz.checkOrAdjustIntConsistency(which, false, processorIntParamIndexAt(offset), oldValue);
+}
+
+using processorIntValuePayload_t = detail::indexedZoneOrGroupDiffMsg_t<int32_t>;
+inline void updateProcessorIntValue(const processorIntValuePayload_t &payload,
+                                    engine::Engine &engine, messaging::MessageController &cont)
+{
+    const auto &[forZone, which, offset, value] = payload;
+    if (forZone)
+    {
+        undo::pushPayloadUndo<undo::ZoneProcessorSpec>(engine, (int32_t)which);
+        auto sz = engine.getSelectionManager()->currentlySelectedZones();
+        if (sz.empty())
+            return;
+
+        cont.scheduleAudioThreadCallback(
+            [zs = sz, w = (int32_t)which, o = offset, v = value](auto &e) {
+                for (const auto &a : zs)
+                {
+                    auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+                    applyProcessorIntValue(*z, w, o, v);
+                }
+                engine::Zone::notifySerialOfProcessorRefresh(e, w);
+            });
+    }
+    else
+    {
+        undo::pushPayloadUndo<undo::GroupProcessorSpec>(engine, (int32_t)which);
+        auto sg = engine.getSelectionManager()->currentlySelectedGroups();
+        if (sg.empty())
+            return;
+
+        cont.scheduleAudioThreadCallback(
+            [gs = sg, w = (int32_t)which, o = offset, v = value](auto &e) {
+                for (const auto &a : gs)
+                {
+                    auto &g = e.getPatch()->getPart(a.part)->getGroup(a.group);
+                    applyProcessorIntValue(*g, w, o, v);
+                }
+                engine::Group::notifySerialOfProcessorRefresh(e, w);
+            });
+    }
+}
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneOrGroupProcessorInt32TValue,
+                             c2s_update_single_processor_int32_t_value, processorIntValuePayload_t,
+                             dsp::processor::ProcessorStorage,
+                             updateProcessorIntValue(payload, engine, cont));
 
 CLIENT_TO_SERIAL_CONSTRAINED(
     UpdateZoneOrGroupProcessorBoolValue, c2s_update_single_processor_bool_value,

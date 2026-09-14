@@ -438,6 +438,8 @@ struct ZoneProcessorSpec
         auto &z = zoneAt(e, a);
         z.setProcessorType(idx, v.type);
         z.processorStorage[idx] = v;
+        // setProcessorType described the default ints and keytrack, not the restored ones
+        z.setupProcessorControlDescriptions(idx, v.type);
     }
 };
 
@@ -455,6 +457,7 @@ struct GroupProcessorSpec
         auto &g = groupAt(e, a);
         g.setProcessorType(idx, v.type);
         g.processorStorage[idx] = v;
+        g.setupProcessorControlDescriptions(idx, v.type);
     }
 };
 
@@ -498,8 +501,10 @@ template <bool ForZone> struct ProcessorSwapSpec
         auto f = (idx >> 8) & 0xff;
         o.setProcessorType(t, std::get<0>(v).type);
         o.processorStorage[t] = std::get<0>(v);
+        o.setupProcessorControlDescriptions(t, std::get<0>(v).type);
         o.setProcessorType(f, std::get<1>(v).type);
         o.processorStorage[f] = std::get<1>(v);
+        o.setupProcessorControlDescriptions(f, std::get<1>(v).type);
         o.routingTable.routes = std::get<2>(v);
         o.onRoutingChanged();
         if constexpr (!ForZone)

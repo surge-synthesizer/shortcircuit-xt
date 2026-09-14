@@ -161,6 +161,7 @@ HAS_MEMFN(enableKeytrack);
 HAS_MEMFN(getKeytrackDefault);
 HAS_MEMFN(getKeytrack);
 HAS_MEMFN(checkParameterConsistency);
+HAS_MEMFN(updateFloatParamsOnIntParamChange);
 HAS_MEMFN(getMonoToStereoSetting);
 HAS_MEMFN(remapParametersForStreamingVersion);
 
@@ -172,6 +173,9 @@ template <typename T> struct SSTVoiceEffectShim : T
     static_assert(!(HasMemFn_processMonoToMono<T>::value &&
                     HasMemFn_processMonoToStereo<T>::value) ||
                   HasMemFn_getMonoToStereoSetting<T>::value);
+    // the int change remap only runs behind the consistency check
+    static_assert(!HasMemFn_updateFloatParamsOnIntParamChange<T>::value ||
+                  HasMemFn_checkParameterConsistency<T>::value);
     template <class... Args> SSTVoiceEffectShim(Args &&...a) : T(std::forward<Args>(a)...)
     {
         static_assert(T::streamingVersion > 0,
@@ -348,6 +352,14 @@ template <typename T> struct SSTVoiceEffectShim : T
             return T::checkParameterConsistency();
         }
         return false;
+    }
+
+    void remapFloatsForIntChange(size_t intIndex, int oldValue, float *fparam) override
+    {
+        if constexpr (HasMemFn_updateFloatParamsOnIntParamChange<T>::value)
+        {
+            T::updateFloatParamsOnIntParamChange(intIndex, oldValue, fparam);
+        }
     }
 
     bool isKeytracked() const override

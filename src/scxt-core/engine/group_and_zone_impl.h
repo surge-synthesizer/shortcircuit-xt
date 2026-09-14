@@ -175,43 +175,46 @@ HasGroupZoneProcessors<T>::spawnTempProcessor(int whichProcessor,
 }
 
 template <typename T>
-bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor, bool notifySerial)
+bool HasGroupZoneProcessors<T>::checkOrAdjustIntConsistency(int whichProcessor, bool notifySerial,
+                                                            int changedIntIndex,
+                                                            int32_t oldIntValue)
 {
-    auto &pd = asT()->processorDescription[whichProcessor];
+    if (!asT()->processorDescription[whichProcessor].requiresConsistencyCheck)
+        return false;
 
-    if (pd.requiresConsistencyCheck)
+    auto &ps = asT()->processorStorage[whichProcessor];
+    auto intChanged = changedIntIndex >= 0 &&
+                      changedIntIndex < dsp::processor::maxProcessorIntParams &&
+                      ps.intParams[changedIntIndex] != oldIntValue;
+
+    // a float still lagging towards a ui edit would land on top of the new values
+    if (intChanged)
+        asT()->mUILag.instantlySnap();
+
+    uint8_t memory[dsp::processor::processorMemoryBufferSize];
+    float pfp[dsp::processor::maxProcessorFloatParams];
+    int ifp[dsp::processor::maxProcessorIntParams];
+
+    memcpy(pfp, ps.floatParams.data(), sizeof(ps.floatParams));
+    memcpy(ifp, ps.intParams.data(), sizeof(ps.intParams));
+    auto tmpProcessor = spawnTempProcessor(whichProcessor, ps.type, memory, pfp, ifp, false);
+
+    if (intChanged)
     {
-        auto &ps = asT()->processorStorage[whichProcessor];
-        auto &pc = asT()->processorDescription[whichProcessor];
-        uint8_t memory[dsp::processor::processorMemoryBufferSize];
-        float pfp[dsp::processor::maxProcessorFloatParams];
-        int ifp[dsp::processor::maxProcessorIntParams];
-
-        memcpy(pfp, ps.floatParams.data(), sizeof(ps.floatParams));
-        memcpy(ifp, ps.intParams.data(), sizeof(ps.intParams));
-        auto tmpProcessor = spawnTempProcessor(whichProcessor, ps.type, memory, pfp, ifp, false);
-
-        auto restate = tmpProcessor->makeParametersConsistent();
-
-        setupProcessorControlDescriptions(whichProcessor, ps.type, tmpProcessor, restate);
-
-        if (restate)
-        {
-            memcpy(ps.floatParams.data(), pfp, sizeof(ps.floatParams));
-            memcpy(ps.intParams.data(), ifp, sizeof(ps.intParams));
-        }
-
-        if (notifySerial)
-        {
-            notifySerialOfProcessorRefresh(*(asT()->getEngine()), whichProcessor);
-        }
-
-        dsp::processor::unspawnProcessor(tmpProcessor);
-
-        return true;
+        tmpProcessor->remapFloatsForIntChange(changedIntIndex, oldIntValue, pfp);
+        memcpy(ps.floatParams.data(), pfp, sizeof(ps.floatParams));
     }
 
-    return false;
+    setupProcessorControlDescriptions(whichProcessor, ps.type, tmpProcessor, true);
+
+    if (notifySerial)
+    {
+        notifySerialOfProcessorRefresh(*(asT()->getEngine()), whichProcessor);
+    }
+
+    dsp::processor::unspawnProcessor(tmpProcessor);
+
+    return true;
 }
 
 template <typename T>

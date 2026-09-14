@@ -34,6 +34,9 @@
 #include "engine/zone.h"
 #include "messaging/messaging.h"
 #include "messaging/client/detail/message_helpers.h"
+#include "messaging/client/client_messages.h"
+#include "dsp/processor/processor_impl.h"
+#include "sst/voice-effects/generator/SinePlus.h"
 
 #include "test_utils.h"
 
@@ -169,4 +172,33 @@ TEST_CASE("A second edit mid-ramp retargets rather than stalling", "[uilag]")
 
     REQUIRE(f.zone->isActive());
     REQUIRE(f.zone->outputInfo.amplitude == Approx(finalTarget));
+}
+
+TEST_CASE("An int edit mid-ramp remaps where the float was heading", "[uilag]")
+{
+    using PS = scxt::dsp::processor::ProcessorStorage;
+    using SinePlus =
+        sst::voice_effects::generator::SinePlus<scxt::dsp::processor::SCXTVFXConfig<1>>;
+
+    LagFixture f;
+    f.noteOn(60);
+    f.runBlocks(4);
+    REQUIRE(f.zone->isActive());
+
+    auto &ps = f.zone->processorStorage[0];
+    REQUIRE(ps.intParams[SinePlus::ipQuantA] == 1);
+    det::pokeZoneMemberValue<float>(
+        f.zone, ps, offsetof(PS, floatParams) + SinePlus::fpOffsetA * sizeof(float), 5.f);
+    f.runBlocks(1);
+    REQUIRE(ps.floatParams[SinePlus::fpOffsetA] < 5.f);
+
+    // unquantize while the harmonic is still ramping towards 5
+    scxt::messaging::client::applyProcessorIntValue(
+        *f.zone, 0, offsetof(PS, intParams) + SinePlus::ipQuantA * sizeof(int32_t), 0);
+    const auto semis = 12.f * std::log2(5.f);
+    REQUIRE(ps.floatParams[SinePlus::fpOffsetA] == Approx(semis));
+
+    f.runBlocks(lagBlocks + 5);
+    REQUIRE(f.zone->isActive());
+    REQUIRE(ps.floatParams[SinePlus::fpOffsetA] == Approx(semis));
 }

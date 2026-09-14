@@ -282,6 +282,9 @@ struct Processor : MoveableOnly<Processor>, SampleRateSupport
     virtual bool supportsMakingParametersConsistent() { return false; }
     virtual bool makeParametersConsistent() { return false; }
 
+    // iparam already holds the new value; the host clamps every float to range afterwards
+    virtual void remapFloatsForIntChange(size_t intIndex, int oldValue, float *fparam) {}
+
     virtual void resetMetadata() { assert(false); }
 
     double *tempoPointer{nullptr};

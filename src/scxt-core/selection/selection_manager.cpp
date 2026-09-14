@@ -843,6 +843,7 @@ void SelectionManager::copyZoneOrGroupProcessorLeadToAll(bool forZone, int which
 
                         tz->setProcessorType(which, ftype);
                         tz->processorStorage[which] = fz->processorStorage[which];
+                        tz->setupProcessorControlDescriptions(which, ftype);
                     }
                 }
             },
@@ -873,6 +874,7 @@ void SelectionManager::copyZoneOrGroupProcessorLeadToAll(bool forZone, int which
 
                         tg->setProcessorType(which, ftype);
                         tg->processorStorage[which] = fz->processorStorage[which];
+                        tg->setupProcessorControlDescriptions(which, ftype);
                     }
                 }
             },
