@@ -92,7 +92,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         rebuild();
         setSelectionMode(jcmp::ListView::SelectionMode::MULTI_SELECTION);
         getRowCount = [this]() { return visibleRows.size() + 1; };
-        getRowHeight = [this]() { return 18; };
+        getRowHeight = [this]() { return 15; };
         makeRowComponent = [this]() { return std::make_unique<rowTopComponent>(); };
         assignComponentToRow = [this](const std::unique_ptr<juce::Component> &c, uint32_t row) {
             auto rc = dynamic_cast<rowTopComponent *>(c.get());
@@ -778,7 +778,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             if (muteProvider && muteProvider->widget)
             {
                 muteProvider->widget->setBounds(
-                    getLocalBounds().withTrimmedLeft(getWidth() - getHeight() + 2).reduced(2));
+                    getLocalBounds().withTrimmedLeft(getWidth() - getHeight() + 2).reduced(1));
             }
         }
 
