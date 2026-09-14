@@ -27,6 +27,7 @@ add_executable(scxt-test
 		sample_gated_tests.cpp
 		undo_tests.cpp
 		importer_tests.cpp
+		missing_sample_save_tests.cpp
 		midi_channel_tests.cpp
 		macro_id_tests.cpp
 		tuning_tests.cpp

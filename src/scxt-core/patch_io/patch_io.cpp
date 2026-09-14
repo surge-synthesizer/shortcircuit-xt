@@ -159,6 +159,11 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
     auto d = (uint8_t *)c->LoadChunkData();
     memcpy(d, mpaths.data(), mpaths.size());
 
+    auto unableToRead = [&e](const fs::path &path, const std::string &why) {
+        RAISE_ERROR_ENGINE(e, "Unable to add sample to monolith", path.u8string() + "\n" + why);
+        return false;
+    };
+
     auto smplst = lst->AddSubList(sampleListChunk);
     for (const auto &path : sortedPaths)
     {
@@ -177,7 +182,7 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
             std::ifstream file(path, std::ios::binary);
             if (!file)
             {
-                return false;
+                return unableToRead(path, "Could not open file");
             }
 
             // Check the file size
@@ -188,13 +193,13 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
             if (fstreamSz != fsz)
             {
                 SCLOG_IF(patchIO, "Mismatched sizes " << fsz << " " << fstreamSz);
-                return false;
+                return unableToRead(path, "File size changed while reading");
             };
 
             file.read((char *)d, fsz);
             if (!file)
             {
-                return false;
+                return unableToRead(path, "Could not read file");
             }
 
             SCLOG_IF(patchIO, "   - " << path.u8string() << " bytes=" << fsz);
@@ -202,7 +207,7 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
         }
         catch (const fs::filesystem_error &fse)
         {
-            return false;
+            return unableToRead(path, fse.what());
         }
     }
 
@@ -391,10 +396,9 @@ fs::path saveSubSample(const engine::Engine &e, sample::SampleManager::sampleMap
     return nf;
 }
 
-sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine &e, int part,
-                                                     std::vector<fs::path> &tempFilesCreated)
+sample::SampleManager::sampleMap_t samplesToSave(const scxt::engine::Engine &e, int part)
 {
-    sample::SampleManager::sampleMap_t toCollect;
+    sample::SampleManager::sampleMap_t res;
 
     e.getSampleManager()->purgeUnreferencedSamples();
 
@@ -404,35 +408,18 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
         for (auto curr = e.getSampleManager()->samplesBegin();
              curr != e.getSampleManager()->samplesEnd(); ++curr)
         {
-            auto id = curr->first;
-            auto sp = curr->second;
-            if (sample::Sample::isSourceTypeSubSampleFromMonolith(sp->type))
-            {
-                tempFilesCreated.push_back(saveSubSample(e, toCollect, id, sp));
-            }
-            else
-            {
-                toCollect.insert(*curr);
-            }
+            res.insert(*curr);
         }
     }
     else
     {
         const auto &pt = e.getPatch()->getPart(part);
-        auto smp = pt->getSamplesUsedByPart();
-        for (const auto &sid : smp)
+        for (const auto &sid : pt->getSamplesUsedByPart())
         {
             auto sp = e.getSampleManager()->getSample(sid);
             if (sp)
             {
-                if (sample::Sample::isSourceTypeSubSampleFromMonolith(sp->type))
-                {
-                    tempFilesCreated.push_back(saveSubSample(e, toCollect, sid, sp));
-                }
-                else
-                {
-                    toCollect.insert({sid, sp});
-                }
+                res.insert({sid, sp});
             }
             else
             {
@@ -440,11 +427,108 @@ sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine 
             }
         }
     }
+    return res;
+}
+
+sample::SampleManager::sampleMap_t getSamplePathsFor(const scxt::engine::Engine &e, int part,
+                                                     std::vector<fs::path> &tempFilesCreated)
+{
+    sample::SampleManager::sampleMap_t toCollect;
+
+    // saveSubSample adds to the sample manager, so don't walk it live
+    for (const auto &[id, sp] : samplesToSave(e, part))
+    {
+        if (sample::Sample::isSourceTypeSubSampleFromMonolith(sp->type))
+        {
+            tempFilesCreated.push_back(saveSubSample(e, toCollect, id, sp));
+        }
+        else
+        {
+            toCollect.insert({id, sp});
+        }
+    }
     return toCollect;
 }
 
-std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collectDir,
-                                                          const scxt::engine::Engine &e, int part)
+void removeTempFiles(const std::vector<fs::path> &files)
+{
+    for (auto &f : files)
+    {
+        try
+        {
+            fs::remove(f);
+        }
+        catch (fs::filesystem_error &fse)
+        {
+            SCLOG_IF(patchIO, "Unable to remove " << f.u8string() << " " << fse.what());
+        }
+    }
+}
+
+bool sampleFilesPresentForSave(const scxt::engine::Engine &e, int part, SaveStyles style)
+{
+    auto what = part < 0 ? std::string("the multi") : "part " + std::to_string(part + 1);
+    std::string action;
+    switch (style)
+    {
+    case NO_SAMPLES:
+        return true;
+    case WITH_COLLECTED_SAMPLES:
+        action = "save " + what + " with collected samples";
+        break;
+    case AS_MONOLITH:
+        action = "save " + what + " as a monolith";
+        break;
+    case AS_SFZ:
+        action = "export " + what + " as SFZ";
+        break;
+    case ONLY_COLLECT:
+        action = "collect the samples for " + what;
+        break;
+    }
+
+    std::set<fs::path> missing;
+    for (const auto &[id, sp] : samplesToSave(e, part))
+    {
+        if (sp->isMissingPlaceholder)
+        {
+            missing.insert(sp->getPath());
+        }
+        else if (!sample::Sample::isSourceTypeSubSampleFromMonolith(sp->type))
+        {
+            // sub-samples are rewritten from memory, everything else is read from disk
+            std::error_code ec;
+            if (!fs::exists(sp->getPath(), ec))
+                missing.insert(sp->getPath());
+        }
+    }
+
+    if (missing.empty())
+        return true;
+
+    static constexpr size_t maxListed{8};
+    auto msg = "Unable to " + action + ". " +
+               (missing.size() == 1 ? std::string("A sample file has")
+                                    : std::to_string(missing.size()) + " sample files have") +
+               " moved or been deleted since loading, so nothing was written.\n";
+    size_t listed{0};
+    for (const auto &p : missing)
+    {
+        if (listed == maxListed)
+        {
+            msg += "\n... and " + std::to_string(missing.size() - maxListed) + " more";
+            break;
+        }
+        msg += "\n" + p.u8string();
+        listed++;
+    }
+    SCLOG_IF(patchIO, msg);
+    RAISE_ERROR_ENGINE(e, "Missing Sample Files", msg);
+    return false;
+}
+
+std::optional<std::unordered_map<SampleID, fs::path>>
+collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part)
 {
     std::vector<fs::path> tempFilesCreated;
     std::unordered_map<SampleID, fs::path> res;
@@ -465,6 +549,7 @@ std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collec
         uniquePaths.insert({sample->getPath(), sid});
     }
 
+    bool ok{true};
     std::set<fs::path> collectedFilenames;
     for (const auto &[c, sid] : uniquePaths)
     {
@@ -477,7 +562,8 @@ std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collec
                                    c.filename().u8string() + "' with " +
                                    "different paths. This is currently unsupported for "
                                    "collect mode and needs fixing soonish!");
-            return {};
+            ok = false;
+            break;
         }
         collectedFilenames.insert(c.filename());
         try
@@ -491,25 +577,21 @@ std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collec
         {
             SCLOG_IF(patchIO, "Unable to copy " << c.u8string() << " " << fse.what());
             RAISE_ERROR_ENGINE(e, "Unable to copy sample", fse.what());
-            return {};
+            ok = false;
+            break;
         }
     }
-    for (auto &f : tempFilesCreated)
-    {
-        try
-        {
-            fs::remove(f);
-        }
-        catch (fs::filesystem_error &fse)
-        {
-            SCLOG_IF(patchIO, "Unable to remove " << f.u8string() << " " << fse.what());
-        }
-    }
+    removeTempFiles(tempFilesCreated);
+    if (!ok)
+        return std::nullopt;
     return res;
 }
 
 bool onlyCollect(const fs::path &p, scxt::engine::Engine &e, int part)
 {
+    if (!sampleFilesPresentForSave(e, part, SaveStyles::ONLY_COLLECT))
+        return false;
+
     try
     {
         if (!fs::is_directory(p))
@@ -521,7 +603,9 @@ bool onlyCollect(const fs::path &p, scxt::engine::Engine &e, int part)
         return false;
     }
     auto collectMap = patch_io::collectSamplesInto(p, e, part);
-    if (collectMap.empty())
+    if (!collectMap)
+        return false;
+    if (collectMap->empty())
     {
         RAISE_ERROR_ENGINE(e, "No Samples Collected", "No samples were saved to " + p.u8string());
         return false;
@@ -535,6 +619,11 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
     {
         return onlyCollect(p, e, -1);
     }
+    if (!sampleFilesPresentForSave(e, -1, style))
+    {
+        return false;
+    }
+
     fs::path riffPath = p;
     fs::path collectDir;
 
@@ -563,7 +652,11 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
     {
         if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
         {
-            collectSamplesInto(collectDir, e, -1);
+            if (!collectSamplesInto(collectDir, e, -1))
+            {
+                e.getSampleManager()->remapIds.clear();
+                return false;
+            }
             e.getSampleManager()->reparentSamplesOnStreamToRelative(reparentInto);
         }
 
@@ -576,19 +669,10 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
             std::vector<fs::path> tmpf;
             auto smp = getSamplePathsFor(e, -1, tmpf);
             auto res = addMonolithBinaries(f, e, smp);
-            for (auto &f : tmpf)
-            {
-                try
-                {
-                    fs::remove(f);
-                }
-                catch (fs::filesystem_error &fse)
-                {
-                    SCLOG_IF(patchIO, "Unable to remove " << f.u8string() << " " << fse.what());
-                }
-            }
+            removeTempFiles(tmpf);
             if (!res)
             {
+                e.getSampleManager()->remapIds.clear();
                 return false;
             }
         }
@@ -629,6 +713,10 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
             return false;
         return onlyCollect(p, e, part);
     }
+    if (!sampleFilesPresentForSave(e, part, style))
+    {
+        return false;
+    }
 
     fs::path riffPath = p;
     fs::path collectDir;
@@ -657,7 +745,11 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
     {
         if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
         {
-            collectSamplesInto(collectDir, e, part);
+            if (!collectSamplesInto(collectDir, e, part))
+            {
+                e.getSampleManager()->remapIds.clear();
+                return false;
+            }
             e.getSampleManager()->reparentSamplesOnStreamToRelative(reparentInto);
         }
 
@@ -670,19 +762,10 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
             std::vector<fs::path> tmpf;
             auto smp = getSamplePathsFor(e, part, tmpf);
             auto res = addMonolithBinaries(f, e, smp);
-            for (auto &f : tmpf)
-            {
-                try
-                {
-                    fs::remove(f);
-                }
-                catch (fs::filesystem_error &fse)
-                {
-                    SCLOG_IF(patchIO, "Unable to remove " << f.u8string() << " " << fse.what());
-                }
-            }
+            removeTempFiles(tmpf);
             if (!res)
             {
+                e.getSampleManager()->remapIds.clear();
                 return false;
             }
         }

@@ -52,9 +52,12 @@ bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
 
 bool initFromResourceBundle(scxt::engine::Engine &e, const std::string &file);
 
-// use -1 for all parts
-std::unordered_map<SampleID, fs::path> collectSamplesInto(const fs::path &collectDir,
-                                                          const scxt::engine::Engine &e, int part);
+// use -1 for all parts; nullopt means the collect failed and an error was raised
+std::optional<std::unordered_map<SampleID, fs::path>>
+collectSamplesInto(const fs::path &collectDir, const scxt::engine::Engine &e, int part);
+
+// raises an error naming any sample file the save style needs to read but can't find
+bool sampleFilesPresentForSave(const scxt::engine::Engine &e, int part, SaveStyles style);
 
 struct SCMonolithSampleReader
 {

@@ -37,6 +37,9 @@ namespace scxt::sfz_support
 {
 bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
 {
+    if (!patch_io::sampleFilesPresentForSave(e, partNumber, patch_io::SaveStyles::AS_SFZ))
+        return false;
+
     auto dir =
         toFile.parent_path() / (toFile.filename().replace_extension("").u8string() + " Samples");
     try
@@ -48,7 +51,10 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
         RAISE_ERROR_ENGINE(e, "Unable to create directory", dir.u8string() + "\n" + fse.what());
         return false;
     }
-    auto collectMap = patch_io::collectSamplesInto(dir, e, partNumber);
+    auto collectResult = patch_io::collectSamplesInto(dir, e, partNumber);
+    if (!collectResult)
+        return false;
+    const auto &collectMap = *collectResult;
 
     std::ostringstream oss;
     oss << "// SFZ exported from ShortCircuit XT\n";
