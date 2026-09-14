@@ -35,12 +35,14 @@
 #include "sst/jucegui/style/StyleAndSettingsConsumer.h"
 #include "sst/jucegui/util/VisibilityParentWatcher.h"
 #include "app/HasEditor.h"
+#include "engine/macros.h"
 #include "utils.h"
 
 namespace scxt::ui::app::shared
 {
 struct MacroValueAttachment;
 struct MacroToggleAttachment;
+struct MacroSteppedAttachment;
 struct SingleMacroEditor : HasEditor,
                            juce::Component,
                            juce::TextEditor::Listener,
@@ -48,7 +50,9 @@ struct SingleMacroEditor : HasEditor,
 {
     std::unique_ptr<MacroValueAttachment> valueAttachment;
     std::unique_ptr<MacroToggleAttachment> toggleAttachment;
+    std::unique_ptr<MacroSteppedAttachment> steppedAttachment;
     std::unique_ptr<sst::jucegui::components::Knob> knob;
+    std::unique_ptr<sst::jucegui::components::DiscreteKnob> steppedKnob;
     std::unique_ptr<sst::jucegui::components::ToggleButton> toggleButton;
     std::unique_ptr<juce::Component> menuButton;
     std::unique_ptr<juce::TextEditor> macroNameEditor;
@@ -58,6 +62,9 @@ struct SingleMacroEditor : HasEditor,
     void resized() override;
     void paint(juce::Graphics &g) override;
     void showMenu();
+    void showSteppedKnobMenu();
+    void showCustomStepsTypein(engine::Macro::Mode mode);
+    void setMacroMode(engine::Macro::Mode mode, int16_t steps);
     void updateFromEditorData();
     void changePart(int p, int i);
 

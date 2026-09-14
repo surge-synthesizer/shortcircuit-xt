@@ -31,7 +31,9 @@
 #include "sst/jucegui/components/GlyphPainter.h"
 #include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/component-adapters/ComponentTags.h"
+#include "sst/clap_juce_shim/menu_helper.h"
 #include "messaging/client/client_messages.h"
+#include "MenuValueTypein.h"
 
 namespace scxt::ui::app::shared
 {
@@ -105,6 +107,57 @@ struct MacroToggleAttachment : HasEditor, sst::jucegui::data::Discrete
     int getMin() const override { return 0; }
     int getMax() const override { return 1; }
     std::string getValueAsStringFor(int i) const override { return i > 0 ? "On" : "Off"; }
+};
+
+struct MacroSteppedAttachment : HasEditor, sst::jucegui::data::Discrete
+{
+    int part{-1}, index{-1};
+    MacroSteppedAttachment(SCXTEditor *e, int p, int i) : HasEditor(e), part(p), index(i)
+    {
+        jogWrapsAtEnd = false;
+    }
+
+    const engine::Macro &macro() const
+    {
+        assert(part >= 0 && part < scxt::numParts);
+        assert(index >= 0 && index < scxt::macrosPerPart);
+        return editor->macroCache[part][index];
+    }
+
+    engine::Macro &macro()
+    {
+        assert(part >= 0 && part < scxt::numParts);
+        assert(index >= 0 && index < scxt::macrosPerPart);
+        return editor->macroCache[part][index];
+    }
+
+    std::string getLabel() const override { return macro().name; }
+    int getValue() const override { return macro().isStepped() ? macro().stepIndex() : 0; }
+    int getDefaultValue() const override
+    {
+        if (!macro().isStepped())
+            return 0;
+        return macro().stepIndexFor01(macro().getValue01For(0));
+    }
+    void setValueFromGUI(const int &i) override
+    {
+        if (!macro().isStepped())
+            return;
+        macro().setValueConstrained(macro().valueForStepIndex(i));
+        sendToSerialization(scxt::messaging::client::SetMacroValue({part, index, macro().value}));
+        editor->setTooltipContents(getLabel(), getValueAsString());
+    }
+    void setValueFromModel(const int &) override {}
+    int getMin() const override { return 0; }
+    // never equal to min, which would divide by zero in getValue01
+    int getMax() const override { return std::max(1, macro().steps - 1); }
+    bool isBipolar() const override { return macro().isBipolar(); }
+    std::string getValueAsStringFor(int i) const override
+    {
+        if (!macro().isStepped())
+            return std::to_string(i);
+        return macro().stepIndexToString(i);
+    }
 };
 
 struct NarrowVerticalMenu : HasEditor, juce::Component
@@ -190,6 +243,53 @@ SingleMacroEditor::SingleMacroEditor(SCXTEditor *e, int p, int i, bool vo)
     valueAttachment = std::make_unique<MacroValueAttachment>(editor, part, index);
     knob->setSource(valueAttachment.get());
 
+    steppedKnob = std::make_unique<sst::jucegui::components::DiscreteKnob>();
+    steppedKnob->wheelModel = sst::jucegui::components::DiscreteParamEditor::VALUE;
+    addChildComponent(*steppedKnob);
+
+    steppedKnob->onBeginEdit = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->showTooltip(*(w->steppedKnob));
+        w->editor->setTooltipContents(w->steppedAttachment->getLabel(),
+                                      w->steppedAttachment->getValueAsString());
+        w->sendToSerialization(messaging::client::MacroBeginEndEdit({true, w->part, w->index}));
+    };
+    steppedKnob->onEndEdit = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->hideTooltip();
+        w->sendToSerialization(messaging::client::MacroBeginEndEdit({false, w->part, w->index}));
+    };
+    steppedKnob->onIdleHover = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->showTooltip(*(w->steppedKnob));
+        w->editor->setTooltipContents(w->steppedAttachment->getLabel(),
+                                      w->steppedAttachment->getValueAsString());
+    };
+    steppedKnob->onIdleHoverEnd = [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->editor->hideTooltip();
+    };
+    steppedKnob->onWheelEditOccurred = [w = juce::Component::SafePointer(steppedKnob.get())]() {
+        if (w)
+            w->immediatelyInitiateIdleAction(1000);
+    };
+    steppedKnob->onPopupMenu = [w = juce::Component::SafePointer(this)](auto &) {
+        if (!w)
+            return;
+        w->editor->hideTooltip();
+        w->showSteppedKnobMenu();
+    };
+
+    sst::jucegui::component_adapters::setClapParamId(steppedKnob.get(),
+                                                     engine::Macro::partIndexToMacroID(p, i));
+
+    steppedAttachment = std::make_unique<MacroSteppedAttachment>(editor, part, index);
+    steppedKnob->setSource(steppedAttachment.get());
+
     toggleButton = std::make_unique<sst::jucegui::components::ToggleButton>();
     toggleButton->setDrawMode(sst::jucegui::components::ToggleButton::DrawMode::GLYPH_WITH_BG);
     toggleButton->setGlyph(sst::jucegui::components::GlyphPainter::SMALL_POWER_LIGHT);
@@ -245,9 +345,13 @@ void SingleMacroEditor::changePart(int p, int i)
     valueAttachment->index = i;
     toggleAttachment->part = p;
     toggleAttachment->index = i;
+    steppedAttachment->part = p;
+    steppedAttachment->index = i;
     part = p;
     index = i;
     sst::jucegui::component_adapters::setClapParamId(knob.get(),
+                                                     engine::Macro::partIndexToMacroID(p, i));
+    sst::jucegui::component_adapters::setClapParamId(steppedKnob.get(),
                                                      engine::Macro::partIndexToMacroID(p, i));
     sst::jucegui::component_adapters::setClapParamId(toggleButton.get(),
                                                      engine::Macro::partIndexToMacroID(p, i));
@@ -269,12 +373,14 @@ void SingleMacroEditor::resized()
             kb = kb.reduced(overShoot / 2, 0);
         }
         knob->setBounds(kb);
+        steppedKnob->setBounds(kb);
         toggleButton->setBounds(kb.reduced(2));
     }
     else
     {
         auto b = getLocalBounds();
         knob->setBounds(b.withHeight(b.getWidth()).reduced(15));
+        steppedKnob->setBounds(b.withHeight(b.getWidth()).reduced(15));
         toggleButton->setBounds(b.withHeight(b.getWidth()).reduced(13));
         menuButton->setBounds(b.withWidth(12).withHeight(24).translated(0, 10));
         macroNameEditor->setBounds(
@@ -301,22 +407,135 @@ void SingleMacroEditor::showMenu()
     juce::PopupMenu p;
     p.addSectionHeader(macro.name);
     p.addSeparator();
-    auto addMode = [this, &p, &macro](const std::string &label, engine::Macro::Mode mode) {
-        p.addItem(label, true, macro.mode == mode,
-                  [w = juce::Component::SafePointer(this), mode]() {
-                      if (!w)
-                          return;
-                      auto &macro = w->editor->macroCache[w->part][w->index];
-                      macro.setMode(mode);
-                      w->sendToSerialization(
-                          scxt::messaging::client::SetMacroFullState({w->part, w->index, macro}));
-                      w->updateFromEditorData();
-                  });
+    auto addMode = [this, &macro](juce::PopupMenu &menu, const std::string &label,
+                                  engine::Macro::Mode mode, int16_t steps) {
+        auto current = macro.mode == mode && (macro.isStepped() ? macro.steps : 0) == steps;
+        menu.addItem(label, true, current, [w = juce::Component::SafePointer(this), mode, steps]() {
+            if (w)
+                w->setMacroMode(mode, steps);
+        });
     };
-    addMode("Unipolar", engine::Macro::UNIPOLAR);
-    addMode("Bipolar", engine::Macro::BIPOLAR);
-    addMode("Toggle", engine::Macro::TOGGLE);
+    addMode(p, "Unipolar", engine::Macro::UNIPOLAR, 0);
+    addMode(p, "Bipolar", engine::Macro::BIPOLAR, 0);
+    addMode(p, "Toggle", engine::Macro::TOGGLE, 0);
+
+    auto addSteppedMenu = [&](const std::string &label, engine::Macro::Mode mode,
+                              std::initializer_list<int16_t> counts) {
+        juce::PopupMenu sub;
+        for (auto c : counts)
+        {
+            auto stepDen = (mode == engine::Macro::BIPOLAR) ? (c - 1) / 2 : c - 1;
+            addMode(sub, std::to_string(c) + " steps (1/" + std::to_string(stepDen) + ")", mode, c);
+        }
+        auto inThisMenu = macro.isStepped() && macro.mode == mode;
+        auto isCustom =
+            inThisMenu && std::find(counts.begin(), counts.end(), macro.steps) == counts.end();
+        sub.addSeparator();
+        sub.addItem("Custom steps...", true, isCustom,
+                    [w = juce::Component::SafePointer(this), mode]() {
+                        if (w)
+                            w->showCustomStepsTypein(mode);
+                    });
+        p.addSubMenu(label, sub, true, juce::Image(), inThisMenu);
+    };
+    // counts include both ends, so 5 steps is quarters
+    addSteppedMenu("Stepped", engine::Macro::UNIPOLAR, {5, 9, 13, 17});
+    // odd counts so zero is always a step
+    addSteppedMenu("Bipolar Stepped", engine::Macro::BIPOLAR, {3, 5, 9, 17, 25, 33});
     p.showMenuAsync(editor->defaultPopupMenuOptions(menuButton.get()));
+}
+
+void SingleMacroEditor::setMacroMode(engine::Macro::Mode mode, int16_t steps)
+{
+    assert(part >= 0 && part < scxt::numParts);
+    assert(index >= 0 && index < scxt::macrosPerPart);
+    auto &macro = editor->macroCache[part][index];
+    macro.setMode(mode, steps);
+    sendToSerialization(scxt::messaging::client::SetMacroFullState({part, index, macro}));
+    updateFromEditorData();
+}
+
+struct CustomStepsTypein : MenuValueTypeinBase
+{
+    std::string initial;
+    std::function<void(const std::string &)> onValue;
+    CustomStepsTypein(SCXTEditor *e, const std::string &i,
+                      std::function<void(const std::string &)> f)
+        : MenuValueTypeinBase(e), initial(i), onValue(std::move(f))
+    {
+    }
+    std::string getInitialText() const override { return initial; }
+    void setValueString(const std::string &s) override { onValue(s); }
+};
+
+void SingleMacroEditor::showCustomStepsTypein(engine::Macro::Mode mode)
+{
+    assert(part >= 0 && part < scxt::numParts);
+    assert(index >= 0 && index < scxt::macrosPerPart);
+    const auto &macro = editor->macroCache[part][index];
+
+    juce::PopupMenu p;
+    if (mode == engine::Macro::BIPOLAR)
+        p.addSectionHeader("How many steps (type '21' for 1/10)");
+    else
+        p.addSectionHeader("How many steps (type '11' for step size 1/10)");
+    p.addSeparator();
+
+    auto initial =
+        (macro.isStepped() && macro.mode == mode) ? std::to_string(macro.steps) : std::string();
+    p.addCustomItem(
+        -1,
+        std::make_unique<CustomStepsTypein>(
+            editor, initial, [w = juce::Component::SafePointer(this), mode](const std::string &s) {
+                if (!w)
+                    return;
+                auto n = std::strtol(s.c_str(), nullptr, 10);
+                if (n < engine::Macro::minSteps)
+                    return;
+                w->setMacroMode(mode, (int16_t)std::min(n, (long)engine::Macro::maxSteps));
+            }));
+    p.showMenuAsync(editor->defaultPopupMenuOptions(menuButton.get()));
+}
+
+void SingleMacroEditor::showSteppedKnobMenu()
+{
+    assert(part >= 0 && part < scxt::numParts);
+    assert(index >= 0 && index < scxt::macrosPerPart);
+    const auto &macro = editor->macroCache[part][index];
+    if (!macro.isStepped())
+        return;
+
+    juce::PopupMenu p;
+    p.addSectionHeader(macro.name);
+    p.addSeparator();
+    // past this a step list is too long to be a useful menu
+    static constexpr int maxListedSteps{33};
+    if (macro.steps <= maxListedSteps)
+    {
+        auto current = macro.stepIndex();
+        for (int i = 0; i < macro.steps; ++i)
+        {
+            p.addItem(steppedAttachment->getValueAsStringFor(i), true, i == current,
+                      [w = juce::Component::SafePointer(this), i]() {
+                          if (!w)
+                              return;
+                          w->steppedAttachment->setValueFromGUI(i);
+                          w->steppedKnob->repaint();
+                      });
+        }
+        p.addSeparator();
+    }
+    p.addItem("Set to Default", [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->steppedAttachment->setValueFromGUI(w->steppedAttachment->getDefaultValue());
+        w->steppedKnob->repaint();
+    });
+
+    sst::clap_juce_shim::populateMenuForClapParam(p, engine::Macro::partIndexToMacroID(part, index),
+                                                  editor->clapHost);
+
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 void SingleMacroEditor::onStyleChanged()
 {
@@ -351,7 +570,8 @@ void SingleMacroEditor::updateFromEditorData()
     {
         macroNameLabel->setText(macro.name);
     }
-    knob->setVisible(!macro.isToggle());
+    knob->setVisible(!macro.isToggle() && !macro.isStepped());
+    steppedKnob->setVisible(macro.isStepped());
     toggleButton->setVisible(macro.isToggle());
     repaint();
 }
