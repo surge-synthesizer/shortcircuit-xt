@@ -346,25 +346,25 @@ void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
 {
     /*
      * Any number of groups can share a switch key, so the live articulation is "every group
-     * latched to one particular key" rather than "one group". Settle on which key that is -
-     * whatever is already live if anything is, otherwise the first switch we find - and bring
-     * up exactly the groups on it. That leaves a shared-key pair both sounding, and never
+     * latched to one particular key" rather than "one group". Settle on which key that is and
+     * bring up exactly the groups on it. That leaves a shared-key pair both sounding, and never
      * leaves an instrument with keyswitches and nothing selected.
      */
-    int16_t selectedKey{-1};
+    // new latch groups arrive unmuted, so adding one must not knock over the live articulation
+    auto defaultKey = defaultKeySwitchLatchKey();
+    int16_t firstLiveKey{-1};
+    bool defaultIsLive{false};
     for (auto &g : groups)
     {
         auto k = g->triggerConditions.firstKeySwitchLatchKey();
-        if (k < 0)
+        if (k < 0 || g->mutedByLatch)
             continue;
-        if (selectedKey < 0)
-            selectedKey = k;
-        if (!g->mutedByLatch)
-        {
-            selectedKey = k;
-            break;
-        }
+        if (firstLiveKey < 0)
+            firstLiveKey = k;
+        if (k == defaultKey)
+            defaultIsLive = true;
     }
+    auto selectedKey = (defaultIsLive || firstLiveKey < 0) ? defaultKey : firstLiveKey;
 
     if (selectedKey < 0)
     {
@@ -380,6 +380,32 @@ void Part::guaranteeKeyswitchLatchCoherence(Engine &e)
         g->mutedByLatch = (k >= 0 && k != selectedKey);
         SCLOG_IF(groupTrigggers, "Coherence " << g->id.to_string() << SCD(k) << SCD(selectedKey)
                                               << SCD(g->mutedByLatch));
+    }
+}
+
+int16_t Part::defaultKeySwitchLatchKey() const
+{
+    int16_t lowest{-1};
+    for (const auto &g : groups)
+    {
+        auto k = g->triggerConditions.firstKeySwitchLatchKey();
+        if (k < 0)
+            continue;
+        if (k == configuration.defaultKeySwitchKey)
+            return k;
+        if (lowest < 0)
+            lowest = k;
+    }
+    return lowest;
+}
+
+void Part::selectDefaultKeySwitchArticulation()
+{
+    auto key = defaultKeySwitchLatchKey();
+    for (auto &g : groups)
+    {
+        auto k = g->triggerConditions.firstKeySwitchLatchKey();
+        g->mutedByLatch = (key >= 0 && k >= 0 && k != key);
     }
 }
 
@@ -555,19 +581,24 @@ partKeySwitchDisplay_t Part::keySwitchDisplay() const
     partKeySwitchDisplay_t res{};
     for (int k = 0; k < 128; ++k)
     {
-        bool isSwitch{false}, isLive{false};
+        bool isSwitch{false}, isLatch{false}, isLive{false};
         for (const auto &g : groups)
         {
             if (g->triggerConditions.isKeySwitchKey(k))
                 isSwitch = true;
+            if (g->triggerConditions.isKeySwitchLatchKey(k))
+                isLatch = true;
             // A momentary switch is live only while held, which is audio thread state this
             // snapshot cannot see, so only latches report as live here.
             if (g->triggerConditions.firstKeySwitchLatchKey() == k && !g->mutedByLatch)
                 isLive = true;
         }
-        res[k] = (int32_t)(isSwitch ? (isLive ? KeySwitchDisplayState::ACTIVE
-                                              : KeySwitchDisplayState::INACTIVE)
-                                    : KeySwitchDisplayState::NOT_A_SWITCH);
+        auto st = KeySwitchDisplayState::NOT_A_SWITCH;
+        if (isLatch)
+            st = isLive ? KeySwitchDisplayState::ACTIVE : KeySwitchDisplayState::INACTIVE;
+        else if (isSwitch)
+            st = KeySwitchDisplayState::MOMENTARY;
+        res[k] = (int32_t)st;
     }
     return res;
 }

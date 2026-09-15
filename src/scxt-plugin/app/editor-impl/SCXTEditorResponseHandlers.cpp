@@ -582,6 +582,8 @@ void SCXTEditorReceiver::onPartConfiguration(
 
     if (editor.editScreen && editor.editScreen->partSidebar)
         editor.editScreen->partSidebar->partConfigurationChanged(pt);
+    if (editor.editScreen && editor.editScreen->partEditScreen)
+        editor.editScreen->partEditScreen->partKeySwitchStateChanged(pt);
 }
 
 void SCXTEditorReceiver::onActivityNotification(
@@ -635,6 +637,8 @@ void SCXTEditorReceiver::onPartKeySwitchDisplay(
     editor.keySwitchDisplay[part] = keys;
     // the mapping keyboard paints these
     editor.editScreen->repaint();
+    if (editor.editScreen->partEditScreen)
+        editor.editScreen->partEditScreen->partKeySwitchStateChanged(part);
 }
 
 void SCXTEditorReceiver::onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &t)

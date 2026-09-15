@@ -225,7 +225,7 @@ TEST_CASE("Keyswitch - part reports every switch key and which is live", "[keysw
     addBlankZoneToGroup(part, 2, 48, 72);
     setKeyswitch(part, 2, scxt::engine::GroupTriggerID::KEYSWITCH_MOMENTARY, PLAY_KEY + 5);
     ks = part.keySwitchDisplay();
-    REQUIRE(ks[PLAY_KEY + 5] == (int32_t)kss::INACTIVE);
+    REQUIRE(ks[PLAY_KEY + 5] == (int32_t)kss::MOMENTARY);
 }
 
 static int32_t keySwitchGroupFeatures(const scxt::engine::Engine &eng, int part, int group)
@@ -267,6 +267,30 @@ TEST_CASE("Keyswitch - the group tree marks keyswitch groups and which are switc
     REQUIRE(!has(0, gzf::MUTED));
 }
 
+static scxt::engine::GroupTriggerConditions keySwitchLatchOn(int key)
+{
+    scxt::engine::GroupTriggerConditions cond;
+    cond.storage[0].id = scxt::engine::GroupTriggerID::KEYSWITCH_LATCH;
+    cond.storage[0].args[0] = (float)key;
+    return cond;
+}
+
+// the same two articulations as setupTwoLatchGroups, built the way the client builds them
+static void setupTwoLatchGroupsThroughMessages(scxt::clients::console_ui::ConsoleHarness &th)
+{
+    // adding a zone selects it, which leads the group the condition then lands on
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 72, 0, 127}));
+    th.stepUI();
+    th.sendToSerialization(cmsg::UpdateGroupTriggerConditions(keySwitchLatchOn(SW_A)));
+    th.stepUI();
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI();
+    th.sendToSerialization(cmsg::AddBlankZone({0, 1, 48, 72, 0, 127}));
+    th.stepUI();
+    th.sendToSerialization(cmsg::UpdateGroupTriggerConditions(keySwitchLatchOn(SW_B)));
+    th.stepUI();
+}
+
 TEST_CASE("Keyswitch latch - a switch press refreshes the client", "[keyswitch]")
 {
     // the latch moves on the audio thread, so the keyboard and tree only hear about it if the
@@ -274,25 +298,7 @@ TEST_CASE("Keyswitch latch - a switch press refreshes the client", "[keyswitch]"
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
     th.stepUI();
-
-    auto latchOn = [](int key) {
-        scxt::engine::GroupTriggerConditions cond;
-        cond.storage[0].id = scxt::engine::GroupTriggerID::KEYSWITCH_LATCH;
-        cond.storage[0].args[0] = (float)key;
-        return cond;
-    };
-
-    // adding a zone selects it, which leads the group the condition then lands on
-    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 72, 0, 127}));
-    th.stepUI();
-    th.sendToSerialization(cmsg::UpdateGroupTriggerConditions(latchOn(SW_A)));
-    th.stepUI();
-    th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
-    th.sendToSerialization(cmsg::AddBlankZone({0, 1, 48, 72, 0, 127}));
-    th.stepUI();
-    th.sendToSerialization(cmsg::UpdateGroupTriggerConditions(latchOn(SW_B)));
-    th.stepUI();
+    setupTwoLatchGroupsThroughMessages(th);
 
     auto &part = *th.engine->getPatch()->getPart(0);
     REQUIRE(part.getGroups().size() == 2);
@@ -474,4 +480,136 @@ TEST_CASE("Keyswitch latch - reads the pre-move nested spelling", "[keyswitch]")
 
     unstreamGroup(legacy, *part.getGroup(0));
     REQUIRE(part.getGroup(0)->mutedByLatch);
+}
+
+TEST_CASE("Keyswitch default - a chosen key is armed at rest", "[keyswitch]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto &part = *eng->getPatch()->getPart(0);
+    part.configuration.defaultKeySwitchKey = SW_B;
+    setupTwoLatchGroups(*eng);
+
+    REQUIRE(part.defaultKeySwitchLatchKey() == SW_B);
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+
+    // and it is what coherence falls back to when nothing is live
+    part.getGroup(0)->mutedByLatch = true;
+    part.getGroup(1)->mutedByLatch = true;
+    part.guaranteeKeyswitchLatchCoherence(*eng);
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+}
+
+TEST_CASE("Keyswitch default - a key no group uses means the lowest group", "[keyswitch]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto &part = *eng->getPatch()->getPart(0);
+    part.configuration.defaultKeySwitchKey = SW_B;
+    setupTwoLatchGroups(*eng);
+
+    // take the default key out of the keyswitches
+    setKeyswitch(part, 1, scxt::engine::GroupTriggerID::KEYSWITCH_LATCH, SW_B + 5);
+    REQUIRE(part.defaultKeySwitchLatchKey() == SW_A);
+
+    part.getGroup(0)->mutedByLatch = true;
+    part.getGroup(1)->mutedByLatch = true;
+    part.guaranteeKeyswitchLatchCoherence(*eng);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
+
+    // a part with no latches has no default at all
+    std::unique_ptr<scxt::engine::Engine> bare(makeEngine());
+    REQUIRE(bare->getPatch()->getPart(0)->defaultKeySwitchLatchKey() == -1);
+}
+
+TEST_CASE("Keyswitch default - adding a switch keeps the live articulation", "[keyswitch]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+
+    eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+
+    // a new group arrives unmuted, so two keys look live until coherence settles them
+    part.addGroup();
+    addBlankZoneToGroup(part, 2, 48, 72);
+    setKeyswitch(part, 2, scxt::engine::GroupTriggerID::KEYSWITCH_LATCH, SW_B + 1);
+    REQUIRE(!part.getGroup(2)->mutedByLatch);
+    part.guaranteeKeyswitchLatchCoherence(*eng);
+
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+    REQUIRE(part.getGroup(2)->mutedByLatch);
+}
+
+TEST_CASE("Keyswitch default - selecting the default re-arms it", "[keyswitch]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+
+    part.configuration.defaultKeySwitchKey = SW_B;
+    part.selectDefaultKeySwitchArticulation();
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+
+    part.configuration.defaultKeySwitchKey = -1;
+    part.selectDefaultKeySwitchArticulation();
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
+}
+
+TEST_CASE("Keyswitch default - survives a stream round trip", "[keyswitch]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    eng->getPatch()->getPart(0)->configuration.defaultKeySwitchKey = SW_B;
+
+    auto saved = scxt::json::streamEngineState(*eng);
+
+    std::unique_ptr<scxt::engine::Engine> reloaded(makeEngine());
+    {
+        auto bg = reloaded->getMessageController()->threadingChecker.bypassChecksInScope();
+        scxt::json::unstreamEngineState(*reloaded, saved);
+    }
+    REQUIRE(reloaded->getPatch()->getPart(0)->configuration.defaultKeySwitchKey == SW_B);
+    REQUIRE(reloaded->getPatch()->getPart(1)->configuration.defaultKeySwitchKey == -1);
+}
+
+TEST_CASE("Keyswitch default - changing it from the client arms it", "[keyswitch]")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+    setupTwoLatchGroupsThroughMessages(th);
+
+    auto &part = *th.engine->getPatch()->getPart(0);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+
+    auto conf = part.configuration;
+    conf.defaultKeySwitchKey = SW_B;
+    th.sendToSerialization(cmsg::UpdatePartFullConfig({0, conf}));
+    for (int i = 0; i < 100 && !part.getGroup(0)->mutedByLatch; ++i)
+        th.stepUI(1);
+
+    REQUIRE(part.configuration.defaultKeySwitchKey == SW_B);
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+
+    // any other part edit leaves a hand-picked articulation alone
+    th.sendToSerialization(cmsg::NoteFromGUI({SW_A, 1.f, true}));
+    th.sendToSerialization(cmsg::NoteFromGUI({SW_A, 0.f, false}));
+    for (int i = 0; i < 100 && part.getGroup(0)->mutedByLatch; ++i)
+        th.stepUI(1);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+
+    conf = part.configuration;
+    conf.level = 0.5f;
+    th.sendToSerialization(cmsg::UpdatePartFullConfig({0, conf}));
+    th.stepUI(20);
+    REQUIRE(part.configuration.level == 0.5f);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
 }
