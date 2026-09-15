@@ -201,6 +201,8 @@ struct ConsoleUI
 
     void onGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &) ON_STUB;
     void onPartKeySwitchDisplay(const scxt::messaging::client::partKeySwitchPayload_t &) ON_STUB;
+    int lastLearnedNote{-1};
+    void onLearnedNote(int16_t k) { lastLearnedNote = k; }
 
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &) ON_STUB;

@@ -1107,6 +1107,8 @@ void PartGroupSidebar::groupTriggerConditionChanged(const scxt::engine::GroupTri
     groupSidebar->groupTriggers->setGroupTriggerConditions(c);
 }
 
+void PartGroupSidebar::noteLearned(int16_t key) { groupSidebar->groupTriggers->noteLearned(key); }
+
 void PartGroupSidebar::refreshAllPartCards()
 {
     for (int i = 0; i < scxt::numParts; ++i)

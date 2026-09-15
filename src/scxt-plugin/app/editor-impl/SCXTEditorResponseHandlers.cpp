@@ -628,6 +628,12 @@ void SCXTEditorReceiver::onGroupTriggerConditions(scxt::engine::GroupTriggerCond
     editor.editScreen->partSidebar->groupTriggerConditionChanged(g);
 }
 
+void SCXTEditorReceiver::onLearnedNote(int16_t key)
+{
+    if (editor.editScreen && editor.editScreen->partSidebar)
+        editor.editScreen->partSidebar->noteLearned(key);
+}
+
 void SCXTEditorReceiver::onPartKeySwitchDisplay(
     const scxt::messaging::client::partKeySwitchPayload_t &p)
 {

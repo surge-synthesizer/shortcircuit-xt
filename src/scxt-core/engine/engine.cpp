@@ -1852,6 +1852,17 @@ void Engine::processProgramChangeEvent(int16_t port, int16_t channel, int16_t pr
 void Engine::processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
                                 double velocity, float retune)
 {
+    if (noteLearnArmed)
+    {
+        noteLearnArmed = false;
+        scxt::messaging::audio::AudioToSerialization a2s;
+        a2s.id = messaging::audio::a2s_note_learned;
+        a2s.payloadType = scxt::messaging::audio::AudioToSerialization::INT;
+        a2s.payload.i[0] = key;
+        getMessageController()->sendAudioToSerialization(a2s);
+        return;
+    }
+
     heldNotes.noteOn(channel, key, note_id, (float)velocity);
     voiceManager.processNoteOnEvent(port, channel, key, note_id, velocity, retune);
 }
