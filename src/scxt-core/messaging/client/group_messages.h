@@ -77,12 +77,8 @@ inline void doUpdateGroupTriggerConditions(const engine::GroupTriggerConditions 
                 eng.getPatch()->getPart(g.part)->guaranteeKeyswitchLatchCoherence(eng);
             },
             [g = *ga](const auto &eng) {
-                // the edit may have moved a switch key, so refresh the client keyboard
-                serializationSendToClient(
-                    s2c_send_part_keyswitch_display,
-                    partKeySwitchPayload_t{(int16_t)g.part,
-                                           eng.getPatch()->getPart(g.part)->keySwitchDisplay()},
-                    *(eng.getMessageController()));
+                // the edit may have moved a switch key or the live articulation
+                eng.sendKeySwitchStateToClient((int16_t)g.part);
             });
     }
 }

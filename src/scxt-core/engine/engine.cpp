@@ -598,6 +598,13 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
             {
                 groupFeatures |= GroupZoneFeatures::SOLOED;
             }
+            if (group->triggerConditions.hasKeySwitch())
+            {
+                groupFeatures |= GroupZoneFeatures::KEYSWITCHED;
+                // a momentary-only group is silent until its key is held
+                if (group->mutedByLatch || group->triggerConditions.firstKeySwitchLatchKey() < 0)
+                    groupFeatures |= GroupZoneFeatures::MUTED_BY_KEYSWITCH;
+            }
             if (sm.isGroupCollapsed(partidx, groupidx))
             {
                 groupFeatures |= GroupZoneFeatures::FOLDED;
@@ -1759,6 +1766,27 @@ void Engine::clearAll(bool alsoPurge)
 
     if (alsoPurge)
         sampleManager->purgeUnreferencedSamples();
+}
+
+void Engine::sendKeySwitchStateToClient(int16_t part) const
+{
+    if (part < 0 || part >= numParts)
+        return;
+    serializationSendToClient(messaging::client::s2c_send_part_keyswitch_display,
+                              messaging::client::partKeySwitchPayload_t{
+                                  part, getPatch()->getPart(part)->keySwitchDisplay()},
+                              *(getMessageController()));
+    serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                              getPartGroupZoneStructure(), *(getMessageController()));
+}
+
+void Engine::notifyKeySwitchStateChanged(int16_t part)
+{
+    scxt::messaging::audio::AudioToSerialization a2s;
+    a2s.id = messaging::audio::a2s_keyswitch_changed;
+    a2s.payloadType = scxt::messaging::audio::AudioToSerialization::INT;
+    a2s.payload.i[0] = part;
+    getMessageController()->sendAudioToSerialization(a2s);
 }
 
 void Engine::setMacro01ValueFromPlugin(int part, int index, float value01)

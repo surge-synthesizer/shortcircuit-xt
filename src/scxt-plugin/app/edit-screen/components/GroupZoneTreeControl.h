@@ -453,6 +453,17 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 if (hasZones && glyphHovered)
                     glyphColor = editor->themeColor(theme::ColorMap::generic_content_high);
                 jcmp::GlyphPainter::paintGlyph(g, gb, glyph, glyphColor);
+
+                // every keyswitch group shows the glyph, lit while it is the live articulation
+                if (sg.features & engine::GroupZoneFeatures::KEYSWITCHED)
+                {
+                    auto off = (sg.features & engine::GroupZoneFeatures::MUTED_BY_KEYSWITCH) != 0;
+                    auto kb = nb.removeFromRight(nb.getHeight()).reduced(1);
+                    jcmp::GlyphPainter::paintGlyph(
+                        g, kb, jcmp::GlyphPainter::KEYBOARD,
+                        editor->themeColor(off ? theme::ColorMap::generic_content_low
+                                               : theme::ColorMap::accent_1b));
+                }
                 g.setColour(textColor);
                 g.drawText(sg.name, nb, juce::Justification::centredLeft);
 

@@ -223,25 +223,33 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                              */
                             if (!inReleaseTriggerPass)
                             {
+                                bool changed{false};
                                 // This second iteration is a wee bit annoying but
                                 for (auto &gkt : *part)
                                 {
                                     SCLOG_IF(groupTrigggers,
                                              "Checking group " << gkt->id.to_string());
+                                    auto wasMuted = gkt->mutedByLatch;
                                     if (!gkt->triggerConditions.containsKeySwitchLatch)
                                     {
                                         SCLOG_IF(groupTrigggers, "   Not a keyswitch - mute false");
                                         gkt->mutedByLatch = false;
-                                        continue;
                                     }
-                                    // Several groups can share a switch key, so bring up
-                                    // everything latched to this key rather than only the group
-                                    // we matched
-                                    gkt->mutedByLatch = !gkt->triggerConditions.keySwitchLatchHolds(
-                                        *this, *gkt, channel, midiKey);
-                                    SCLOG_IF(groupTrigggers,
-                                             "   Muted by latch: " << gkt->mutedByLatch);
+                                    else
+                                    {
+                                        // Several groups can share a switch key, so bring up
+                                        // everything latched to this key rather than only the
+                                        // group we matched
+                                        gkt->mutedByLatch =
+                                            !gkt->triggerConditions.keySwitchLatchHolds(
+                                                *this, *gkt, channel, midiKey);
+                                        SCLOG_IF(groupTrigggers,
+                                                 "   Muted by latch: " << gkt->mutedByLatch);
+                                    }
+                                    changed = changed || (wasMuted != gkt->mutedByLatch);
                                 }
+                                if (changed)
+                                    notifyKeySwitchStateChanged((int16_t)pidx);
                             }
 
                             // Ignore any voices found here
@@ -736,6 +744,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * Update the audio playing state
      */
     void sendEngineStatusToClient() const;
+
+    // the keyboard marks the live articulation and the group tree marks what it silenced
+    void sendKeySwitchStateToClient(int16_t part) const;
+    // audio thread: a switch press moved the live articulation in this part
+    void notifyKeySwitchStateChanged(int16_t part);
 
     void clearAll(bool purgeSamples = true);
 
