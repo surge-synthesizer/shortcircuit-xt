@@ -36,6 +36,7 @@ enum GroupZoneFeatures
     MUTED = 1 << 1,
     FOLDED = 1 << 2, // group rows only: the group's zones are hidden in the tree sidebar
     SOLOED = 1 << 3,
+    MUTED_BY_KEYSWITCH = 1 << 4, // group rows only: another articulation is latched
 };
 }
 

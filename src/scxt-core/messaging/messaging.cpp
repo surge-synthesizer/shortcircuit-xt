@@ -119,6 +119,9 @@ void MessageController::parseAudioMessageOnSerializationThread(
         engine.getSampleManager()->purgeUnreferencedSamples();
     }
     break;
+    case audio::a2s_keyswitch_changed:
+        engine.sendKeySwitchStateToClient((int16_t)as.payload.i[0]);
+        break;
     case audio::a2s_none:
         break;
     }
