@@ -26,6 +26,7 @@
  */
 
 #include "sample_analytics.h"
+#include <algorithm>
 #include <limits>
 #include <cmath>
 #include <cstring>
@@ -122,5 +123,61 @@ float computeRMS(const std::shared_ptr<sample::Sample> &s)
 
     // What should the RMS of an empty sample be?
     return 0.0f;
+}
+
+int64_t nearestZeroCrossing(const std::shared_ptr<sample::Sample> &s, int64_t pos, int64_t lo,
+                            int64_t hi)
+{
+    if (!s || s->channels == 0)
+        return -1;
+
+    auto len = (int64_t)s->getSampleLength();
+    lo = std::max(lo, (int64_t)0);
+    hi = std::min(hi, len - 1);
+    if (lo > hi)
+        return -1;
+    pos = std::clamp(pos, lo, hi);
+
+    // only sign and relative size matter, so the raw sum needs no scaling
+    auto frame = [&s](int64_t i) {
+        float res{0};
+        for (int chan = 0; chan < s->channels; chan++)
+        {
+            switch (s->bitDepth)
+            {
+            case sample::Sample::BD_I16:
+                res += s->GetSamplePtrI16(chan)[i];
+                break;
+            case sample::Sample::BD_F32:
+                res += s->GetSamplePtrF32(chan)[i];
+                break;
+            }
+        }
+        return res;
+    };
+
+    auto crosses = [&frame, len](int64_t i) {
+        auto v = frame(i);
+        if (v == 0)
+            return true;
+        for (auto n : {i - 1, i + 1})
+        {
+            if (n < 0 || n >= len)
+                continue;
+            auto nv = frame(n);
+            if ((v < 0) != (nv < 0) && std::abs(v) <= std::abs(nv))
+                return true;
+        }
+        return false;
+    };
+
+    for (int64_t d = 0; pos - d >= lo || pos + d <= hi; ++d)
+    {
+        if (pos - d >= lo && crosses(pos - d))
+            return pos - d;
+        if (d > 0 && pos + d <= hi && crosses(pos + d))
+            return pos + d;
+    }
+    return -1;
 }
 } // namespace scxt::dsp::sample_analytics

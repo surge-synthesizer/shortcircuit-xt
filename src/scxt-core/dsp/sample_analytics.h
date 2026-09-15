@@ -54,6 +54,14 @@ float computeRMS(const std::shared_ptr<sample::Sample> &s);
  * @return The largest RMS in a 64 sample block
  */
 float computeMaxRMSInBlock(const std::shared_ptr<sample::Sample> &s);
+
+/**
+ * @param s the sample to search, whose channels are summed
+ * @return The frame in [lo, hi] closest to pos where the signal crosses zero - a zero frame,
+ * or the quieter side of a sign change - or -1 if nothing in range crosses
+ */
+int64_t nearestZeroCrossing(const std::shared_ptr<sample::Sample> &s, int64_t pos, int64_t lo,
+                            int64_t hi);
 } // namespace scxt::dsp::sample_analytics
 
 #endif // SCXT_SRC_DSP_SAMPLE_ANALYTICS_H

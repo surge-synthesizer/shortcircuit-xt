@@ -256,7 +256,17 @@ struct VariantDisplay : juce::Component, HasEditor
     void showVariantPlaymodeMenu();
     void showSRCMenu();
 
-    void showVariantTabMenu(int variantIdx);
+    void showVariantTabMenu(int variantIdx, bool fromWaveform = false);
+
+    enum struct SnapPoint
+    {
+        Start,
+        End,
+        LoopStart,
+        LoopEnd
+    };
+    // move the selected variant's markers to their nearest zero crossings, as one undo entry
+    void snapToZeroCrossings(const std::vector<SnapPoint> &points);
 
     void showHamburgerMenu();
 
