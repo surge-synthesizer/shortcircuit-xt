@@ -62,12 +62,14 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
             return std::string("P") + std::to_string(t.index + 1) + " " + d.typeDisplayName;
         };
 
-        auto ptShortFn = [](const engine::Group &z,
-                            const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
-            auto &d = z.processorDescription[t.index];
-            if (d.type == dsp::processor::proct_none)
-                return "";
-            return std::string("P") + std::to_string(t.index + 1) + "." + d.typeShortName;
+        // the long names stay empty on an empty slot, which keeps them out of the target menu
+        auto slotShortFn = [](const std::string &absentWhat) {
+            return [absentWhat](const engine::Group &z,
+                                const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+                auto &d = z.processorDescription[t.index];
+                return shared::processorTargetShortPath(
+                    d, t.index, d.type != dsp::processor::proct_none, absentWhat);
+            };
         };
 
         auto mixFn = [](const engine::Group &z,
@@ -76,6 +78,19 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
             if (d.type == dsp::processor::proct_none)
                 return "";
             return "Mix";
+        };
+
+        auto mixShortFn = [](const engine::Group &z,
+                             const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            if (d.type == dsp::processor::proct_none)
+                return shared::absentProcessorTargetShortName;
+            return "Mix";
+        };
+
+        auto slotFilledFn = [](const engine::Group &z,
+                               const GroupMatrixConfig::TargetIdentifier &t) -> bool {
+            return z.processorDescription[t.index].type != dsp::processor::proct_none;
         };
 
         auto levFn = [](const engine::Group &z,
@@ -90,7 +105,7 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
                              const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
             auto &d = z.processorDescription[t.index];
             if (d.type == dsp::processor::proct_none)
-                return "";
+                return shared::absentProcessorTargetShortName;
             return "Out Lvl";
         };
 
@@ -104,19 +119,23 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
                     return "";
                 return d.floatControlDescriptions[icopy].name;
             };
+            auto elShortPathFn =
+                [icopy = i](const engine::Group &z,
+                            const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
+                auto &d = z.processorDescription[t.index];
+                return shared::processorTargetShortPath(d, t.index, icopy < d.numFloatParams,
+                                                        std::to_string(icopy + 1));
+            };
             auto elShortFn = [icopy =
                                   i](const engine::Group &z,
                                      const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
-                auto &d = z.processorDescription[t.index];
-                if (d.type == dsp::processor::proct_none)
-                    return "";
-                return d.floatControlDescriptions[icopy].shortName;
+                return shared::processorFloatParamShortName(z.processorDescription[t.index], icopy);
             };
 
             auto adFn = [icopy = i](const engine::Group &z,
                                     const GroupMatrixConfig::TargetIdentifier &t) -> int32_t {
                 auto &d = z.processorDescription[t.index];
-                if (d.type == dsp::processor::proct_none)
+                if (icopy >= d.numFloatParams)
                     return false;
                 auto can = d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
                 if (!can)
@@ -125,12 +144,24 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
                     !d.floatControlDescriptions[icopy].hasMultiplicativeModulationOffByDefault();
                 return can * 1 + should * 2;
             };
-            registerGroupModTarget(e, fpT[i], ptFn, elFn, adFn, ptShortFn, elShortFn);
+            auto enFn = [icopy = i](const engine::Group &z,
+                                    const GroupMatrixConfig::TargetIdentifier &t) -> bool {
+                auto &d = z.processorDescription[t.index];
+                if (icopy >= d.numFloatParams)
+                    return false;
+                return d.floatControlDescriptions[icopy].isEnabled();
+            };
+            registerGroupModTarget(e, fpT[i], ptFn, elFn, adFn, elShortPathFn, elShortFn, enFn);
         }
 
         order.separator();
-        registerGroupModTarget(e, mixT, ptFn, mixFn, false, ptShortFn, mixFn);
-        registerGroupModTarget(e, outputLevelDbT, ptFn, levFn, true, ptShortFn, levShortFn);
+        registerGroupModTarget(
+            e, mixT, ptFn, mixFn, [](const auto &, const auto &) -> int32_t { return false; },
+            slotShortFn("Mix"), mixShortFn, slotFilledFn);
+        registerGroupModTarget(
+            e, outputLevelDbT, ptFn, levFn,
+            [](const auto &, const auto &) -> int32_t { return true; }, slotShortFn("Out Lvl"),
+            levShortFn, slotFilledFn);
     }
 }
 
@@ -338,14 +369,16 @@ void GroupMatrixEndpoints::registerGroupModTarget(
     std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
         shortPathFn,
     std::function<std::string(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
-        shortNameFn)
+        shortNameFn,
+    std::function<bool(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+        enabledFn)
 {
     if (!e)
         return;
 
-    e->registerGroupModTarget(
-        t, pathFn, nameFn, additiveFn, [](const auto &, const auto &) { return true; }, shortPathFn,
-        shortNameFn);
+    if (!enabledFn)
+        enabledFn = [](const auto &, const auto &) { return true; };
+    e->registerGroupModTarget(t, pathFn, nameFn, additiveFn, enabledFn, shortPathFn, shortNameFn);
 }
 
 void GroupMatrixEndpoints::registerGroupModSource(
