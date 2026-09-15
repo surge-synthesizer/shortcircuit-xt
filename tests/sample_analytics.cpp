@@ -112,3 +112,72 @@ TEST_CASE("Sample Analytics", "[sample]")
                      Catch::WithinRel(saw_rms, tolerance));
     }
 }
+
+TEST_CASE("Nearest Zero Crossing", "[sample]")
+{
+    using scxt::dsp::sample_analytics::nearestZeroCrossing;
+
+    auto makeF32 = [](const std::vector<float> &d) {
+        auto s = std::make_shared<scxt::sample::Sample>();
+        s->allocateF32(0, d.size());
+        auto buf = d;
+        s->load_data_f32(0, buf.data(), buf.size(), sizeof(float));
+        s->sampleLengthPerChannel = d.size();
+        s->channels = 1;
+        s->sample_loaded = true;
+        return s;
+    };
+
+    // sign changes between 2/3 (3 is quieter) and 6/7 (6 is quieter)
+    auto s = makeF32({0.5f, 0.4f, 0.3f, -0.1f, -0.4f, -0.5f, -0.2f, 0.6f, 0.7f, 0.8f});
+    auto len = (int64_t)s->getSampleLength();
+
+    SECTION("Picks the quieter side of the nearest sign change")
+    {
+        REQUIRE(nearestZeroCrossing(s, 0, 0, len) == 3);
+        REQUIRE(nearestZeroCrossing(s, 3, 0, len) == 3);
+        REQUIRE(nearestZeroCrossing(s, 8, 0, len) == 6);
+        // 4 is one from 3 and two from 6
+        REQUIRE(nearestZeroCrossing(s, 4, 0, len) == 3);
+        REQUIRE(nearestZeroCrossing(s, 5, 0, len) == 6);
+    }
+
+    SECTION("Stays inside the range it is given")
+    {
+        REQUIRE(nearestZeroCrossing(s, 4, 5, len) == 6);
+        REQUIRE(nearestZeroCrossing(s, 5, 0, 4) == 3);
+        REQUIRE(nearestZeroCrossing(s, 8, 7, len) == -1);
+        REQUIRE(nearestZeroCrossing(s, 4, 6, 2) == -1);
+    }
+
+    SECTION("An exact zero is a crossing")
+    {
+        auto z = makeF32({0.5f, 0.5f, 0.0f, 0.5f, 0.5f});
+        REQUIRE(nearestZeroCrossing(z, 4, 0, 5) == 2);
+    }
+
+    SECTION("A signal that never crosses has no crossing")
+    {
+        auto dc = makeF32({0.2f, 0.3f, 0.4f, 0.3f, 0.2f});
+        REQUIRE(nearestZeroCrossing(dc, 2, 0, 5) == -1);
+    }
+
+    SECTION("Stereo crosses where the channels sum to a crossing")
+    {
+        auto st = std::make_shared<scxt::sample::Sample>();
+        std::array<int16_t, 6> l{100, 100, 100, 100, 100, 100};
+        std::array<int16_t, 6> r{50, 20, -50, -150, -300, -300};
+        st->allocateI16(0, l.size());
+        st->allocateI16(1, r.size());
+        st->load_data_i16(0, l.data(), l.size(), sizeof(int16_t));
+        st->load_data_i16(1, r.data(), r.size(), sizeof(int16_t));
+        st->sampleLengthPerChannel = l.size();
+        st->channels = 2;
+        st->sample_loaded = true;
+
+        // sums are 150 120 50 -50 -200 -200: the change is between 2 and 3, a tie
+        auto c = nearestZeroCrossing(st, 5, 0, 6);
+        REQUIRE(c == 3);
+        REQUIRE(nearestZeroCrossing(st, 0, 0, 6) == 2);
+    }
+}

@@ -60,7 +60,11 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ, fadeLoopHz;
     std::vector<std::pair<int, int>> slicePixelAndSamplePositions;
     static constexpr int sliceSnapZoneInPixels{4};
+    static constexpr int zeroCrossingSnapZoneInPixels{12};
     void rebuildHotZones();
+
+    // shift-drag lands a marker on the nearest zero crossing near the mouse, if there is one
+    int64_t snapToZeroCrossingNear(int64_t samplePos, float xpos);
 
     // Anticipating future drag and so forth gestures
     enum struct MouseState

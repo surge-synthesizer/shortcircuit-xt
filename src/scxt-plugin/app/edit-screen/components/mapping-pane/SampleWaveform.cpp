@@ -27,6 +27,7 @@
 
 #include "SampleWaveform.h"
 #include "app/SCXTEditor.h"
+#include "dsp/sample_analytics.h"
 
 #include "VariantDisplay.h"
 
@@ -84,6 +85,21 @@ void SampleWaveform::rebuildHotZones()
         auto sp = xPixelForSample(samp->meta.slice_start[i]);
         slicePixelAndSamplePositions.emplace_back(sp, samp->meta.slice_start[i]);
     }
+}
+
+int64_t SampleWaveform::snapToZeroCrossingNear(int64_t samplePos, float xpos)
+{
+    auto &v = display->variantView.variants[display->selectedVariation];
+    auto samp = editor->sampleManager.getSample(v.sampleID);
+    if (!samp || samplePos < 0)
+        return samplePos;
+
+    // mirroring can put either edge of the window on the low sample
+    auto a = sampleForXPixel(xpos - zeroCrossingSnapZoneInPixels);
+    auto b = sampleForXPixel(xpos + zeroCrossingSnapZoneInPixels);
+    auto res =
+        dsp::sample_analytics::nearestZeroCrossing(samp, samplePos, std::min(a, b), std::max(a, b));
+    return res >= 0 ? res : samplePos;
 }
 
 int64_t SampleWaveform::sampleForXPixel(float xpos)
@@ -397,14 +413,21 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
 
     auto xpos = e.position.x - dragGrabOffsetPx;
     auto samplePos = sampleForXPixel(xpos);
-    int sliceDistance{getWidth() * 2};
-    for (const auto &[pix, smp] : slicePixelAndSamplePositions)
+    if (e.mods.isShiftDown())
     {
-        auto d = std::abs(pix - xpos);
-        if (d <= sliceSnapZoneInPixels && d < sliceDistance)
+        samplePos = snapToZeroCrossingNear(samplePos, xpos);
+    }
+    else
+    {
+        int sliceDistance{getWidth() * 2};
+        for (const auto &[pix, smp] : slicePixelAndSamplePositions)
         {
-            sliceDistance = d;
-            samplePos = smp;
+            auto d = std::abs(pix - xpos);
+            if (d <= sliceSnapZoneInPixels && d < sliceDistance)
+            {
+                sliceDistance = d;
+                samplePos = smp;
+            }
         }
     }
     switch (mouseState)
