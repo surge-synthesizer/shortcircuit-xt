@@ -223,25 +223,33 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                              */
                             if (!inReleaseTriggerPass)
                             {
+                                bool changed{false};
                                 // This second iteration is a wee bit annoying but
                                 for (auto &gkt : *part)
                                 {
                                     SCLOG_IF(groupTrigggers,
                                              "Checking group " << gkt->id.to_string());
+                                    auto wasMuted = gkt->mutedByLatch;
                                     if (!gkt->triggerConditions.containsKeySwitchLatch)
                                     {
                                         SCLOG_IF(groupTrigggers, "   Not a keyswitch - mute false");
                                         gkt->mutedByLatch = false;
-                                        continue;
                                     }
-                                    // Several groups can share a switch key, so bring up
-                                    // everything latched to this key rather than only the group
-                                    // we matched
-                                    gkt->mutedByLatch = !gkt->triggerConditions.keySwitchLatchHolds(
-                                        *this, *gkt, channel, midiKey);
-                                    SCLOG_IF(groupTrigggers,
-                                             "   Muted by latch: " << gkt->mutedByLatch);
+                                    else
+                                    {
+                                        // Several groups can share a switch key, so bring up
+                                        // everything latched to this key rather than only the
+                                        // group we matched
+                                        gkt->mutedByLatch =
+                                            !gkt->triggerConditions.keySwitchLatchHolds(
+                                                *this, *gkt, channel, midiKey);
+                                        SCLOG_IF(groupTrigggers,
+                                                 "   Muted by latch: " << gkt->mutedByLatch);
+                                    }
+                                    changed = changed || (wasMuted != gkt->mutedByLatch);
                                 }
+                                if (changed)
+                                    notifyKeySwitchStateChanged((int16_t)pidx);
                             }
 
                             // Ignore any voices found here
@@ -371,6 +379,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         SET_VEL_BOUNDS_START,
         SET_VEL_BOUNDS_SECOND
     } midiZoneAction{MidiZoneAction::NONE};
+
+    // audio thread: the next note-on is reported to the client as a learned key, not played
+    bool noteLearnArmed{false};
 
     // new voice manager style
     struct VMConfig
@@ -712,13 +723,22 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     // use -1 for p and g here to get best choice
     void createEmptyZone(int part, int group, KeyboardRange krange = {48, 72},
                          VelocityRange vrange = {0, 127});
-    void duplicateZone(const selection::SelectionManager::ZoneAddress &);
-    void copyZone(const selection::SelectionManager::ZoneAddress &);
-    void pasteZone(const selection::SelectionManager::ZoneAddress &);
+    void duplicateZone(const selection::SelectionManager::ZoneAddress &a) { duplicateZones({a}); }
+    void copyZone(const selection::SelectionManager::ZoneAddress &a) { copyZones({a}); }
+    // pastes every zone on the clipboard into the group at a
+    void pasteZone(const selection::SelectionManager::ZoneAddress &a);
+    void duplicateZones(const std::vector<selection::SelectionManager::ZoneAddress> &);
+    void copyZones(const std::vector<selection::SelectionManager::ZoneAddress> &);
 
-    void duplicateGroup(const selection::SelectionManager::ZoneAddress &);
-    void copyGroup(const selection::SelectionManager::ZoneAddress &);
-    void pasteGroup(const selection::SelectionManager::ZoneAddress &);
+    void duplicateGroup(const selection::SelectionManager::ZoneAddress &a) { duplicateGroups({a}); }
+    void copyGroup(const selection::SelectionManager::ZoneAddress &a) { copyGroups({a}); }
+    // pastes every group on the clipboard at the end of the part at a
+    void pasteGroup(const selection::SelectionManager::ZoneAddress &a);
+    void duplicateGroups(const std::vector<selection::SelectionManager::ZoneAddress> &);
+    void copyGroups(const std::vector<selection::SelectionManager::ZoneAddress> &);
+
+    bool isValidZoneAddress(const selection::SelectionManager::ZoneAddress &) const;
+    bool isValidGroupAddress(const selection::SelectionManager::ZoneAddress &) const;
 
     Clipboard clipboard;
 
@@ -736,6 +756,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * Update the audio playing state
      */
     void sendEngineStatusToClient() const;
+
+    // the keyboard marks the live articulation and the group tree marks what it silenced
+    void sendKeySwitchStateToClient(int16_t part) const;
+    // audio thread: a switch press moved the live articulation in this part
+    void notifyKeySwitchStateChanged(int16_t part);
 
     void clearAll(bool purgeSamples = true);
 

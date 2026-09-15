@@ -33,21 +33,26 @@
 
 namespace scxt::engine
 {
-template <typename T> Clipboard::ContentType Clipboard::streamToClipboard(ContentType c, const T &t)
+template <typename T>
+Clipboard::ContentType Clipboard::streamToClipboard(ContentType c, const std::vector<const T *> &ts)
 {
-    auto v = json::scxt_value(t);
     type = c;
-    contents = tao::json::msgpack::to_string(v);
+    contents.clear();
+    for (auto *t : ts)
+    {
+        auto v = json::scxt_value(*t);
+        contents.push_back(tao::json::msgpack::to_string(v));
+    }
     return type;
 }
 
-template <typename T> bool Clipboard::unstreamFromClipboard(ContentType c, T &t)
+template <typename T> bool Clipboard::unstreamFromClipboard(ContentType c, size_t idx, T &t)
 {
-    if (c != type)
+    if (c != type || idx >= contents.size())
         return false;
 
     tao::json::events::transformer<tao::json::events::to_basic_value<json::scxt_traits>> consumer;
-    tao::json::msgpack::events::from_string(consumer, contents);
+    tao::json::msgpack::events::from_string(consumer, contents[idx]);
     auto v = std::move(consumer.value);
     v.to(t);
 

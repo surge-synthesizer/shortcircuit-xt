@@ -269,7 +269,9 @@ struct GroupMatrixEndpoints
             shortPathFn = {},
         std::function<std::string(const engine::Group &,
                                   const GroupMatrixConfig::TargetIdentifier &)>
-            shortNameFn = {});
+            shortNameFn = {},
+        std::function<bool(const engine::Group &, const GroupMatrixConfig::TargetIdentifier &)>
+            enabledFn = {});
 
     static void registerGroupModSource(engine::Engine *e,
                                        const GroupMatrixConfig::SourceIdentifier &t,

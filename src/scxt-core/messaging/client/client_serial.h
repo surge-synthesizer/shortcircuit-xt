@@ -151,14 +151,19 @@ enum ClientToSerializationMessagesIds
     c2s_duplicate_zone,
     c2s_copy_zone,
     c2s_paste_zone,
+    c2s_duplicate_zones,
+    c2s_copy_zones,
     c2s_add_blank_zone,
     c2s_delete_selected_zones,
     c2s_delete_group,
+    c2s_delete_groups,
     c2s_delete_empty_groups,
     c2s_move_group,
     c2s_duplicate_group,
     c2s_copy_group,
     c2s_paste_group,
+    c2s_duplicate_groups,
+    c2s_copy_groups,
     c2s_clear_part,
     c2s_rename_zone,
     c2s_rename_group,
@@ -169,6 +174,7 @@ enum ClientToSerializationMessagesIds
     c2s_set_scl_kbm,
 
     c2s_noteonoff,
+    c2s_arm_note_learn,
 
     c2s_set_mixer_effect,
     c2s_set_mixer_effect_storage,
@@ -249,6 +255,7 @@ enum SerializationToClientMessageIds
 
     s2c_send_group_trigger_conditions,
     s2c_send_part_keyswitch_display,
+    s2c_send_learned_note,
 
     s2c_respond_single_processor_metadata_and_data,
 

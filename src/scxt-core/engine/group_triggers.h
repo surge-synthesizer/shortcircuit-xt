@@ -145,7 +145,8 @@ enum struct KeySwitchDisplayState : int32_t
 {
     NOT_A_SWITCH = 0,
     INACTIVE,
-    ACTIVE
+    ACTIVE,
+    MOMENTARY // no group latches on it, so it can never be the live articulation
 };
 using partKeySwitchDisplay_t = std::array<int32_t, 128>;
 

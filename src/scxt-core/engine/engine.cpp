@@ -598,6 +598,10 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
             {
                 groupFeatures |= GroupZoneFeatures::SOLOED;
             }
+            if (group->mutedByLatch)
+            {
+                groupFeatures |= GroupZoneFeatures::MUTED_BY_KEYSWITCH;
+            }
             if (sm.isGroupCollapsed(partidx, groupidx))
             {
                 groupFeatures |= GroupZoneFeatures::FOLDED;
@@ -1271,29 +1275,81 @@ void Engine::createEmptyZone(int partN, int groupN, scxt::engine::KeyboardRange 
         });
 }
 
-void Engine::copyZone(const selection::SelectionManager::ZoneAddress &s)
+namespace
 {
-    auto &zoneO = getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+using ZoneAddress = selection::SelectionManager::ZoneAddress;
+
+// the lowest free of name, "name (Copy)", "name (Copy 2)" and so on, which it then takes
+std::string takeFreeCopyName(const std::string &base, std::set<std::string> &taken)
+{
+    for (int count = 0;; ++count)
+    {
+        auto n = base;
+        if (count == 1)
+            n += " (Copy)";
+        else if (count > 1)
+            n += " (Copy " + std::to_string(count) + ")";
+        if (taken.insert(n).second)
+            return n;
+    }
+}
+
+void selectAddresses(const Engine &e, const std::vector<ZoneAddress> &addrs)
+{
+    bool first{true};
+    for (const auto &a : addrs)
+    {
+        e.getSelectionManager()->applySelectActions(
+            selection::SelectionManager::SelectActionContents(a, true, first, first));
+        first = false;
+    }
+}
+
+template <typename F>
+std::vector<ZoneAddress> sortedValid(const std::vector<ZoneAddress> &addrs, F isValid)
+{
+    std::vector<ZoneAddress> res;
+    for (const auto &a : addrs)
+        if (isValid(a))
+            res.push_back(a);
+    std::sort(res.begin(), res.end());
+    res.erase(std::unique(res.begin(), res.end()), res.end());
+    return res;
+}
+} // namespace
+
+bool Engine::isValidGroupAddress(const selection::SelectionManager::ZoneAddress &a) const
+{
+    return a.part >= 0 && a.part < numParts && a.group >= 0 &&
+           a.group < (int)getPatch()->getPart(a.part)->getGroups().size();
+}
+
+bool Engine::isValidZoneAddress(const selection::SelectionManager::ZoneAddress &a) const
+{
+    return isValidGroupAddress(a) && a.zone >= 0 &&
+           a.zone < (int)getPatch()->getPart(a.part)->getGroup(a.group)->getZones().size();
+}
+
+void Engine::copyZones(const std::vector<selection::SelectionManager::ZoneAddress> &addrs)
+{
+    std::vector<const Zone *> zones;
+    for (const auto &s :
+         sortedValid(addrs, [this](const auto &a) { return isValidZoneAddress(a); }))
+        zones.push_back(getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone).get());
+    if (zones.empty())
+        return;
 
     messaging::client::serializationSendToClient(
         messaging::client::s2c_send_clipboard_type,
-        clipboard.streamToClipboard(Clipboard::ContentType::ZONE, *zoneO), *messageController);
+        clipboard.streamToClipboard(Clipboard::ContentType::ZONE, zones), *messageController);
 }
 
 void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &a)
 {
     if (clipboard.getClipboardType() != Clipboard::ContentType::ZONE)
-    {
         return;
-    }
-
-    auto zptr = std::make_unique<Zone>();
-    zptr->engine = this;
-
-    if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::ZONE, *zptr))
-    {
+    if (a.part < 0 || a.part >= numParts || a.group < 0)
         return;
-    }
 
     std::set<std::string> zoneNames;
     auto &part = getPatch()->getPart(a.part);
@@ -1301,193 +1357,207 @@ void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &a)
         for (auto &z : *g)
             zoneNames.insert(z->getName());
 
-    // Give the new zone the lowest available new zone name for the part
-    int count{0};
-    bool found{false};
-    while (!found)
+    std::vector<Zone *> zones;
+    for (size_t i = 0; i < clipboard.getClipboardItemCount(); ++i)
     {
-        std::string lname = zptr->givenName;
-        if (count == 1)
-            lname += " (Copy)";
-        else if (count > 1)
-            lname += " (Copy " + std::to_string(count) + ")";
-        if (zoneNames.find(lname) == zoneNames.end())
-        {
-            zptr->givenName = lname;
-            found = true;
-        }
-        count++;
+        auto zptr = std::make_unique<Zone>();
+        zptr->engine = this;
+        if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::ZONE, i, *zptr))
+            continue;
+        zptr->givenName = takeFreeCopyName(zptr->givenName, zoneNames);
+        zptr->setupOnUnstream(*this);
+        zones.push_back(zptr.release());
     }
-
-    zptr->setupOnUnstream(*this);
+    if (zones.empty())
+        return;
 
     auto sp = a.part;
     auto sg = a.group;
+    int32_t zi =
+        (sg < (int)part->getGroups().size()) ? (int32_t)part->getGroup(sg)->getZones().size() : 0;
+    std::vector<ZoneAddress> added;
+    for (size_t i = 0; i < zones.size(); ++i)
+        added.push_back({sp, sg, zi + (int32_t)i});
 
-    undo::pushZoneAddUndo(*this, sp, sg);
+    undo::pushUndo<undo::ZonesDeleteOnUndoItem>(*this, added);
 
-    // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
-            std::unique_ptr<Zone> zptr;
-            zptr.reset(zone);
+        [sp, sg, zones](auto &e) {
             e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
-            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
-
-            // 4. have the audio thread message back here to refresh the ui
+            for (auto *zone : zones)
+            {
+                std::unique_ptr<Zone> zptr;
+                zptr.reset(zone);
+                e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+            }
             messaging::audio::sendStructureRefresh(*(e.getMessageController()));
         },
-        [sp = sp, sg = sg](auto &e) {
-            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
-            int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
-        });
+        [added](auto &e) { selectAddresses(e, added); });
 }
 
-void Engine::duplicateZone(const selection::SelectionManager::ZoneAddress &s)
+void Engine::duplicateZones(const std::vector<selection::SelectionManager::ZoneAddress> &addrs)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
-    // 2. Create a zone object on this thread but don't add it
-    auto &zoneO = getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
-    auto v = json::scxt_value(*zoneO);
-    auto zptr = std::make_unique<Zone>();
-    v.to(*zptr);
+    // each duplicate lands at the end of its own group
+    std::vector<std::pair<ZoneAddress, Zone *>> dups;
+    std::map<std::pair<int32_t, int32_t>, int32_t> nextIndex;
+    for (const auto &s :
+         sortedValid(addrs, [this](const auto &a) { return isValidZoneAddress(a); }))
+    {
+        auto &zoneO = getPatch()->getPart(s.part)->getGroup(s.group)->getZone(s.zone);
+        auto v = json::scxt_value(*zoneO);
+        auto zptr = std::make_unique<Zone>();
+        v.to(*zptr);
 
-    zptr->engine = this;
-    zptr->setupOnUnstream(*this);
+        zptr->engine = this;
+        zptr->setupOnUnstream(*this);
+        zptr->givenName = zoneO->getName() + " (copy)";
 
-    // give it a name
-    zptr->givenName = zoneO->getName() + " (copy)";
+        auto key = std::make_pair(s.part, s.group);
+        auto it = nextIndex.find(key);
+        if (it == nextIndex.end())
+            it = nextIndex
+                     .emplace(
+                         key,
+                         (int32_t)getPatch()->getPart(s.part)->getGroup(s.group)->getZones().size())
+                     .first;
+        dups.push_back({{s.part, s.group, it->second++}, zptr.release()});
+    }
+    if (dups.empty())
+        return;
 
-    // Drop into selected group logic goes here
-    auto sp = s.part;
-    auto sg = s.group;
+    std::vector<ZoneAddress> added;
+    for (const auto &[at, z] : dups)
+        added.push_back(at);
 
-    undo::pushZoneAddUndo(*this, sp, sg);
+    undo::pushUndo<undo::ZonesDeleteOnUndoItem>(*this, added);
 
-    // 3. Send a message to the audio thread saying to add that zone and
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [sp = sp, sg = sg, zone = zptr.release()](auto &e) {
-            std::unique_ptr<Zone> zptr;
-            zptr.reset(zone);
-            e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
-            e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
-
-            // 4. have the audio thread message back here to refresh the ui
+        [dups](auto &e) {
+            for (const auto &[at, zone] : dups)
+            {
+                std::unique_ptr<Zone> zptr;
+                zptr.reset(zone);
+                e.getPatch()->getPart(at.part)->getGroup(at.group)->addZone(zptr);
+            }
             messaging::audio::sendStructureRefresh(*(e.getMessageController()));
         },
-        [sp = sp, sg = sg](auto &e) {
-            auto &g = e.getPatch()->getPart(sp)->getGroup(sg);
-            int32_t zi = g->getZones().size() - 1;
-            e.getSelectionManager()->applySelectActions({sp, sg, zi, true, true, true});
-        });
+        [added](auto &e) { selectAddresses(e, added); });
 }
 
-void Engine::copyGroup(const selection::SelectionManager::ZoneAddress &s)
+void Engine::copyGroups(const std::vector<selection::SelectionManager::ZoneAddress> &addrs)
 {
-    auto &groupO = getPatch()->getPart(s.part)->getGroup(s.group);
+    std::vector<const Group *> groups;
+    for (const auto &s :
+         sortedValid(addrs, [this](const auto &a) { return isValidGroupAddress(a); }))
+        groups.push_back(getPatch()->getPart(s.part)->getGroup(s.group).get());
+    if (groups.empty())
+        return;
 
     messaging::client::serializationSendToClient(
         messaging::client::s2c_send_clipboard_type,
-        clipboard.streamToClipboard(Clipboard::ContentType::GROUP, *groupO), *messageController);
+        clipboard.streamToClipboard(Clipboard::ContentType::GROUP, groups), *messageController);
 }
 
 void Engine::pasteGroup(const selection::SelectionManager::ZoneAddress &a)
 {
     if (clipboard.getClipboardType() != Clipboard::ContentType::GROUP)
-    {
         return;
-    }
-
-    auto gptr = std::make_unique<Group>(rng);
-    gptr->parentPart = getPatch()->getPart(a.part).get();
-    gptr->setSampleRate(getPatch()->getPart(a.part)->getSampleRate());
-
-    if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::GROUP, *gptr))
-    {
+    if (a.part < 0 || a.part >= numParts)
         return;
-    }
 
-    // Give the new group the lowest available new group name for the part
-    std::set<std::string> groupNames;
     auto &part = getPatch()->getPart(a.part);
+    std::set<std::string> groupNames;
     for (auto &g : *part)
         groupNames.insert(g->name);
 
-    int count{0};
-    bool found{false};
-    while (!found)
+    std::vector<Group *> groups;
+    for (size_t i = 0; i < clipboard.getClipboardItemCount(); ++i)
     {
-        std::string lname = gptr->name;
-        if (count == 1)
-            lname += " (Copy)";
-        else if (count > 1)
-            lname += " (Copy " + std::to_string(count) + ")";
-        if (groupNames.find(lname) == groupNames.end())
-        {
-            gptr->name = lname;
-            found = true;
-        }
-        count++;
+        auto gptr = std::make_unique<Group>(rng);
+        gptr->parentPart = part.get();
+        gptr->setSampleRate(part->getSampleRate());
+        if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::GROUP, i, *gptr))
+            continue;
+        gptr->name = takeFreeCopyName(gptr->name, groupNames);
+        groups.push_back(gptr.release());
     }
+    if (groups.empty())
+        return;
 
     auto sp = a.part;
-
+    auto gi = (int32_t)part->getGroups().size();
+    std::vector<std::pair<int16_t, int32_t>> undoAddrs;
+    std::vector<ZoneAddress> added;
+    for (size_t i = 0; i < groups.size(); ++i)
     {
-        auto gi = (int32_t)getPatch()->getPart(sp)->getGroups().size();
-        undo::pushUndo<undo::GroupsDeleteOnUndoItem>(
-            *this, std::vector<std::pair<int16_t, int32_t>>{{(int16_t)sp, gi}});
+        undoAddrs.emplace_back((int16_t)sp, gi + (int32_t)i);
+        added.push_back({sp, gi + (int32_t)i, -1});
     }
 
-    messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [sp = sp, group = gptr.release()](auto &e) {
-            std::unique_ptr<Group> gptr;
-            gptr.reset(group);
-            e.getPatch()->getPart(sp)->addGroup(gptr);
+    undo::pushUndo<undo::GroupsDeleteOnUndoItem>(*this, undoAddrs);
 
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [sp, groups](auto &e) {
+            for (auto *group : groups)
+            {
+                std::unique_ptr<Group> gptr;
+                gptr.reset(group);
+                e.getPatch()->getPart(sp)->addGroup(gptr);
+            }
             messaging::audio::sendStructureRefresh(*(e.getMessageController()));
         },
-        [sp = sp](auto &e) {
-            int32_t gi = e.getPatch()->getPart(sp)->getGroups().size() - 1;
-            e.getSelectionManager()->applySelectActions({sp, gi, -1, true, true, true});
-        });
+        [added](auto &e) { selectAddresses(e, added); });
 }
 
-void Engine::duplicateGroup(const selection::SelectionManager::ZoneAddress &s)
+void Engine::duplicateGroups(const std::vector<selection::SelectionManager::ZoneAddress> &addrs)
 {
     assert(messageController->threadingChecker.isSerialThread());
 
-    auto &groupO = getPatch()->getPart(s.part)->getGroup(s.group);
-    auto v = json::scxt_value(*groupO);
-
-    auto gptr = std::make_unique<Group>(rng);
-    gptr->parentPart = getPatch()->getPart(s.part).get();
-    gptr->setSampleRate(getPatch()->getPart(s.part)->getSampleRate());
-    v.to(*gptr);
-
-    gptr->name = groupO->name + " (copy)";
-
-    auto sp = s.part;
-
+    // duplicates go to the end of their part, in the order of their originals
+    std::vector<std::pair<int16_t, Group *>> dups;
+    std::map<int32_t, int32_t> nextIndex;
+    std::vector<std::pair<int16_t, int32_t>> undoAddrs;
+    std::vector<ZoneAddress> added;
+    for (const auto &s :
+         sortedValid(addrs, [this](const auto &a) { return isValidGroupAddress(a); }))
     {
-        auto gi = (int32_t)getPatch()->getPart(sp)->getGroups().size();
-        undo::pushUndo<undo::GroupsDeleteOnUndoItem>(
-            *this, std::vector<std::pair<int16_t, int32_t>>{{(int16_t)sp, gi}});
+        auto &groupO = getPatch()->getPart(s.part)->getGroup(s.group);
+        auto v = json::scxt_value(*groupO);
+
+        auto gptr = std::make_unique<Group>(rng);
+        gptr->parentPart = getPatch()->getPart(s.part).get();
+        gptr->setSampleRate(getPatch()->getPart(s.part)->getSampleRate());
+        v.to(*gptr);
+
+        gptr->name = groupO->name + " (copy)";
+
+        auto it = nextIndex.find(s.part);
+        if (it == nextIndex.end())
+            it = nextIndex.emplace(s.part, (int32_t)getPatch()->getPart(s.part)->getGroups().size())
+                     .first;
+        undoAddrs.emplace_back((int16_t)s.part, it->second);
+        added.push_back({s.part, it->second, -1});
+        it->second++;
+        dups.emplace_back((int16_t)s.part, gptr.release());
     }
+    if (dups.empty())
+        return;
+
+    undo::pushUndo<undo::GroupsDeleteOnUndoItem>(*this, undoAddrs);
 
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [sp = sp, group = gptr.release()](auto &e) {
-            std::unique_ptr<Group> gptr;
-            gptr.reset(group);
-            e.getPatch()->getPart(sp)->addGroup(gptr);
-
+        [dups](auto &e) {
+            for (const auto &[sp, group] : dups)
+            {
+                std::unique_ptr<Group> gptr;
+                gptr.reset(group);
+                e.getPatch()->getPart(sp)->addGroup(gptr);
+            }
             messaging::audio::sendStructureRefresh(*(e.getMessageController()));
         },
-        [sp = sp](auto &e) {
-            int32_t gi = e.getPatch()->getPart(sp)->getGroups().size() - 1;
-            e.getSelectionManager()->applySelectActions({sp, gi, -1, true, true, true});
-        });
+        [added](auto &e) { selectAddresses(e, added); });
 }
 
 void Engine::sendMetadataToClient() const
@@ -1761,6 +1831,27 @@ void Engine::clearAll(bool alsoPurge)
         sampleManager->purgeUnreferencedSamples();
 }
 
+void Engine::sendKeySwitchStateToClient(int16_t part) const
+{
+    if (part < 0 || part >= numParts)
+        return;
+    serializationSendToClient(messaging::client::s2c_send_part_keyswitch_display,
+                              messaging::client::partKeySwitchPayload_t{
+                                  part, getPatch()->getPart(part)->keySwitchDisplay()},
+                              *(getMessageController()));
+    serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                              getPartGroupZoneStructure(), *(getMessageController()));
+}
+
+void Engine::notifyKeySwitchStateChanged(int16_t part)
+{
+    scxt::messaging::audio::AudioToSerialization a2s;
+    a2s.id = messaging::audio::a2s_keyswitch_changed;
+    a2s.payloadType = scxt::messaging::audio::AudioToSerialization::INT;
+    a2s.payload.i[0] = part;
+    getMessageController()->sendAudioToSerialization(a2s);
+}
+
 void Engine::setMacro01ValueFromPlugin(int part, int index, float value01)
 {
     // Open Question: What about with paramFlush
@@ -1827,6 +1918,17 @@ void Engine::processProgramChangeEvent(int16_t port, int16_t channel, int16_t pr
 void Engine::processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
                                 double velocity, float retune)
 {
+    if (noteLearnArmed)
+    {
+        noteLearnArmed = false;
+        scxt::messaging::audio::AudioToSerialization a2s;
+        a2s.id = messaging::audio::a2s_note_learned;
+        a2s.payloadType = scxt::messaging::audio::AudioToSerialization::INT;
+        a2s.payload.i[0] = key;
+        getMessageController()->sendAudioToSerialization(a2s);
+        return;
+    }
+
     heldNotes.noteOn(channel, key, note_id, (float)velocity);
     voiceManager.processNoteOnEvent(port, channel, key, note_id, velocity, retune);
 }

@@ -274,6 +274,15 @@ CLIENT_TO_SERIAL(CopyGroup, c2s_copy_group, selection::SelectionManager::ZoneAdd
 CLIENT_TO_SERIAL(PasteGroup, c2s_paste_group, selection::SelectionManager::ZoneAddress,
                  engine.pasteGroup(payload));
 
+// many at once, as one undo step; the clipboard then holds all of them
+using zoneAddressList_t = std::vector<selection::SelectionManager::ZoneAddress>;
+CLIENT_TO_SERIAL(DuplicateZones, c2s_duplicate_zones, zoneAddressList_t,
+                 engine.duplicateZones(payload));
+CLIENT_TO_SERIAL(CopyZones, c2s_copy_zones, zoneAddressList_t, engine.copyZones(payload));
+CLIENT_TO_SERIAL(DuplicateGroups, c2s_duplicate_groups, zoneAddressList_t,
+                 engine.duplicateGroups(payload));
+CLIENT_TO_SERIAL(CopyGroups, c2s_copy_groups, zoneAddressList_t, engine.copyGroups(payload));
+
 SERIAL_TO_CLIENT(SendClipboardType, s2c_send_clipboard_type, engine::Clipboard::ContentType,
                  onClipboardType);
 
@@ -326,56 +335,44 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
 CLIENT_TO_SERIAL(DeleteAllSelectedZones, c2s_delete_selected_zones, bool,
                  removeSelectedZones(payload, engine, cont));
 
-inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a,
-                               bool deleteAllEmpty, engine::Engine &engine, MessageController &cont)
+inline void deleteGroupsHandler(int32_t part, std::vector<int32_t> groups,
+                                const selection::SelectionManager::ZoneAddress &consistencyHint,
+                                engine::Engine &engine, MessageController &cont)
 {
+    if (part < 0 || part >= scxt::numParts)
+        return;
+
+    auto count = (int32_t)engine.getPatch()->getPart(part)->getGroups().size();
+    std::erase_if(groups, [count](auto g) { return g < 0 || g >= count; });
+    std::sort(groups.begin(), groups.end());
+    groups.erase(std::unique(groups.begin(), groups.end()), groups.end());
+    if (groups.empty())
+        return;
+
     {
         std::vector<std::pair<int16_t, int32_t>> addrs;
-        auto &part = engine.getPatch()->getPart(a.part);
-        if (deleteAllEmpty)
-        {
-            for (int g = 0; g < (int)part->getGroups().size(); ++g)
-                if (part->getGroup(g)->getZones().empty())
-                    addrs.emplace_back((int16_t)a.part, g);
-        }
-        else if (a.group >= 0 && a.group < (int32_t)part->getGroups().size())
-        {
-            addrs.emplace_back((int16_t)a.part, a.group);
-        }
-        if (!addrs.empty())
-            undo::pushUndo<undo::GroupsRestoreItem>(engine, addrs);
+        for (auto g : groups)
+            addrs.emplace_back((int16_t)part, g);
+        undo::pushUndo<undo::GroupsRestoreItem>(engine, addrs);
     }
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(
-        [s = a, all = deleteAllEmpty](auto &e) {
-            auto deleteOneGroup = [&e, s](int groupIdx) {
-                auto &part = e.getPatch()->getPart(s.part);
-                auto &groupO = part->getGroup(groupIdx);
+        [part, groups](auto &e) {
+            auto &pt = e.getPatch()->getPart(part);
+            // descending so earlier indices stay valid
+            for (auto it = groups.rbegin(); it != groups.rend(); ++it)
+            {
+                if (*it >= (int32_t)pt->getGroups().size())
+                    continue;
+                auto &groupO = pt->getGroup(*it);
                 e.terminateVoicesForGroup(*groupO);
                 auto gid = groupO->id;
-                auto groupToFree = part->removeGroup(gid).release();
+                auto groupToFree = pt->removeGroup(gid).release();
                 e.getMessageController()->sendItemForDeletion(
                     groupToFree, audio::AudioToSerialization::ToBeDeleted::engine_Group);
-            };
-
-            if (all)
-            {
-                auto &part = e.getPatch()->getPart(s.part);
-                for (int g = (int)part->getGroups().size() - 1; g >= 0; --g)
-                {
-                    if (part->getGroup(g)->getZones().empty())
-                        deleteOneGroup(g);
-                }
-            }
-            else
-            {
-                if (s.group < 0 ||
-                    s.group >= (int32_t)e.getPatch()->getPart(s.part)->getGroups().size())
-                    return;
-                deleteOneGroup(s.group);
             }
         },
-        [t = a](auto &engine) {
+        [t = consistencyHint](auto &engine) {
             // no unreferenced-sample purge; undoing the delete needs them resident
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false, t);
 
@@ -386,10 +383,37 @@ inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a
                                       *(engine.getMessageController()));
         });
 }
+
+inline void deleteEmptyGroups(int32_t part, engine::Engine &engine, MessageController &cont)
+{
+    if (part < 0 || part >= scxt::numParts)
+        return;
+    std::vector<int32_t> empties;
+    auto &pt = engine.getPatch()->getPart(part);
+    for (int g = 0; g < (int)pt->getGroups().size(); ++g)
+        if (pt->getGroup(g)->getZones().empty())
+            empties.push_back(g);
+    deleteGroupsHandler(part, empties, {part, -1, -1}, engine, cont);
+}
+
+inline void deleteGroups(const std::vector<selection::SelectionManager::ZoneAddress> &addrs,
+                         engine::Engine &engine, MessageController &cont)
+{
+    if (addrs.empty())
+        return;
+    std::vector<int32_t> groups;
+    for (const auto &a : addrs)
+        if (a.part == addrs.front().part)
+            groups.push_back(a.group);
+    deleteGroupsHandler(addrs.front().part, groups, addrs.front(), engine, cont);
+}
+
 CLIENT_TO_SERIAL(DeleteGroup, c2s_delete_group, selection::SelectionManager::ZoneAddress,
-                 deleteGroupHandler(payload, false, engine, cont));
+                 deleteGroupsHandler(payload.part, {payload.group}, payload, engine, cont));
+CLIENT_TO_SERIAL(DeleteGroups, c2s_delete_groups, zoneAddressList_t,
+                 deleteGroups(payload, engine, cont));
 CLIENT_TO_SERIAL(DeleteEmptyGroups, c2s_delete_empty_groups, int32_t,
-                 deleteGroupHandler({payload, -1, -1}, true, engine, cont));
+                 deleteEmptyGroups(payload, engine, cont));
 
 inline void clearPart(const int p, engine::Engine &engine, MessageController &cont)
 {

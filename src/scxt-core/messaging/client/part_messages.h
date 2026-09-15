@@ -52,11 +52,24 @@ inline void updatePartFullConfig(const partConfigurationPayload_t &p, engine::En
                                  messaging::MessageController &cont)
 {
     auto [pt, conf] = p;
+    if (pt < 0 || pt >= scxt::numParts)
+        return;
     undo::pushPayloadUndoFor<undo::PartConfigSpec>(e, {{pt, -1, -1}}, pt);
-    cont.scheduleAudioThreadCallback([part = pt, configuration = conf](auto &eng) {
-        eng.getPatch()->getPart(part)->configuration = configuration;
-        eng.onPartConfigurationUpdated();
-    });
+    // picking a default articulation arms it, so the choice is heard straight away
+    auto rearm =
+        conf.defaultKeySwitchKey != e.getPatch()->getPart(pt)->configuration.defaultKeySwitchKey;
+    cont.scheduleAudioThreadCallback(
+        [part = pt, configuration = conf, rearm](auto &eng) {
+            auto &prt = eng.getPatch()->getPart(part);
+            prt->configuration = configuration;
+            if (rearm)
+                prt->selectDefaultKeySwitchArticulation();
+            eng.onPartConfigurationUpdated();
+        },
+        [part = pt, rearm](const auto &eng) {
+            if (rearm)
+                eng.sendKeySwitchStateToClient(part);
+        });
 }
 CLIENT_TO_SERIAL(UpdatePartFullConfig, c2s_send_full_part_config, partConfigurationPayload_t,
                  updatePartFullConfig(payload, engine, cont));

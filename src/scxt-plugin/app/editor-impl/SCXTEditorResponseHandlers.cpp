@@ -38,6 +38,7 @@
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/shared/HeaderRegion.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
+#include "app/edit-screen/components/mapping-pane/MappingDisplay.h"
 #include "app/edit-screen/components/mapping-pane/VariantDisplay.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/ThemeEditor.h"
@@ -555,6 +556,14 @@ void SCXTEditorReceiver::onOtherTabSelection(
     {
         editor.editScreen->mappingPane->setEditAllFromModel(std::atoi(ea.c_str()) != 0);
     }
+
+    // absent means never turned off, and names show by default
+    auto zn = editor.queryTabSelection(edit_screen::MappingDisplay::showZoneNamesTabKey);
+    if (editor.editScreen && editor.editScreen->mappingPane)
+    {
+        editor.editScreen->mappingPane->setShowZoneNamesFromModel(zn.empty() ||
+                                                                  std::atoi(zn.c_str()) != 0);
+    }
 }
 
 void SCXTEditorReceiver::onPartConfiguration(
@@ -573,6 +582,8 @@ void SCXTEditorReceiver::onPartConfiguration(
 
     if (editor.editScreen && editor.editScreen->partSidebar)
         editor.editScreen->partSidebar->partConfigurationChanged(pt);
+    if (editor.editScreen && editor.editScreen->partEditScreen)
+        editor.editScreen->partEditScreen->partKeySwitchStateChanged(pt);
 }
 
 void SCXTEditorReceiver::onActivityNotification(
@@ -617,6 +628,12 @@ void SCXTEditorReceiver::onGroupTriggerConditions(scxt::engine::GroupTriggerCond
     editor.editScreen->partSidebar->groupTriggerConditionChanged(g);
 }
 
+void SCXTEditorReceiver::onLearnedNote(int16_t key)
+{
+    if (editor.editScreen && editor.editScreen->partSidebar)
+        editor.editScreen->partSidebar->noteLearned(key);
+}
+
 void SCXTEditorReceiver::onPartKeySwitchDisplay(
     const scxt::messaging::client::partKeySwitchPayload_t &p)
 {
@@ -626,6 +643,8 @@ void SCXTEditorReceiver::onPartKeySwitchDisplay(
     editor.keySwitchDisplay[part] = keys;
     // the mapping keyboard paints these
     editor.editScreen->repaint();
+    if (editor.editScreen->partEditScreen)
+        editor.editScreen->partEditScreen->partKeySwitchStateChanged(part);
 }
 
 void SCXTEditorReceiver::onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &t)

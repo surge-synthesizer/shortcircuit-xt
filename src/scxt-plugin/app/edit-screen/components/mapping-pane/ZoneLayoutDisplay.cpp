@@ -433,7 +433,7 @@ void ZoneLayoutDisplay::showZoneMenu(const selection::SelectionManager::ZoneAddr
     if (added)
         p.addSeparator();
 
-    app::shared::populateZoneRightMouseMenuForSelectedZones(display, p, part);
+    app::shared::populatePartRightMouseMenu(display, p, part);
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
@@ -924,7 +924,8 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
             r = drawZone(g, z, fillColor, borderColor);
 
-            labelZoneRectangle(g, r, z.name, textColor);
+            if (display->showZoneNames)
+                labelZoneRectangle(g, r, z.name, textColor);
 
             auto ct = display->voiceCountFor(z.address);
             drawVoiceMarkers(r, ct);
@@ -954,7 +955,8 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
                 borderColor = editor->themeColor(theme::ColorMap::warning_1a);
             }
             auto r = drawZone(g, z, selZoneColor, borderColor);
-            labelZoneRectangle(g, r, z.name, textColor);
+            if (display->showZoneNames)
+                labelZoneRectangle(g, r, z.name, textColor);
 
             auto ct = display->voiceCountFor(z.address);
             drawVoiceMarkers(r, ct);

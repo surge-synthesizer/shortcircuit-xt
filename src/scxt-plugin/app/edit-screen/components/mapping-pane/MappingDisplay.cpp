@@ -407,6 +407,27 @@ template <typename A, typename B, typename F> void forEachMapElPair(A &a, B &b, 
 }
 } // namespace
 
+void MappingDisplay::setShowZoneNames(bool b)
+{
+    showZoneNames = b;
+    if (mappingZones)
+        mappingZones->repaint();
+}
+
+void MappingDisplay::showHamburgerMenu()
+{
+    juce::PopupMenu p;
+    p.addSectionHeader("Mapping");
+    p.addSeparator();
+    p.addItem("Show Zone Names", true, showZoneNames, [w = juce::Component::SafePointer(this)]() {
+        if (!w)
+            return;
+        w->setShowZoneNames(!w->showZoneNames);
+        w->editor->setTabSelection(showZoneNamesTabKey, w->showZoneNames ? "1" : "0");
+    });
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
 void MappingDisplay::setActive(bool b)
 {
     if (b == active)

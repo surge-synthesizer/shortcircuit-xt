@@ -34,6 +34,7 @@
 #include "SampleWaveform.h"
 #include "app/browser-ui/BrowserPaneInterfaces.h"
 #include "app/shared/UIHelpers.h"
+#include "dsp/sample_analytics.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -70,7 +71,7 @@ VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPa
         auto wf = std::make_unique<SampleWaveform>(this);
         wf->onPopupMenu = [i, w = juce::Component::SafePointer(this)]() {
             if (w)
-                w->showVariantTabMenu(i);
+                w->showVariantTabMenu(i, true);
         };
         waveforms[i].waveformViewport = std::make_unique<jcmp::ZoomContainer>(std::move(wf));
         waveforms[i].waveformViewport->setVZoomFloor(1.0 / 16.0);
@@ -1251,7 +1252,52 @@ void VariantDisplay::FileInfos::paint(juce::Graphics &g)
     g.drawText(msg, bx.reduced(margin, 0), juce::Justification::centred);
 }
 
-void VariantDisplay::showVariantTabMenu(int variantIdx)
+void VariantDisplay::snapToZeroCrossings(const std::vector<SnapPoint> &points)
+{
+    if (selectedVariation >= maxVariantsPerZone)
+        return;
+    auto &v = variantView.variants[selectedVariation];
+    auto samp = editor->sampleManager.getSample(v.sampleID);
+    if (!v.active || !samp)
+        return;
+
+    auto len = (int64_t)samp->getSampleLength();
+    bool opened{false};
+    // each marker searches only where it could legally land
+    auto snap = [&samp, &opened, this](int64_t &field, int64_t lo, int64_t hi) {
+        auto res = dsp::sample_analytics::nearestZeroCrossing(samp, field, lo, hi);
+        if (res < 0 || res == field)
+            return;
+        if (!opened)
+            beginVariantGesture();
+        opened = true;
+        field = res;
+        onVariantFieldChanged(field);
+    };
+    for (auto pt : points)
+    {
+        switch (pt)
+        {
+        case SnapPoint::Start:
+            snap(v.startSample, 0, v.endSample);
+            break;
+        case SnapPoint::End:
+            snap(v.endSample, v.startSample, len);
+            break;
+        case SnapPoint::LoopStart:
+            snap(v.startLoop, 0, v.endLoop);
+            break;
+        case SnapPoint::LoopEnd:
+            snap(v.endLoop, v.startLoop, len);
+            break;
+        }
+    }
+    if (opened)
+        endVariantGesture();
+    repaint();
+}
+
+void VariantDisplay::showVariantTabMenu(int variantIdx, bool fromWaveform)
 {
     auto numVariants{0};
     for (auto i = 0; i < maxVariantsPerZone; ++i)
@@ -1320,6 +1366,30 @@ void VariantDisplay::showVariantTabMenu(int variantIdx)
                           return;
                       w->sendToSerialization(cmsg::ClearVariantAmplitudeNormalization(-1));
                   });
+
+        // the waveform only ever shows the selected variant, which is what the snap edits
+        if (fromWaveform && variantIdx == (int)selectedVariation)
+        {
+            using sp = SnapPoint;
+            auto addSnap = [&p, w = juce::Component::SafePointer(this)](
+                               const std::string &name, bool enabled, std::vector<sp> points) {
+                p.addItem(name, enabled, false, [w, points]() {
+                    if (w)
+                        w->snapToZeroCrossings(points);
+                });
+            };
+            p.addSeparator();
+            p.addSectionHeader("Zero Crossings");
+            addSnap("Snap Start to Zero Crossing", true, {sp::Start});
+            addSnap("Snap End to Zero Crossing", true, {sp::End});
+            addSnap("Snap Loop Start to Zero Crossing", var.loopActive, {sp::LoopStart});
+            addSnap("Snap Loop End to Zero Crossing", var.loopActive, {sp::LoopEnd});
+            if (var.loopActive)
+                addSnap("Snap All to Zero Crossings", true,
+                        {sp::Start, sp::End, sp::LoopStart, sp::LoopEnd});
+            else
+                addSnap("Snap All to Zero Crossings", true, {sp::Start, sp::End});
+        }
     }
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
