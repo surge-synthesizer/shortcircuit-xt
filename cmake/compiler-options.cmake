@@ -45,7 +45,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
     )
 endif ()
 
-
 # Platform Specific Compile Settings
 add_library(sc-compiler-options INTERFACE)
 
@@ -70,6 +69,14 @@ if (APPLE)
         add_link_options(-Wl,-ld_classic)
         add_compile_definitions(JUCE_SILENCE_XCODE_15_LINKER_WARNING=1)
     endif()
+
+    # AppleClang 21's libc++ #warns in every file below macOS 11
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
+            AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 21)
+        message(STATUS "Silencing #warning on AppleClang ${CMAKE_CXX_COMPILER_VERSION}")
+        string(APPEND CMAKE_CXX_FLAGS " -Wno-#warnings")
+        string(APPEND CMAKE_OBJCXX_FLAGS " -Wno-#warnings")
+    endif ()
 endif ()
 
 
