@@ -288,7 +288,8 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"nexg", from.numExclusiveGroups},
 
                           {"nm", std::string(from.name)},
-                          {"bl", std::string(from.blurb)}};),
+                          {"bl", std::string(from.blurb)}};
+                     addUnlessDefault<val_t>(v, "dks", (int16_t)-1, from.defaultKeySwitchKey);),
              SC_TO({
                  int chTmp;
                  findOrSet(v, "c", scxt::engine::Part::PartConfiguration::omniChannel, chTmp);
@@ -310,6 +311,7 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "s", false, to.solo);
                  findOrSet(v, "pv", 0, to.polyLimitVoices);
                  findOrSet(v, "nexg", 0, to.numExclusiveGroups);
+                 findOrSet(v, "dks", (int16_t)-1, to.defaultKeySwitchKey);
                  findOrSet(v, "mbr", 24, to.mpePitchBendRange);
                  findOrSet(v, "mps", 0, to.mpePitchSmoothingTime);
                  int rtv;

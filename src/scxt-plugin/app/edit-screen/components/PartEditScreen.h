@@ -54,6 +54,8 @@ struct PartEditScreen : juce::Component, HasEditor
     void resized() override;
     void selectedPartChanged();
     void macroDataChanged(int part, int index);
+    // the part's configuration or its switch keys changed
+    void partKeySwitchStateChanged(int part);
 
     std::unique_ptr<MacroDisplay> macroDisplay;
     std::unique_ptr<PartSettingsDisplay> partSettingsDisplay;
