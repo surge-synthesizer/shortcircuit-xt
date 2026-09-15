@@ -1210,6 +1210,8 @@ template <typename GZTrait> void ModPane<GZTrait>::setActive(bool b)
 {
     auto enChange = b != isEnabled();
     setEnabled(b);
+    // resized skips a disabled pane, so the viewport would keep its old scrollbar
+    viewPort->setVisible(b);
     rebuildMatrix(enChange);
     if (enChange)
         resized();

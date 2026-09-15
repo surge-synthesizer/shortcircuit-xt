@@ -217,12 +217,14 @@ void SCXTEditorReceiver::onGroupOrZoneModulatorStorageUpdated(
     if (forZone)
     {
         editor.editScreen->getZoneElements()->lfo->setActive(i, active);
-        editor.editScreen->getZoneElements()->lfo->setModulatorStorage(i, r);
+        if (active)
+            editor.editScreen->getZoneElements()->lfo->setModulatorStorage(i, r);
     }
     else
     {
         editor.editScreen->getGroupElements()->lfo->setActive(i, active);
-        editor.editScreen->getGroupElements()->lfo->setModulatorStorage(i, r);
+        if (active)
+            editor.editScreen->getGroupElements()->lfo->setModulatorStorage(i, r);
     }
 }
 

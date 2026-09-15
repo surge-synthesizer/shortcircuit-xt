@@ -69,14 +69,7 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
 void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d)
 {
     adsrView = d;
-    for (const auto &sl : sliders.members)
-        if (sl)
-            sl->setEnabled(true);
-
-    for (const auto &sl : knobs.members)
-        if (sl)
-            sl->setEnabled(true);
-
+    setControlsActive(true);
     updateForGateMode();
     repaint();
 }
@@ -89,28 +82,26 @@ void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d
         adsrView = d;
         updateForGateMode();
     }
-    for (const auto &sl : sliders.members)
-        if (sl)
-            sl->setEnabled(true);
-
-    for (const auto &sl : knobs.members)
-        if (sl)
-            sl->setEnabled(true);
-
+    setControlsActive(true);
     repaint();
 }
 
 void AdsrPane::adsrDeactivated()
 {
+    setControlsActive(false);
+    repaint();
+}
+
+void AdsrPane::setControlsActive(bool b)
+{
+    active = b;
     for (const auto &sl : sliders.members)
         if (sl)
-            sl->setEnabled(false);
+            sl->setEnabled(b);
 
     for (const auto &sl : knobs.members)
         if (sl)
-            sl->setEnabled(false);
-
-    repaint();
+            sl->setEnabled(b);
 }
 
 void AdsrPane::tabChanged(int newIndex, bool updateState)
@@ -204,6 +195,8 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
     }
 
     updateForGateMode();
+    // fresh widgets come up enabled, and a tab restore can land after a deactivate
+    setControlsActive(active);
 
     resized();
 }

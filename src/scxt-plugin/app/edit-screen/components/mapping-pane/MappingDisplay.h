@@ -200,7 +200,8 @@ struct MappingDisplay : juce::Component,
     void resized() override;
 
     void mappingChangedFromGUI();
-    void setActive(bool b) { setVisible(b); }
+    bool active{true};
+    void setActive(bool b);
 
     void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d);
 

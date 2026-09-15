@@ -85,7 +85,7 @@ template <typename RPTraits> struct RoutingPane : sst::jucegui::components::Name
 
     typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t> bool_attachment_t;
     std::unique_ptr<bool_attachment_t> oversampleAttachment;
-    std::unique_ptr<sst::jucegui::components::ToggleButton> oversampleButton;
+    void addOversampleButton();
     std::unique_ptr<RoutingPaneContents<RPTraits>> contents;
     bool active{false};
 

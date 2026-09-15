@@ -384,6 +384,72 @@ void MappingDisplay::mappingChangedFromGUI()
     sendToSerialization(cmsg::UpdateLeadZoneMapping(mappingView));
 }
 
+namespace
+{
+template <typename A, typename B, typename F> void forEachMapElPair(A &a, B &b, F &&f)
+{
+    f(a.RootKey, b.RootKey);
+    f(a.KeyStart, b.KeyStart);
+    f(a.KeyEnd, b.KeyEnd);
+    f(a.FadeStart, b.FadeStart);
+    f(a.FadeEnd, b.FadeEnd);
+    f(a.VelStart, b.VelStart);
+    f(a.VelEnd, b.VelEnd);
+    f(a.VelFadeStart, b.VelFadeStart);
+    f(a.VelFadeEnd, b.VelFadeEnd);
+    f(a.PBDown, b.PBDown);
+    f(a.PBUp, b.PBUp);
+    f(a.VelocitySens, b.VelocitySens);
+    f(a.Level, b.Level);
+    f(a.Pan, b.Pan);
+    f(a.Pitch, b.Pitch);
+    f(a.Tracking, b.Tracking);
+}
+} // namespace
+
+void MappingDisplay::setActive(bool b)
+{
+    if (b == active)
+        return;
+    active = b;
+
+    // the zone grid stays live so a zone can still be picked from it
+    auto enable = [b](juce::Component *c) {
+        if (!c)
+            return;
+        c->setEnabled(b);
+        // jucegui widgets still take the mouse when disabled
+        c->setInterceptsMouseClicks(b, b);
+    };
+
+    enable(zoneHeader.get());
+    for (auto &r : rules)
+        enable(r.get());
+    forEachMapElPair(labels, glyphs, [&](auto &l, auto &g) {
+        enable(l.get());
+        enable(g.get());
+    });
+
+    // with no lead zone the mapping view is stale, so show empty boxes
+    // disable first, since losing focus commits an open type-in through the source
+    forEachMapElPair(textEds, floatAttachments, [&](auto &w, auto &a) {
+        if (!w)
+            return;
+        enable(w.get());
+        if (b)
+            w->setSource(a.get());
+        else
+            w->clearSource();
+        w->repaint();
+    });
+    forEachMapElPair(discreteTextEds, intAttachments, [&](auto &w, auto &a) {
+        if (!w)
+            return;
+        enable(w.get());
+        w->setSource(b ? a.get() : nullptr);
+    });
+}
+
 void MappingDisplay::setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)
 {
     summary = d;
