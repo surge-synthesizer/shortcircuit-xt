@@ -38,6 +38,7 @@
 #include "app/mixer-screen/MixerScreen.h"
 #include "app/shared/HeaderRegion.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
+#include "app/edit-screen/components/mapping-pane/MappingDisplay.h"
 #include "app/edit-screen/components/mapping-pane/VariantDisplay.h"
 #include "app/other-screens/AboutScreen.h"
 #include "app/other-screens/ThemeEditor.h"
@@ -554,6 +555,14 @@ void SCXTEditorReceiver::onOtherTabSelection(
     if (!ea.empty() && editor.editScreen && editor.editScreen->mappingPane)
     {
         editor.editScreen->mappingPane->setEditAllFromModel(std::atoi(ea.c_str()) != 0);
+    }
+
+    // absent means never turned off, and names show by default
+    auto zn = editor.queryTabSelection(edit_screen::MappingDisplay::showZoneNamesTabKey);
+    if (editor.editScreen && editor.editScreen->mappingPane)
+    {
+        editor.editScreen->mappingPane->setShowZoneNamesFromModel(zn.empty() ||
+                                                                  std::atoi(zn.c_str()) != 0);
     }
 }
 

@@ -134,6 +134,12 @@ struct MappingDisplay : juce::Component,
     // When set, drags in the zone grid select only; they don't move or resize zones
     bool mappingLocked{false};
 
+    // key into SCXTEditor::otherTabSelection, so the choice outlives zone changes and sessions
+    static constexpr const char *showZoneNamesTabKey{"mapping.zonenames"};
+    bool showZoneNames{true};
+    void setShowZoneNames(bool b);
+    void showHamburgerMenu();
+
     std::unique_ptr<MappingZoneHeader> zoneHeader;
 
     enum Ctrl
