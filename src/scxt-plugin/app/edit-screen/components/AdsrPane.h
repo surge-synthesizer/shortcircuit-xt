@@ -87,6 +87,8 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     void adsrChangedFromModel(const modulation::modulators::AdsrStorage &);
     void adsrChangedFromModel(const modulation::modulators::AdsrStorage &, int index);
     void adsrDeactivated();
+    bool active{true};
+    void setControlsActive(bool b);
     void tabChanged(int newIndex, bool updateState);
     // the sustain slider's meaning and, for the zone AEG, the panel title both follow gateMode
     void updateForGateMode();

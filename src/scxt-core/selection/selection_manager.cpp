@@ -707,6 +707,9 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
     serializationSendToClient(cms::s2c_update_group_or_zone_adsr_view,
                               cms::AdsrGroupOrZoneUpdate::s2c_payload_t{true, 1, false, {}},
                               *(engine.getMessageController()));
+    serializationSendToClient(cms::s2c_update_group_or_zone_individual_modulator_storage,
+                              cms::indexedModulatorStorageUpdate_t{true, false, 0, {}},
+                              *(engine.getMessageController()));
     for (int i = 0; i < engine::processorCount; ++i)
     {
         serializationSendToClient(
@@ -804,6 +807,9 @@ void SelectionManager::sendDisplayDataForNoGroupSelected()
                                   cms::AdsrGroupOrZoneUpdate::s2c_payload_t{false, i, false, {}},
                                   *(engine.getMessageController()));
     }
+    serializationSendToClient(cms::s2c_update_group_or_zone_individual_modulator_storage,
+                              cms::indexedModulatorStorageUpdate_t{false, false, 0, {}},
+                              *(engine.getMessageController()));
 
     for (int i = 0; i < engine::processorCount; ++i)
     {
@@ -812,6 +818,14 @@ void SelectionManager::sendDisplayDataForNoGroupSelected()
             cms::ProcessorMetadataAndData::s2c_payload_t{false, i, false, {}, {}},
             *(engine.getMessageController()));
     }
+
+    serializationSendToClient(cms::s2c_update_group_matrix_metadata,
+                              modulation::groupMatrixMetadata_t{false, {}, {}, {}},
+                              *(engine.getMessageController()));
+
+    serializationSendToClient(cms::s2c_update_group_output_info,
+                              cms::groupOutputInfoUpdate_t{false, {}},
+                              *(engine.getMessageController()));
 }
 
 void SelectionManager::copyZoneOrGroupProcessorLeadToAll(bool forZone, int which)

@@ -547,14 +547,8 @@ RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e)
     {
         using bfac = connectors::BooleanSingleValueFactory<
             bool_attachment_t, scxt::messaging::client::UpdateGroupOutputBoolValue>;
-        bfac::attachAndAdd(info, info.oversample, this, oversampleAttachment, oversampleButton);
-
-        oversampleButton->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
-        oversampleButton->setLabel("2xOS");
-        oversampleButton->setLabelDrawsBackground(false);
-
-        setupFloatWidget(oversampleButton.get(), oversampleAttachment);
-        addAdditionalHamburgerComponent(std::move(oversampleButton), 28);
+        oversampleAttachment = bfac::attachOnly(info, info.oversample, this);
+        addOversampleButton();
     }
 
     contents = std::make_unique<RoutingPaneContents<RPTraits>>(editor, this);
@@ -569,7 +563,32 @@ template <typename RPTraits> void RoutingPane<RPTraits>::resized()
     contents->setBounds(getContentArea());
 }
 
-template <typename RPTraits> void RoutingPane<RPTraits>::setActive(bool b) { active = b; }
+template <typename RPTraits> void RoutingPane<RPTraits>::addOversampleButton()
+{
+    auto ob = std::make_unique<jcmp::ToggleButton>();
+    ob->setSource(oversampleAttachment.get());
+    ob->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
+    ob->setLabel("2xOS");
+    ob->setLabelDrawsBackground(false);
+    setupFloatWidget(ob.get(), oversampleAttachment);
+    addAdditionalHamburgerComponent(std::move(ob), 28);
+}
+
+template <typename RPTraits> void RoutingPane<RPTraits>::setActive(bool b)
+{
+    active = b;
+    contents->setVisible(b);
+
+    if constexpr (!RPTraits::forZone)
+    {
+        // removed rather than hidden, so the header rule runs the full width
+        if (!b)
+            clearAdditionalHamburgerComponents();
+        else if (additionalHamburgerComponents.empty())
+            addOversampleButton();
+        repaint();
+    }
+}
 
 template <typename RPTraits> void RoutingPane<RPTraits>::updateFromOutputInfo()
 {

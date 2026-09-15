@@ -1703,6 +1703,7 @@ void LfoPane::setActive(int i, bool b)
     if (!b)
     {
         getContentAreaComponent()->removeAllChildren();
+        clearAdditionalHamburgerComponents();
     }
 }
 
