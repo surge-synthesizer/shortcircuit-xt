@@ -104,14 +104,7 @@ void MacroMappingVariantPane::setSelectedTab(int i)
     mappingDisplay->setVisible(i == 1);
     macroDisplay->setVisible(i == 0);
 
-    if (i == 2)
-    {
-        hasHamburger = true;
-    }
-    else
-    {
-        hasHamburger = false;
-    }
+    hasHamburger = (i == 1 || i == 2);
 
     repaint();
     editor->setTabSelection(editor->editScreen->tabKey("multi.mapping"), std::to_string(i));
@@ -122,7 +115,9 @@ void MacroMappingVariantPane::showHamburgerMenu()
     switch (selectedTab)
     {
     case 0:
+        break;
     case 1:
+        mappingDisplay->showHamburgerMenu();
         break;
     case 2:
         sampleDisplay->showHamburgerMenu();
@@ -171,6 +166,11 @@ void MacroMappingVariantPane::setMappingLockFromModel(bool b)
 void MacroMappingVariantPane::setEditAllFromModel(bool b)
 {
     sampleDisplay->editAllButton->setValueFromModel(b);
+}
+
+void MacroMappingVariantPane::setShowZoneNamesFromModel(bool b)
+{
+    mappingDisplay->setShowZoneNames(b);
 }
 
 void MacroMappingVariantPane::editorSelectionChanged()
