@@ -77,7 +77,7 @@ struct PreviewVoice::Details
         GD.directionAtOutset = GD.direction;
         GD.gated = true;
 
-        GD.ratio = (int32_t)((double)(1 << 24) * sample->sample_rate * parent->samplerate_inv);
+        GD.ratio = (int64_t)((double)(1 << 24) * sample->sample_rate * parent->samplerate_inv);
 
         Generator = dsp::GetFPtrGeneratorSample(
             sample->channels != 1, sample->bitDepth == sample::Sample::BD_F32, false, false, false);

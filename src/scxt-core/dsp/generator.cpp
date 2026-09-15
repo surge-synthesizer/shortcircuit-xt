@@ -631,6 +631,60 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     }
 }
 
+// mirrors a playhead that ran past a ping-pong bound back in, however many times it crossed
+inline void reflectPingPong(int &samplePos, int &sampleSubPos, int &direction, int64_t ratio,
+                            GeneratorState *GD)
+{
+    const int64_t lo = (int64_t)GD->loopLowerBound << 24;
+    const int64_t len = (int64_t)std::max(1, GD->loopUpperBound - GD->loopLowerBound) << 24;
+    const int64_t hi = lo + len;
+    int64_t pos = ((int64_t)samplePos << 24) + sampleSubPos;
+
+    auto over = direction > 0 ? pos - hi : lo - pos;
+    if (over < 0)
+        return;
+
+    if (over > ratio)
+    {
+        // already outside before this step, so head back rather than jump in
+        direction = -direction;
+        return;
+    }
+
+    const auto trips = over / (2 * len);
+    const auto phase = over % (2 * len);
+    const auto directionBefore = direction;
+    if (phase < len)
+    {
+        pos = direction > 0 ? hi - phase : lo + phase;
+        direction = -direction;
+    }
+    else
+    {
+        pos = direction > 0 ? lo + (phase - len) : hi - (phase - len);
+    }
+
+    // a loop counts when the playhead turns at the bound it set out from
+    const auto turnsAtFirstBound = trips + 1;
+    const auto turnsAtOtherBound = trips + (phase >= len ? 1 : 0);
+    GD->loopCount +=
+        (int16_t)(directionBefore != GD->directionAtOutset ? turnsAtFirstBound : turnsAtOtherBound);
+
+    samplePos = (int)(pos >> 24);
+    sampleSubPos = (int)(pos & ((1 << 24) - 1));
+}
+
+// sample index for a window straddling the loop end, wrapped back into the loop
+inline int loopEndIndex(int k, int samplePos, int loopUpperBound, int waveSize, int loopLength)
+{
+    // signed, since a short loop's window starts in the pad before the sample
+    int q = k + samplePos - (int)FIRoffset;
+    const auto top = std::min(loopUpperBound, waveSize);
+    if (q >= top)
+        q -= loopLength * ((q - top) / loopLength + 1);
+    return std::max(q, -(int)FIRoffset);
+}
+
 template <int compoundConfig>
 void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO);
 
@@ -685,7 +739,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     int IsFinished = GD->isFinished;
     int WaveSize = IO->waveSize;
     int LoopOffset = std::max(1, GD->loopUpperBound - GD->loopLowerBound);
-    int Ratio = GD->ratio;
+    int64_t Ratio = GD->ratio;
     int RatioSign = Ratio < 0 ? -1 : 1;
     Ratio = std::abs(Ratio);
     int Direction = GD->direction * RatioSign;
@@ -751,9 +805,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 for (int k = 0; k < resampFIRSize; ++k)
                 {
-                    auto q = k + SamplePos - FIRoffset;
-                    if (q >= GD->loopUpperBound || q >= WaveSize)
-                        q -= std::min((unsigned)LoopOffset, q);
+                    auto q = loopEndIndex(k, SamplePos, GD->loopUpperBound, WaveSize, LoopOffset);
                     loopEndBufferLF32[k] = SampleDataFL[q];
                     if (stereo)
                         loopEndBufferRF32[k] = SampleDataFR[q];
@@ -784,9 +836,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 for (int k = 0; k < resampFIRSize; ++k)
                 {
-                    auto q = k + SamplePos - FIRoffset;
-                    if (q >= GD->loopUpperBound || q >= WaveSize)
-                        q -= std::min((unsigned)LoopOffset, q);
+                    auto q = loopEndIndex(k, SamplePos, GD->loopUpperBound, WaveSize, LoopOffset);
 
                     loopEndBufferL[k] = SampleDataL[q];
                     if (stereo)
@@ -914,10 +964,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 #endif
 
         // 3. Forward sample position
-        SampleSubPos += Ratio * Direction;
-        int incr = SampleSubPos >> 24;
+        // wide so a ratio past 128x cannot overflow
+        int64_t subPos = SampleSubPos + Ratio * Direction;
+        auto incr = (int)(subPos >> 24);
         SamplePos += incr;
-        SampleSubPos = SampleSubPos - (incr << 24);
+        SampleSubPos = (int)(subPos - ((int64_t)incr << 24));
 
         if constexpr (!loopActive) // these constexprs just remind us not to refactor to break ce
         {
@@ -981,19 +1032,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         else if constexpr (!loopWhileGated && !loopForward)
         {
             // bidirectional
-            if (SamplePos >= GD->loopUpperBound)
-            {
-                if (GD->directionAtOutset == -1 && Direction == 1)
-                    GD->loopCount++;
-                Direction = -1;
-            }
-            else if (SamplePos <= GD->loopLowerBound)
-            {
-                if (GD->directionAtOutset == 1 && Direction == -1)
-                    GD->loopCount++;
-                Direction = 1;
-            }
-
+            reflectPingPong(SamplePos, SampleSubPos, Direction, Ratio, GD);
             SamplePos = std::clamp(SamplePos, 0, WaveSize);
         }
         else if constexpr (loopForward)
@@ -1048,19 +1087,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             // gated bidirecational
             if (GD->gated || (GD->direction != GD->directionAtOutset))
             {
-                if (SamplePos >= GD->loopUpperBound)
-                {
-                    if (GD->directionAtOutset == -1 && Direction == 1)
-                        GD->loopCount++;
-                    Direction = -1;
-                }
-                else if (SamplePos <= GD->loopLowerBound)
-                {
-                    if (GD->directionAtOutset == 1 && Direction == -1)
-                        GD->loopCount++;
-                    Direction = 1;
-                }
-
+                reflectPingPong(SamplePos, SampleSubPos, Direction, Ratio, GD);
                 SamplePos = std::clamp(SamplePos, 0, WaveSize);
             }
             else
@@ -1091,9 +1118,8 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     for (int k = 0; k < resampFIRSize; ++k)
                     {
-                        auto q = k + SamplePos - FIRoffset;
-                        if (q >= GD->loopUpperBound || q >= WaveSize)
-                            q -= std::min((unsigned)LoopOffset, q);
+                        auto q =
+                            loopEndIndex(k, SamplePos, GD->loopUpperBound, WaveSize, LoopOffset);
                         loopEndBufferLF32[k] = SampleDataFL[q];
                         if (stereo)
                             loopEndBufferRF32[k] = SampleDataFR[q];
@@ -1125,9 +1151,8 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     for (int k = 0; k < resampFIRSize; ++k)
                     {
-                        auto q = k + SamplePos - FIRoffset;
-                        if (q >= GD->loopUpperBound || q >= WaveSize)
-                            q -= std::min((unsigned)LoopOffset, q);
+                        auto q =
+                            loopEndIndex(k, SamplePos, GD->loopUpperBound, WaveSize, LoopOffset);
                         loopEndBufferL[k] = SampleDataL[q];
                         if (stereo)
                             loopEndBufferR[k] = SampleDataR[q];

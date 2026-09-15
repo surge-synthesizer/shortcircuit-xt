@@ -84,7 +84,7 @@ struct GeneratorState
     int32_t loopLowerBound{0};     // inclusive
     int32_t loopUpperBound{1};     // inclusive
     float loopInvertedBounds{1.f}; // 1 / (UB-LB)
-    int32_t ratio{1 << 24};        // 1 << 24 is playback-at-tempo
+    int64_t ratio{1 << 24};        // 1 << 24 is playback-at-tempo
     int16_t blockSize{scxt::blockSize};
     bool isFinished{true};
     int32_t sampleStart{0};
