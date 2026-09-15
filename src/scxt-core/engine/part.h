@@ -103,6 +103,9 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         int32_t polyLimitVoices{0};    // poly limit. 0 means unlimited.
         int32_t numExclusiveGroups{0}; // how many exclusive-group IDs have been issued (0 = none)
 
+        // the latch key armed when nothing else is; -1, or a key no group uses, is the lowest group
+        int16_t defaultKeySwitchKey{-1};
+
         BusAddress routeTo{DEFAULT_BUS};
 
         float level{1.f};
@@ -286,6 +289,11 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     void setBusEffectType(Engine &e, int idx, AvailableBusEffects t);
     void setupOnUnstream(Engine &e);
     void guaranteeKeyswitchLatchCoherence(Engine &e);
+
+    // the key of the articulation the part falls back to, or -1 with no latch groups
+    int16_t defaultKeySwitchLatchKey() const;
+    // latch the default articulation, whatever was live
+    void selectDefaultKeySwitchArticulation();
 
     /*
      * Round robin. Which slot of a set is live is a question about every group in the set at once,
