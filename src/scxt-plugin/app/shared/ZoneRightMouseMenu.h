@@ -53,52 +53,67 @@ findOtherGroups(SCXTEditor *e,
     }
     return res;
 }
+// inside a wider selection the menu acts on all of it, bar rename which is the clicked zone
 template <typename SendingComp, typename RenamingComp> // COMP is a HasEditor and a few other things
 void populateZoneRightMouseMenuForZone(SendingComp *that, RenamingComp *rnThat, juce::PopupMenu &p,
                                        const selection::SelectionManager::ZoneAddress &forZone,
                                        const std::string &zoneSectionName)
 {
     namespace cmsg = scxt::messaging::client;
+    using za_t = selection::SelectionManager::ZoneAddress;
 
-    p.addSectionHeader(zoneSectionName);
+    auto *ed = that->editor;
+    auto onSelection = ed->isSelected(forZone) && ed->allZoneSelections.size() > 1;
+    std::vector<za_t> targets;
+    if (onSelection)
+        targets.assign(ed->allZoneSelections.begin(), ed->allZoneSelections.end());
+    else
+        targets.push_back(forZone);
+
+    p.addSectionHeader(onSelection ? std::to_string(targets.size()) + " Selected Zones"
+                                   : zoneSectionName);
     p.addItem("Rename", [w = juce::Component::SafePointer(rnThat), forZone]() {
         if (!w)
             return;
         w->doZoneRename(forZone);
     });
-    p.addItem("Copy", [w = juce::Component::SafePointer(that), forZone]() {
+    p.addItem("Copy", [w = juce::Component::SafePointer(that), targets]() {
         if (!w)
             return;
-        w->sendToSerialization(cmsg::CopyZone(forZone));
+        w->sendToSerialization(cmsg::CopyZones(targets));
     });
-    p.addItem("Paste", that->editor->clipboardType == engine::Clipboard::ContentType::ZONE, false,
+    p.addItem("Paste", ed->clipboardType == engine::Clipboard::ContentType::ZONE, false,
               [w = juce::Component::SafePointer(that), forZone]() {
                   if (!w)
                       return;
                   w->sendToSerialization(cmsg::PasteZone(forZone));
               });
-    p.addItem("Duplicate", [w = juce::Component::SafePointer(that), forZone]() {
+    p.addItem("Duplicate", [w = juce::Component::SafePointer(that), targets]() {
         if (!w)
             return;
-        w->sendToSerialization(cmsg::DuplicateZone(forZone));
+        w->sendToSerialization(cmsg::DuplicateZones(targets));
     });
-    p.addItem("Delete", [w = juce::Component::SafePointer(that), forZone]() {
+    p.addItem("Delete", [w = juce::Component::SafePointer(that), forZone, onSelection]() {
         if (!w)
             return;
-        w->sendToSerialization(cmsg::DeleteZone(forZone));
+        if (onSelection)
+            w->sendToSerialization(cmsg::DeleteAllSelectedZones(true));
+        else
+            w->sendToSerialization(cmsg::DeleteZone(forZone));
     });
 
+    // an empty source set means the selection
+    auto moveSources = onSelection ? std::set<za_t>{} : std::set<za_t>{forZone};
     auto moveMenu = juce::PopupMenu();
-    moveMenu.addItem("New Group", [w = juce::Component::SafePointer(that), forZone]() {
+    moveMenu.addItem("New Group", [w = juce::Component::SafePointer(that), moveSources]() {
         if (!w)
             return;
-        w->sendToSerialization(cmsg::MoveZonesFromTo(
-            {{forZone},
-             selection::SelectionManager::ZoneAddress{w->editor->selectedPart, -1, -1}}));
+        w->sendToSerialization(
+            cmsg::MoveZonesFromTo({moveSources, za_t{w->editor->selectedPart, -1, -1}}));
     });
     moveMenu.addItem("New Duplicate Group", false, false, []() {});
 
-    auto og = findOtherGroups(that->editor, forZone);
+    auto og = findOtherGroups(ed, onSelection ? za_t{-1, -1, -1} : forZone);
     if (!og.empty())
     {
         auto g = juce::PopupMenu();
@@ -106,10 +121,10 @@ void populateZoneRightMouseMenuForZone(SendingComp *that, RenamingComp *rnThat, 
         {
             auto &n = sg.name;
             auto &a = sg.address;
-            g.addItem(n, [forZone, w = juce::Component::SafePointer(that), a]() {
+            g.addItem(n, [moveSources, w = juce::Component::SafePointer(that), a]() {
                 if (!w)
                     return;
-                w->sendToSerialization(cmsg::MoveZonesFromTo({{forZone}, a}));
+                w->sendToSerialization(cmsg::MoveZonesFromTo({moveSources, a}));
             });
         }
         moveMenu.addSubMenu("Group", g);
@@ -118,50 +133,10 @@ void populateZoneRightMouseMenuForZone(SendingComp *that, RenamingComp *rnThat, 
 }
 
 template <typename SendingComp>
-void populateZoneRightMouseMenuForSelectedZones(SendingComp *that, juce::PopupMenu &p, int part,
-                                                const std::string &name = "")
+void populatePartRightMouseMenu(SendingComp *that, juce::PopupMenu &p, int part)
 {
     namespace cmsg = scxt::messaging::client;
 
-    if (name.empty())
-        p.addSectionHeader("Selected Zones");
-    else
-        p.addSectionHeader(name);
-
-    p.addItem("Delete All", [w = juce::Component::SafePointer(that)]() {
-        if (!w)
-            return;
-
-        w->sendToSerialization(cmsg::DeleteAllSelectedZones(true));
-    });
-
-    auto moveMenu = juce::PopupMenu();
-    moveMenu.addItem("New Group", [w = juce::Component::SafePointer(that)]() {
-        if (!w)
-            return;
-        w->sendToSerialization(cmsg::MoveZonesFromTo(
-            {{}, selection::SelectionManager::ZoneAddress{w->editor->selectedPart, -1, -1}}));
-    });
-    moveMenu.addItem("New Duplicate Group", false, false, []() {});
-    auto og = findOtherGroups(that->editor);
-    if (!og.empty())
-    {
-        auto g = juce::PopupMenu();
-        for (const auto &sg : og)
-        {
-            auto &n = sg.name;
-            auto &a = sg.address;
-            g.addItem(n, [w = juce::Component::SafePointer(that), a]() {
-                if (!w)
-                    return;
-                w->sendToSerialization(cmsg::MoveZonesFromTo({{}, a}));
-            });
-        }
-        moveMenu.addSubMenu("Group", g);
-    }
-    p.addSubMenu("Move All to", moveMenu);
-
-    p.addSeparator();
     p.addSectionHeader("Current Part");
     p.addItem("Delete All Zones and Groups", [w = juce::Component::SafePointer(that), part]() {
         if (!w)

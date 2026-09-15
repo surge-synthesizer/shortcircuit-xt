@@ -299,3 +299,138 @@ TEST_CASE("Moving Zones Into A Group Which Already Has Zones Keeps Them Selected
     REQUIRE(sel.find(ZoneAddress{0, 1, 1}) != sel.end());
     REQUIRE(sel.find(ZoneAddress{0, 1, 2}) != sel.end());
 }
+
+namespace multi_structure_test
+{
+// drain until the audio thread has applied the structure change
+template <typename F> bool stepUntil(scxt::clients::console_ui::ConsoleHarness &th, F done)
+{
+    for (int i = 0; i < 300; ++i)
+    {
+        if (done())
+            return true;
+        th.stepUI(1);
+    }
+    return done();
+}
+} // namespace multi_structure_test
+
+TEST_CASE("Copy And Paste Several Zones At Once")
+{
+    namespace mst = multi_structure_test;
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI();
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 2; }));
+
+    th.sendToSerialization(cmsg::CopyZones({ZoneAddress{0, 0, 1}, ZoneAddress{0, 0, 0}}));
+    th.stepUI();
+    REQUIRE(th.engine->clipboard.getClipboardType() == scxt::engine::Clipboard::ContentType::ZONE);
+    REQUIRE(th.engine->clipboard.getClipboardItemCount() == 2);
+
+    th.sendToSerialization(cmsg::PasteZone(ZoneAddress{0, 1, -1}));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroup(1)->getZones().size() == 2; }));
+
+    // pasted in address order, and selected together
+    REQUIRE(part->getGroup(1)->getZone(0)->mapping.keyboardRange.keyStart == 48);
+    REQUIRE(part->getGroup(1)->getZone(1)->mapping.keyboardRange.keyStart == 61);
+    th.stepUI();
+    auto sel = th.engine->getSelectionManager()->currentlySelectedZones();
+    REQUIRE(sel.size() == 2);
+    REQUIRE(sel.count(ZoneAddress{0, 1, 0}) == 1);
+    REQUIRE(sel.count(ZoneAddress{0, 1, 1}) == 1);
+
+    // one undo takes both away
+    th.sendToSerialization(cmsg::Undo(true));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroup(1)->getZones().empty(); }));
+}
+
+TEST_CASE("Duplicate Several Zones Across Groups At Once")
+{
+    namespace mst = multi_structure_test;
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 1, 24, 36, 0, 127}));
+    th.stepUI();
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(mst::stepUntil(th, [&part]() {
+        return part->getGroups().size() == 2 && part->getGroup(1)->getZones().size() == 1;
+    }));
+
+    th.sendToSerialization(
+        cmsg::DuplicateZones({ZoneAddress{0, 0, 0}, ZoneAddress{0, 0, 1}, ZoneAddress{0, 1, 0}}));
+    REQUIRE(mst::stepUntil(th, [&part]() {
+        return part->getGroup(0)->getZones().size() == 4 &&
+               part->getGroup(1)->getZones().size() == 2;
+    }));
+    REQUIRE(part->getGroup(0)->getZone(2)->mapping.keyboardRange.keyStart == 48);
+    REQUIRE(part->getGroup(0)->getZone(3)->mapping.keyboardRange.keyStart == 61);
+    REQUIRE(part->getGroup(1)->getZone(1)->mapping.keyboardRange.keyStart == 24);
+
+    th.sendToSerialization(cmsg::Undo(true));
+    REQUIRE(mst::stepUntil(th, [&part]() {
+        return part->getGroup(0)->getZones().size() == 2 &&
+               part->getGroup(1)->getZones().size() == 1;
+    }));
+}
+
+TEST_CASE("Copy, Paste, Duplicate And Delete Several Groups At Once")
+{
+    namespace mst = multi_structure_test;
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 1, 61, 72, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI();
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 3; }));
+    auto name0 = part->getGroup(0)->name;
+    auto name1 = part->getGroup(1)->name;
+
+    th.sendToSerialization(cmsg::CopyGroups({ZoneAddress{0, 1, -1}, ZoneAddress{0, 0, -1}}));
+    th.stepUI();
+    REQUIRE(th.engine->clipboard.getClipboardItemCount() == 2);
+
+    th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 5; }));
+    REQUIRE(part->getGroup(3)->name == name0 + " (Copy)");
+    REQUIRE(part->getGroup(4)->name == name1 + " (Copy)");
+
+    th.sendToSerialization(cmsg::DuplicateGroups({ZoneAddress{0, 0, -1}, ZoneAddress{0, 1, -1}}));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 7; }));
+    REQUIRE(part->getGroup(5)->name == name0 + " (copy)");
+    REQUIRE(part->getGroup(6)->name == name1 + " (copy)");
+
+    // one undo removes both duplicates
+    th.sendToSerialization(cmsg::Undo(true));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 5; }));
+
+    // delete the two pasted groups, then bring both back with one undo
+    th.sendToSerialization(cmsg::DeleteGroups({ZoneAddress{0, 4, -1}, ZoneAddress{0, 3, -1}}));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 3; }));
+    REQUIRE(part->getGroup(0)->name == name0);
+    REQUIRE(part->getGroup(1)->name == name1);
+
+    th.sendToSerialization(cmsg::Undo(true));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 5; }));
+    REQUIRE(part->getGroup(3)->name == name0 + " (Copy)");
+    REQUIRE(part->getGroup(4)->name == name1 + " (Copy)");
+}

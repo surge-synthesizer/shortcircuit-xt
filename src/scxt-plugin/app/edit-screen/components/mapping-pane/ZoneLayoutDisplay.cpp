@@ -433,7 +433,7 @@ void ZoneLayoutDisplay::showZoneMenu(const selection::SelectionManager::ZoneAddr
     if (added)
         p.addSeparator();
 
-    app::shared::populateZoneRightMouseMenuForSelectedZones(display, p, part);
+    app::shared::populatePartRightMouseMenu(display, p, part);
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
