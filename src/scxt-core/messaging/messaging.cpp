@@ -122,6 +122,9 @@ void MessageController::parseAudioMessageOnSerializationThread(
     case audio::a2s_keyswitch_changed:
         engine.sendKeySwitchStateToClient((int16_t)as.payload.i[0]);
         break;
+    case audio::a2s_note_learned:
+        serializationSendToClient(client::s2c_send_learned_note, (int16_t)as.payload.i[0], *this);
+        break;
     case audio::a2s_none:
         break;
     }

@@ -35,6 +35,7 @@
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
+#include "sst/jucegui/component-adapters/DiscreteToReference.h"
 
 #include "app/SCXTEditor.h"
 #include "messaging/client/client_messages.h"
@@ -83,7 +84,7 @@ static argMetadata_t argMetadataFor(engine::GroupTriggerID id)
         return range(-8192, 8191, 0); // signed 14 bit, as the part carries it
     case engine::GroupTriggerID::KEYSWITCH_LATCH:
     case engine::GroupTriggerID::KEYSWITCH_MOMENTARY:
-        return {arg(0, 127, 0, 60), std::nullopt}; // a key, not a range
+        return {datamodel::pmd().asMIDINote(), std::nullopt}; // a key, not a range
     case engine::GroupTriggerID::ROUND_ROBIN_CYCLE:
     case engine::GroupTriggerID::ROUND_ROBIN_RANDOM:
     case engine::GroupTriggerID::ROUND_ROBIN_SHUFFLE:
@@ -183,7 +184,22 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
         if (withCond)
             cM = mkm("&", "Conjunction");
 
+        learnB = std::make_unique<learnToggle_t>(learnValue);
+        learnB->widget->setGlyph(jcmp::GlyphPainter::GlyphType::MIDI);
+        learnB->widget->setDrawMode(jcmp::ToggleButton::DrawMode::GLYPH_WITH_BG);
+        learnB->onValueChanged = [w = juce::Component::SafePointer(this)](bool v) {
+            if (w)
+                w->parent->setLearningRow(v ? w->index : -1);
+        };
+        addChildComponent(*learnB->widget);
+
         setupValuesFromData();
+    }
+
+    static bool isKeySwitch(engine::GroupTriggerID id)
+    {
+        return id == engine::GroupTriggerID::KEYSWITCH_LATCH ||
+               id == engine::GroupTriggerID::KEYSWITCH_MOMENTARY;
     }
 
     void setupValuesFromData()
@@ -248,6 +264,10 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
         }
         typeM->setEnabled(ac);
 
+        learnB->widget->setVisible(isKeySwitch(sr.id));
+        learnB->widget->setEnabled(ac);
+        learnB->setValueFromModel(parent->learningRow == index);
+
         repaint();
     }
 
@@ -264,6 +284,8 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
                     return;
                 auto &sr = w->parent->cond.storage[w->index];
                 auto id = (engine::GroupTriggerID)v;
+                if (!isKeySwitch(id) && w->parent->learningRow == w->index)
+                    w->parent->setLearningRow(-1);
                 if (sr.id != id)
                 {
                     // the args mean something else now, so a CC range left in a bend
@@ -341,11 +363,14 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
         activeB->setBounds(tb);
         tb = tb.translated(tb.getWidth() + 2, 0).withWidth(72);
         typeM->setBounds(tb);
-        for (auto *m : argM)
+        for (int i = 0; i < numArgs; ++i)
         {
             tb = tb.translated(tb.getWidth() + 2, 0).withWidth(32);
-            if (m)
-                m->setBounds(tb);
+            if (argM[i])
+                argM[i]->setBounds(tb);
+            // a keyswitch has no second arg, so learn takes its place
+            if (i == 1)
+                learnB->widget->setBounds(tb.withWidth(16));
         }
 
         if (cM)
@@ -367,6 +392,11 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
     std::array<std::unique_ptr<jcmp::DraggableTextEditableValue>, numArgs> argFM;
     std::array<std::unique_ptr<jcmp::DraggableTextEditableDiscreteValue>, numArgs> argDM;
     std::array<juce::Component *, numArgs> argM{};
+
+    using learnToggle_t =
+        sst::jucegui::component_adapters::DiscreteToValueReference<jcmp::ToggleButton, bool>;
+    bool learnValue{false};
+    std::unique_ptr<learnToggle_t> learnB;
 };
 /*
  * Just the toggle and its attachment. Nested and defined here for the same reason ConditionRow
@@ -418,7 +448,12 @@ GroupTriggersCard::GroupTriggersCard(SCXTEditor *e) : HasEditor(e)
         addAndMakeVisible(*rows[i]);
     }
 }
-GroupTriggersCard::~GroupTriggersCard() = default;
+GroupTriggersCard::~GroupTriggersCard()
+{
+    // an armed engine would otherwise swallow the next note with nobody listening
+    if (learningRow >= 0)
+        sendToSerialization(scxt::messaging::client::ArmNoteLearn(false));
+}
 
 void GroupTriggersCard::resized()
 {
@@ -452,6 +487,9 @@ void GroupTriggersCard::paint(juce::Graphics &g)
 
 void GroupTriggersCard::setGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &c)
 {
+    // the row being learned may belong to a different group now
+    if (learningRow >= 0)
+        setLearningRow(-1);
     cond = c;
     releaseRow->setupValuesFromData();
     for (auto &r : rows)
@@ -462,6 +500,30 @@ void GroupTriggersCard::setGroupTriggerConditions(const scxt::engine::GroupTrigg
 void GroupTriggersCard::pushUpdate()
 {
     sendToSerialization(scxt::messaging::client::UpdateGroupTriggerConditions(cond));
+}
+
+void GroupTriggersCard::setLearningRow(int row)
+{
+    if (row == learningRow)
+        return;
+    learningRow = row;
+    sendToSerialization(scxt::messaging::client::ArmNoteLearn(row >= 0));
+    for (auto &r : rows)
+        r->setupValuesFromData();
+}
+
+void GroupTriggersCard::noteLearned(int16_t key)
+{
+    // the engine disarms itself once it has sent the key
+    auto row = learningRow;
+    learningRow = -1;
+    if (row >= 0 && ConditionRow::isKeySwitch(cond.storage[row].id) && key >= 0 && key < 128)
+    {
+        cond.storage[row].args[0] = key;
+        pushUpdate();
+    }
+    for (auto &r : rows)
+        r->setupValuesFromData();
 }
 
 } // namespace scxt::ui::app::edit_screen

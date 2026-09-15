@@ -170,6 +170,7 @@ enum ClientToSerializationMessagesIds
     c2s_set_scl_kbm,
 
     c2s_noteonoff,
+    c2s_arm_note_learn,
 
     c2s_set_mixer_effect,
     c2s_set_mixer_effect_storage,
@@ -250,6 +251,7 @@ enum SerializationToClientMessageIds
 
     s2c_send_group_trigger_conditions,
     s2c_send_part_keyswitch_display,
+    s2c_send_learned_note,
 
     s2c_respond_single_processor_metadata_and_data,
 

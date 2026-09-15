@@ -114,6 +114,14 @@ inline void processMidiFromGUI(const noteOnOff_t &g, const engine::Engine &engin
 }
 CLIENT_TO_SERIAL(NoteFromGUI, c2s_noteonoff, noteOnOff_t, processMidiFromGUI(payload, engine, cont))
 
+// arm or cancel a one-shot learn; the next note-on comes back as SendLearnedNote instead of playing
+inline void doArmNoteLearn(bool arm, MessageController &cont)
+{
+    cont.scheduleAudioThreadCallback([arm](auto &eng) { eng.noteLearnArmed = arm; });
+}
+CLIENT_TO_SERIAL(ArmNoteLearn, c2s_arm_note_learn, bool, doArmNoteLearn(payload, cont));
+SERIAL_TO_CLIENT(SendLearnedNote, s2c_send_learned_note, int16_t, onLearnedNote);
+
 inline void doHostCallback(uint64_t pl, MessageController &cont)
 {
     if (cont.requestHostCallback)
