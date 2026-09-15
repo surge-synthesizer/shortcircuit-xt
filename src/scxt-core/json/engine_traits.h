@@ -521,12 +521,14 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"pm", t.playMode},
                       {"np", t.notePriority},
                       {"excg", t.exclusiveGroup}};
+                 addUnlessDefault<val_t>(v, "soloed", false, t.soloed);
              }),
              SC_TO({
                  findIf(v, "amplitude", result.amplitude);
                  findIf(v, "pan", result.pan);
                  findOrSet(v, "tn", 0.f, result.tuning);
                  findIf(v, "muted", result.muted);
+                 findOrSet(v, "soloed", false, result.soloed);
                  findIf(v, "procRouting", result.procRouting);
                  findIf(v, "velocitySensitivity", result.velocitySensitivity);
                  findIf(v, "oversample", result.oversample);

@@ -592,7 +592,7 @@ TEST_CASE("Mute solo group undo/redo", "[undo]")
     auto &group = f.engine().getPatch()->getPart(0)->getGroup(0);
     REQUIRE(!group->outputInfo.muted);
 
-    f.send(cmsg::MuteOrSoloGroup({0, 0, true, false, false}));
+    f.send(cmsg::MuteOrSoloGroup({0, 0, false, true, cmsg::MS_THIS_GROUP}));
     REQUIRE(group->outputInfo.muted);
 
     f.sendUndo();

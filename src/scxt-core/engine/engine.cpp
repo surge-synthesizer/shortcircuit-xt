@@ -594,6 +594,10 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
             {
                 groupFeatures |= GroupZoneFeatures::MUTED;
             }
+            if (group->outputInfo.soloed)
+            {
+                groupFeatures |= GroupZoneFeatures::SOLOED;
+            }
             if (sm.isGroupCollapsed(partidx, groupidx))
             {
                 groupFeatures |= GroupZoneFeatures::FOLDED;

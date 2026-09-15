@@ -116,6 +116,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         char blurb[maxDescription]{0};
     } configuration;
     void process(Engine &onto);
+    void reconfigureGroupSolo();
 
     // TODO: editable name
     std::string getName() const

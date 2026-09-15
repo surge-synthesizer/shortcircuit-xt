@@ -883,7 +883,7 @@ template <bool OS> bool Voice::processWithOS()
     }
     pao = std::max(pao, 0.f);
 
-    if (zone->parentGroup->outputInfo.muted)
+    if (zone->parentGroup->isSilencedByMuteOrSolo())
     {
         pao = 0.f;
     }
