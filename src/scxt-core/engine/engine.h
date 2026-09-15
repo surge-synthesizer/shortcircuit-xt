@@ -380,6 +380,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         SET_VEL_BOUNDS_SECOND
     } midiZoneAction{MidiZoneAction::NONE};
 
+    // audio thread: the next note-on is reported to the client as a learned key, not played
+    bool noteLearnArmed{false};
+
     // new voice manager style
     struct VMConfig
     {

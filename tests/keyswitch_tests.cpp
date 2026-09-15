@@ -613,3 +613,54 @@ TEST_CASE("Keyswitch default - changing it from the client arms it", "[keyswitch
     REQUIRE(!part.getGroup(0)->mutedByLatch);
     REQUIRE(part.getGroup(1)->mutedByLatch);
 }
+
+TEST_CASE("Note learn - an armed engine takes the next key instead of playing it", "[keyswitch]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+
+    eng->noteLearnArmed = true;
+    eng->processNoteOnEvent(0, 0, PLAY_KEY, -1, 1.f, 0.f);
+    REQUIRE(!eng->noteLearnArmed);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(0), PLAY_KEY) == 0);
+    eng->processNoteOffEvent(0, 0, PLAY_KEY, -1, 0.f);
+
+    // learning a switch key must not also throw the switch
+    eng->noteLearnArmed = true;
+    eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
+    eng->processNoteOffEvent(0, 0, SW_B, -1, 0.f);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
+
+    // one shot, so the next press plays
+    eng->processNoteOnEvent(0, 0, PLAY_KEY + 1, -1, 1.f, 0.f);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(0), PLAY_KEY + 1) >= 1);
+}
+
+TEST_CASE("Note learn - the learned key reaches the client", "[keyswitch]")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::ArmNoteLearn(true));
+    th.stepUI();
+    th.sendToSerialization(cmsg::NoteFromGUI({SW_B, 1.f, true}));
+    th.sendToSerialization(cmsg::NoteFromGUI({SW_B, 0.f, false}));
+    for (int i = 0; i < 100 && th.editor->lastLearnedNote < 0; ++i)
+        th.stepUI(1);
+    REQUIRE(th.editor->lastLearnedNote == SW_B);
+
+    // a cancelled learn leaves the next note alone
+    th.editor->lastLearnedNote = -1;
+    th.sendToSerialization(cmsg::ArmNoteLearn(true));
+    th.stepUI();
+    th.sendToSerialization(cmsg::ArmNoteLearn(false));
+    th.stepUI();
+    th.sendToSerialization(cmsg::NoteFromGUI({SW_A, 1.f, true}));
+    th.sendToSerialization(cmsg::NoteFromGUI({SW_A, 0.f, false}));
+    th.stepUI(20);
+    REQUIRE(th.editor->lastLearnedNote == -1);
+    REQUIRE(!th.engine->noteLearnArmed);
+}

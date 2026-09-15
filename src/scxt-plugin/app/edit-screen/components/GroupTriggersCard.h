@@ -53,6 +53,11 @@ struct GroupTriggersCard : juce::Component, HasEditor
     void pushUpdate();
     scxt::engine::GroupTriggerConditions cond;
 
+    // the keyswitch row waiting on a played key, or -1
+    int learningRow{-1};
+    void setLearningRow(int row);
+    void noteLearned(int16_t key);
+
     /*
      * The release trigger sits above the conditions rather than among them: it says which note
      * event asks them, not whether they hold. The widget wants a bool and the engine carries an
