@@ -59,6 +59,7 @@ struct MacroMappingVariantPane : sst::jucegui::components::NamedPanel, HasEditor
     // Restore the mapping-grid lock toggle from the persisted tab selection
     void setMappingLockFromModel(bool b);
     void setEditAllFromModel(bool b);
+    void setShowZoneNamesFromModel(bool b);
 
     std::unique_ptr<MappingDisplay> mappingDisplay;
     std::unique_ptr<VariantDisplay> sampleDisplay;
