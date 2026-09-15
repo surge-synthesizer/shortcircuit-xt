@@ -147,51 +147,130 @@ CLIENT_TO_SERIAL(UpdateGroupOutputInfoExclusiveGroup, c2s_update_group_output_in
                  scxt::engine::Group::GroupOutputInfo,
                  doUpdateGroupOutputInfoExclusiveGroup(payload, engine, cont));
 
-using muteOrSoloGroup_t = std::tuple<int32_t, int32_t, bool, bool, bool>; // p, g, m, s, selected
+enum MuteOrSoloGesture : int32_t
+{
+    MS_THIS_GROUP = 0,
+    MS_SELECTED_GROUPS, // every selected group, if this one is selected
+    MS_EXCLUSIVE,       // this group alone, or clear all if it already was
+    MS_RANGE            // sweep to the nearest group already in the new state
+};
+
+using muteOrSoloGroup_t =
+    std::tuple<int32_t, int32_t, bool, bool, int32_t>; // part, group, isSolo, value, gesture
 inline void doMuteOrSoloGroup(const muteOrSoloGroup_t &payload, engine::Engine &engine,
                               messaging::MessageController &cont)
 {
-    auto &[p, g, m, s, sel] = payload;
-    auto &gs = engine.getSelectionManager()->state[p].selectedGroups;
-    bool muteSelected{false};
-    if (sel)
+    auto &[p, g, isSolo, value, gesture] = payload;
+    if (p < 0 || p >= numParts)
+        return;
+    const auto &part = engine.getPatch()->getPart(p);
+    auto ng = (int32_t)part->getGroups().size();
+    if (g < 0 || g >= ng)
+        return;
+
+    auto stateOf = [&part, isSolo](int32_t i) {
+        const auto &oi = part->getGroup(i)->outputInfo;
+        return isSolo ? oi.soloed : oi.muted;
+    };
+
+    std::vector<bool> target(ng);
+    for (int32_t i = 0; i < ng; ++i)
+        target[i] = stateOf(i);
+
+    switch ((MuteOrSoloGesture)gesture)
     {
-        for (auto gi : gs)
+    case MS_SELECTED_GROUPS:
+    {
+        const auto &gs = engine.getSelectionManager()->state[p].selectedGroups;
+        bool inSelection = std::any_of(
+            gs.begin(), gs.end(), [p, g](const auto &gi) { return gi.part == p && gi.group == g; });
+        target[g] = value;
+        if (inSelection)
         {
-            if (g == gi.group)
-            {
-                muteSelected = true;
-                break;
-            }
+            for (const auto &gi : gs)
+                if (gi.part == p && gi.group >= 0 && gi.group < ng)
+                    target[gi.group] = value;
+        }
+    }
+    break;
+    case MS_EXCLUSIVE:
+    {
+        bool onlyThisOne = stateOf(g);
+        for (int32_t i = 0; i < ng; ++i)
+            if (i != g && stateOf(i))
+                onlyThisOne = false;
+        for (int32_t i = 0; i < ng; ++i)
+            target[i] = !onlyThisOne && i == g;
+    }
+    break;
+    case MS_RANGE:
+    {
+        auto anchor = g;
+        for (int32_t d = 1; d < ng && anchor == g; ++d)
+        {
+            if (g - d >= 0 && stateOf(g - d) == value)
+                anchor = g - d;
+            else if (g + d < ng && stateOf(g + d) == value)
+                anchor = g + d;
+        }
+        for (int32_t i = std::min(g, anchor); i <= std::max(g, anchor); ++i)
+            target[i] = value;
+    }
+    break;
+    default:
+        target[g] = value;
+        break;
+    }
+
+    std::vector<selection::SelectionManager::ZoneAddress> changed;
+    std::vector<std::pair<int32_t, bool>> newValues;
+    for (int32_t i = 0; i < ng; ++i)
+    {
+        if (target[i] != stateOf(i))
+        {
+            changed.emplace_back(p, i, -1);
+            newValues.emplace_back(i, target[i]);
         }
     }
 
-    if (muteSelected)
-        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, {gs.begin(), gs.end()});
-    else
-        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(
-            engine, {selection::SelectionManager::ZoneAddress(p, g, -1)});
+    auto sendStructure = [p](const engine::Engine &e) {
+        serializationSendToClient(s2c_send_pgz_structure, e.getPartGroupZoneStructure(),
+                                  *e.getMessageController());
+        // keep the client's lead group output info current, since some edits send it back whole
+        auto lg = e.getSelectionManager()->currentLeadGroup(e);
+        if (lg.has_value() && lg->part == p)
+        {
+            const auto &grp = e.getPatch()->getPart(p)->getGroup(lg->group);
+            serializationSendToClient(s2c_update_group_output_info,
+                                      groupOutputInfoUpdate_t{true, grp->outputInfo},
+                                      *e.getMessageController());
+        }
+    };
+
+    // the toggle flipped itself on the client, so a no-op still owes it the real state
+    if (changed.empty())
+    {
+        sendStructure(engine);
+        return;
+    }
+
+    undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, changed);
 
     cont.scheduleAudioThreadCallback(
-        [p, g, m, gs, muteSelected](auto &eng) {
-            if (!muteSelected)
+        [p, isSolo, newValues](auto &eng) {
+            const auto &prt = eng.getPatch()->getPart(p);
+            for (const auto &[gi, v] : newValues)
             {
-                auto &grp = eng.getPatch()->getPart(p)->getGroup(g);
-                grp->outputInfo.muted = m;
-            }
-            else
-            {
-                for (auto &gi : gs)
-                {
-                    auto &grp = eng.getPatch()->getPart(gi.part)->getGroup(gi.group);
-                    grp->outputInfo.muted = m;
-                }
+                if (gi >= (int32_t)prt->getGroups().size())
+                    continue;
+                auto &oi = prt->getGroup(gi)->outputInfo;
+                if (isSolo)
+                    oi.soloed = v;
+                else
+                    oi.muted = v;
             }
         },
-        [](auto &engine) {
-            serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
-                                      *engine.getMessageController());
-        });
+        sendStructure);
 }
 CLIENT_TO_SERIAL(MuteOrSoloGroup, c2s_mute_solo_group, muteOrSoloGroup_t,
                  doMuteOrSoloGroup(payload, engine, cont));

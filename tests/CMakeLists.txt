@@ -21,6 +21,7 @@ add_executable(scxt-test
 		mod_matrix_operations_tests.cpp
 		alternate_source_tests.cpp
 		exclusive_group_tests.cpp
+		group_mute_solo_tests.cpp
 		keyswitch_tests.cpp
 		group_trigger_tests.cpp
 		release_trigger_tests.cpp

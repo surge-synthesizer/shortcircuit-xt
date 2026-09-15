@@ -59,6 +59,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
     // Indices into gzData of the rows the ListView should actually show.
     std::vector<size_t> visibleRows;
+    bool anyGroupSoloed{false};
 
     // Map a ListView row index to its gzData index.
     size_t gzIndexForRow(int row) const { return visibleRows[row]; }
@@ -125,9 +126,16 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
         auto &pgz = sidebar->partGroupSidebar->pgzStructure;
         gzData.clear();
+        anyGroupSoloed = false;
         for (const auto &el : pgz)
+        {
             if (el.address.part == sidebar->editor->selectedPart && el.address.group >= 0)
+            {
                 gzData.push_back(el);
+                anyGroupSoloed =
+                    anyGroupSoloed || (el.features & engine::GroupZoneFeatures::SOLOED);
+            }
+        }
         rebuildVisible();
     }
 
@@ -238,8 +246,8 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         std::unique_ptr<juce::TextEditor> renameEditor;
         using bdm_t =
             sst::jucegui::component_adapters::DiscreteToValueReference<jcmp::ToggleButton, bool>;
-        std::unique_ptr<bdm_t> muteProvider;
-        bool muteValue{false};
+        std::unique_ptr<bdm_t> muteProvider, soloProvider;
+        bool muteValue{false}, soloValue{false};
         bool glyphHovered{false};
         rowComponent()
         {
@@ -281,39 +289,43 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             }
         }
 
-        // Rows are recycled across refreshes, so build the mute widget once and
-        // retarget it. Rebuilding it here allocates on every row assignment.
+        // Rows are recycled across refreshes, so build the mute and solo widgets once and
+        // retarget them. Rebuilding them here allocates on every row assignment.
         void complete()
         {
             if (!isZone())
             {
                 const auto &tgl = lbm->gzData;
                 const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
-                bool mv = sg.features & engine::GroupZoneFeatures::MUTED;
 
                 if (!muteProvider)
                 {
-                    muteValue = mv;
-                    muteProvider = std::make_unique<bdm_t>(muteValue);
-                    muteProvider->widget->setLabel("M");
-                    muteProvider->setup();
-                    muteProvider->onValueChanged = [this](bool v) {
-                        auto shift = juce::ModifierKeys::getCurrentModifiers().isShiftDown();
-                        setMuteTo(v, !shift);
-                    };
-                    addAndMakeVisible(*muteProvider->widget);
+                    muteProvider = makeMuteOrSoloToggle(muteValue, "M", false);
+                    soloProvider = makeMuteOrSoloToggle(soloValue, "S", true);
                     resized();
                 }
-                else
-                {
-                    muteProvider->setValueFromModel(mv);
-                    muteProvider->widget->setVisible(true);
-                }
+                muteProvider->setValueFromModel(sg.features & engine::GroupZoneFeatures::MUTED);
+                soloProvider->setValueFromModel(sg.features & engine::GroupZoneFeatures::SOLOED);
+                muteProvider->widget->setVisible(true);
+                soloProvider->widget->setVisible(true);
+                // a solo in the part decides what sounds, as on the mixer
+                muteProvider->widget->setEnabled(!lbm->anyGroupSoloed);
             }
-            else if (muteProvider && muteProvider->widget)
+            else if (muteProvider)
             {
                 muteProvider->widget->setVisible(false);
+                soloProvider->widget->setVisible(false);
             }
+        }
+
+        std::unique_ptr<bdm_t> makeMuteOrSoloToggle(bool &value, const std::string &label,
+                                                    bool isSolo)
+        {
+            auto res = std::make_unique<bdm_t>(value);
+            res->widget->setLabel(label);
+            res->onValueChanged = [this, isSolo](bool v) { setMuteOrSoloTo(isSolo, v); };
+            addAndMakeVisible(*res->widget);
+            return res;
         }
 
         int zonePad = 16;
@@ -325,13 +337,24 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             DRAG_OVER
         } dragOverState{NONE};
 
-        void setMuteTo(bool v, bool allSel)
+        // alt is exclusive, shift sweeps a range, command skips the selection
+        void setMuteOrSoloTo(bool isSolo, bool v)
         {
             assert(!isZone());
             const auto &tgl = lbm->gzData;
             const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
-            gsb->sendToSerialization(
-                cmsg::MuteOrSoloGroup({sg.address.part, sg.address.group, v, false, allSel}));
+
+            auto mods = juce::ModifierKeys::getCurrentModifiers();
+            auto gesture = cmsg::MS_SELECTED_GROUPS;
+            if (mods.isAltDown())
+                gesture = cmsg::MS_EXCLUSIVE;
+            else if (mods.isShiftDown())
+                gesture = cmsg::MS_RANGE;
+            else if (mods.isCommandDown())
+                gesture = cmsg::MS_THIS_GROUP;
+
+            gsb->sendToSerialization(cmsg::MuteOrSoloGroup(
+                {sg.address.part, sg.address.group, isSolo, v, (int32_t)gesture}));
         }
 
         void paint(juce::Graphics &g) override
@@ -409,7 +432,10 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 g.drawHorizontalLine(getHeight() - 1, 0, getWidth());
 
                 auto bx = getLocalBounds().withWidth(grouplabelPad);
-                auto nb = getLocalBounds().withTrimmedLeft(grouplabelPad).withTrimmedBottom(1);
+                auto nb = getLocalBounds()
+                              .withTrimmedLeft(grouplabelPad)
+                              .withTrimmedRight(2 * (getHeight() - 2))
+                              .withTrimmedBottom(1);
                 auto glyphColor = lowTextColor;
                 bool groupIsSelected =
                     editor->allGroupSelections.find(sg.address) != editor->allGroupSelections.end();
@@ -775,10 +801,11 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         void resized() override
         {
             renameEditor->setBounds(getLocalBounds().withTrimmedLeft(zonePad));
-            if (muteProvider && muteProvider->widget)
+            if (muteProvider)
             {
-                muteProvider->widget->setBounds(
-                    getLocalBounds().withTrimmedLeft(getWidth() - getHeight() + 2).reduced(1));
+                auto bx = getLocalBounds().withTrimmedLeft(getWidth() - getHeight() + 2);
+                muteProvider->widget->setBounds(bx.reduced(1));
+                soloProvider->widget->setBounds(bx.translated(-bx.getWidth(), 0).reduced(1));
             }
         }
 

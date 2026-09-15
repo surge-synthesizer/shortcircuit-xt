@@ -102,6 +102,7 @@ struct Group : MoveableOnly<Group>,
     {
         float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f}, tuning{0.f};
         bool muted{false};
+        bool soloed{false};
         bool oversample{true};
 
         ProcRoutingPath procRouting{procRoute_linear};
@@ -135,6 +136,14 @@ struct Group : MoveableOnly<Group>,
      * struct gets assigned wholesale from the client, which would clobber a live switch.
      */
     bool mutedByLatch{false};
+
+    // unstreamed; Part::reconfigureGroupSolo derives it from the part's soloed groups
+    bool mutedDueToSoloAway{false};
+    // a solo beats the group's own mute, as on the busses
+    bool isSilencedByMuteOrSolo() const
+    {
+        return (outputInfo.muted && !outputInfo.soloed) || mutedDueToSoloAway;
+    }
 
     Engine *getEngine();
     const Engine *getEngine() const;

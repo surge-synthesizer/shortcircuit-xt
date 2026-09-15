@@ -55,6 +55,7 @@ void Part::process(Engine &e)
 
     macroLagHandler.process();
     externalSignalLag.processAll();
+    reconfigureGroupSolo();
 
     auto lev = configuration.level;
     lev = lev * lev * lev;
@@ -154,6 +155,16 @@ void Part::process(Engine &e)
     {
         silenceTime += blockSize;
     }
+}
+
+// every block, since add, delete, paste and undo all change which groups are soloed
+void Part::reconfigureGroupSolo()
+{
+    bool anySolo{false};
+    for (const auto &g : groups)
+        anySolo = anySolo || g->outputInfo.soloed;
+    for (const auto &g : groups)
+        g->mutedDueToSoloAway = anySolo && !g->outputInfo.soloed;
 }
 
 bool Part::isActive()
