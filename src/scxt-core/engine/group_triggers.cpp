@@ -483,6 +483,18 @@ bool GroupTriggerConditions::isKeySwitchKey(int16_t midiKey) const
     return false;
 }
 
+bool GroupTriggerConditions::hasKeySwitch() const
+{
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        const auto &s = storage[i];
+        if (active[i] && (s.id == GroupTriggerID::KEYSWITCH_LATCH ||
+                          s.id == GroupTriggerID::KEYSWITCH_MOMENTARY))
+            return true;
+    }
+    return false;
+}
+
 bool GroupTriggerConditions::isKeySwitchLatchKey(int16_t midiKey) const
 {
     for (int i = 0; i < triggerConditionsPerGroup; ++i)

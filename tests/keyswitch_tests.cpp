@@ -30,11 +30,16 @@
 #include <tao/json/from_string.hpp>
 #include "engine/engine.h"
 #include "engine/zone.h"
+#include "engine/feature_enums.h"
 #include "voice/voice.h"
 #include "json/engine_traits.h"
 #include "json/stream.h"
+#include "messaging/client/client_messages.h"
+#include "console_harness.h"
 
 #include "test_utils.h"
+
+namespace cmsg = scxt::messaging::client;
 
 /*
  * Group keyswitch triggers. Like the exclusive group tests these drive the engine
@@ -221,6 +226,100 @@ TEST_CASE("Keyswitch - part reports every switch key and which is live", "[keysw
     setKeyswitch(part, 2, scxt::engine::GroupTriggerID::KEYSWITCH_MOMENTARY, PLAY_KEY + 5);
     ks = part.keySwitchDisplay();
     REQUIRE(ks[PLAY_KEY + 5] == (int32_t)kss::INACTIVE);
+}
+
+static int32_t keySwitchGroupFeatures(const scxt::engine::Engine &eng, int part, int group)
+{
+    for (const auto &b : eng.getPartGroupZoneStructure())
+        if (b.address.part == part && b.address.group == group && b.address.zone == -1)
+            return b.features;
+    return 0;
+}
+
+TEST_CASE("Keyswitch - the group tree marks keyswitch groups and which are switched off",
+          "[keyswitch]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoLatchGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+    part.addGroup(); // group 2 has no keyswitch
+    part.addGroup();
+    setKeyswitch(part, 3, scxt::engine::GroupTriggerID::KEYSWITCH_MOMENTARY, PLAY_KEY + 5);
+
+    using gzf = scxt::engine::GroupZoneFeatures;
+    auto has = [&eng](int g, int f) { return (keySwitchGroupFeatures(*eng, 0, g) & f) != 0; };
+
+    REQUIRE(has(0, gzf::KEYSWITCHED));
+    REQUIRE(!has(0, gzf::MUTED_BY_KEYSWITCH));
+    REQUIRE(has(1, gzf::KEYSWITCHED));
+    REQUIRE(has(1, gzf::MUTED_BY_KEYSWITCH));
+    REQUIRE(!has(2, gzf::KEYSWITCHED));
+    REQUIRE(!has(2, gzf::MUTED_BY_KEYSWITCH));
+    // a momentary group is silent until its key is held
+    REQUIRE(has(3, gzf::KEYSWITCHED));
+    REQUIRE(has(3, gzf::MUTED_BY_KEYSWITCH));
+
+    eng->processNoteOnEvent(0, 0, SW_B, -1, 1.f, 0.f);
+    REQUIRE(has(0, gzf::MUTED_BY_KEYSWITCH));
+    REQUIRE(!has(1, gzf::MUTED_BY_KEYSWITCH));
+
+    // it is its own bit, not the user's mute
+    REQUIRE(!has(0, gzf::MUTED));
+}
+
+TEST_CASE("Keyswitch latch - a switch press refreshes the client", "[keyswitch]")
+{
+    // the latch moves on the audio thread, so the keyboard and tree only hear about it if the
+    // engine tells them
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    auto latchOn = [](int key) {
+        scxt::engine::GroupTriggerConditions cond;
+        cond.storage[0].id = scxt::engine::GroupTriggerID::KEYSWITCH_LATCH;
+        cond.storage[0].args[0] = (float)key;
+        return cond;
+    };
+
+    // adding a zone selects it, which leads the group the condition then lands on
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 72, 0, 127}));
+    th.stepUI();
+    th.sendToSerialization(cmsg::UpdateGroupTriggerConditions(latchOn(SW_A)));
+    th.stepUI();
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI();
+    th.sendToSerialization(cmsg::AddBlankZone({0, 1, 48, 72, 0, 127}));
+    th.stepUI();
+    th.sendToSerialization(cmsg::UpdateGroupTriggerConditions(latchOn(SW_B)));
+    th.stepUI();
+
+    auto &part = *th.engine->getPatch()->getPart(0);
+    REQUIRE(part.getGroups().size() == 2);
+    REQUIRE(!part.getGroup(0)->mutedByLatch);
+    REQUIRE(part.getGroup(1)->mutedByLatch);
+
+    auto pressAndRelease = [&th](int key) {
+        th.sendToSerialization(cmsg::NoteFromGUI({key, 1.f, true}));
+        th.stepUI();
+        th.sendToSerialization(cmsg::NoteFromGUI({key, 0.f, false}));
+        th.stepUI();
+    };
+
+    th.editor->structureUpdateCount = 0;
+    pressAndRelease(SW_B);
+    for (int i = 0; i < 100 && th.editor->structureUpdateCount == 0; ++i)
+        th.stepUI(1);
+
+    REQUIRE(part.getGroup(0)->mutedByLatch);
+    REQUIRE(!part.getGroup(1)->mutedByLatch);
+    REQUIRE(th.editor->structureUpdateCount == 1);
+
+    // pressing the key that is already live changes nothing, so sends nothing
+    th.editor->structureUpdateCount = 0;
+    pressAndRelease(SW_B);
+    th.stepUI(20);
+    REQUIRE(th.editor->structureUpdateCount == 0);
 }
 
 TEST_CASE("Keyswitch - switch keys are reported for display", "[keyswitch]")

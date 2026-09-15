@@ -279,6 +279,7 @@ struct GroupTriggerConditions
      * built, so anything the UI asks has to be answerable from storage and active alone.
      */
     bool isKeySwitchKey(int16_t midiKey) const;
+    bool hasKeySwitch() const;
     bool isKeySwitchLatchKey(int16_t midiKey) const;
     int16_t firstKeySwitchLatchKey() const; // -1 if this group has no latch
 

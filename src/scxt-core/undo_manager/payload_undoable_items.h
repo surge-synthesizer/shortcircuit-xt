@@ -524,6 +524,15 @@ struct GroupTriggerConditionsSpec : GroupMemberSpec<&engine::Group::triggerCondi
         groupAt(e, a).triggerConditions.setupOnUnstream(pt->groupTriggerInstrumentState);
         pt->guaranteeKeyswitchLatchCoherence(e);
     }
+    static void extraClientRefresh(const engine::Engine &e, const std::vector<ZoneAddress> &sel,
+                                   int32_t)
+    {
+        std::set<int16_t> parts;
+        for (const auto &a : sel)
+            parts.insert((int16_t)a.part);
+        for (auto p : parts)
+            e.sendKeySwitchStateToClient(p);
+    }
 };
 
 /*
