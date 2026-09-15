@@ -260,6 +260,23 @@ template <typename TG, uint32_t gn> struct LFOTargetEndpointData
     template <typename M, typename Z> void baseBind(M &m, Z &z);
 };
 
+// the row label for a target on an empty slot, or past the parameters its processor has
+static constexpr const char *absentProcessorTargetShortName{"-"};
+
+template <typename D> std::string processorSlotShortPath(const D &d, uint32_t slot, bool isNone)
+{
+    auto res = std::string("P") + std::to_string(slot + 1);
+    return isNone ? res : res + "." + d.typeShortName;
+}
+
+template <typename D> std::string processorFloatParamShortName(const D &d, int i)
+{
+    if (i >= d.numFloatParams)
+        return absentProcessorTargetShortName;
+    const auto &md = d.floatControlDescriptions[i];
+    return md.shortName.empty() ? md.name : md.shortName;
+}
+
 template <typename TG, uint32_t gn> struct ProcessorTargetEndpointData
 {
     // so we can get to it without an instance
