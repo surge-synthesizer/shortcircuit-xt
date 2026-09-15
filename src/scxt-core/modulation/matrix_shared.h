@@ -260,6 +260,26 @@ template <typename TG, uint32_t gn> struct LFOTargetEndpointData
     template <typename M, typename Z> void baseBind(M &m, Z &z);
 };
 
+// the row label for a target on an empty slot, or past the parameters its processor has
+static constexpr const char *absentProcessorTargetShortName{"none"};
+
+// P1.SVF while the target exists; otherwise P1.4 or P1.Mix, naming what it pointed at
+template <typename D>
+std::string processorTargetShortPath(const D &d, uint32_t slot, bool present,
+                                     const std::string &absentWhat)
+{
+    return std::string("P") + std::to_string(slot + 1) + "." +
+           (present ? d.typeShortName : absentWhat);
+}
+
+template <typename D> std::string processorFloatParamShortName(const D &d, int i)
+{
+    if (i >= d.numFloatParams)
+        return absentProcessorTargetShortName;
+    const auto &md = d.floatControlDescriptions[i];
+    return md.shortName.empty() ? md.name : md.shortName;
+}
+
 template <typename TG, uint32_t gn> struct ProcessorTargetEndpointData
 {
     // so we can get to it without an instance

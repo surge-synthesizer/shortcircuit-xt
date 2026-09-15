@@ -375,18 +375,28 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         return std::string("P") + std::to_string(t.index + 1) + " " + d.typeDisplayName;
     };
 
-    auto ptShortFn = [](const engine::Zone &z,
-                        const MatrixConfig::TargetIdentifier &t) -> std::string {
-        auto &d = z.processorDescription[t.index];
-        if (d.type == dsp::processor::proct_none)
-            return "";
-        return std::string("P") + std::to_string(t.index + 1) + "." + d.typeShortName;
+    // the long names stay empty on an empty slot, which keeps them out of the target menu
+    auto slotShortFn = [](const std::string &absentWhat) {
+        return [absentWhat](const engine::Zone &z,
+                            const MatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            return shmo::processorTargetShortPath(d, t.index, d.type != dsp::processor::proct_none,
+                                                  absentWhat);
+        };
     };
 
     auto mixFn = [](const engine::Zone &z, const MatrixConfig::TargetIdentifier &t) -> std::string {
         auto &d = z.processorDescription[t.index];
         if (d.type == dsp::processor::proct_none)
             return "";
+        return "Mix";
+    };
+
+    auto mixShortFn = [](const engine::Zone &z,
+                         const MatrixConfig::TargetIdentifier &t) -> std::string {
+        auto &d = z.processorDescription[t.index];
+        if (d.type == dsp::processor::proct_none)
+            return shmo::absentProcessorTargetShortName;
         return "Mix";
     };
 
@@ -401,8 +411,12 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
                          const MatrixConfig::TargetIdentifier &t) -> std::string {
         auto &d = z.processorDescription[t.index];
         if (d.type == dsp::processor::proct_none)
-            return "";
+            return shmo::absentProcessorTargetShortName;
         return "Out Lvl";
+    };
+
+    auto slotFilledFn = [](const engine::Zone &z, const MatrixConfig::TargetIdentifier &t) -> bool {
+        return z.processorDescription[t.index].type != dsp::processor::proct_none;
     };
 
     auto order = scxt::modulation::shared::ExplicitMenuOrder(e);
@@ -416,17 +430,20 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
                 return "";
             return d.floatControlDescriptions[icopy].name;
         };
+        auto elShortPathFn = [icopy = i](const engine::Zone &z,
+                                         const MatrixConfig::TargetIdentifier &t) -> std::string {
+            auto &d = z.processorDescription[t.index];
+            return shmo::processorTargetShortPath(d, t.index, icopy < d.numFloatParams,
+                                                  std::to_string(icopy + 1));
+        };
         auto elShortFn = [icopy = i](const engine::Zone &z,
                                      const MatrixConfig::TargetIdentifier &t) -> std::string {
-            auto &d = z.processorDescription[t.index];
-            if (d.type == dsp::processor::proct_none)
-                return "";
-            return d.floatControlDescriptions[icopy].shortName;
+            return shmo::processorFloatParamShortName(z.processorDescription[t.index], icopy);
         };
         auto adFn = [icopy = i](const engine::Zone &z,
                                 const MatrixConfig::TargetIdentifier &t) -> int32_t {
             auto &d = z.processorDescription[t.index];
-            if (d.type == dsp::processor::proct_none)
+            if (icopy >= d.numFloatParams)
                 return false;
             auto can = d.floatControlDescriptions[icopy].hasSupportsMultiplicativeModulation();
             if (!can)
@@ -438,17 +455,21 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         auto enFn = [icopy = i](const engine::Zone &z,
                                 const MatrixConfig::TargetIdentifier &t) -> bool {
             auto &d = z.processorDescription[t.index];
-            if (d.type == dsp::processor::proct_none)
+            if (icopy >= d.numFloatParams)
                 return false;
             return d.floatControlDescriptions[icopy].isEnabled();
         };
 
-        registerVoiceModTarget(e, fpT[i], ptFn, elFn, adFn, enFn, ptShortFn, elShortFn);
+        registerVoiceModTarget(e, fpT[i], ptFn, elFn, adFn, enFn, elShortPathFn, elShortFn);
     }
 
     order.separator();
-    registerVoiceModTarget(e, mixT, ptFn, mixFn, false, ptShortFn, mixFn);
-    registerVoiceModTarget(e, outputLevelDbT, ptFn, levFn, true, ptShortFn, levShortFn);
+    registerVoiceModTarget(
+        e, mixT, ptFn, mixFn, [](const auto &, const auto &) -> int32_t { return false; },
+        slotFilledFn, slotShortFn("Mix"), mixShortFn);
+    registerVoiceModTarget(
+        e, outputLevelDbT, ptFn, levFn, [](const auto &, const auto &) -> int32_t { return true; },
+        slotFilledFn, slotShortFn("Out Lvl"), levShortFn);
 }
 
 MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
