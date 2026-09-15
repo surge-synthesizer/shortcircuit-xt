@@ -1275,7 +1275,7 @@ void Voice::calculateGeneratorRatio(float pitch, int cSampleIndex, int generator
     auto fac = tuning::equalTuning.note_to_pitch(ndiff);
 
     GD[generatorIndex].ratio =
-        (int32_t)((1 << 24) * fac * zone->samplePointers[cSampleIndex]->sample_rate *
+        (int64_t)((1 << 24) * fac * zone->samplePointers[cSampleIndex]->sample_rate *
                   sampleRateInv);
 }
 
