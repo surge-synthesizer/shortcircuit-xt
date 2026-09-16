@@ -50,6 +50,7 @@
 
 #include "SCXTEditorDataCache.h"
 #include "HasEditor.h"
+#include "KeyCommands.h"
 
 #include "theme/ThemeApplier.h"
 
@@ -345,6 +346,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     }
 
     void showMainMenu(bool alignWithHeaderButton = true);
+    void addKeyCommandItem(juce::PopupMenu &into, const std::string &label, KeyCommands command);
     void addTuningMenu(juce::PopupMenu &into, bool addTitle = true);
     void addZoomMenu(juce::PopupMenu &into, bool addTitle = true);
     void addOmniFlavorMenu(juce::PopupMenu &p);
@@ -383,6 +385,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // Keyboard shortcuts
     std::unique_ptr<KeyBindings> keyBindings;
     bool keyPressed(const juce::KeyPress &key) override;
+    bool handleGlobalKeyCommand(KeyCommands command);
+    void showKeyBindingsEditor();
     void modifierKeysChanged(const juce::ModifierKeys &modifiers) override;
     void switchGroupOrZoneFocus();
 

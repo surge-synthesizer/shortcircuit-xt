@@ -461,6 +461,7 @@ struct PartSidebar : juce::Component,
 template <typename T, bool forZone>
 struct GroupZoneSidebarBase : juce::Component,
                               HasEditor,
+                              KeyCommandTarget,
                               juce::DragAndDropContainer,
                               juce::FileDragAndDropTarget
 {
@@ -470,8 +471,85 @@ struct GroupZoneSidebarBase : juce::Component,
 
     T *asT() { return static_cast<T *>(this); }
 
-    GroupZoneSidebarBase(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor) {}
+    GroupZoneSidebarBase(PartGroupSidebar *p) : partGroupSidebar(p), HasEditor(p->editor)
+    {
+        // rows claim focus for the list, so the edit keys reach handleKeyCommand
+        setWantsKeyboardFocus(true);
+    }
     ~GroupZoneSidebarBase() {}
+
+    bool handleKeyCommand(KeyCommands command) override
+    {
+        switch (command)
+        {
+        case SELECT_PREVIOUS:
+            return jogLeadSelection(-1);
+        case SELECT_NEXT:
+            return jogLeadSelection(1);
+        case RENAME:
+            return renameLead();
+        default:
+            break;
+        }
+
+        auto *es = editor->editScreen.get();
+        if (!es)
+            return false;
+        return forZone ? es->doZoneEditCommand(command) : es->doGroupEditCommand(command);
+    }
+
+    // walks the rows as shown, so zones in folded groups are skipped
+    bool jogLeadSelection(int dir)
+    {
+        std::vector<selection::SelectionManager::ZoneAddress> addresses;
+        for (auto gi : gzTreeControl->visibleRows)
+        {
+            const auto &a = gzTreeControl->gzData[gi].address;
+            if ((a.zone >= 0) == forZone)
+                addresses.push_back(a);
+        }
+        if (addresses.empty())
+            return false;
+
+        const auto &lead =
+            forZone ? editor->currentLeadZoneSelection : editor->currentLeadGroupSelection;
+        auto idx = dir > 0 ? 0 : (int)addresses.size() - 1;
+        if (lead.has_value())
+        {
+            auto it = std::find(addresses.begin(), addresses.end(), *lead);
+            if (it != addresses.end())
+                idx = std::clamp((int)(it - addresses.begin()) + dir, 0, (int)addresses.size() - 1);
+        }
+
+        auto se = selection::SelectionManager::SelectActionContents(addresses[idx]);
+        se.selecting = true;
+        se.distinct = true;
+        se.selectingAsLead = true;
+        se.forZone = forZone;
+        editor->doSelectionAction(se);
+
+        if constexpr (requires(T &t) { t.lastZoneClicked; })
+            asT()->lastZoneClicked = addresses[idx];
+        return true;
+    }
+
+    bool renameLead()
+    {
+        const auto &lead =
+            forZone ? editor->currentLeadZoneSelection : editor->currentLeadGroupSelection;
+        if (!lead.has_value())
+            return false;
+
+        auto row = gzTreeControl->rowComponentForAddress(*lead);
+        if (!row)
+            return false;
+
+        if (forZone)
+            row->doZoneRename(*lead);
+        else
+            row->doGroupRename();
+        return true;
+    }
 
     // FileDragAndDropTarget — accept single audio files from the OS; add as zones in current group
     bool isInterestedInFileDrag(const juce::StringArray &files) override

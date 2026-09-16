@@ -28,27 +28,30 @@
 #ifndef SCXT_SRC_SCXT_PLUGIN_APP_EDITOR_IMPL_KEYBINDINGS_H
 #define SCXT_SRC_SCXT_PLUGIN_APP_EDITOR_IMPL_KEYBINDINGS_H
 
+#include <string>
+#include <vector>
+
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "app/HasEditor.h"
+#include "app/KeyCommands.h"
 #include "sst/plugininfra/keybindings.h"
+
+namespace sst::plugininfra
+{
+// key names rather than platform key codes, so a key map moves between machines
+template <> inline std::string keyCodeToString<juce::KeyPress>(int keyCode)
+{
+    return juce::KeyPress(keyCode).getTextDescription().toStdString();
+}
+
+template <> inline int keyCodeFromString<juce::KeyPress>(const std::string &s)
+{
+    return juce::KeyPress::createFromDescription(s).getKeyCode();
+}
+} // namespace sst::plugininfra
 
 namespace scxt::ui::app
 {
-enum KeyCommands : uint32_t
-{
-    SWITCH_GROUP_ZONE_SELECTION,
-
-    FOCUS_PARTS,
-    FOCUS_GROUPS,
-    FOCUS_ZONES,
-    FOCUS_MIXER,
-    FOCUS_PLAY,
-
-    UNDO,
-    REDO,
-
-    numKeyCommands
-};
 struct KeyBindings : HasEditor
 {
     using manager_t = sst::plugininfra::KeyMapManager<KeyCommands, (int)KeyCommands::numKeyCommands,
@@ -58,7 +61,14 @@ struct KeyBindings : HasEditor
 
     void setupKeyBindings();
 
-    std::string commandToString(KeyCommands);
+    static KeyCommandInfo commandInfo(KeyCommands);
+    static std::string commandToString(KeyCommands);
+
+    // exact shift matches come before the looser linux ones
+    std::vector<KeyCommands> matchingCommands(const juce::KeyPress &key) const;
+    std::string shortcutDescription(KeyCommands) const;
+
+    void showEditor();
 
     std::unique_ptr<manager_t> manager;
 };

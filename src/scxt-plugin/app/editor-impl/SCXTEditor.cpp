@@ -738,48 +738,93 @@ void SCXTEditor::displayError(const std::string &title, const std::string &messa
 
 bool SCXTEditor::keyPressed(const juce::KeyPress &key)
 {
-    auto m = keyBindings->manager->matches(key);
+    auto commands = keyBindings->matchingCommands(key);
+    if (commands.empty())
+        return false;
 
-    if (m.has_value())
+    // edit commands act on whatever the focused component is showing
+    for (auto *c = juce::Component::getCurrentlyFocusedComponent(); c && c != this;
+         c = c->getParentComponent())
     {
-        switch (*m)
+        if (auto *target = dynamic_cast<KeyCommandTarget *>(c))
         {
-        case SWITCH_GROUP_ZONE_SELECTION:
-            switchGroupOrZoneFocus();
-            return true;
-            break;
-        // DONT ADD A DEFAULT
-        case FOCUS_ZONES:
-            setActiveScreen(ActiveScreen::MULTI);
-            editScreen->viewZone();
-            return true;
-        case FOCUS_GROUPS:
-            setActiveScreen(ActiveScreen::MULTI);
-            editScreen->viewGroup();
-            return true;
-        case FOCUS_PARTS:
-            setActiveScreen(ActiveScreen::MULTI);
-            editScreen->viewPart();
-            return true;
-        case FOCUS_MIXER:
-            setActiveScreen(ActiveScreen::MIXER);
-            return true;
-        case FOCUS_PLAY:
-            setActiveScreen(ActiveScreen::PLAY);
-            return true;
-        case UNDO:
-            sendToSerialization(scxt::messaging::client::Undo(true));
-            return true;
-        case REDO:
-            sendToSerialization(scxt::messaging::client::Redo(true));
+            for (auto command : commands)
+                if (target->handleKeyCommand(command))
+                    return true;
+        }
+    }
+
+    for (auto command : commands)
+        if (handleGlobalKeyCommand(command))
             return true;
 
-        case numKeyCommands:
-            break;
-        }
+    return false;
+}
+
+bool SCXTEditor::handleGlobalKeyCommand(KeyCommands command)
+{
+    switch (command)
+    {
+    // DONT ADD A DEFAULT
+    case SWITCH_GROUP_ZONE_SELECTION:
+        switchGroupOrZoneFocus();
+        return true;
+    case FOCUS_ZONES:
+        setActiveScreen(ActiveScreen::MULTI);
+        editScreen->viewZone();
+        return true;
+    case FOCUS_GROUPS:
+        setActiveScreen(ActiveScreen::MULTI);
+        editScreen->viewGroup();
+        return true;
+    case FOCUS_PARTS:
+        setActiveScreen(ActiveScreen::MULTI);
+        editScreen->viewPart();
+        return true;
+    case FOCUS_MIXER:
+        setActiveScreen(ActiveScreen::MIXER);
+        return true;
+    case FOCUS_PLAY:
+        setActiveScreen(ActiveScreen::PLAY);
+        return true;
+    case UNDO:
+        sendToSerialization(scxt::messaging::client::Undo(true));
+        return true;
+    case REDO:
+        sendToSerialization(scxt::messaging::client::Redo(true));
+        return true;
+    case SHOW_KEYBINDINGS_EDITOR:
+        showKeyBindingsEditor();
+        return true;
+    case SHOW_TUNING_EDITOR:
+        showTuningOverlay();
+        return true;
+    case SHOW_LOG:
+        showLogOverlay();
+        return true;
+    case SHOW_ABOUT:
+        showAboutOverlay();
+        return true;
+
+    // these only mean something to a focused KeyCommandTarget
+    case SELECT_ALL:
+    case SELECT_PREVIOUS:
+    case SELECT_NEXT:
+    case ACTIVATE:
+    case COLLAPSE:
+    case EXPAND:
+    case RENAME:
+    case COPY:
+    case PASTE:
+    case DUPLICATE:
+    case DELETE_SELECTED:
+    case numKeyCommands:
+        break;
     }
     return false;
 }
+
+void SCXTEditor::showKeyBindingsEditor() { keyBindings->showEditor(); }
 
 void SCXTEditor::switchGroupOrZoneFocus()
 {

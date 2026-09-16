@@ -282,7 +282,7 @@ struct DriveArea : juce::Component, HasEditor
 
 struct DriveFSRowComponent;
 
-struct DriveFSArea : juce::Component, HasEditor
+struct DriveFSArea : juce::Component, HasEditor, KeyCommandTarget
 {
     BrowserPane *browserPane{nullptr};
 
@@ -300,6 +300,8 @@ struct DriveFSArea : juce::Component, HasEditor
 
     DriveFSArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
     {
+        // rows hand focus here on click, so the arrow keys reach handleKeyCommand
+        setWantsKeyboardFocus(true);
         listView = std::make_unique<jcmp::ListView>();
         setupListView();
         addAndMakeVisible(*listView);
@@ -449,6 +451,29 @@ struct DriveFSArea : juce::Component, HasEditor
 
     void setupListView();
 
+    bool handleKeyCommand(KeyCommands command) override;
+
+    // what a double click does: enter a directory, or load the file or element
+    void activateRow(int row);
+    // opens or closes a multi-sample file; a child row closes its parent
+    bool setRowExpanded(int row, bool expand);
+    std::optional<int> selectedRow() const;
+
+    void scrollRowIntoView(int row)
+    {
+        if (!listView->getRowHeight || !listView->viewPort)
+            return;
+        auto rh = (int)listView->getRowHeight();
+        auto &vp = listView->viewPort;
+        auto top = row * rh;
+        auto vy = vp->getViewPositionY();
+        auto vh = vp->getViewHeight();
+        if (top < vy)
+            vp->setViewPosition(vp->getViewPositionX(), top);
+        else if (top + rh > vy + vh)
+            vp->setViewPosition(vp->getViewPositionX(), top + rh - vh);
+    }
+
     void expandMultifile(int row)
     {
         auto &ent = contents[row];
@@ -582,6 +607,9 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         auto &entry = data[rowNumber];
         browserPane->lastClickedPotentialSample = rowNumber;
 
+        // keep focus on the list rather than a child juce might pick
+        fsArea->grabKeyboardFocus();
+
         isMouseDownWithoutDrag = true;
         if (browser::Browser::isExpandableInBrowser(entry.dirent.path()))
         {
@@ -713,49 +741,19 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         const auto &data = browserPane->devicesPane->driveFSArea->contents;
         if (rowNumber >= 0 && rowNumber < data.size())
         {
-            if (data[rowNumber].dirent == fs::path(".."))
-            {
-                browserPane->devicesPane->driveFSArea->upOneLevel();
-            }
-            else if (data[rowNumber].dirent.is_directory())
-            {
-                browserPane->devicesPane->driveFSArea->setCurrentPath(
-                    data[rowNumber].dirent.path());
-            }
-            else
-            {
-                // This is a hack and should be a drag and drop gesture really I guess
-                auto &entry = data[rowNumber];
+            const auto &entry = data[rowNumber];
 
-                namespace cmsg = scxt::messaging::client;
-                const auto &d = data[rowNumber];
-                if (d.expandableAddress.has_value())
-                {
-                    cmsg::clientSendToSerialization(
-                        cmsg::AddCompoundElementWithRange(
-                            {*(d.expandableAddress), 60, 48, 72, 0, 127}),
-                        browserPane->editor->msgCont);
-                }
-                else if (browser::Browser::isExpandableInBrowser(entry.dirent.path()) &&
-                         event.position.x < glyphSize + 2)
-                {
-                    if (entry.isExpanded)
-                    {
-                        browserPane->devicesPane->driveFSArea->collapsMultifile(rowNumber);
-                    }
-                    else
-                    {
-                        browserPane->devicesPane->driveFSArea->expandMultifile(rowNumber);
-                    }
-                    repaint();
-                }
-                else
-                {
-                    scxt::messaging::client::clientSendToSerialization(
-                        cmsg::AddSample(data[rowNumber].dirent.path().u8string()),
-                        browserPane->editor->msgCont);
-                }
+            // a double click on the glyph of a multi-sample file opens or closes it
+            if (!entry.expandableAddress.has_value() && !entry.dirent.is_directory() &&
+                browser::Browser::isExpandableInBrowser(entry.dirent.path()) &&
+                event.position.x < glyphSize + 2)
+            {
+                browserPane->devicesPane->driveFSArea->setRowExpanded(rowNumber, !entry.isExpanded);
+                repaint();
+                return;
             }
+
+            browserPane->devicesPane->driveFSArea->activateRow(rowNumber);
         }
     }
 
@@ -921,6 +919,121 @@ std::vector<DriveFSRowComponent *> DriveFSArea::selectedRowsInOrder() const
             res.push_back(r);
     std::sort(res.begin(), res.end(), [](auto &a, auto &b) { return a->rowNumber < b->rowNumber; });
     return res;
+}
+
+std::optional<int> DriveFSArea::selectedRow() const
+{
+    auto sel = selectedRowsInOrder();
+    if (sel.empty())
+        return std::nullopt;
+    return sel.front()->rowNumber;
+}
+
+void DriveFSArea::activateRow(int row)
+{
+    if (row < 0 || row >= (int)contents.size())
+        return;
+
+    namespace cmsg = scxt::messaging::client;
+    const auto &d = contents[row];
+
+    if (d.dirent == fs::path(".."))
+    {
+        upOneLevel();
+    }
+    else if (d.dirent.is_directory())
+    {
+        setCurrentPath(d.dirent.path());
+    }
+    else if (d.expandableAddress.has_value())
+    {
+        sendToSerialization(
+            cmsg::AddCompoundElementWithRange({*(d.expandableAddress), 60, 48, 72, 0, 127}));
+    }
+    else
+    {
+        sendToSerialization(cmsg::AddSample(d.dirent.path().u8string()));
+    }
+}
+
+bool DriveFSArea::setRowExpanded(int row, bool expand)
+{
+    if (row < 0 || row >= (int)contents.size())
+        return false;
+
+    const auto &ent = contents[row];
+    auto isParent = !ent.expandableAddress.has_value() &&
+                    browser::Browser::isExpandableInBrowser(ent.dirent.path());
+
+    if (expand)
+    {
+        if (!isParent || ent.isExpanded)
+            return false;
+        expandMultifile(row);
+        scrollRowIntoView(row);
+        return true;
+    }
+
+    if (isParent && ent.isExpanded)
+    {
+        collapsMultifile(row);
+        scrollRowIntoView(row);
+        return true;
+    }
+
+    // on one of the elements, so close the file it came from and land on it
+    if (ent.expandableAddress.has_value())
+    {
+        for (int r = row - 1; r >= 0; --r)
+        {
+            const auto &p = contents[r];
+            if (!p.expandableAddress.has_value() && p.isExpanded &&
+                p.dirent.path() == ent.dirent.path())
+            {
+                collapsMultifile(r);
+                scrollRowIntoView(r);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool DriveFSArea::handleKeyCommand(KeyCommands command)
+{
+    if (contents.empty())
+        return false;
+
+    if (command == ACTIVATE || command == COLLAPSE || command == EXPAND)
+    {
+        auto row = selectedRow();
+        if (!row.has_value())
+            return false;
+
+        if (command == ACTIVATE)
+        {
+            activateRow(*row);
+            return true;
+        }
+        return setRowExpanded(*row, command == EXPAND);
+    }
+
+    if (command != SELECT_NEXT && command != SELECT_PREVIOUS)
+        return false;
+
+    auto dir = (command == SELECT_NEXT) ? 1 : -1;
+    auto sel = selectedRowsInOrder();
+    int row = (dir > 0) ? 0 : (int)contents.size() - 1;
+    if (!sel.empty())
+    {
+        auto from = (dir > 0) ? sel.back()->rowNumber : sel.front()->rowNumber;
+        row = std::clamp(from + dir, 0, (int)contents.size() - 1);
+    }
+
+    deselectAllRows();
+    listView->rowSelected(row, true);
+    scrollRowIntoView(row);
+    return true;
 }
 
 size_t DriveFSArea::selectedRowCount() const
