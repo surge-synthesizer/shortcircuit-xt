@@ -720,6 +720,17 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void loadCompoundElementIntoZone(const sample::compound::CompoundElement &, int16_t part,
                                      int16_t group, int16_t zone, int variantID);
 
+    struct VariantToAdd
+    {
+        int variantID{0};
+        fs::path path;
+        // loaded by its address instead of path when present
+        std::optional<sample::compound::CompoundElement> element;
+    };
+    // the zone must be the lead zone; variants out of range are skipped
+    void loadSamplesIntoZone(const std::vector<VariantToAdd> &, int16_t part, int16_t group,
+                             int16_t zone);
+
     // use -1 for p and g here to get best choice
     void createEmptyZone(int part, int group, KeyboardRange krange = {48, 72},
                          VelocityRange vrange = {0, 127});

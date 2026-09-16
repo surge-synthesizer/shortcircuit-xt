@@ -645,69 +645,19 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
 void Engine::loadCompoundElementIntoZone(const sample::compound::CompoundElement &p, int16_t partID,
                                          int16_t groupID, int16_t zoneID, int variantID)
 {
-    assert(messageController->threadingChecker.isSerialThread());
-    assert(variantID < maxVariantsPerZone);
-
-    auto sz = getSelectionManager()->currentLeadZone(*this);
-
-    if (!sz.has_value())
-    {
-        RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
-                         "There is no currentLeadZone");
-        return;
-    }
-
-    if (p.type == sample::compound::CompoundElement::ERROR_SENTINEL)
-    {
-        RAISE_ERROR_CONT(*messageController, p.name, p.emsg);
-        return;
-    }
-
-    assert((*sz).part == partID);
-    assert((*sz).group == groupID);
-    assert((*sz).zone == zoneID);
-
-    auto osid = SampleID();
-    auto sid = sampleManager->loadSampleByFileAddress(p.sampleAddress, osid);
-
-    if (!sid.has_value())
-    {
-        RAISE_ERROR_CONT(*messageController, "Unable to load Compoint Sample",
-                         "Sample load failed:\n\n" + p.sampleAddress.path.u8string() + "\n\n" +
-                             "More information may be available in the log file (menu/log)");
-        return;
-    }
-
-    undo::pushPayloadUndoFor<undo::ZoneVariantsSpec>(*this, {{partID, groupID, zoneID}});
-
-    messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [p = partID, g = groupID, z = zoneID, sID = variantID, sample = *sid](auto &e) {
-            auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
-            zone->terminateAllVoices();
-            zone->variantData.variants[sID].sampleID = sample;
-            zone->variantData.variants[sID].active = true;
-            zone->attachToSample(*e.getSampleManager(), sID,
-                                 (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
-        },
-        [p = partID, g = groupID, z = zoneID](auto &e) {
-            e.getSelectionManager()->applySelectActions({p, g, z, true, true, true});
-        });
+    loadSamplesIntoZone({{variantID, p.sampleAddress.path, p}}, partID, groupID, zoneID);
 }
 
 void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t groupID, int16_t zoneID,
                                 int variantID)
 {
-    assert(messageController->threadingChecker.isSerialThread());
-    assert(variantID < maxVariantsPerZone);
+    loadSamplesIntoZone({{variantID, p, std::nullopt}}, partID, groupID, zoneID);
+}
 
-    // TODO: Deal with compound types more comprehensively
-    // If you add a type here add it to Browser::isLoadableFile also
-    if (extensionMatches(p, ".multisample") || extensionMatches(p, ".sf2") ||
-        extensionMatches(p, ".sfz"))
-    {
-        assert(false);
-        return;
-    }
+void Engine::loadSamplesIntoZone(const std::vector<VariantToAdd> &variants, int16_t partID,
+                                 int16_t groupID, int16_t zoneID)
+{
+    assert(messageController->threadingChecker.isSerialThread());
 
     auto sz = getSelectionManager()->currentLeadZone(*this);
 
@@ -722,31 +672,73 @@ void Engine::loadSampleIntoZone(const fs::path &p, int16_t partID, int16_t group
     assert((*sz).group == groupID);
     assert((*sz).zone == zoneID);
 
-    // OK so what we want to do now is
-    // 1. Load this sample on this thread
-    auto sid = sampleManager->loadSampleByPath(p);
-
-    if (!sid.has_value())
+    std::vector<std::pair<int, SampleID>> loaded;
+    for (const auto &v : variants)
     {
-        RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
-                         "Sample load failed:\n\n" + p.u8string() + "\n\n" +
-                             "It is either an unsupported format or invalid file. "
-                             "More information may be available in the log file (menu/log)");
-        return;
+        if (v.variantID < 0 || v.variantID >= maxVariantsPerZone)
+            continue;
+
+        if (v.element.has_value())
+        {
+            const auto &el = *v.element;
+            if (el.type == sample::compound::CompoundElement::ERROR_SENTINEL)
+            {
+                RAISE_ERROR_CONT(*messageController, el.name, el.emsg);
+                continue;
+            }
+
+            auto sid = sampleManager->loadSampleByFileAddress(el.sampleAddress, SampleID());
+            if (!sid.has_value())
+            {
+                RAISE_ERROR_CONT(
+                    *messageController, "Unable to load Compound Sample",
+                    "Sample load failed:\n\n" + el.sampleAddress.path.u8string() + "\n\n" +
+                        "More information may be available in the log file (menu/log)");
+                continue;
+            }
+            loaded.emplace_back(v.variantID, *sid);
+            continue;
+        }
+
+        // a container needs an element to say which of its samples to use
+        if (extensionMatches(v.path, ".multisample") || extensionMatches(v.path, ".sf2") ||
+            extensionMatches(v.path, ".sfz"))
+            continue;
+
+        auto sid = sampleManager->loadSampleByPath(v.path);
+        if (!sid.has_value())
+        {
+            RAISE_ERROR_CONT(*messageController, "Unable to load Sample",
+                             "Sample load failed:\n\n" + v.path.u8string() + "\n\n" +
+                                 "It is either an unsupported format or invalid file. "
+                                 "More information may be available in the log file (menu/log)");
+            continue;
+        }
+        loaded.emplace_back(v.variantID, *sid);
     }
+
+    if (loaded.empty())
+        return;
 
     undo::pushPayloadUndoFor<undo::ZoneVariantsSpec>(*this, {{partID, groupID, zoneID}});
 
+    // one hop for the whole drop; the list is freed back on this thread, not the audio one
+    auto *toAttach = new std::vector<std::pair<int, SampleID>>(std::move(loaded));
+
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [p = partID, g = groupID, z = zoneID, sID = variantID, sample = *sid](auto &e) {
+        [p = partID, g = groupID, z = zoneID, toAttach](auto &e) {
             auto &zone = e.getPatch()->getPart(p)->getGroup(g)->getZone(z);
             zone->terminateAllVoices();
-            zone->variantData.variants[sID].sampleID = sample;
-            zone->variantData.variants[sID].active = true;
-            zone->attachToSample(*e.getSampleManager(), sID,
-                                 (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
+            for (const auto &[vid, sample] : *toAttach)
+            {
+                zone->variantData.variants[vid].sampleID = sample;
+                zone->variantData.variants[vid].active = true;
+                zone->attachToSample(*e.getSampleManager(), vid,
+                                     (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
+            }
         },
-        [p = partID, g = groupID, z = zoneID](auto &e) {
+        [p = partID, g = groupID, z = zoneID, toAttach](auto &e) {
+            delete toAttach;
             e.getSelectionManager()->applySelectActions({p, g, z, true, true, true});
         });
 }
