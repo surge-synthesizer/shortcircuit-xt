@@ -50,19 +50,19 @@ AdsrPane::AdsrPane(SCXTEditor *e, int idx, bool fz)
             w->showHamburgerMenu();
     };
 
-    if (forZone)
+    if (idx == 1)
     {
-        if (idx == 1)
-        {
-            isTabbed = true;
-            tabNames = {"EG2", "EG3", "EG4", "EG5"};
-            onTabSelected = [w = juce::Component::SafePointer(this)](int nt) {
-                if (!w)
-                    return;
-                w->tabChanged(nt, true);
-            };
-            tabChanged(0, false);
-        }
+        isTabbed = true;
+        tabNames.clear();
+        auto egs = forZone ? scxt::egsPerZone : scxt::egsPerGroup;
+        for (int i = 1; i < egs; ++i)
+            tabNames.push_back((forZone ? "EG" : "GEG") + std::to_string(i + 1));
+        onTabSelected = [w = juce::Component::SafePointer(this)](int nt) {
+            if (!w)
+                return;
+            w->tabChanged(nt, true);
+        };
+        tabChanged(0, false);
     }
 }
 
@@ -76,7 +76,7 @@ void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d
 
 void AdsrPane::adsrChangedFromModel(const modulation::modulators::AdsrStorage &d, int cacheIdx)
 {
-    zoneAdsrCache[cacheIdx - 1] = d;
+    tabAdsrCache[cacheIdx - 1] = d;
     if (cacheIdx - 1 == selectedTab)
     {
         adsrView = d;
@@ -106,13 +106,12 @@ void AdsrPane::setControlsActive(bool b)
 
 void AdsrPane::tabChanged(int newIndex, bool updateState)
 {
-    assert(newIndex < zoneAdsrCache.size());
-    assert(forZone);
+    assert(newIndex < tabNames.size());
 
     // We need to preserve our local cache
-    zoneAdsrCache[displayedTabIndex] = adsrView;
+    tabAdsrCache[displayedTabIndex] = adsrView;
     displayedTabIndex = newIndex;
-    adsrView = zoneAdsrCache[newIndex];
+    adsrView = tabAdsrCache[newIndex];
     updateForGateMode();
 
     getContentAreaComponent()->removeAllChildren();
@@ -120,7 +119,6 @@ void AdsrPane::tabChanged(int newIndex, bool updateState)
 
     if (updateState)
     {
-        // Handle group case even though we dont use it today
         auto kn = std::string("multi") + (forZone ? ".zone.eg" : ".group.eg");
         editor->setTabSelection(editor->editScreen->tabKey(kn), std::to_string(newIndex));
     }
@@ -168,7 +166,7 @@ void AdsrPane::rebuildPanelComponents(int useIdx)
     {
         // no widget for this one - it is a hamburger item
         gateToggleA =
-            bfac::attachOnly(adsrView, adsrView.gateGroupEGOnAnyPlaying, this, forZone, index);
+            bfac::attachOnly(adsrView, adsrView.gateGroupEGOnAnyPlaying, this, forZone, useIdx);
         assert(gateToggleA);
     }
 
@@ -248,7 +246,7 @@ void AdsrPane::setGateMode(modulation::modulators::AdsrStorage::GateMode gm)
     updateForGateMode();
     repaint();
     sendToSerialization(cmsg::UpdateFullAdsrStorageForGroupsOrZones(
-        {forZone, (int)(forZone && index != 0 ? displayedTabIndex + 1 : index), adsrView}));
+        {forZone, (int)(index != 0 ? displayedTabIndex + 1 : index), adsrView}));
 }
 
 void AdsrPane::resized()
@@ -302,7 +300,7 @@ void AdsrPane::showHamburgerMenu()
     }
     else
     {
-        p.addSectionHeader("Group EG " + std::to_string(index + 1));
+        p.addSectionHeader("Group EG " + std::to_string(index == 0 ? 1 : displayedTabIndex + 2));
     }
     p.addSeparator();
 

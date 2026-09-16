@@ -600,7 +600,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
              SC_TO({
                  auto &group = to;
                  findIf(v, "name", group.name);
-                 findIf(v, "gegStorage", group.gegStorage);
+                 findIfArray(v, "gegStorage", group.gegStorage);
                  findIf(v, "outputInfo", group.outputInfo);
 
                  // mutedByLatch used to live inside outputInfo; read the old nested spelling

@@ -67,20 +67,13 @@ void Group::rePrepareAndBindGroupMatrix()
 
     std::fill(lfosActive.begin(), lfosActive.end(), false);
     std::fill(envFollowersActive.begin(), envFollowersActive.end(), false);
-    egsActive[0] = false; // no AEG here
-    egsActive[1] = false;
+    std::fill(egsActive.begin(), egsActive.end(), false); // no AEG here
 
     auto updateInternalState = [this](const auto &source) {
-        if (source.gid == 'greg')
+        for (int i = 0; i < egsPerGroup; ++i)
         {
-            if (source.tid == 'eg1 ')
-            {
-                egsActive[0] = true;
-            }
-            else
-            {
-                egsActive[1] = true;
-            }
+            if (source == endpoints.sources.egSource[i])
+                egsActive[i] = true;
         }
         if (source.gid == 'grlf')
         {
