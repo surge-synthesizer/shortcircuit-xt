@@ -111,7 +111,8 @@ struct NestedSourceMenu
     }
 };
 
-template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::DragAndDropTarget
+template <typename GZTrait>
+struct ModRow : juce::Component, HasEditor, KeyCommandTarget, juce::DragAndDropTarget
 {
     int index{0};
     ModPane<GZTrait> *parent{nullptr};
@@ -1014,12 +1015,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
         p.addItem("Paste", hasClipboard, false, [w = juce::Component::SafePointer(this)]() {
             if (!w || !w->parent->clipboard.has_value())
                 return;
-            if constexpr (GZTrait::forZone)
-                w->sendToSerialization(
-                    cmsg::UpdateZoneRoutingRow({w->index, *w->parent->clipboard, true}));
-            else
-                w->sendToSerialization(
-                    cmsg::UpdateGroupRoutingRow({w->index, *w->parent->clipboard, true}));
+            w->sendRoutingRow(w->index, *w->parent->clipboard);
         });
 
         p.addSeparator();
@@ -1035,12 +1031,7 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
                             [w = juce::Component::SafePointer(this), i]() {
                                 if (!w)
                                     return;
-                                if constexpr (GZTrait::forZone)
-                                    w->sendToSerialization(cmsg::UpdateZoneRoutingRow(
-                                        {i, w->parent->routingTable.routes[w->index], true}));
-                                else
-                                    w->sendToSerialization(cmsg::UpdateGroupRoutingRow(
-                                        {i, w->parent->routingTable.routes[w->index], true}));
+                                w->sendRoutingRow(i, w->parent->routingTable.routes[w->index]);
                             });
             }
             p.addSubMenu("Duplicate to", sub);
@@ -1085,6 +1076,36 @@ template <typename GZTrait> struct ModRow : juce::Component, HasEditor, juce::Dr
         }
 
         p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
+
+    void sendRoutingRow(int row, const typename GZTrait::routing::Routing &r)
+    {
+        if constexpr (GZTrait::forZone)
+            sendToSerialization(cmsg::UpdateZoneRoutingRow({row, r, true}));
+        else
+            sendToSerialization(cmsg::UpdateGroupRoutingRow({row, r, true}));
+    }
+
+    // the row holding the focused control is the one the clipboard keys act on
+    bool handleKeyCommand(KeyCommands command) override
+    {
+        switch (command)
+        {
+        case COPY:
+        case CUT:
+            parent->clipboard = parent->routingTable.routes[index];
+            if (command == CUT)
+                sendRoutingRow(index, {});
+            return true;
+        case PASTE:
+            if (!parent->clipboard.has_value())
+                return false;
+            sendRoutingRow(index, *parent->clipboard);
+            return true;
+        default:
+            break;
+        }
+        return false;
     }
 
     void paint(juce::Graphics &g) override
