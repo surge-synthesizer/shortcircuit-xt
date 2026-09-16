@@ -28,8 +28,14 @@
 #ifndef SCXT_SRC_SCXT_CORE_ENGINE_CLIPBOARD_H
 #define SCXT_SRC_SCXT_CORE_ENGINE_CLIPBOARD_H
 
+#include <memory>
 #include <string>
 #include <vector>
+
+namespace scxt::sample
+{
+struct Sample;
+}
 
 /*
  * Why is 'Clipboard' in 'engine' since it seems like a UI thing? Well the maintenance
@@ -47,7 +53,8 @@ struct Clipboard
     {
         NONE,
         ZONE,
-        GROUP // add after this and remember to extend inverse below
+        GROUP,
+        VARIANT // add after this and remember to extend inverse below
     };
 
     // the clipboard holds one or more items of a single type, each with the name it showed
@@ -72,6 +79,9 @@ struct Clipboard
     ContentType getClipboardType() const { return type; }
     size_t getClipboardItemCount() const { return contents.size(); }
 
+    // content that refers to samples by id keeps them loaded until the clipboard moves on
+    void holdSamples(std::vector<std::shared_ptr<sample::Sample>> s) { heldSamples = std::move(s); }
+
     static std::string toStringContentType(const ContentType &c)
     {
         switch (c)
@@ -82,13 +92,15 @@ struct Clipboard
             return "z";
         case GROUP:
             return "g";
+        case VARIANT:
+            return "v";
         }
         return "";
     }
     static ContentType fromStringContentType(const std::string &s)
     {
-        static auto inverse = makeEnumInverse<ContentType, toStringContentType>(ContentType::NONE,
-                                                                                ContentType::GROUP);
+        static auto inverse = makeEnumInverse<ContentType, toStringContentType>(
+            ContentType::NONE, ContentType::VARIANT);
         auto p = inverse.find(s);
         if (p == inverse.end())
             return NONE;
@@ -99,6 +111,7 @@ struct Clipboard
     ContentType type{NONE};
     std::vector<std::string> contents;
     std::vector<std::string> names;
+    std::vector<std::shared_ptr<sample::Sample>> heldSamples;
 };
 } // namespace scxt::engine
 #endif // CLIPBOARD_H

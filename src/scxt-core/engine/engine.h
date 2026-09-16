@@ -737,6 +737,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void duplicateGroups(const std::vector<selection::SelectionManager::ZoneAddress> &);
     void copyGroups(const std::vector<selection::SelectionManager::ZoneAddress> &);
 
+    // a variant of the lead zone, which pastes into the lead zone after the variant named
+    void copyVariant(int variant);
+    void pasteVariant(int afterVariant);
+
     bool isValidZoneAddress(const selection::SelectionManager::ZoneAddress &) const;
     bool isValidGroupAddress(const selection::SelectionManager::ZoneAddress &) const;
 

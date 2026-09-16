@@ -373,6 +373,10 @@ inline void doDeleteVariant(const deleteVariantPayload_t &payload, engine::Engin
 CLIENT_TO_SERIAL(DeleteVariant, c2s_delete_variant, deleteVariantPayload_t,
                  doDeleteVariant(payload, engine, cont))
 
+// both act on the lead zone; paste lands after the variant named
+CLIENT_TO_SERIAL(CopyVariant, c2s_copy_variant, int32_t, engine.copyVariant(payload));
+CLIENT_TO_SERIAL(PasteVariant, c2s_paste_variant, int32_t, engine.pasteVariant(payload));
+
 using initiateMidiZoneAction_t = int;
 inline void doInitiateMidiZoneAction(const initiateMidiZoneAction_t &payload,
                                      engine::Engine &engine, MessageController &cont)

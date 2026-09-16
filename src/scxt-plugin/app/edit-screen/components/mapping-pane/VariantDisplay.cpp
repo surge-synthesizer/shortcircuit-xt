@@ -57,6 +57,9 @@ struct NoSelection : juce::Component, HasEditor
 VariantDisplay::VariantDisplay(scxt::ui::app::edit_screen::MacroMappingVariantPane *p)
     : HasEditor(p->editor), variantView(p->sampleView), parentPane(p)
 {
+    // a click on nothing focusable stops here, so the clipboard keys reach handleKeyCommand
+    setWantsKeyboardFocus(true);
+
     noSelectionOverlay = std::make_unique<NoSelection>(editor);
     addChildComponent(*noSelectionOverlay);
 
@@ -1309,12 +1312,18 @@ void VariantDisplay::showVariantTabMenu(int variantIdx, bool fromWaveform)
     }
     bool isPlus = variantIdx >= numVariants;
 
+    auto canPaste = editor->clipboardType == engine::Clipboard::ContentType::VARIANT;
+
     juce::PopupMenu p;
     if (isPlus)
     {
         p.addSectionHeader("Add Variant");
         p.addSeparator();
-        ;
+        p.addItem("Paste", canPaste, false,
+                  [numVariants, w = juce::Component::SafePointer(this)]() {
+                      if (w)
+                          w->pasteVariantAfter(numVariants - 1);
+                  });
         p.addItem("Copy From", editor->makeComingSoon("Copy From"));
         p.addItem("Sample", editor->makeComingSoon("Sample"));
     }
@@ -1324,7 +1333,14 @@ void VariantDisplay::showVariantTabMenu(int variantIdx, bool fromWaveform)
         p.addSectionHeader("Variant " + std::to_string(variantIdx + 1));
         p.addSeparator();
 
-        p.addItem("Copy", editor->makeComingSoon("Copy Variant"));
+        p.addItem("Copy", [variantIdx, w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->copyVariant(variantIdx, false);
+        });
+        p.addItem("Paste", canPaste, false, [variantIdx, w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->pasteVariantAfter(variantIdx);
+        });
         p.addItem("Delete", [variantIdx, w = juce::Component::SafePointer(this)]() {
             if (!w)
                 return;
@@ -1392,5 +1408,52 @@ void VariantDisplay::showVariantTabMenu(int variantIdx, bool fromWaveform)
         }
     }
     p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+int VariantDisplay::activeVariantCount() const
+{
+    return (int)std::count_if(variantView.variants.begin(), variantView.variants.end(),
+                              [](const auto &v) { return v.active; });
+}
+
+bool VariantDisplay::handleKeyCommand(KeyCommands command)
+{
+    if (!active)
+        return false;
+
+    switch (command)
+    {
+    case COPY:
+    case CUT:
+        // the + tab has nothing to copy
+        if ((int)selectedVariation >= activeVariantCount())
+            return false;
+        copyVariant((int)selectedVariation, command == CUT);
+        return true;
+    case PASTE:
+        if (editor->clipboardType != engine::Clipboard::ContentType::VARIANT)
+            return false;
+        pasteVariantAfter((int)selectedVariation);
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
+void VariantDisplay::copyVariant(int variantIdx, bool cut)
+{
+    sendToSerialization(cmsg::CopyVariant(variantIdx));
+    if (cut)
+        sendToSerialization(cmsg::DeleteVariant(variantIdx));
+}
+
+void VariantDisplay::pasteVariantAfter(int variantIdx)
+{
+    // the refresh that follows keeps this, so the pasted variant is the one shown
+    auto count = activeVariantCount();
+    if (count < maxVariantsPerZone)
+        selectedVariation = (size_t)std::clamp(variantIdx + 1, 0, count);
+    sendToSerialization(cmsg::PasteVariant(variantIdx));
 }
 } // namespace scxt::ui::app::edit_screen

@@ -103,6 +103,8 @@ enum ClientToSerializationMessagesIds
     c2s_clear_variant_amplitude_normalization,
 
     c2s_delete_variant,
+    c2s_copy_variant,
+    c2s_paste_variant,
 
     c2s_update_zone_output_float_value,
     c2s_update_zone_output_int16_t_value,

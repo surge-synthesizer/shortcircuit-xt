@@ -1594,6 +1594,58 @@ void Engine::duplicateGroups(const std::vector<selection::SelectionManager::Zone
         [added](auto &e) { selectAddresses(e, added); });
 }
 
+void Engine::copyVariant(int variant)
+{
+    auto lz = selectionManager->currentLeadZone(*this);
+    if (!lz.has_value() || !isValidZoneAddress(*lz) || variant < 0 || variant >= maxVariantsPerZone)
+        return;
+
+    const auto &zone = getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(lz->zone);
+    const auto &v = zone->variantData.variants[variant];
+    auto smp = sampleManager->getSample(v.sampleID);
+    if (!v.active || !smp)
+        return;
+
+    auto type = clipboard.streamToClipboard(Clipboard::ContentType::VARIANT, v);
+    // a cut deletes the variant, and nothing else would stop a purge dropping its sample
+    clipboard.holdSamples({smp});
+    messaging::client::serializationSendToClient(messaging::client::s2c_send_clipboard_type, type,
+                                                 *messageController);
+}
+
+void Engine::pasteVariant(int afterVariant)
+{
+    if (clipboard.getClipboardType() != Clipboard::ContentType::VARIANT)
+        return;
+
+    auto lz = selectionManager->currentLeadZone(*this);
+    if (!lz.has_value() || !isValidZoneAddress(*lz))
+        return;
+
+    Zone::SingleVariant v;
+    if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::VARIANT, v) || !v.active)
+        return;
+
+    const auto &zone = getPatch()->getPart(lz->part)->getGroup(lz->group)->getZone(lz->zone);
+    auto used = (int)zone->getNumSampleLoaded();
+    if (used >= maxVariantsPerZone)
+    {
+        RAISE_ERROR_CONT(*messageController, "Unable to Paste Variant",
+                         "This zone already has the most variants a zone can hold.");
+        return;
+    }
+
+    auto at = std::clamp(afterVariant + 1, 0, used);
+    undo::pushPayloadUndoFor<undo::ZoneVariantsSpec>(*this, {*lz});
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [a = *lz, at, v](auto &e) {
+            auto &z = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+            z->insertVariant(at, v, *e.getSampleManager());
+        },
+        [](auto &e) { e.sendFullRefreshToClient(); });
+}
+
 void Engine::sendMetadataToClient() const
 {
     // On register send metadata
