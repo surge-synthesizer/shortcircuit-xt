@@ -408,6 +408,21 @@ void ZoneLayoutDisplay::showMappingNonZoneMenu(const juce::Point<int> &pos)
         if (w)
             w->createEmptyZoneAt(pos);
     });
+
+    /*
+     * Into the lead group, as an empty zone would go. The lead group always arrives with a
+     * value, unset or not, so the group index is what says whether there is one; -1 leaves the
+     * engine to pick.
+     */
+    auto ga = editor->currentLeadGroupSelection;
+    auto pasteInto = selection::SelectionManager::ZoneAddress{editor->selectedPart, -1, -1};
+    if (ga.has_value() && ga->part >= 0 && ga->group >= 0)
+        pasteInto = *ga;
+    p.addItem("Paste", editor->clipboardType == engine::Clipboard::ContentType::ZONE, false,
+              [w = juce::Component::SafePointer(this), pasteInto]() {
+                  if (w)
+                      w->sendToSerialization(scxt::messaging::client::PasteZone(pasteInto));
+              });
     p.addSeparator();
     p.addItem("More Coming Soon", []() {});
 
@@ -433,7 +448,7 @@ void ZoneLayoutDisplay::showZoneMenu(const selection::SelectionManager::ZoneAddr
     if (added)
         p.addSeparator();
 
-    app::shared::populateZoneRightMouseMenuForSelectedZones(display, p, part);
+    app::shared::populatePartRightMouseMenu(display, p, part);
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

@@ -274,6 +274,15 @@ CLIENT_TO_SERIAL(CopyGroup, c2s_copy_group, selection::SelectionManager::ZoneAdd
 CLIENT_TO_SERIAL(PasteGroup, c2s_paste_group, selection::SelectionManager::ZoneAddress,
                  engine.pasteGroup(payload));
 
+// many at once, as one undo step; the clipboard then holds all of them
+using zoneAddressList_t = std::vector<selection::SelectionManager::ZoneAddress>;
+CLIENT_TO_SERIAL(DuplicateZones, c2s_duplicate_zones, zoneAddressList_t,
+                 engine.duplicateZones(payload));
+CLIENT_TO_SERIAL(CopyZones, c2s_copy_zones, zoneAddressList_t, engine.copyZones(payload));
+CLIENT_TO_SERIAL(DuplicateGroups, c2s_duplicate_groups, zoneAddressList_t,
+                 engine.duplicateGroups(payload));
+CLIENT_TO_SERIAL(CopyGroups, c2s_copy_groups, zoneAddressList_t, engine.copyGroups(payload));
+
 SERIAL_TO_CLIENT(SendClipboardType, s2c_send_clipboard_type, engine::Clipboard::ContentType,
                  onClipboardType);
 
