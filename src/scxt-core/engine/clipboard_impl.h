@@ -40,6 +40,7 @@ Clipboard::ContentType Clipboard::streamToClipboard(ContentType c, const std::ve
     type = c;
     names = itemNames;
     contents.clear();
+    heldSamples.clear();
     for (auto *t : ts)
     {
         auto v = json::scxt_value(*t);

@@ -661,6 +661,20 @@ void Zone::deleteVariant(int idx)
     samplePointers[maxVariantsPerZone - 1] = {};
 }
 
+void Zone::insertVariant(int idx, const SingleVariant &v, const sample::SampleManager &manager)
+{
+    assert(idx >= 0 && idx < maxVariantsPerZone);
+    terminateOnNextProcess = true;
+
+    for (int nv = maxVariantsPerZone - 1; nv > idx; --nv)
+    {
+        variantData.variants[nv] = variantData.variants[nv - 1];
+        samplePointers[nv] = samplePointers[nv - 1];
+    }
+    variantData.variants[idx] = v;
+    attachToSample(manager, idx, NONE);
+}
+
 void Zone::onProcessorTypeChanged(int idx, dsp::processor::ProcessorType)
 {
     auto &pd = processorDescription[idx];

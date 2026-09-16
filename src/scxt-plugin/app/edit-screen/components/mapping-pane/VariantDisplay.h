@@ -41,6 +41,7 @@
 
 #include "sst/jucegui/component-adapters/DiscreteToReference.h"
 #include "app/HasEditor.h"
+#include "app/KeyCommands.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "connectors/PayloadDataAttachment.h"
 
@@ -48,7 +49,7 @@ namespace scxt::ui::app::edit_screen
 {
 struct SampleWaveform;
 
-struct VariantDisplay : juce::Component, HasEditor
+struct VariantDisplay : juce::Component, HasEditor, KeyCommandTarget
 {
     static constexpr int sidePanelWidth{136};
     static constexpr int sidePanelDividerPad{10};
@@ -257,6 +258,12 @@ struct VariantDisplay : juce::Component, HasEditor
     void showSRCMenu();
 
     void showVariantTabMenu(int variantIdx, bool fromWaveform = false);
+
+    // the selected variant is what the clipboard keys act on
+    bool handleKeyCommand(KeyCommands command) override;
+    int activeVariantCount() const;
+    void copyVariant(int variantIdx, bool cut);
+    void pasteVariantAfter(int variantIdx);
 
     enum struct SnapPoint
     {

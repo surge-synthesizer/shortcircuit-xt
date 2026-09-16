@@ -273,6 +273,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     }
 
     void deleteVariant(int idx);
+    // moves idx and the variants after it up a slot, dropping the last, to make room for v
+    void insertVariant(int idx, const SingleVariant &v, const sample::SampleManager &manager);
 
     struct ZoneOutputInfo
     {
