@@ -37,6 +37,7 @@
 #include "app/edit-screen/components/PartEditScreen.h"
 
 #include "app/SCXTEditor.h"
+#include "messaging/client/structure_messages.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -321,6 +322,112 @@ void EditScreen::macroDataChanged(int part, int index)
 {
     mappingPane->macroDataChanged(part, index);
     partEditScreen->macroDataChanged(part, index);
+}
+
+void EditScreen::selectAllInPart(bool forZone)
+{
+    const auto &lead =
+        forZone ? editor->currentLeadZoneSelection : editor->currentLeadGroupSelection;
+
+    std::vector<selection::SelectionManager::SelectActionContents> actions;
+    for (const auto &r : partSidebar->pgzStructure)
+    {
+        const auto &a = r.address;
+        if (a.part != editor->selectedPart || a.group < 0 || (a.zone >= 0) != forZone)
+            continue;
+
+        auto se = selection::SelectionManager::SelectActionContents(a);
+        se.selecting = true;
+        se.distinct = false;
+        se.selectingAsLead = lead.has_value() && *lead == a;
+        se.forZone = forZone;
+        actions.push_back(se);
+    }
+    if (actions.empty())
+        return;
+
+    if (!lead.has_value())
+        actions.front().selectingAsLead = true;
+    editor->doSelectionAction(actions);
+}
+
+bool EditScreen::doZoneEditCommand(KeyCommands command)
+{
+    namespace cmsg = scxt::messaging::client;
+    const auto &lead = editor->currentLeadZoneSelection;
+
+    switch (command)
+    {
+    case SELECT_ALL:
+        selectAllInPart(true);
+        return true;
+    case COPY:
+        if (!lead.has_value())
+            return false;
+        sendToSerialization(cmsg::CopyZone(*lead));
+        return true;
+    case PASTE:
+    {
+        if (editor->clipboardType != engine::Clipboard::ContentType::ZONE)
+            return false;
+        auto into = selection::SelectionManager::ZoneAddress{editor->selectedPart, 0, -1};
+        if (lead.has_value())
+            into = {lead->part, lead->group, -1};
+        else if (editor->currentLeadGroupSelection.has_value())
+            into = *editor->currentLeadGroupSelection;
+        sendToSerialization(cmsg::PasteZone(into));
+        return true;
+    }
+    case DUPLICATE:
+        if (!lead.has_value())
+            return false;
+        sendToSerialization(cmsg::DuplicateZone(*lead));
+        return true;
+    case DELETE_SELECTED:
+        if (!lead.has_value() && editor->allZoneSelections.empty())
+            return false;
+        sendToSerialization(cmsg::DeleteAllSelectedZones(true));
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
+bool EditScreen::doGroupEditCommand(KeyCommands command)
+{
+    namespace cmsg = scxt::messaging::client;
+    const auto &lead = editor->currentLeadGroupSelection;
+
+    switch (command)
+    {
+    case SELECT_ALL:
+        selectAllInPart(false);
+        return true;
+    case COPY:
+        if (!lead.has_value())
+            return false;
+        sendToSerialization(cmsg::CopyGroup(*lead));
+        return true;
+    case PASTE:
+        if (editor->clipboardType != engine::Clipboard::ContentType::GROUP)
+            return false;
+        sendToSerialization(cmsg::PasteGroup({editor->selectedPart, -1, -1}));
+        return true;
+    case DUPLICATE:
+        if (!lead.has_value())
+            return false;
+        sendToSerialization(cmsg::DuplicateGroup(*lead));
+        return true;
+    case DELETE_SELECTED:
+        if (!lead.has_value() && editor->allGroupSelections.empty())
+            return false;
+        sendToSerialization(cmsg::DeleteAllSelectedGroups(true));
+        return true;
+    default:
+        break;
+    }
+    return false;
 }
 
 template struct EditScreen::ZoneOrGroupElements<typename EditScreen::ZoneTraits>;

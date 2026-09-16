@@ -32,6 +32,7 @@
 #include <memory>
 #include <variant>
 #include "app/HasEditor.h"
+#include "app/KeyCommands.h"
 #include "app/browser-ui/BrowserPane.h"
 #include "components/PartGroupSidebar.h"
 #include "sst/jucegui/components/NamedPanel.h"
@@ -157,6 +158,11 @@ struct EditScreen : juce::Component, HasEditor
             partSidebar->setSelectedTab(2);
         }
     }
+
+    // the edit keys the zone and group lists share with the mapping pane
+    bool doZoneEditCommand(KeyCommands command);
+    bool doGroupEditCommand(KeyCommands command);
+    void selectAllInPart(bool forZone);
 
     void onOtherTabSelection();
     // This allows us, in the future, to make this return s + selected part to have

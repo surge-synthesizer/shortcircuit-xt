@@ -161,8 +161,10 @@ struct SelectionManager
     {
         applySelectActions(std::vector<SelectActionContents>{v});
     }
+    // deletedGroups lets a multi-group delete remap fold state; empty means use addressDeleted
     void guaranteeConsistencyAfterDeletes(const engine::Engine &, bool zoneDeleted,
-                                          const ZoneAddress &addressDeleted);
+                                          const ZoneAddress &addressDeleted,
+                                          const std::vector<int32_t> &deletedGroups = {});
     void selectPart(int16_t part);
     void clearAllSelections();
 

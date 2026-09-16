@@ -40,6 +40,7 @@
 #include "sst/clap_juce_shim/menu_helper.h"
 
 #include "app/SCXTEditor.h"
+#include "app/editor-impl/KeyBindings.h"
 #include "messaging/client/client_messages.h"
 #include "messaging/client/detail/client_serial_impl.h"
 #include "app/edit-screen/EditScreen.h"
@@ -86,6 +87,18 @@ void SCXTEditor::applyThemeFromFile(const fs::path &fp)
         themeEditorWindow->rebuildFromThemeApplier();
 }
 
+void SCXTEditor::addKeyCommandItem(juce::PopupMenu &into, const std::string &label,
+                                   KeyCommands command)
+{
+    juce::PopupMenu::Item item(label);
+    item.shortcutKeyDescription = keyBindings->shortcutDescription(command);
+    item.setAction([w = juce::Component::SafePointer(this), command]() {
+        if (w)
+            w->handleGlobalKeyCommand(command);
+    });
+    into.addItem(std::move(item));
+}
+
 void SCXTEditor::showMainMenu(bool alignWithHeaderButton)
 {
     juce::PopupMenu m;
@@ -109,6 +122,8 @@ void SCXTEditor::showMainMenu(bool alignWithHeaderButton)
     addUIThemesMenu(skin);
     m.addSubMenu("UI Behavior", skin);
 
+    addKeyCommandItem(m, "Keyboard Shortcuts...", SHOW_KEYBINDINGS_EDITOR);
+
     m.addSeparator();
     m.addItem("Release all Voices", [w = juce::Component::SafePointer(this)]() {
         if (!w)
@@ -122,10 +137,7 @@ void SCXTEditor::showMainMenu(bool alignWithHeaderButton)
     });
     m.addSeparator();
 
-    m.addItem("Show Log", [w = juce::Component::SafePointer(this)] {
-        if (w)
-            w->showLogOverlay();
-    });
+    addKeyCommandItem(m, "Show Log", SHOW_LOG);
 
     m.addItem("Show Welcome Screen", [w = juce::Component::SafePointer(this)] {
         if (w)
@@ -136,10 +148,7 @@ void SCXTEditor::showMainMenu(bool alignWithHeaderButton)
     });
 
     m.addSeparator();
-    m.addItem("About Shortcircuit XT", [w = juce::Component::SafePointer(this)] {
-        if (w)
-            w->showAboutOverlay();
-    });
+    addKeyCommandItem(m, "About Shortcircuit XT", SHOW_ABOUT);
 
     m.addSeparator();
     auto dp = juce::PopupMenu();
@@ -330,10 +339,7 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
         if (w)
             w->promptForLoadKBM();
     });
-    sclKbm.addItem("Edit SCL/KBM...", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->showTuningOverlay();
-    });
+    addKeyCommandItem(sclKbm, "Edit SCL/KBM...", SHOW_TUNING_EDITOR);
     sclKbm.addSeparator();
     // Back to a session which never had a scale: no SCL, no KBM, mode off SCL/KBM
     sclKbm.addItem("Reset to No SCL/KBM", !sclText.empty() || !kbmText.empty(), false,

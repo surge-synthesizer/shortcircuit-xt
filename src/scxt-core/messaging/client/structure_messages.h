@@ -326,70 +326,93 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
 CLIENT_TO_SERIAL(DeleteAllSelectedZones, c2s_delete_selected_zones, bool,
                  removeSelectedZones(payload, engine, cont));
 
-inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a,
-                               bool deleteAllEmpty, engine::Engine &engine, MessageController &cont)
+// one undo step however many groups go, so the deletes run high index first
+inline void deleteGroupsByIndex(int16_t part, std::vector<int32_t> groups, engine::Engine &engine,
+                                MessageController &cont)
 {
+    auto groupCount = (int32_t)engine.getPatch()->getPart(part)->getGroups().size();
+    std::erase_if(groups, [groupCount](auto g) { return g < 0 || g >= groupCount; });
+    std::sort(groups.begin(), groups.end(), std::greater<int32_t>());
+    groups.erase(std::unique(groups.begin(), groups.end()), groups.end());
+
+    if (groups.empty())
+        return;
+
     {
         std::vector<std::pair<int16_t, int32_t>> addrs;
-        auto &part = engine.getPatch()->getPart(a.part);
-        if (deleteAllEmpty)
-        {
-            for (int g = 0; g < (int)part->getGroups().size(); ++g)
-                if (part->getGroup(g)->getZones().empty())
-                    addrs.emplace_back((int16_t)a.part, g);
-        }
-        else if (a.group >= 0 && a.group < (int32_t)part->getGroups().size())
-        {
-            addrs.emplace_back((int16_t)a.part, a.group);
-        }
-        if (!addrs.empty())
-            undo::pushUndo<undo::GroupsRestoreItem>(engine, addrs);
+        addrs.reserve(groups.size());
+        for (auto g : groups)
+            addrs.emplace_back(part, g);
+        undo::pushUndo<undo::GroupsRestoreItem>(engine, addrs);
     }
 
     cont.scheduleAudioThreadCallbackUnderStructureLock(
-        [s = a, all = deleteAllEmpty](auto &e) {
-            auto deleteOneGroup = [&e, s](int groupIdx) {
-                auto &part = e.getPatch()->getPart(s.part);
-                auto &groupO = part->getGroup(groupIdx);
+        [part, groups](auto &e) {
+            auto &p = e.getPatch()->getPart(part);
+            for (auto g : groups)
+            {
+                if (g < 0 || g >= (int32_t)p->getGroups().size())
+                    continue;
+                auto &groupO = p->getGroup(g);
                 e.terminateVoicesForGroup(*groupO);
                 auto gid = groupO->id;
-                auto groupToFree = part->removeGroup(gid).release();
+                auto groupToFree = p->removeGroup(gid).release();
                 e.getMessageController()->sendItemForDeletion(
                     groupToFree, audio::AudioToSerialization::ToBeDeleted::engine_Group);
-            };
-
-            if (all)
-            {
-                auto &part = e.getPatch()->getPart(s.part);
-                for (int g = (int)part->getGroups().size() - 1; g >= 0; --g)
-                {
-                    if (part->getGroup(g)->getZones().empty())
-                        deleteOneGroup(g);
-                }
-            }
-            else
-            {
-                if (s.group < 0 ||
-                    s.group >= (int32_t)e.getPatch()->getPart(s.part)->getGroups().size())
-                    return;
-                deleteOneGroup(s.group);
             }
         },
-        [t = a](auto &engine) {
+        [part, groups](auto &engine) {
             // no unreferenced-sample purge; undoing the delete needs them resident
-            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false, t);
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false,
+                                                                           {part, -1, -1}, groups);
 
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
-                                      engine.getPatch()->getPart(t.part)->getZoneMappingSummary(),
+                                      engine.getPatch()->getPart(part)->getZoneMappingSummary(),
                                       *(engine.getMessageController()));
         });
 }
+
+inline void deleteGroupHandler(const selection::SelectionManager::ZoneAddress &a,
+                               bool deleteAllEmpty, engine::Engine &engine, MessageController &cont)
+{
+    std::vector<int32_t> groups;
+    if (deleteAllEmpty)
+    {
+        auto &part = engine.getPatch()->getPart(a.part);
+        for (int32_t g = 0; g < (int32_t)part->getGroups().size(); ++g)
+            if (part->getGroup(g)->getZones().empty())
+                groups.push_back(g);
+    }
+    else
+    {
+        groups.push_back(a.group);
+    }
+    deleteGroupsByIndex((int16_t)a.part, groups, engine, cont);
+}
+
+inline void removeSelectedGroups(const bool &, engine::Engine &engine, MessageController &cont)
+{
+    auto part = engine.getSelectionManager()->selectedPart;
+    auto &state = engine.getSelectionManager()->state[part];
+
+    std::vector<int32_t> groups;
+    for (const auto &g : state.selectedGroups)
+        if (g.part == part)
+            groups.push_back(g.group);
+    if (state.leadGroup.part == part)
+        groups.push_back(state.leadGroup.group);
+
+    deleteGroupsByIndex((int16_t)part, groups, engine, cont);
+}
+
 CLIENT_TO_SERIAL(DeleteGroup, c2s_delete_group, selection::SelectionManager::ZoneAddress,
                  deleteGroupHandler(payload, false, engine, cont));
 CLIENT_TO_SERIAL(DeleteEmptyGroups, c2s_delete_empty_groups, int32_t,
                  deleteGroupHandler({payload, -1, -1}, true, engine, cont));
+CLIENT_TO_SERIAL(DeleteAllSelectedGroups, c2s_delete_selected_groups, bool,
+                 removeSelectedGroups(payload, engine, cont));
 
 inline void clearPart(const int p, engine::Engine &engine, MessageController &cont)
 {

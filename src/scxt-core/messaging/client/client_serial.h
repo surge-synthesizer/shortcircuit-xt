@@ -155,6 +155,7 @@ enum ClientToSerializationMessagesIds
     c2s_delete_selected_zones,
     c2s_delete_group,
     c2s_delete_empty_groups,
+    c2s_delete_selected_groups,
     c2s_move_group,
     c2s_duplicate_group,
     c2s_copy_group,

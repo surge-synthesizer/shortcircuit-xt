@@ -46,6 +46,7 @@
 #include "selection/selection_manager.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "app/HasEditor.h"
+#include "app/KeyCommands.h"
 #include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "app/shared/SampleDropHandler.h"
 
@@ -93,6 +94,7 @@ struct MappingZoneHeader : HasEditor, juce::Component
 
 struct MappingDisplay : juce::Component,
                         HasEditor,
+                        KeyCommandTarget,
                         juce::FileDragAndDropTarget,
                         juce::DragAndDropTarget
 
@@ -234,7 +236,7 @@ struct MappingDisplay : juce::Component,
 
     void doZoneRename(const selection::SelectionManager::ZoneAddress &z);
 
-    bool keyPressed(const juce::KeyPress &key) override;
+    bool handleKeyCommand(KeyCommands command) override;
 
     engine::Part::zoneMappingSummary_t summary{};
 

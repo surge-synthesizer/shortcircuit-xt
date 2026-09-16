@@ -301,7 +301,8 @@ void SelectionManager::sendGroupZoneMappingForSelectedPart()
 
 void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &engine,
                                                         bool zoneDeleted,
-                                                        const ZoneAddress &whatIDeleted)
+                                                        const ZoneAddress &whatIDeleted,
+                                                        const std::vector<int32_t> &deletedGroups)
 {
     bool morphed{false};
     auto zit = state[selectedPart].selectedZones.begin();
@@ -361,14 +362,21 @@ void SelectionManager::guaranteeConsistencyAfterDeletes(const engine::Engine &en
             int n = (int)part->getGroups().size();
             auto &cset = state[p].collapsedGroups;
 
-            if (whatIDeleted.group >= 0)
+            std::vector<int32_t> gone{deletedGroups};
+            if (gone.empty() && whatIDeleted.group >= 0)
+                gone.push_back(whatIDeleted.group);
+            std::sort(gone.begin(), gone.end());
+
+            if (!gone.empty())
             {
                 std::unordered_set<int32_t> nset;
                 for (auto i : cset)
                 {
-                    if (i == whatIDeleted.group)
+                    if (std::binary_search(gone.begin(), gone.end(), i))
                         continue;
-                    int j = i > whatIDeleted.group ? i - 1 : i;
+                    // a surviving group drops by however many went below it
+                    auto below = std::lower_bound(gone.begin(), gone.end(), i) - gone.begin();
+                    int j = i - (int)below;
                     if (j >= 0 && j < n)
                         nset.insert(j);
                 }

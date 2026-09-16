@@ -400,6 +400,54 @@ TEST_CASE("Fold: delete-fixup drops the deleted group's fold bit and clamps out-
     REQUIRE(sm->state[0].collapsedGroups.size() == 1);
 }
 
+TEST_CASE("Deleting several selected groups is one undo step")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    namespace cmsg = scxt::messaging::client;
+    using zad = scxt::selection::SelectionManager::ZoneAddress;
+
+    makeGroups(th, 5); // 5 groups: 0..4
+    const auto &sm = th.engine->getSelectionManager();
+    const auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(part->getGroups().size() == 5);
+
+    for (int g = 0; g < 5; ++g)
+        th.sendToSerialization(cmsg::RenameGroup({zad{0, g, -1}, "G" + std::to_string(g)}));
+    th.stepUI();
+
+    auto selectGroup = [&th](int g, bool distinct) {
+        auto sa = scxt::selection::SelectionManager::SelectActionContents(zad{0, g, -1});
+        sa.selecting = true;
+        sa.distinct = distinct;
+        sa.selectingAsLead = true;
+        sa.forZone = false;
+        th.sendToSerialization(cmsg::ApplySelectActions({sa}));
+    };
+    selectGroup(1, true);
+    selectGroup(3, false);
+    th.stepUI();
+    REQUIRE(sm->state[0].selectedGroups.size() == 2);
+
+    th.sendToSerialization(cmsg::DeleteAllSelectedGroups(true));
+    th.stepUI(30);
+
+    REQUIRE(part->getGroups().size() == 3);
+    REQUIRE(part->getGroup(0)->name == "G0");
+    REQUIRE(part->getGroup(1)->name == "G2");
+    REQUIRE(part->getGroup(2)->name == "G4");
+
+    INFO("One undo brings both groups back, in their old places");
+    th.sendToSerialization(cmsg::Undo(true));
+    th.stepUI(30);
+
+    REQUIRE(part->getGroups().size() == 5);
+    for (int g = 0; g < 5; ++g)
+        REQUIRE(part->getGroup(g)->name == "G" + std::to_string(g));
+}
+
 TEST_CASE("Fold: swap groups remaps fold state")
 {
     scxt::clients::console_ui::ConsoleHarness th;

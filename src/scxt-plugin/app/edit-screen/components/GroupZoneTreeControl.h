@@ -706,6 +706,9 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 return;
             }
 
+            // keep focus on the list rather than a child juce might pick, like a mute toggle
+            gsb->grabKeyboardFocus();
+
             auto za = getZoneAddress();
             gsb->onRowClicked(za, isSelected(), event.mods);
         }
@@ -856,10 +859,12 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                     cmsg::RenameGroup({za, renameEditor->getText().toStdString()}));
             }
             renameEditor->setVisible(false);
+            gsb->grabKeyboardFocus();
         }
         void textEditorEscapeKeyPressed(juce::TextEditor &) override
         {
             renameEditor->setVisible(false);
+            gsb->grabKeyboardFocus();
         }
         void textEditorFocusLost(juce::TextEditor &) override { renameEditor->setVisible(false); }
 
@@ -999,8 +1004,23 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         }
     };
 
+    rowComponent *rowComponentForAddress(const selection::SelectionManager::ZoneAddress &a)
+    {
+        auto *content = viewPort->getViewedComponent();
+        if (!content)
+            return nullptr;
+        for (auto *c : content->getChildren())
+        {
+            auto *rt = dynamic_cast<rowTopComponent *>(c);
+            if (rt && rt->gzRow && rt->gzRow->lbm && rt->gzRow->getZoneAddress() == a)
+                return rt->gzRow.get();
+        }
+        return nullptr;
+    }
+
     void mouseDown(const juce::MouseEvent &event) override
     {
+        sidebar->grabKeyboardFocus();
         sidebar->editor->doSelectionAction(
             selection::SelectionManager::SelectActionContents::deselectSentinel());
     }
