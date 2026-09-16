@@ -27,6 +27,7 @@
 
 #include "BrowserPane.h"
 #include "app/SCXTEditor.h"
+#include "app/editor-impl/KeyBindings.h"
 #include "messaging/client/detail/client_serial_impl.h"
 #include "messaging/client/browser_messages.h"
 #include "messaging/client/structure_messages.h"
@@ -333,7 +334,17 @@ struct DriveFSArea : juce::Component, HasEditor, KeyCommandTarget
     {
         if (currentPath > rootPath)
         {
+            // land on the folder we came out of, so going back in is one key away
+            auto from = currentPath;
             setCurrentPath(currentPath.parent_path());
+            for (int r = 0; r < (int)contents.size(); ++r)
+            {
+                if (!contents[r].expandableAddress.has_value() && contents[r].dirent.path() == from)
+                {
+                    selectRowFromKeys(r, false);
+                    break;
+                }
+            }
         }
     }
 
@@ -452,12 +463,29 @@ struct DriveFSArea : juce::Component, HasEditor, KeyCommandTarget
     void setupListView();
 
     bool handleKeyCommand(KeyCommands command) override;
+    bool keyPressed(const juce::KeyPress &key) override;
 
     // what a double click does: enter a directory, or load the file or element
     void activateRow(int row);
     // opens or closes a multi-sample file; a child row closes its parent
     bool setRowExpanded(int row, bool expand);
     std::optional<int> selectedRow() const;
+
+    bool isEnterableDirectory(int row) const
+    {
+        const auto &d = contents[row];
+        return !d.expandableAddress.has_value() && !(d.dirent == fs::path("..")) &&
+               d.dirent.is_directory();
+    }
+    void enterDirectory(int row);
+    void selectRowFromKeys(int row, bool preview);
+    // plays the row if it is a sample, and says whether it did
+    bool previewRow(int row);
+    bool previewPlaying{false};
+
+    juce::String typedPrefix;
+    uint32_t typedAt{0};
+    bool jumpToTyped(juce::juce_wchar c);
 
     void scrollRowIntoView(int row)
     {
@@ -627,35 +655,10 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 return;
             }
         }
-        if (browserPane->autoPreviewEnabled)
+        if (browserPane->autoPreviewEnabled && fsArea->previewRow(rowNumber))
         {
-            auto &entry = data[rowNumber];
-
-            if (entry.expandableAddress.has_value() &&
-                entry.expandableAddress->type == sample::compound::CompoundElement::SAMPLE)
-            {
-                hasStartedPreview = true;
-                namespace cmsg = scxt::messaging::client;
-                scxt::messaging::client::clientSendToSerialization(
-                    cmsg::PreviewBrowserSample(
-                        {1, browserPane->previewAmplitude, entry.expandableAddress->sampleAddress}),
-                    browserPane->editor->msgCont);
-                repaint();
-            }
-            else if (isFile() && browser::Browser::isLoadableSingleSample(entry.dirent.path()))
-            {
-                hasStartedPreview = true;
-                namespace cmsg = scxt::messaging::client;
-                auto pth = fs::path(fs::u8path(data[rowNumber].dirent.path().u8string()));
-                scxt::messaging::client::clientSendToSerialization(
-                    cmsg::PreviewBrowserSample(
-                        {1,
-                         browserPane->previewAmplitude,
-                         {sample::Sample::sourceTypeFromPath(data[rowNumber].dirent.path()), pth,
-                          "", -1, -1, -1}}),
-                    browserPane->editor->msgCont);
-                repaint();
-            }
+            hasStartedPreview = true;
+            repaint();
         }
 
         if (event.mods.isPopupMenu())
@@ -1004,35 +1007,165 @@ bool DriveFSArea::handleKeyCommand(KeyCommands command)
     if (contents.empty())
         return false;
 
-    if (command == ACTIVATE || command == COLLAPSE || command == EXPAND)
+    auto row = selectedRow();
+    switch (command)
     {
-        auto row = selectedRow();
+    case ACTIVATE:
         if (!row.has_value())
             return false;
-
-        if (command == ACTIVATE)
-        {
+        if (isEnterableDirectory(*row))
+            enterDirectory(*row);
+        else
             activateRow(*row);
+        return true;
+    case EXPAND:
+        if (!row.has_value())
+            return false;
+        // a folder is entered, an instrument file opens in place
+        if (isEnterableDirectory(*row))
+        {
+            enterDirectory(*row);
             return true;
         }
-        return setRowExpanded(*row, command == EXPAND);
-    }
-
-    if (command != SELECT_NEXT && command != SELECT_PREVIOUS)
-        return false;
-
-    auto dir = (command == SELECT_NEXT) ? 1 : -1;
-    auto sel = selectedRowsInOrder();
-    int row = (dir > 0) ? 0 : (int)contents.size() - 1;
-    if (!sel.empty())
+        return setRowExpanded(*row, true);
+    case COLLAPSE:
+        // an open instrument file closes, anywhere else goes up a folder
+        if (row.has_value() && setRowExpanded(*row, false))
+            return true;
+        if (!(currentPath > rootPath))
+            return false;
+        upOneLevel();
+        return true;
+    case SELECT_NEXT:
+    case SELECT_PREVIOUS:
     {
-        auto from = (dir > 0) ? sel.back()->rowNumber : sel.front()->rowNumber;
-        row = std::clamp(from + dir, 0, (int)contents.size() - 1);
+        auto dir = (command == SELECT_NEXT) ? 1 : -1;
+        auto sel = selectedRowsInOrder();
+        int to = (dir > 0) ? 0 : (int)contents.size() - 1;
+        if (!sel.empty())
+        {
+            auto from = (dir > 0) ? sel.back()->rowNumber : sel.front()->rowNumber;
+            to = std::clamp(from + dir, 0, (int)contents.size() - 1);
+        }
+        selectRowFromKeys(to, true);
+        return true;
     }
+    default:
+        break;
+    }
+    return false;
+}
+
+void DriveFSArea::enterDirectory(int row)
+{
+    setCurrentPath(contents[row].dirent.path());
+    if (contents.empty())
+        return;
+    // step past .. onto the first entry
+    auto first = (currentPath > rootPath && contents.size() > 1) ? 1 : 0;
+    selectRowFromKeys(first, true);
+}
+
+void DriveFSArea::selectRowFromKeys(int row, bool preview)
+{
+    if (row < 0 || row >= (int)contents.size())
+        return;
+
+    auto sel = selectedRowsInOrder();
+    auto moved = sel.size() != 1 || sel.front()->rowNumber != row;
 
     deselectAllRows();
     listView->rowSelected(row, true);
     scrollRowIntoView(row);
+    browserPane->lastClickedPotentialSample = row;
+
+    if (!preview || !moved || !browserPane->autoPreviewEnabled)
+        return;
+
+    if (!previewRow(row) && previewPlaying)
+    {
+        // moving off a sample onto a folder silences it
+        previewPlaying = false;
+        sendToSerialization(scxt::messaging::client::PreviewBrowserSample({0, 1.0, {}}));
+    }
+}
+
+bool DriveFSArea::previewRow(int row)
+{
+    if (row < 0 || row >= (int)contents.size())
+        return false;
+
+    namespace cmsg = scxt::messaging::client;
+    const auto &entry = contents[row];
+    if (entry.expandableAddress.has_value())
+    {
+        if (entry.expandableAddress->type != sample::compound::CompoundElement::SAMPLE)
+            return false;
+        sendToSerialization(cmsg::PreviewBrowserSample(
+            {1, browserPane->previewAmplitude, entry.expandableAddress->sampleAddress}));
+        previewPlaying = true;
+        return true;
+    }
+
+    const auto &p = entry.dirent.path();
+    if (entry.dirent.is_directory() || !browser::Browser::isLoadableSingleSample(p))
+        return false;
+
+    auto address = sample::Sample::SampleFileAddress{
+        sample::Sample::sourceTypeFromPath(p), fs::path(fs::u8path(p.u8string())), "", -1, -1, -1};
+    sendToSerialization(cmsg::PreviewBrowserSample({1, browserPane->previewAmplitude, address}));
+    previewPlaying = true;
+    return true;
+}
+
+bool DriveFSArea::keyPressed(const juce::KeyPress &key)
+{
+    auto c = key.getTextCharacter();
+    const auto &mods = key.getModifiers();
+    if (!juce::CharacterFunctions::isPrintable(c) || mods.isCommandDown() || mods.isCtrlDown() ||
+        mods.isAltDown())
+        return false;
+
+    // a plain key someone has bound to a command keeps its binding
+    if (!editor->keyBindings->matchingCommands(key).empty())
+        return false;
+
+    return jumpToTyped(c);
+}
+
+bool DriveFSArea::jumpToTyped(juce::juce_wchar c)
+{
+    // letters typed in quick succession spell out a prefix
+    auto now = juce::Time::getMillisecondCounter();
+    if (now - typedAt > 1000)
+        typedPrefix.clear();
+    typedAt = now;
+
+    if (typedPrefix.isEmpty() && c == ' ')
+        return false;
+    typedPrefix += juce::String::charToString(c);
+
+    auto n = (int)contents.size();
+    if (n == 0)
+        return true;
+
+    // a first letter searches on from the selection, so tapping it again cycles its matches
+    auto from = std::max(selectedRow().value_or(-1) + (typedPrefix.length() == 1 ? 1 : 0), 0);
+    for (int i = 0; i < n; ++i)
+    {
+        auto r = (from + i) % n;
+        const auto &d = contents[r];
+        if (d.dirent == fs::path(".."))
+            continue;
+
+        auto name = d.expandableAddress.has_value() ? d.expandableAddress->name
+                                                    : d.dirent.path().filename().u8string();
+        if (juce::String::fromUTF8(name.c_str()).startsWithIgnoreCase(typedPrefix))
+        {
+            selectRowFromKeys(r, true);
+            break;
+        }
+    }
     return true;
 }
 
@@ -1160,34 +1293,10 @@ struct BrowserPaneFooter : HasEditor, juce::Component
 
     void launchPreview()
     {
-        auto r = parent->devicesPane->driveFSArea->listView->getRowCount();
+        auto &fsArea = parent->devicesPane->driveFSArea;
         auto lsr = parent->lastClickedPotentialSample;
-        if (lsr >= 0 && lsr < r)
-        {
-            auto &entry = parent->devicesPane->driveFSArea->contents[lsr];
-            if (entry.expandableAddress.has_value() &&
-                entry.expandableAddress->type == sample::compound::CompoundElement::SAMPLE)
-            {
-                namespace cmsg = scxt::messaging::client;
-                scxt::messaging::client::clientSendToSerialization(
-                    cmsg::PreviewBrowserSample(
-                        {1, parent->previewAmplitude, entry.expandableAddress->sampleAddress}),
-                    parent->editor->msgCont);
-            }
-            else if (!entry.dirent.is_directory() &&
-                     browser::Browser::isLoadableSingleSample(entry.dirent.path()))
-            {
-                namespace cmsg = scxt::messaging::client;
-                auto pth = fs::path(fs::u8path(entry.dirent.path().u8string()));
-                scxt::messaging::client::clientSendToSerialization(
-                    cmsg::PreviewBrowserSample(
-                        {1,
-                         parent->previewAmplitude,
-                         {sample::Sample::sourceTypeFromPath(entry.dirent.path()), pth, "", -1, -1,
-                          -1}}),
-                    parent->editor->msgCont);
-            }
-        }
+        if (lsr >= 0 && lsr < (int)fsArea->contents.size())
+            fsArea->previewRow(lsr);
     }
 };
 
