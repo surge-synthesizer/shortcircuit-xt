@@ -166,11 +166,15 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
 
         if (ec != SQLITE_OK)
         {
-            std::ostringstream oss;
-            oss << "An error occurred opening sqlite file '" << dbname << "'. The error was '"
-                << sqlite3_errmsg(dbh) << "'.";
-            // storage->reportError(oss.str(), "Surge Patch Database Error");
-            SCLOG_IF(sqlDb, oss.str());
+            // every batch retries the open, so only report the first failure
+            if (!reportedOpenFailure)
+            {
+                std::ostringstream oss;
+                oss << "Unable to open the browser database '" << dbname << "'. The error was '"
+                    << sqlite3_errmsg(dbh) << "'.";
+                RAISE_ERROR_FROM_WORKER(mc, "Browser Database Error", oss.str());
+                reportedOpenFailure = true;
+            }
             if (dbh)
             {
                 // even if opening fails we still need to close the database
@@ -179,6 +183,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
             dbh = nullptr;
             return;
         }
+        reportedOpenFailure = false;
     }
 
     void closeDb()
@@ -259,12 +264,8 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         }
         catch (const SQL::Exception &e)
         {
+            // no version table just means we rebuild
             rebuild = true;
-            /*
-             * In this case, we choose to not report the error since it means
-             * that we just need to rebuild everything
-             */
-            // storage->reportError(e.what(), "SQLLite3 Startup Error");
         }
 
         char *emsg;
@@ -283,8 +284,9 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
             }
             catch (const SQL::Exception &e)
             {
-                // storage->reportError(e.what(), "PatchDB Setup Error");
-                SCLOG_IF(sqlDb, e.what());
+                RAISE_ERROR_FROM_WORKER(mc, "Browser Database Error",
+                                        std::string("Unable to set up the browser database. ") +
+                                            e.what());
             }
         }
 
@@ -299,6 +301,8 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         // We know this is called in the lock so can manipulate pathQ properly
         haveOpenedForWriteOnce = true;
         qThread = std::thread([this]() { this->loadQueueFunction(); });
+        // before setup, which can report errors
+        mc.threadingChecker.addAsAClientThread(qThread.get_id());
 
         std::unique_lock<std::mutex> lk(qLock);
         pathQ.push_back(new EnQSetup());
@@ -340,6 +344,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
      * Functions for the write thread
      */
     std::atomic<bool> waiting{false};
+    bool reportedOpenFailure{false}, reportedWriteFailure{false};
     void loadQueueFunction()
     {
         static constexpr auto transChunkSize = 50;
@@ -390,6 +395,9 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
                     openDb();
                 if (dbh == nullptr)
                 {
+                    // openDb has reported, so drop the batch
+                    for (auto *p : doThis)
+                        delete p;
                 }
                 else
                 {
@@ -397,28 +405,22 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
                     {
                         SQL::TxnGuard tg(dbh);
 
-                        for (auto *p : doThis)
+                        for (auto *&p : doThis)
                         {
                             p->go(*this);
                             delete p;
+                            p = nullptr;
                         }
 
                         tg.end();
+                        lock_retries = 0;
+                        reportedWriteFailure = false;
                     }
                     catch (SQL::LockedException &le)
                     {
-                        std::ostringstream oss;
-                        oss << le.what() << "\n"
-                            << "Patch database is locked for writing. Most likely, another "
-                               "Shortcircuit "
-                               "XT instance has exclusive write access. We will attempt to retry "
-                               "writing up to 10 more times. "
-                               "Please dismiss this error in the meantime!\n\n Attempt: "
-                            << lock_retries;
-                        // storage->reportError(oss.str(), "Patch Database Locked");
-                        SCLOG_IF(sqlDb, oss.str());
-                        // OK so in this case, we reload doThis onto the front of the queue and
-                        // sleep
+                        SCLOG_IF(warnings, "Browser database locked for writing, attempt "
+                                               << lock_retries << ": " << le.what());
+                        // reload the unrun items onto the front of the queue and sleep
                         lock_retries++;
                         if (lock_retries < 10)
                         {
@@ -427,23 +429,37 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
                                 std::reverse(doThis.begin(), doThis.end());
                                 for (auto p : doThis)
                                 {
-                                    pathQ.push_front(p);
+                                    if (p)
+                                        pathQ.push_front(p);
                                 }
                             }
                             std::this_thread::sleep_for(std::chrono::seconds(lock_retries * 3));
                         }
                         else
                         {
-                            /*storage->reportError(
-                                "Database is locked and unwritable after multiple attempts!",
-                                "Patch Database Locked");*/
-                            SCLOG_IF(sqlDb, "Database Locked");
+                            RAISE_ERROR_FROM_WORKER(
+                                mc, "Browser Database Locked",
+                                "The browser database is locked and unwritable after multiple "
+                                "attempts. Most likely another Shortcircuit XT instance has "
+                                "exclusive write access.");
+                            for (auto *p : doThis)
+                                delete p;
+                            lock_retries = 0;
                         }
                     }
                     catch (SQL::Exception &e)
                     {
-                        // storage->reportError(e.what(), "Patch DB");
-                        SCLOG_IF(sqlDb, e.what());
+                        // a broken database fails every batch, so report once until one succeeds
+                        if (!reportedWriteFailure)
+                        {
+                            RAISE_ERROR_FROM_WORKER(
+                                mc, "Browser Database Error",
+                                std::string("Unable to write to the browser database. ") +
+                                    e.what());
+                            reportedWriteFailure = true;
+                        }
+                        for (auto *p : doThis)
+                            delete p;
                     }
                 }
             }
@@ -500,8 +516,7 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         }
         catch (const SQL::Exception &e)
         {
-            // storage->reportError(e.what(), "PatchDB - Junk gave Junk");
-            SCLOG_IF(sqlDb, e.what());
+            SCLOG_IF(warnings, "Unable to write browser database debug message: " << e.what());
         }
     }
 
@@ -534,8 +549,9 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         }
         catch (const SQL::Exception &e)
         {
-            // storage->reportError(e.what(), "PatchDB - Junk gave Junk");
-            SCLOG_IF(sqlDb, e.what());
+            RAISE_ERROR_FROM_WORKER(mc, "Browser Database Error",
+                                    std::string("Unable to ") + (add ? "add" : "remove") +
+                                        " browser location '" + m.u8string() + "'. " + e.what());
         }
     }
 
@@ -573,13 +589,12 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
 
             if (ec != SQLITE_OK)
             {
+                // callers are on the serialization thread and raise their own error
                 if (notifyOnError)
                 {
-                    std::ostringstream oss;
-                    oss << "An error occurred opening r/o sqlite file '" << dbname
-                        << "'. The error was '" << sqlite3_errmsg(dbh) << "'.";
-                    // storage->reportError(oss.str(), "Surge Patch Database Error");
-                    SCLOG_IF(sqlDb, oss.str());
+                    SCLOG_IF(warnings, "Unable to open the browser database '"
+                                           << dbname << "' read only. The error was '"
+                                           << sqlite3_errmsg(rodbh) << "'.");
                 }
                 if (rodbh)
                     sqlite3_close(rodbh);

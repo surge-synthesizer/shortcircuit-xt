@@ -225,6 +225,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_add_samples,
 
+    c2s_report_item_from_worker,
+
     num_clientToSerializationMessages
 };
 

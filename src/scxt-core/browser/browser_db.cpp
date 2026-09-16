@@ -48,7 +48,6 @@ BrowserDB::BrowserDB(const fs::path &p, messaging::MessageController &m) : mc(m)
 {
     writerWorker = std::make_unique<scxt::browser::WriterWorker>(p, m);
     writerWorker->openForWrite();
-    m.threadingChecker.addAsAClientThread(writerWorker->qThread.get_id());
 
     scanner = std::make_unique<Scanner>(*writerWorker, mc);
 }

@@ -427,6 +427,14 @@ void MessageController::reportInfoToClient(const std::string &title, const std::
     reportItemToClient(client::Severity_Info, title, body, source, line);
 }
 
+void MessageController::reportErrorFromWorkerThread(const std::string &title,
+                                                    const std::string &body,
+                                                    const std::string &source, int line)
+{
+    client::clientSendToSerialization(
+        client::ReportItemFromWorker({client::Severity_Error, title, body, source, line}), *this);
+}
+
 void MessageController::prepareSerializationThreadForAudioQueueDrain()
 {
     assert(!macroSetValueCompressorUsed);

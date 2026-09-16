@@ -338,6 +338,10 @@ struct MessageController : MoveableOnly<MessageController>
     void reportInfoToClient(const std::string &title, const std::string &body,
                             const std::string &source, int line);
 
+    // for registered client threads like the browser workers, which can't use the above
+    void reportErrorFromWorkerThread(const std::string &title, const std::string &body,
+                                     const std::string &source, int line);
+
     /*
      * Some stats on messages back
      */
