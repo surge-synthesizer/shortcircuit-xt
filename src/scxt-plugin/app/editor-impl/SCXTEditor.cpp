@@ -815,6 +815,7 @@ bool SCXTEditor::handleGlobalKeyCommand(KeyCommands command)
     case EXPAND:
     case RENAME:
     case COPY:
+    case CUT:
     case PASTE:
     case DUPLICATE:
     case DELETE_SELECTED:

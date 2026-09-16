@@ -1118,6 +1118,17 @@ void SelectionManager::remapCollapsedOnMoveAfter(int part, int whichGroup, int t
     }
 }
 
+void SelectionManager::remapCollapsedOnInsert(int part, int at, int count)
+{
+    if (part < 0 || part >= scxt::numParts || at < 0 || count <= 0)
+        return;
+    auto &s = state[part].collapsedGroups;
+    collapsedGroupSet_t shifted;
+    for (auto i : s)
+        shifted.insert(i >= at ? i + count : i);
+    s = std::move(shifted);
+}
+
 void SelectionManager::clearAllSelections()
 {
     for (auto &s : state)

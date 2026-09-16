@@ -74,6 +74,7 @@ void KeyBindings::setupKeyBindings()
     manager->addBinding(EXPAND, {juce::KeyPress::rightKey});
     manager->addBinding(RENAME, {(uint32_t)mod::COMMAND, (int)'R'});
     manager->addBinding(COPY, {(uint32_t)mod::COMMAND, (int)'C'});
+    manager->addBinding(CUT, {(uint32_t)mod::COMMAND, (int)'X'});
     manager->addBinding(PASTE, {(uint32_t)mod::COMMAND, (int)'V'});
     manager->addBinding(DUPLICATE, {(uint32_t)mod::COMMAND, (int)'D'});
 #if MAC
@@ -134,6 +135,8 @@ KeyCommandInfo KeyBindings::commandInfo(KeyCommands c)
         return {"rename", "Rename", edit, sc::EDIT};
     case COPY:
         return {"copy", "Copy", edit, sc::EDIT};
+    case CUT:
+        return {"cut", "Cut", edit, sc::EDIT};
     case PASTE:
         return {"paste", "Paste", edit, sc::EDIT};
     case DUPLICATE:

@@ -1398,6 +1398,8 @@ void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &aIn)
     auto sg = a.group;
     int32_t zi =
         (sg < (int)part->getGroups().size()) ? (int32_t)part->getGroup(sg)->getZones().size() : 0;
+    if (isValidZoneAddress(a))
+        zi = a.zone + 1;
     std::vector<ZoneAddress> added;
     for (size_t i = 0; i < zones.size(); ++i)
         added.push_back({sp, sg, zi + (int32_t)i});
@@ -1405,13 +1407,14 @@ void Engine::pasteZone(const selection::SelectionManager::ZoneAddress &aIn)
     undo::pushUndo<undo::ZonesDeleteOnUndoItem>(*this, added);
 
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [sp, sg, zones](auto &e) {
+        [sp, sg, zi, zones](auto &e) {
             e.getPatch()->getPart(sp)->guaranteeGroupCount(sg + 1);
+            auto at = zi;
             for (auto *zone : zones)
             {
                 std::unique_ptr<Zone> zptr;
                 zptr.reset(zone);
-                e.getPatch()->getPart(sp)->getGroup(sg)->addZone(zptr);
+                e.getPatch()->getPart(sp)->getGroup(sg)->insertZone(zptr, at++);
             }
             messaging::audio::sendStructureRefresh(*(e.getMessageController()));
         },
@@ -1504,13 +1507,14 @@ void Engine::pasteGroup(const selection::SelectionManager::ZoneAddress &a)
         if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::GROUP, i, *gptr))
             continue;
         gptr->name = takeFreeCopyName(gptr->name, groupNames);
+        gptr->warmup();
         groups.push_back(gptr.release());
     }
     if (groups.empty())
         return;
 
     auto sp = a.part;
-    auto gi = (int32_t)part->getGroups().size();
+    auto gi = isValidGroupAddress(a) ? a.group + 1 : (int32_t)part->getGroups().size();
     std::vector<std::pair<int16_t, int32_t>> undoAddrs;
     std::vector<ZoneAddress> added;
     for (size_t i = 0; i < groups.size(); ++i)
@@ -1522,16 +1526,23 @@ void Engine::pasteGroup(const selection::SelectionManager::ZoneAddress &a)
     undo::pushUndo<undo::GroupsDeleteOnUndoItem>(*this, undoAddrs);
 
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
-        [sp, groups](auto &e) {
+        [sp, gi, groups](auto &e) {
+            auto at = gi;
             for (auto *group : groups)
             {
                 std::unique_ptr<Group> gptr;
                 gptr.reset(group);
-                e.getPatch()->getPart(sp)->addGroup(gptr);
+                e.getPatch()->getPart(sp)->insertGroup(gptr, at++);
             }
-            messaging::audio::sendStructureRefresh(*(e.getMessageController()));
         },
-        [added](auto &e) { selectAddresses(e, added); });
+        [sp, gi, added](auto &e) {
+            // folds key on group index, so shift them before the structure goes out
+            e.getSelectionManager()->remapCollapsedOnInsert(sp, gi, (int)added.size());
+            messaging::client::serializationSendToClient(messaging::client::s2c_send_pgz_structure,
+                                                         e.getPartGroupZoneStructure(),
+                                                         *(e.getMessageController()));
+            selectAddresses(e, added);
+        });
 }
 
 void Engine::duplicateGroups(const std::vector<selection::SelectionManager::ZoneAddress> &addrs)

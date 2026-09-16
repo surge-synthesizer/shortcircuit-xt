@@ -725,14 +725,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                          VelocityRange vrange = {0, 127});
     void duplicateZone(const selection::SelectionManager::ZoneAddress &a) { duplicateZones({a}); }
     void copyZone(const selection::SelectionManager::ZoneAddress &a) { copyZones({a}); }
-    // pastes every zone on the clipboard into the group at a
+    // pastes every zone on the clipboard after zone a, or at the end of its group if a has no zone
     void pasteZone(const selection::SelectionManager::ZoneAddress &a);
     void duplicateZones(const std::vector<selection::SelectionManager::ZoneAddress> &);
     void copyZones(const std::vector<selection::SelectionManager::ZoneAddress> &);
 
     void duplicateGroup(const selection::SelectionManager::ZoneAddress &a) { duplicateGroups({a}); }
     void copyGroup(const selection::SelectionManager::ZoneAddress &a) { copyGroups({a}); }
-    // pastes every group on the clipboard at the end of the part at a
+    // pastes every group on the clipboard after group a, or at the end of its part if a has none
     void pasteGroup(const selection::SelectionManager::ZoneAddress &a);
     void duplicateGroups(const std::vector<selection::SelectionManager::ZoneAddress> &);
     void copyGroups(const std::vector<selection::SelectionManager::ZoneAddress> &);
