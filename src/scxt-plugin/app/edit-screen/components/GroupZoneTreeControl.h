@@ -577,7 +577,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
                     shared::populateZoneRightMouseMenuForZone(gsb, this, p, za, sg.name);
                     p.addSeparator();
-                    shared::populateZoneRightMouseMenuForSelectedZones(gsb, p, za.part);
+                    shared::populatePartRightMouseMenu(gsb, p, za.part);
                 }
                 else if (isGroup())
                 {
@@ -587,18 +587,29 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
                     const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
 
-                    p.addSectionHeader(sg.name);
+                    // inside a wider group selection the menu acts on all of it, bar rename
+                    using za_t = selection::SelectionManager::ZoneAddress;
+                    const auto &allGroups = gsb->editor->allGroupSelections;
+                    auto onSelection = allGroups.count(sg.address) > 0 && allGroups.size() > 1;
+                    std::vector<za_t> targets;
+                    if (onSelection)
+                        targets.assign(allGroups.begin(), allGroups.end());
+                    else
+                        targets.push_back(sg.address);
+
+                    p.addSectionHeader(onSelection
+                                           ? std::to_string(targets.size()) + " Selected Groups"
+                                           : sg.name);
                     p.addSeparator();
                     p.addItem("Rename", [w = juce::Component::SafePointer(this)]() {
                         if (!w)
                             return;
                         w->doGroupRename();
                     });
-                    p.addItem("Copy", [w = juce::Component::SafePointer(this)]() {
+                    p.addItem("Copy", [w = juce::Component::SafePointer(this), targets]() {
                         if (!w)
                             return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::CopyGroup(za));
+                        w->gsb->sendToSerialization(cmsg::CopyGroups(targets));
                     });
                     p.addItem("Paste",
                               gsb->editor->clipboardType == engine::Clipboard::ContentType::GROUP,
@@ -608,11 +619,10 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                                   auto za = w->getZoneAddress();
                                   w->gsb->sendToSerialization(cmsg::PasteGroup(za));
                               });
-                    p.addItem("Duplicate", [w = juce::Component::SafePointer(this)]() {
+                    p.addItem("Duplicate", [w = juce::Component::SafePointer(this), targets]() {
                         if (!w)
                             return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::DuplicateGroup(za));
+                        w->gsb->sendToSerialization(cmsg::DuplicateGroups(targets));
                     });
                     p.addItem("Paste Zone",
                               gsb->editor->clipboardType == engine::Clipboard::ContentType::ZONE,
@@ -629,11 +639,13 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                         w->gsb->sendToSerialization(
                             cmsg::AddBlankZone({za.part, za.group, 48, 72, 0, 127}));
                     });
-                    p.addItem("Delete", [w = juce::Component::SafePointer(this)]() {
+                    p.addItem("Delete", [w = juce::Component::SafePointer(this), onSelection]() {
                         if (!w)
                             return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::DeleteGroup(za));
+                        if (onSelection)
+                            w->gsb->sendToSerialization(cmsg::DeleteAllSelectedGroups(true));
+                        else
+                            w->gsb->sendToSerialization(cmsg::DeleteGroup(w->getZoneAddress()));
                     });
                     p.addItem("Delete Empty Groups", [w = juce::Component::SafePointer(this)]() {
                         if (!w)
@@ -659,7 +671,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                     auto za = getZoneAddress();
 
                     p.addSeparator();
-                    shared::populateZoneRightMouseMenuForSelectedZones(gsb, p, za.part);
+                    shared::populatePartRightMouseMenu(gsb, p, za.part);
                 }
 
                 isPopup = true;

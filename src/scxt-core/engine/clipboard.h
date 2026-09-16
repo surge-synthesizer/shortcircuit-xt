@@ -29,6 +29,7 @@
 #define SCXT_SRC_SCXT_CORE_ENGINE_CLIPBOARD_H
 
 #include <string>
+#include <vector>
 
 /*
  * Why is 'Clipboard' in 'engine' since it seems like a UI thing? Well the maintenance
@@ -49,12 +50,27 @@ struct Clipboard
         GROUP // add after this and remember to extend inverse below
     };
 
-    template <typename T> [[nodiscard]] ContentType streamToClipboard(ContentType c, const T &t);
+    // the clipboard holds one or more items of a single type, each with the name it showed
+    template <typename T>
+    [[nodiscard]] ContentType streamToClipboard(ContentType c, const std::vector<const T *> &ts,
+                                                const std::vector<std::string> &names = {});
+    template <typename T> [[nodiscard]] ContentType streamToClipboard(ContentType c, const T &t)
+    {
+        return streamToClipboard(c, std::vector<const T *>{&t});
+    }
+    std::string getClipboardItemName(size_t idx) const
+    {
+        return idx < names.size() ? names[idx] : std::string();
+    }
 
-    template <typename T> [[nodiscard]] bool unstreamFromClipboard(ContentType c, T &t);
+    template <typename T> [[nodiscard]] bool unstreamFromClipboard(ContentType c, size_t idx, T &t);
+    template <typename T> [[nodiscard]] bool unstreamFromClipboard(ContentType c, T &t)
+    {
+        return unstreamFromClipboard(c, 0, t);
+    }
 
     ContentType getClipboardType() const { return type; }
-    std::string getClipboardContents() const { return contents; }
+    size_t getClipboardItemCount() const { return contents.size(); }
 
     static std::string toStringContentType(const ContentType &c)
     {
@@ -81,7 +97,8 @@ struct Clipboard
 
   protected:
     ContentType type{NONE};
-    std::string contents;
+    std::vector<std::string> contents;
+    std::vector<std::string> names;
 };
 } // namespace scxt::engine
 #endif // CLIPBOARD_H
