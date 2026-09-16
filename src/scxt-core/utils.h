@@ -327,6 +327,9 @@ std::string logTimestamp();
 #define RAISE_WARN_CONT(C, title, msg) (C).reportWarningToClient((title), (msg), __FILE__, __LINE__)
 #define RAISE_INFO_CONT(C, title, msg) (C).reportInfoToClient((title), (msg), __FILE__, __LINE__)
 
+#define RAISE_ERROR_FROM_WORKER(C, title, msg)                                                     \
+    (C).reportErrorFromWorkerThread((title), (msg), __FILE__, __LINE__)
+
 struct DebugTimeGuard
 {
     std::string msg, file;

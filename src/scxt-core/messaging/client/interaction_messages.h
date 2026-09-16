@@ -51,6 +51,15 @@ enum ReportItemSeverity : int
 typedef std::tuple<int, std::string, std::string, std::string, int> s2cError_t;
 SERIAL_TO_CLIENT(ReportError, s2c_report_error, s2cError_t, onErrorFromEngine);
 
+// worker threads can't send to the client, so they bounce reports through here
+inline void doReportItemFromWorker(const s2cError_t &payload, MessageController &cont)
+{
+    const auto &[severity, title, body, source, line] = payload;
+    cont.reportItemToClient(severity, title, body, source, line);
+}
+CLIENT_TO_SERIAL(ReportItemFromWorker, c2s_report_item_from_worker, s2cError_t,
+                 doReportItemFromWorker(payload, cont));
+
 // Behind-the-scenes batch of (format, key, value) triples emitted by an
 // importer at finish() to surface tokens it recognized but didn't route.
 // Not user-facing; used by diagnostic tools (e.g. check-multi-loadability)

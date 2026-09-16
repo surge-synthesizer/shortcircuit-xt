@@ -214,6 +214,9 @@ Engine::~Engine()
     }
     messageController->stop();
     messageController->threadingChecker.bypassThreadChecks++;
+    // browser workers send to the message controller, which would otherwise die first
+    browser.reset();
+    browserDb.reset();
     sampleManager->purgeUnreferencedSamples();
 
     /*
