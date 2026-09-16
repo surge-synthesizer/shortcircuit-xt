@@ -515,6 +515,34 @@ void ProcessorPane::pasteFromEditorClipboard()
     sendToSerialization(cmsg::SendFullProcessorStorage({forZone, index, processorView}));
 }
 
+bool ProcessorPane::handleKeyCommand(KeyCommands command)
+{
+    if (!isEnabled())
+        return false;
+
+    switch (command)
+    {
+    case COPY:
+    case CUT:
+        // a selection mixing processor types has no one processor to take
+        if (multiZone)
+            return false;
+        editor->clipboard.processorStorage = processorView;
+        if (command == CUT)
+            sendToSerialization(
+                cmsg::SetSelectedProcessorType({forZone, index, dsp::processor::proct_none}));
+        return true;
+    case PASTE:
+        if (!editor->clipboard.processorStorage.has_value())
+            return false;
+        pasteFromEditorClipboard();
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
 void ProcessorPane::setupJsonTypeMap()
 {
     auto a = [this](auto x, auto y) { jsonDefinitions[x] = std::string("voicefx-layouts/") + y; };

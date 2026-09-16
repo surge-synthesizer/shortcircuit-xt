@@ -41,6 +41,7 @@
 #include "sst/jucegui/layouts/JsonLayoutEngine.h"
 #include "dsp/processor/processor.h"
 #include "app/HasEditor.h"
+#include "app/KeyCommands.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/zone.h"
 
@@ -52,6 +53,7 @@ struct SinePlusRenderer;
 
 struct ProcessorPane : sst::jucegui::components::NamedPanel,
                        HasEditor,
+                       KeyCommandTarget,
                        juce::DragAndDropTarget,
                        sst::jucegui::layouts::JsonLayoutHost
 {
@@ -105,6 +107,7 @@ struct ProcessorPane : sst::jucegui::components::NamedPanel,
     void layoutControlsWithJsonEngine(const std::string &jsonpath);
 
     void pasteFromEditorClipboard();
+    bool handleKeyCommand(KeyCommands command) override;
 
     // massive swaths of this can go in the near future
     template <typename T = sst::jucegui::components::Knob>
