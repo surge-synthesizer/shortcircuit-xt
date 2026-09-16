@@ -88,6 +88,25 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             gzData[gzIdx].features &= ~engine::GroupZoneFeatures::FOLDED;
     }
 
+    // flips the local bit so the fold is instant; the structure broadcast that follows confirms it
+    bool setGroupFolded(const selection::SelectionManager::ZoneAddress &group, bool collapsed)
+    {
+        for (size_t i = 0; i < gzData.size(); ++i)
+        {
+            const auto &a = gzData[i].address;
+            if (a.zone >= 0 || a.part != group.part || a.group != group.group)
+                continue;
+            if (!groupHasZones(i) || isGroupCollapsed(i) == collapsed)
+                return false;
+
+            setGroupCollapsedLocal(i, collapsed);
+            sidebar->partGroupSidebar->collapsedGroupsChanged();
+            sidebar->sendToSerialization(cmsg::SetGroupCollapsed({a.part, a.group, collapsed}));
+            return true;
+        }
+        return false;
+    }
+
     GroupZoneSidebarWidget(SidebarParent *sb) : sidebar(sb)
     {
         rebuild();
@@ -237,13 +256,27 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         return addr;
     }
 
+    struct RenameEditor : juce::TextEditor
+    {
+        std::function<void(int)> onTab;
+        bool keyPressed(const juce::KeyPress &key) override
+        {
+            if (key.getKeyCode() == juce::KeyPress::tabKey && onTab)
+            {
+                onTab(key.getModifiers().isShiftDown() ? -1 : 1);
+                return true;
+            }
+            return juce::TextEditor::keyPressed(key);
+        }
+    };
+
     struct rowComponent : juce::Component, juce::DragAndDropTarget, juce::TextEditor::Listener
     {
         int rowNumber{-1};
         GroupZoneSidebarWidget<SidebarParent, forZone> *lbm{nullptr};
         SidebarParent *gsb{nullptr};
 
-        std::unique_ptr<juce::TextEditor> renameEditor;
+        std::unique_ptr<RenameEditor> renameEditor;
         using bdm_t =
             sst::jucegui::component_adapters::DiscreteToValueReference<jcmp::ToggleButton, bool>;
         std::unique_ptr<bdm_t> muteProvider, soloProvider;
@@ -251,9 +284,15 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         bool glyphHovered{false};
         rowComponent()
         {
-            renameEditor = std::make_unique<juce::TextEditor>();
+            renameEditor = std::make_unique<RenameEditor>();
             addChildComponent(*renameEditor);
             renameEditor->addListener(this);
+            renameEditor->onTab = [this](int dir) {
+                auto from = getZoneAddress();
+                commitRename();
+                if (!gsb->renameNeighbourOf(from, dir))
+                    gsb->grabKeyboardFocus();
+            };
         }
 
         // Hover-on-glyph: highlight the fold arrow when the mouse is over the gutter
@@ -552,16 +591,8 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             if (!e.mods.isPopupMenu() && isGroup() && e.x < grouplabelPad &&
                 lbm->groupHasZones(lbm->gzIndexForRow(rowNumber)))
             {
-                auto za = getZoneAddress();
                 auto gzIdx = lbm->gzIndexForRow(rowNumber);
-                bool nowCollapsed = !lbm->isGroupCollapsed(gzIdx);
-                // Optimistic: flip the local FOLDED bit and refresh both sidebars
-                // so the click feels instant. The c2s round-trip will trigger a
-                // structure broadcast that reaffirms the state.
-                lbm->setGroupCollapsedLocal(gzIdx, nowCollapsed);
-                gsb->partGroupSidebar->collapsedGroupsChanged();
-                gsb->sendToSerialization(
-                    cmsg::SetGroupCollapsed({za.part, za.group, nowCollapsed}));
+                lbm->setGroupFolded(getZoneAddress(), !lbm->isGroupCollapsed(gzIdx));
                 consumedFoldClick = true;
                 return;
             }
@@ -868,20 +899,27 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             renameEditor->grabKeyboardFocus();
         }
 
-        void textEditorReturnKeyPressed(juce::TextEditor &) override
+        void commitRename()
         {
+            renameEditor->setVisible(false);
+            if (rowNumber < 0 || rowNumber >= (int)lbm->visibleRows.size())
+                return;
+
+            // tabbing past a row leaves its name alone rather than adding an undo step
+            auto name = renameEditor->getText().toStdString();
+            if (name == lbm->gzData[lbm->gzIndexForRow(rowNumber)].name)
+                return;
+
             auto za = getZoneAddress();
             if (isZone())
-            {
-                gsb->sendToSerialization(
-                    cmsg::RenameZone({za, renameEditor->getText().toStdString()}));
-            }
+                gsb->sendToSerialization(cmsg::RenameZone({za, name}));
             else
-            {
-                gsb->sendToSerialization(
-                    cmsg::RenameGroup({za, renameEditor->getText().toStdString()}));
-            }
-            renameEditor->setVisible(false);
+                gsb->sendToSerialization(cmsg::RenameGroup({za, name}));
+        }
+
+        void textEditorReturnKeyPressed(juce::TextEditor &) override
+        {
+            commitRename();
             gsb->grabKeyboardFocus();
         }
         void textEditorEscapeKeyPressed(juce::TextEditor &) override

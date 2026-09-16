@@ -267,6 +267,8 @@ struct SelectionManager
     // Caller is responsible for broadcasting structure after the move.
     void remapCollapsedOnSwap(int part, int gA, int gB);
     void remapCollapsedOnMoveAfter(int part, int whichGroup, int toAfter);
+    // count new groups now start at index at, and arrive unfolded
+    void remapCollapsedOnInsert(int part, int at, int count);
 };
 } // namespace scxt::selection
 

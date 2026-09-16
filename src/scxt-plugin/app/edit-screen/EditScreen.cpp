@@ -351,10 +351,28 @@ void EditScreen::selectAllInPart(bool forZone)
     editor->doSelectionAction(actions);
 }
 
+namespace
+{
+using za_t = selection::SelectionManager::ZoneAddress;
+
+// a lead can arrive holding an unset address, which says there is no lead
+bool isLeadSet(const std::optional<za_t> &lead) { return lead.has_value() && lead->group >= 0; }
+
+std::vector<za_t> selectionOrLead(const selection::SelectionManager::selectedZones_t &all,
+                                  const std::optional<za_t> &lead)
+{
+    std::vector<za_t> res(all.begin(), all.end());
+    if (res.empty() && isLeadSet(lead))
+        res.push_back(*lead);
+    return res;
+}
+} // namespace
+
 bool EditScreen::doZoneEditCommand(KeyCommands command)
 {
     namespace cmsg = scxt::messaging::client;
     const auto &lead = editor->currentLeadZoneSelection;
+    auto targets = selectionOrLead(editor->allZoneSelections, lead);
 
     switch (command)
     {
@@ -362,29 +380,34 @@ bool EditScreen::doZoneEditCommand(KeyCommands command)
         selectAllInPart(true);
         return true;
     case COPY:
-        if (!lead.has_value())
+    case CUT:
+        if (targets.empty())
             return false;
-        sendToSerialization(cmsg::CopyZone(*lead));
+        sendToSerialization(cmsg::CopyZones(targets));
+        if (command == CUT)
+            sendToSerialization(cmsg::DeleteAllSelectedZones(true));
         return true;
     case PASTE:
     {
         if (editor->clipboardType != engine::Clipboard::ContentType::ZONE)
             return false;
-        auto into = selection::SelectionManager::ZoneAddress{editor->selectedPart, 0, -1};
-        if (lead.has_value())
-            into = {lead->part, lead->group, -1};
-        else if (editor->currentLeadGroupSelection.has_value())
-            into = *editor->currentLeadGroupSelection;
+        // after the lead zone, else the end of the lead group, else wherever a new zone goes
+        auto into = za_t{editor->selectedPart, -1, -1};
+        const auto &leadGroup = editor->currentLeadGroupSelection;
+        if (isLeadSet(lead))
+            into = *lead;
+        else if (isLeadSet(leadGroup))
+            into = *leadGroup;
         sendToSerialization(cmsg::PasteZone(into));
         return true;
     }
     case DUPLICATE:
-        if (!lead.has_value())
+        if (targets.empty())
             return false;
-        sendToSerialization(cmsg::DuplicateZone(*lead));
+        sendToSerialization(cmsg::DuplicateZones(targets));
         return true;
     case DELETE_SELECTED:
-        if (!lead.has_value() && editor->allZoneSelections.empty())
+        if (targets.empty())
             return false;
         sendToSerialization(cmsg::DeleteAllSelectedZones(true));
         return true;
@@ -398,6 +421,7 @@ bool EditScreen::doGroupEditCommand(KeyCommands command)
 {
     namespace cmsg = scxt::messaging::client;
     const auto &lead = editor->currentLeadGroupSelection;
+    auto targets = selectionOrLead(editor->allGroupSelections, lead);
 
     switch (command)
     {
@@ -405,22 +429,27 @@ bool EditScreen::doGroupEditCommand(KeyCommands command)
         selectAllInPart(false);
         return true;
     case COPY:
-        if (!lead.has_value())
+    case CUT:
+        if (targets.empty())
             return false;
-        sendToSerialization(cmsg::CopyGroup(*lead));
+        sendToSerialization(cmsg::CopyGroups(targets));
+        if (command == CUT)
+            sendToSerialization(cmsg::DeleteAllSelectedGroups(true));
         return true;
     case PASTE:
         if (editor->clipboardType != engine::Clipboard::ContentType::GROUP)
             return false;
-        sendToSerialization(cmsg::PasteGroup({editor->selectedPart, -1, -1}));
+        // after the lead group, else the end of the part
+        sendToSerialization(
+            cmsg::PasteGroup(isLeadSet(lead) ? *lead : za_t{editor->selectedPart, -1, -1}));
         return true;
     case DUPLICATE:
-        if (!lead.has_value())
+        if (targets.empty())
             return false;
-        sendToSerialization(cmsg::DuplicateGroup(*lead));
+        sendToSerialization(cmsg::DuplicateGroups(targets));
         return true;
     case DELETE_SELECTED:
-        if (!lead.has_value() && editor->allGroupSelections.empty())
+        if (targets.empty())
             return false;
         sendToSerialization(cmsg::DeleteAllSelectedGroups(true));
         return true;

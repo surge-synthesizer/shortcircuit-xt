@@ -355,9 +355,14 @@ void GroupsDeleteOnUndoItem::restore(engine::Engine &e)
                     groupToFree, messaging::audio::AudioToSerialization::ToBeDeleted::engine_Group);
             }
         },
-        [t = addresses.front()](auto &engine) {
-            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false,
-                                                                           {t.first, t.second, -1});
+        [addrs](auto &engine) {
+            auto t = addrs.front();
+            std::vector<int32_t> gone;
+            for (const auto &[pt, gi] : addrs)
+                if (pt == t.first)
+                    gone.push_back(gi);
+            engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(
+                engine, false, {t.first, t.second, -1}, gone);
             sendStructureAndSummary(engine, t.first);
         });
 }
@@ -402,6 +407,7 @@ void GroupsRestoreItem::restore(engine::Engine &e)
         {
             auto gptr = rebuildGroupFromJSON(e, ent.part, ent.groupJSON);
             e.getPatch()->getPart(ent.part)->insertGroup(gptr, ent.groupIndex);
+            e.getSelectionManager()->remapCollapsedOnInsert(ent.part, ent.groupIndex, 1);
         }
         auto lead = entries.front();
         e.getSelectionManager()->applySelectActions(

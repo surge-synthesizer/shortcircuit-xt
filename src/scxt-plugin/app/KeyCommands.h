@@ -57,6 +57,7 @@ enum KeyCommands : uint32_t
     EXPAND,
     RENAME,
     COPY,
+    CUT,
     PASTE,
     DUPLICATE,
     DELETE_SELECTED,

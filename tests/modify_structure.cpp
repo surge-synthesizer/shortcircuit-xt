@@ -103,12 +103,13 @@ TEST_CASE("Copy and Paste Group")
     // Pasted group should have a "(copy)" suffix
     REQUIRE(part->getGroup(1)->name == originalName + " (copy)");
 
-    // Paste again - should get a distinct name
+    // Paste again - should get a distinct name, and land straight after group 0
     th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
     th.stepUI();
 
     REQUIRE(part->getGroups().size() == 3);
-    REQUIRE(part->getGroup(2)->name == originalName + " (copy 2)");
+    REQUIRE(part->getGroup(1)->name == originalName + " (copy 2)");
+    REQUIRE(part->getGroup(2)->name == originalName + " (copy)");
 }
 
 TEST_CASE("Delete Group")
@@ -431,7 +432,8 @@ TEST_CASE("Copy, Paste, Duplicate And Delete Several Groups At Once")
     th.stepUI();
     REQUIRE(th.engine->clipboard.getClipboardItemCount() == 2);
 
-    th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
+    // no group named puts them at the end
+    th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, -1, -1}));
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 5; }));
     REQUIRE(part->getGroup(3)->name == name0 + " (copy)");
     REQUIRE(part->getGroup(4)->name == name1 + " (copy)");
@@ -492,4 +494,92 @@ TEST_CASE("Pasting Zones With No Group Named Lands Them Somewhere Sensible")
 
     th.sendToSerialization(cmsg::Undo(true));
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroup(0)->getZones().size() == 2; }));
+}
+
+TEST_CASE("Pasting Zones After A Zone Lands Them Next To It")
+{
+    namespace mst = multi_structure_test;
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 10, 20, 0, 127}));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 21, 30, 0, 127}));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 31, 40, 0, 127}));
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(mst::stepUntil(th, [&part]() {
+        return !part->getGroups().empty() && part->getGroup(0)->getZones().size() == 3;
+    }));
+
+    th.sendToSerialization(cmsg::CopyZones({ZoneAddress{0, 0, 2}}));
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::PasteZone(ZoneAddress{0, 0, 0}));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroup(0)->getZones().size() == 4; }));
+    const auto &g = part->getGroup(0);
+    REQUIRE(g->getZone(0)->mapping.keyboardRange.keyStart == 10);
+    REQUIRE(g->getZone(1)->mapping.keyboardRange.keyStart == 31);
+    REQUIRE(g->getZone(2)->mapping.keyboardRange.keyStart == 21);
+    REQUIRE(g->getZone(3)->mapping.keyboardRange.keyStart == 31);
+    th.stepUI();
+    auto lead = th.engine->getSelectionManager()->currentLeadZone(*th.engine);
+    REQUIRE(lead.has_value());
+    REQUIRE(*lead == ZoneAddress{0, 0, 1});
+
+    th.sendToSerialization(cmsg::Undo(true));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroup(0)->getZones().size() == 3; }));
+    REQUIRE(part->getGroup(0)->getZone(1)->mapping.keyboardRange.keyStart == 21);
+
+    th.sendToSerialization(cmsg::Redo(true));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroup(0)->getZones().size() == 4; }));
+    REQUIRE(part->getGroup(0)->getZone(1)->mapping.keyboardRange.keyStart == 31);
+}
+
+TEST_CASE("Pasting Groups After A Group Keeps Folds On Their Groups")
+{
+    namespace mst = multi_structure_test;
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 10, 20, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 1, 21, 30, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.sendToSerialization(cmsg::AddBlankZone({0, 2, 31, 40, 0, 127}));
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(mst::stepUntil(th, [&part]() {
+        return part->getGroups().size() == 3 && part->getGroup(2)->getZones().size() == 1;
+    }));
+    auto name0 = part->getGroup(0)->name;
+    auto name2 = part->getGroup(2)->name;
+
+    auto *sm = th.engine->getSelectionManager().get();
+    th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
+    REQUIRE(mst::stepUntil(th, [sm]() { return sm->isGroupCollapsed(0, 2); }));
+
+    th.sendToSerialization(cmsg::CopyGroups({ZoneAddress{0, 0, -1}, ZoneAddress{0, 1, -1}}));
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 5; }));
+    REQUIRE(part->getGroup(0)->name == name0);
+    REQUIRE(part->getGroup(1)->name == name0 + " (copy)");
+    REQUIRE(part->getGroup(4)->name == name2);
+    th.stepUI();
+    REQUIRE(sm->isGroupCollapsed(0, 4));
+    REQUIRE(!sm->isGroupCollapsed(0, 2));
+
+    th.sendToSerialization(cmsg::Undo(true));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 3; }));
+    th.stepUI();
+    REQUIRE(part->getGroup(2)->name == name2);
+    REQUIRE(sm->isGroupCollapsed(0, 2));
+
+    th.sendToSerialization(cmsg::Redo(true));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 5; }));
+    th.stepUI();
+    REQUIRE(part->getGroup(4)->name == name2);
+    REQUIRE(sm->isGroupCollapsed(0, 4));
+    REQUIRE(!sm->isGroupCollapsed(0, 2));
 }

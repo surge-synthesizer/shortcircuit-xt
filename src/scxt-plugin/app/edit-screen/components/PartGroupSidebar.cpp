@@ -486,6 +486,9 @@ struct GroupZoneSidebarBase : juce::Component,
             return jogLeadSelection(-1);
         case SELECT_NEXT:
             return jogLeadSelection(1);
+        case COLLAPSE:
+        case EXPAND:
+            return foldLeadGroup(command == COLLAPSE);
         case RENAME:
             return renameLead();
         default:
@@ -498,30 +501,47 @@ struct GroupZoneSidebarBase : juce::Component,
         return forZone ? es->doZoneEditCommand(command) : es->doGroupEditCommand(command);
     }
 
-    // walks the rows as shown, so zones in folded groups are skipped
-    bool jogLeadSelection(int dir)
-    {
-        std::vector<selection::SelectionManager::ZoneAddress> addresses;
-        for (auto gi : gzTreeControl->visibleRows)
-        {
-            const auto &a = gzTreeControl->gzData[gi].address;
-            if ((a.zone >= 0) == forZone)
-                addresses.push_back(a);
-        }
-        if (addresses.empty())
-            return false;
+    using za_t = selection::SelectionManager::ZoneAddress;
 
+    std::optional<za_t> currentLead() const
+    {
         const auto &lead =
             forZone ? editor->currentLeadZoneSelection : editor->currentLeadGroupSelection;
-        auto idx = dir > 0 ? 0 : (int)addresses.size() - 1;
-        if (lead.has_value())
+        if (!lead.has_value() || lead->group < 0)
+            return std::nullopt;
+        return lead;
+    }
+
+    // walks the rows as shown, so zones in folded groups are skipped
+    std::optional<za_t> neighbourOf(const std::optional<za_t> &from, int dir)
+    {
+        const auto &rows = gzTreeControl->visibleRows;
+        const auto &data = gzTreeControl->gzData;
+        auto n = (int)rows.size();
+
+        // with nothing to start from, enter the list at the end we are moving away from
+        auto start = dir > 0 ? 0 : n - 1;
+        if (from.has_value())
         {
-            auto it = std::find(addresses.begin(), addresses.end(), *lead);
-            if (it != addresses.end())
-                idx = std::clamp((int)(it - addresses.begin()) + dir, 0, (int)addresses.size() - 1);
+            // a zone in a folded group starts from its group's row
+            auto row = gzTreeControl->rowForAddress(*from);
+            if (!row.has_value())
+                return std::nullopt;
+            start = *row + dir;
         }
 
-        auto se = selection::SelectionManager::SelectActionContents(addresses[idx]);
+        for (auto r = start; r >= 0 && r < n; r += dir)
+        {
+            const auto &a = data[rows[r]].address;
+            if ((a.zone >= 0) == forZone)
+                return a;
+        }
+        return std::nullopt;
+    }
+
+    void selectAsLead(const za_t &a)
+    {
+        auto se = selection::SelectionManager::SelectActionContents(a);
         se.selecting = true;
         se.distinct = true;
         se.selectingAsLead = true;
@@ -529,26 +549,53 @@ struct GroupZoneSidebarBase : juce::Component,
         editor->doSelectionAction(se);
 
         if constexpr (requires(T &t) { t.lastZoneClicked; })
-            asT()->lastZoneClicked = addresses[idx];
+            asT()->lastZoneClicked = a;
+    }
+
+    bool jogLeadSelection(int dir)
+    {
+        auto next = neighbourOf(currentLead(), dir);
+        if (!next.has_value())
+            return false;
+        selectAsLead(*next);
         return true;
+    }
+
+    bool foldLeadGroup(bool collapse)
+    {
+        auto lead = currentLead();
+        if (!lead.has_value())
+            return false;
+        return gzTreeControl->setGroupFolded({lead->part, lead->group, -1}, collapse);
     }
 
     bool renameLead()
     {
-        const auto &lead =
-            forZone ? editor->currentLeadZoneSelection : editor->currentLeadGroupSelection;
-        if (!lead.has_value())
-            return false;
+        auto lead = currentLead();
+        return lead.has_value() && renameRow(*lead);
+    }
 
-        auto row = gzTreeControl->rowComponentForAddress(*lead);
+    bool renameRow(const za_t &a)
+    {
+        auto row = gzTreeControl->rowComponentForAddress(a);
         if (!row)
             return false;
 
         if (forZone)
-            row->doZoneRename(*lead);
+            row->doZoneRename(a);
         else
             row->doGroupRename();
         return true;
+    }
+
+    // tab moves the rename on a row, taking the selection with it as rename acts on the lead
+    bool renameNeighbourOf(const za_t &from, int dir)
+    {
+        auto next = neighbourOf(from, dir);
+        if (!next.has_value())
+            return false;
+        selectAsLead(*next);
+        return renameRow(*next);
     }
 
     // FileDragAndDropTarget — accept single audio files from the OS; add as zones in current group
