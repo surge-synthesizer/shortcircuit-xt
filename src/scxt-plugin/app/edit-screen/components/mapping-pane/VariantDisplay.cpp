@@ -1063,31 +1063,20 @@ bool VariantDisplay::MyTabbedComponent::isInterestedInFileDrag(const juce::Strin
 
 void VariantDisplay::MyTabbedComponent::filesDropped(const juce::StringArray &files, int x, int y)
 {
-    auto processFilesDropped = [this](const juce::StringArray &files, auto tabIndex) {
-        namespace cmsg = scxt::messaging::client;
-        // one add per file; coalesce the batch into a single undo entry
-        sendToSerialization(
-            cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
-        for (const auto &fl : files)
-        {
-            if (tabIndex == maxVariantsPerZone)
-            {
-                break;
-            }
-            auto za{editor->currentLeadZoneSelection};
-            auto sampleID{tabIndex};
-            sendToSerialization(cmsg::AddSampleInZone({std::string{(const char *)(fl.toUTF8())},
-                                                       za->part, za->group, za->zone, sampleID}));
-            tabIndex++;
-        }
-        sendToSerialization(cmsg::EndEdit(false));
-    };
-
+    namespace cmsg = scxt::messaging::client;
+    auto za{editor->currentLeadZoneSelection};
     auto tabIndex{getTabIndexFromPosition(x, y)};
-    if (tabIndex != -1)
+    if (tabIndex == -1 || !za.has_value())
+        return;
+
+    std::vector<cmsg::addSampleInZoneSpec_t> samples;
+    for (const auto &fl : files)
     {
-        processFilesDropped(files, tabIndex);
+        if (tabIndex == maxVariantsPerZone)
+            break;
+        samples.push_back({std::string{(const char *)(fl.toUTF8())}, tabIndex++});
     }
+    sendToSerialization(cmsg::AddSamplesInZone({samples, {}, za->part, za->group, za->zone}));
 }
 
 void VariantDisplay::MyTabbedComponent::itemDropped(
@@ -1131,26 +1120,19 @@ void VariantDisplay::MyTabbedComponent::itemDropped(
                     return;
                 }
             }
-            auto addAt = nts;
-            // one add per dropped sample; coalesce the batch into one undo entry
-            sendToSerialization(
-                cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
+            auto addAt = (int)nts;
+            std::vector<cmsg::addSampleInZoneSpec_t> samples;
+            std::vector<cmsg::addCompoundInZoneSpec_t> compounds;
             for (auto e : els)
             {
                 if (e->getCompoundElement().has_value())
-                {
-                    auto ce = *wsi->getCompoundElement();
-                    sendToSerialization(cmsg::AddCompoundElementInZone(
-                        {*e->getCompoundElement(), za->part, za->group, za->zone, addAt}));
-                }
+                    compounds.push_back({*e->getCompoundElement(), addAt});
                 else if (e->getDirEnt().has_value())
-                {
-                    sendToSerialization(cmsg::AddSampleInZone(
-                        {e->getDirEnt()->path().u8string(), za->part, za->group, za->zone, addAt}));
-                }
+                    samples.push_back({e->getDirEnt()->path().u8string(), addAt});
                 addAt++;
             }
-            sendToSerialization(cmsg::EndEdit(false));
+            sendToSerialization(
+                cmsg::AddSamplesInZone({samples, compounds, za->part, za->group, za->zone}));
         }
         else if (wsi->getCompoundElement().has_value())
         {

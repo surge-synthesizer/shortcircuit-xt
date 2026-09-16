@@ -196,6 +196,29 @@ inline void addCompoundElementInZone(const addCompoundElementInZone_t &payload,
 CLIENT_TO_SERIAL(AddCompoundElementInZone, c2s_add_compound_element_in_zone,
                  addCompoundElementInZone_t, addCompoundElementInZone(payload, engine, cont);)
 
+// sample, variant
+using addSampleInZoneSpec_t = std::tuple<std::string, int>;
+// compound element, variant
+using addCompoundInZoneSpec_t = std::tuple<sample::compound::CompoundElement, int>;
+// samples, compound elements, part, group, zone; one message so a variant drop refreshes once
+using addSamplesInZonePayload_t = std::tuple<std::vector<addSampleInZoneSpec_t>,
+                                             std::vector<addCompoundInZoneSpec_t>, int, int, int>;
+inline void addSamplesInZone(const addSamplesInZonePayload_t &payload, engine::Engine &engine,
+                             MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    const auto &[samples, compounds, part, group, zone] = payload;
+    std::vector<engine::Engine::VariantToAdd> variants;
+    variants.reserve(samples.size() + compounds.size());
+    for (const auto &[path, variant] : samples)
+        variants.push_back({variant, fs::path(fs::u8path(path)), std::nullopt});
+    for (const auto &[el, variant] : compounds)
+        variants.push_back({variant, el.sampleAddress.path, el});
+    engine.loadSamplesIntoZone(variants, part, group, zone);
+}
+CLIENT_TO_SERIAL(AddSamplesInZone, c2s_add_samples_in_zone, addSamplesInZonePayload_t,
+                 addSamplesInZone(payload, engine, cont);)
+
 inline void createGroupIn(int partNumber, engine::Engine &engine, MessageController &cont)
 {
     if (partNumber < 0 || partNumber >= numParts)
