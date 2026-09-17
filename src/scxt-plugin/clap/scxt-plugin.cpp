@@ -91,6 +91,14 @@ SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
 
     clapJuceShim = std::make_unique<sst::clap_juce_shim::ClapJuceShim>(this);
     clapJuceShim->setResizable(true);
+
+    // queued ahead of any host state restore, which then replaces it
+    {
+        auto bypass = engine->getMessageController()->threadingChecker.bypassChecksInScope();
+        scxt::messaging::client::clientSendToSerialization(
+            scxt::messaging::client::ResetEngineToStartupPatch(false),
+            *engine->getMessageController());
+    }
 }
 
 SCXTPlugin::~SCXTPlugin() { engine.reset(nullptr); }

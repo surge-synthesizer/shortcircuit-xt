@@ -605,7 +605,52 @@ void HeaderRegion::addResetMenuItems(juce::PopupMenu &menu)
         editor->displayError("Filesystem Error",
                              std::string() + "Unable to traverse user templates " + e.what());
     }
+
+    auto startup = editor->defaultsProvider.getUserDefaultPath(
+        infrastructure::DefaultKeys::startupPatchPath, fs::path{});
+    p.addSeparator();
+    p.addSectionHeader("Startup Default");
+    if (!startup.empty())
+    {
+        auto kind = extensionMatches(startup, ".scp") ? "Part: " : "Multi: ";
+        auto nm = startup;
+        p.addItem(kind + nm.replace_extension("").filename().u8string(),
+                  [w = juce::Component::SafePointer(this)]() {
+                      if (w)
+                          w->sendToSerialization(cmsg::ResetEngineToStartupPatch(true));
+                  });
+    }
+    p.addItem("Set Startup Default...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doChooseStartupPatch();
+    });
+    if (!startup.empty())
+    {
+        p.addItem("Clear Startup Default", [w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->editor->defaultsProvider.updateUserDefaultValueOrOverride(
+                    infrastructure::DefaultKeys::startupPatchPath, std::string());
+        });
+    }
     menu.addSubMenu("Reset Engine To", p);
+}
+
+void HeaderRegion::doChooseStartupPatch()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Set Startup Default", fsPathToJuceFile(editor->browser.patchIODirectory), "*.scm;*.scp");
+    fileChooser->launchAsync(juce::FileBrowserComponent::canSelectFiles |
+                                 juce::FileBrowserComponent::openMode,
+                             [w = juce::Component::SafePointer(this)](const juce::FileChooser &c) {
+                                 if (!w)
+                                     return;
+                                 auto result = c.getResults();
+                                 if (result.size() != 1)
+                                     return;
+                                 w->editor->defaultsProvider.updateUserDefaultValueOrOverride(
+                                     infrastructure::DefaultKeys::startupPatchPath,
+                                     juceFileToFSPath(result[0]).u8string());
+                             });
 }
 
 void HeaderRegion::onActivityNotification(int idx, const std::string &msg)

@@ -231,6 +231,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_add_samples_in_zone,
 
+    c2s_reset_engine_to_startup_patch,
+
     num_clientToSerializationMessages
 };
 

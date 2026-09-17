@@ -150,6 +150,19 @@ inline void doResetEngine(const std::string &fl, engine::Engine &e, MessageContr
 }
 CLIENT_TO_SERIAL(ResetEngine, c2s_reset_engine, std::string, doResetEngine(payload, engine, cont));
 
+// payload marks the host session dirty, which a new instance should not
+inline void doResetEngineToStartupPatch(bool markDirty, engine::Engine &e, MessageController &cont)
+{
+    if (!scxt::patch_io::initFromStartupPatch(e))
+        return;
+    e.undoManager.clear();
+    if (markDirty)
+        e.markDirty();
+    e.sendFullRefreshToClient();
+}
+CLIENT_TO_SERIAL(ResetEngineToStartupPatch, c2s_reset_engine_to_startup_patch, bool,
+                 doResetEngineToStartupPatch(payload, engine, cont));
+
 inline void doResendFullState(const bool &b, engine::Engine &e, MessageController &cont)
 {
     if (b)

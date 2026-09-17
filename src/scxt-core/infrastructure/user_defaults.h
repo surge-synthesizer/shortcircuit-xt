@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_SCXT_CORE_INFRASTRUCTURE_USER_DEFAULTS_H
 #define SCXT_SRC_SCXT_CORE_INFRASTRUCTURE_USER_DEFAULTS_H
 
+#include <set>
 #include "sst/plugininfra/userdefaults.h"
 
 namespace scxt::infrastructure
@@ -49,6 +50,7 @@ enum DefaultKeys
     useSoftwareRenderer,
     showUndoRedo,
     lastSavedPath,
+    startupPatchPath,
 
     nKeys // must be last K?
 };
@@ -88,6 +90,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "showUndoRedo";
     case lastSavedPath:
         return "lastSavedPath";
+    case startupPatchPath:
+        return "startupPatchPath";
     default:
         std::terminate(); // for now
     }
@@ -96,13 +100,43 @@ inline std::string defaultKeyToString(DefaultKeys k)
 
 struct DefaultsProvider : sst::plugininfra::defaults::Provider<DefaultKeys, DefaultKeys::nKeys>
 {
+    using base_t = sst::plugininfra::defaults::Provider<DefaultKeys, DefaultKeys::nKeys>;
+
     DefaultsProvider(const fs::path &defaultsDirectory, const std::string &productName,
                      const std::function<std::string(DefaultKeys)> &e2S,
                      const std::function<void(const std::string &, const std::string &)> &errHandle)
-        : sst::plugininfra::defaults::Provider<DefaultKeys, DefaultKeys::nKeys>(
-              defaultsDirectory, productName, e2S, errHandle)
+        : base_t(defaultsDirectory, productName, e2S, errHandle)
     {
     }
+
+    void addOverride(DefaultKeys key, const std::string &s)
+    {
+        overriddenKeys.insert(key);
+        base_t::addOverride(key, s);
+    }
+    void addOverride(DefaultKeys key, int i)
+    {
+        overriddenKeys.insert(key);
+        base_t::addOverride(key, i);
+    }
+    void clearOverride(DefaultKeys key)
+    {
+        overriddenKeys.erase(key);
+        base_t::clearOverride(key);
+    }
+    bool hasOverride(DefaultKeys key) const { return overriddenKeys.count(key) > 0; }
+
+    // an override stands in for the stored value, so change that and leave the file alone
+    void updateUserDefaultValueOrOverride(DefaultKeys key, const std::string &s)
+    {
+        if (hasOverride(key))
+            addOverride(key, s);
+        else
+            updateUserDefaultValue(key, s);
+    }
+
+  private:
+    std::set<DefaultKeys> overriddenKeys;
 };
 } // namespace scxt::infrastructure
 
