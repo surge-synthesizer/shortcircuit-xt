@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_ADSRPANE_H
 #define SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_ADSRPANE_H
 
+#include <algorithm>
 #include <unordered_map>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/NamedPanel.h"
@@ -76,7 +77,10 @@ struct AdsrPane : sst::jucegui::components::NamedPanel, HasEditor
     }
 
     modulation::modulators::AdsrStorage adsrView;
-    std::array<modulation::modulators::AdsrStorage, scxt::egsPerZone - 1> zoneAdsrCache;
+    // the tabbed pane shows EG2 up, for a zone or a group
+    std::array<modulation::modulators::AdsrStorage,
+               std::max(scxt::egsPerZone, scxt::egsPerGroup) - 1>
+        tabAdsrCache;
     size_t displayedTabIndex{0};
     size_t index{0};
     bool forZone{true};

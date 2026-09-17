@@ -73,7 +73,7 @@ static constexpr uint16_t maxVariantsPerZone{16};
 static constexpr int64_t minimumVariantRegionInSamples{16};
 
 static constexpr uint16_t lfosPerGroup{4};
-static constexpr uint16_t egsPerGroup{2};
+static constexpr uint16_t egsPerGroup{5};
 static constexpr uint16_t processorsPerZoneAndGroup{4};
 
 static constexpr uint16_t phasorsPerGroupOrZone{4};

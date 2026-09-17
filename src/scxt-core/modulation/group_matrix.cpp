@@ -287,13 +287,17 @@ void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, 
 }
 
 GroupMatrixEndpoints::Sources::Sources(engine::Engine *e)
-    : lfoSources(e, "GLFO", "GLFO"), midiCCSources(e),
-      egSource{{'greg', 'eg1 ', 0}, {'greg', 'eg2 ', 0}}, transportSources(e), rngSources(e),
+    : lfoSources(e, "GLFO", "GLFO"), midiCCSources(e), transportSources(e), rngSources(e),
       envFollowerSources(e), macroSources(e), subordinateVoiceSources(e), midiSources(e),
       keyAndPitchSources(e)
 {
-    registerGroupModSource(e, egSource[0], "Group EG", "GEG1");
-    registerGroupModSource(e, egSource[1], "Group EG", "GEG2");
+    // 'eg1 ', 'eg2 ' and so on; these are streamed so must stay put
+    static_assert(egsPerGroup < 10);
+    for (uint32_t i = 0; i < egsPerGroup; ++i)
+    {
+        egSource[i] = SR{'greg', 'eg1 ' + (i << 8), 0};
+        registerGroupModSource(e, egSource[i], "Group EG", "GEG" + std::to_string(i + 1));
+    }
 
     for (int i = 0; i < randomsPerGroupOrZone; ++i)
         registerGroupModSource(
@@ -317,8 +321,8 @@ void GroupMatrixEndpoints::Sources::bind(scxt::modulation::GroupMatrix &m, engin
         m.bindSourceValue(macroSources.macros[i], part->macros[i].value);
     }
 
-    m.bindSourceValue(egSource[0], g.eg[0].outBlock0);
-    m.bindSourceValue(egSource[1], g.eg[1].outBlock0);
+    for (int i = 0; i < egsPerGroup; ++i)
+        m.bindSourceValue(egSource[i], g.eg[i].outBlock0);
 
     for (int i = 0; i < scxt::randomsPerGroupOrZone; ++i)
     {

@@ -172,7 +172,7 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(EditScreen *parent
     parent->addChildComponent(*modPane);
     parent->addChildComponent(*routingPane);
 
-    for (int i = 0; i < scxt::egsPerGroup; ++i)
+    for (int i = 0; i < (int)eg.size(); ++i)
     {
         auto egt = std::make_unique<edit_screen::AdsrPane>(parent->editor, i, forZone);
         eg[i] = std::move(egt);
@@ -196,7 +196,6 @@ EditScreen::ZoneOrGroupElements<ZGTrait>::ZoneOrGroupElements(EditScreen *parent
     {
         lfo->setTabsForGLFO();
         eg[0]->setName("GRP EG1");
-        eg[1]->setName("GRP EG2");
 
         theme.applyGroupMultiScreenTheme(routingPane.get());
         for (const auto &p : processors)
@@ -282,13 +281,20 @@ void EditScreen::onOtherTabSelection()
             zoneElements->lfo->selectTab(zt);
     }
 
+    // eg[1] tabs EG2 up, so its tab 0 is the first restorable one
     auto zeg = editor->queryTabSelection(tabKey("multi.zone.eg"));
     if (!zeg.empty())
     {
         auto zt = std::atoi(zeg.c_str());
-        // eg[1] tabs EG2 up, so its tab 0 is the first restorable one
         if (zt >= 0 && zt < (int)zoneElements->eg[1]->tabNames.size())
             zoneElements->eg[1]->selectTab(zt);
+    }
+    auto geg = editor->queryTabSelection(tabKey("multi.group.eg"));
+    if (!geg.empty())
+    {
+        auto gt = std::atoi(geg.c_str());
+        if (gt >= 0 && gt < (int)groupElements->eg[1]->tabNames.size())
+            groupElements->eg[1]->selectTab(gt);
     }
 
     auto mts = editor->queryTabSelection(tabKey("multi.mapping"));

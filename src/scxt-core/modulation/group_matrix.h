@@ -342,7 +342,7 @@ struct GroupMatrixEndpoints
             SR modWheelSource, chanATSource, pbpm1Source;
         } midiSources;
 
-        SR egSource[2];
+        std::array<SR, egsPerGroup> egSource;
         scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', registerGroupModSource>
             transportSources;
         scxt::modulation::shared::RNGSourceBase<SR, 'grng'> rngSources;

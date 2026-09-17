@@ -92,14 +92,18 @@ void SCXTEditorReceiver::onGroupOrZoneEnvelopeUpdated(
     }
     else
     {
+        // GEG2 up share the tabbed second pane, as the zone EGs do
+        auto &egPane = editor.editScreen->getGroupElements()->eg[which == 0 ? 0 : 1];
         if (active)
         {
-            // TODO - do I want a multiScreen->onEnvelopeUpdated or just
-            editor.editScreen->getGroupElements()->eg[which]->adsrChangedFromModel(env);
+            if (which == 0)
+                egPane->adsrChangedFromModel(env);
+            else
+                egPane->adsrChangedFromModel(env, which);
         }
         else
         {
-            editor.editScreen->getGroupElements()->eg[which]->adsrDeactivated();
+            egPane->adsrDeactivated();
         }
     }
 }
