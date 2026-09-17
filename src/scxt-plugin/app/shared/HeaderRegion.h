@@ -120,6 +120,7 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     void showMultiSelectionMenu();
 
     void addResetMenuItems(juce::PopupMenu &menu);
+    void doChooseStartupPatch();
 
     void setShowUndoRedo(bool show);
 

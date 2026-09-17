@@ -50,7 +50,11 @@ bool loadMulti(const fs::path &fromFile, scxt::engine::Engine &);
 bool savePart(const fs::path &toFile, scxt::engine::Engine &, int part, SaveStyles saveStyles);
 bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
 
+static constexpr const char *emptyEngineResource{"InitSampler.dat"};
 bool initFromResourceBundle(scxt::engine::Engine &e, const std::string &file);
+
+// startup multi, or a startup part into part 1 of an empty engine; false if none is set
+bool initFromStartupPatch(scxt::engine::Engine &e);
 
 // use -1 for all parts; nullopt means the collect failed and an error was raised
 std::optional<std::unordered_map<SampleID, fs::path>>

@@ -52,6 +52,7 @@
 
 #include "cmrc/cmrc.hpp"
 #include "browser/browser.h"
+#include "infrastructure/user_defaults.h"
 
 CMRC_DECLARE(scxt_resources_core);
 
@@ -871,6 +872,8 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
     }
     else
     {
+        // audio can start before the serialization thread notices
+        engine.stopEngineRequests++;
         try
         {
             engine.immediatelyTerminateAllVoices();
@@ -880,6 +883,53 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
         {
             SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
         }
+        engine.stopEngineRequests--;
+    }
+    return true;
+}
+
+bool initFromStartupPatch(scxt::engine::Engine &engine)
+{
+    auto &defaults = *engine.defaults;
+    auto pathString =
+        defaults.getUserDefaultValue(infrastructure::DefaultKeys::startupPatchPath, std::string());
+    if (pathString.empty())
+        return false;
+
+    auto p = fs::path(fs::u8path(pathString));
+    auto isMulti = extensionMatches(p, ".scm");
+    auto isPart = extensionMatches(p, ".scp");
+
+    bool present{false};
+    try
+    {
+        present = (isMulti || isPart) && fs::is_regular_file(p);
+    }
+    catch (const fs::filesystem_error &)
+    {
+    }
+
+    if (present)
+    {
+        if (isMulti)
+        {
+            present = loadMulti(p, engine);
+        }
+        else
+        {
+            initFromResourceBundle(engine, emptyEngineResource);
+            present = loadPartInto(p, engine, 0);
+        }
+    }
+
+    if (!present)
+    {
+        RAISE_ERROR_ENGINE(engine, "Startup Patch Unavailable",
+                           "Unable to load startup patch '" + pathString +
+                               "'. Starting with an empty engine and clearing the startup patch.");
+        defaults.updateUserDefaultValueOrOverride(infrastructure::DefaultKeys::startupPatchPath,
+                                                  std::string());
+        initFromResourceBundle(engine, emptyEngineResource);
     }
     return true;
 }
@@ -899,6 +949,74 @@ std::optional<std::pair<std::string, std::string>> retrieveSCManifestAndPayload(
     {
         SCLOG_IF(patchIO, "RIFF::Exception " << e.Message);
         return std::nullopt;
+    }
+}
+
+// the audio thread must be stopped around both of these
+static void unstreamMultiPayload(scxt::engine::Engine &engine, const std::string &payload,
+                                 const fs::path &multiPath,
+                                 const std::vector<fs::path> &monolithBinaryIndex)
+{
+    auto &sm = *engine.getSampleManager();
+    try
+    {
+        auto g = messaging::MessageController::ClientActivityNotificationGuard(
+            "Loading Multi from " + multiPath.filename().u8string(),
+            *engine.getMessageController());
+
+        sm.setRelativeRoot(multiPath.parent_path());
+        sm.setMonolithBinaryIndex(multiPath, monolithBinaryIndex);
+        engine.immediatelyTerminateAllVoices();
+        scxt::json::unstreamEngineState(engine, payload, true);
+        sm.clearReparenting();
+        sm.clearMonolithBinaryIndex();
+        sm.purgeUnreferencedSamples();
+    }
+    catch (std::exception &err)
+    {
+        SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
+        RAISE_ERROR_ENGINE(engine, "Unable to load Multi", err.what());
+        sm.clearReparenting();
+        sm.clearMonolithBinaryIndex();
+    }
+}
+
+static void unstreamPartPayload(scxt::engine::Engine &engine, int part, const std::string &payload,
+                                const fs::path &partPath,
+                                const std::vector<fs::path> &monolithBinaryIndex)
+{
+    auto &smgr = *engine.getSampleManager();
+    try
+    {
+        auto pg = messaging::MessageController::ClientActivityNotificationGuard(
+            "Loading Part from " + partPath.filename().u8string(), *engine.getMessageController());
+
+        smgr.setRelativeRoot(partPath.parent_path());
+        smgr.setMonolithBinaryIndex(partPath, monolithBinaryIndex);
+        engine.immediatelyTerminateAllVoices();
+        scxt::json::unstreamPartState(engine, part, payload, true);
+        smgr.clearReparenting();
+        smgr.purgeUnreferencedSamples();
+        smgr.clearMonolithBinaryIndex();
+
+        auto &pt = engine.getPatch()->getPart(part);
+        auto &sm = engine.getSelectionManager();
+        // Only default-select group 0 when loading into the active part AND
+        // the stream didn't restore a selection of its own. SCPs from
+        // 0x2026'05'29 on carry a per-part selection slice; clobbering it
+        // here would lose the saved selection.
+        if (!pt->getGroups().empty() && part == sm->selectedPart &&
+            !sm->currentLeadZone(engine).has_value() && !sm->currentLeadGroup(engine).has_value())
+        {
+            sm->applySelectActions({part, 0, -1});
+        }
+    }
+    catch (std::exception &err)
+    {
+        SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
+        RAISE_ERROR_ENGINE(engine, "Unable to load Part", err.what());
+        smgr.clearReparenting();
+        smgr.clearMonolithBinaryIndex();
     }
 }
 
@@ -929,43 +1047,17 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
     {
         cont->stopAudioThreadThenRunOnSerial(
             [payload, multiPath = p, monolithBinaryIndex, &nonconste = engine](auto &e) {
-                try
-                {
-                    auto g = messaging::MessageController::ClientActivityNotificationGuard(
-                        "Loading Multi from " + multiPath.filename().u8string(),
-                        *nonconste.getMessageController());
-
-                    nonconste.getSampleManager()->setRelativeRoot(multiPath.parent_path());
-                    nonconste.getSampleManager()->setMonolithBinaryIndex(multiPath,
-                                                                         monolithBinaryIndex);
-                    nonconste.immediatelyTerminateAllVoices();
-                    scxt::json::unstreamEngineState(nonconste, payload, true);
-                    nonconste.getSampleManager()->clearReparenting();
-                    nonconste.getSampleManager()->clearMonolithBinaryIndex();
-                    nonconste.getSampleManager()->purgeUnreferencedSamples();
-                }
-                catch (std::exception &err)
-                {
-                    SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
-                    RAISE_ERROR_ENGINE(e, "Unable to load Multi", err.what());
-                    nonconste.getSampleManager()->clearReparenting();
-                    nonconste.getSampleManager()->clearMonolithBinaryIndex();
-                }
+                unstreamMultiPayload(nonconste, payload, multiPath, monolithBinaryIndex);
                 // Always restart, else a failed load leaves audio permanently stopped.
                 e.getMessageController()->restartAudioThreadFromSerial();
             });
     }
     else
     {
-        try
-        {
-            engine.immediatelyTerminateAllVoices();
-            scxt::json::unstreamEngineState(engine, payload, true);
-        }
-        catch (std::exception &err)
-        {
-            SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
-        }
+        // audio can start before the serialization thread notices
+        engine.stopEngineRequests++;
+        unstreamMultiPayload(engine, payload, p, monolithBinaryIndex);
+        engine.stopEngineRequests--;
     }
     return true;
 }
@@ -996,59 +1088,19 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
     auto &cont = engine.getMessageController();
     if (cont->isAudioRunning)
     {
-        cont->stopAudioThreadThenRunOnSerial([payload, multiPath = p, relP = p.parent_path(),
-                                              monolithBinaryIndex, part,
-                                              &nonconste = engine](auto &e) {
-            try
-            {
-                auto pg = messaging::MessageController::ClientActivityNotificationGuard(
-                    "Loading Part from " + multiPath.filename().u8string(),
-                    *nonconste.getMessageController());
-
-                nonconste.getSampleManager()->setRelativeRoot(relP);
-                nonconste.getSampleManager()->setMonolithBinaryIndex(multiPath,
-                                                                     monolithBinaryIndex);
-                nonconste.immediatelyTerminateAllVoices();
-                scxt::json::unstreamPartState(nonconste, part, payload, true);
-                nonconste.getSampleManager()->clearReparenting();
-                nonconste.getSampleManager()->purgeUnreferencedSamples();
-                nonconste.getSampleManager()->clearMonolithBinaryIndex();
-
-                auto &pt = nonconste.getPatch()->getPart(part);
-                auto &sm = nonconste.getSelectionManager();
-                // Only default-select group 0 when loading into the active part AND
-                // the stream didn't restore a selection of its own. SCPs from
-                // 0x2026'05'29 on carry a per-part selection slice; clobbering it
-                // here would lose the saved selection.
-                if (!pt->getGroups().empty() && part == sm->selectedPart &&
-                    !sm->currentLeadZone(nonconste).has_value() &&
-                    !sm->currentLeadGroup(nonconste).has_value())
-                {
-                    sm->applySelectActions({part, 0, -1});
-                }
-            }
-            catch (std::exception &err)
-            {
-                SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
-                RAISE_ERROR_ENGINE(e, "Unable to load Part", err.what());
-                nonconste.getSampleManager()->clearReparenting();
-                nonconste.getSampleManager()->clearMonolithBinaryIndex();
-            }
-            // Always restart, else a failed load leaves audio permanently stopped.
-            e.getMessageController()->restartAudioThreadFromSerial();
-        });
+        cont->stopAudioThreadThenRunOnSerial(
+            [payload, partPath = p, monolithBinaryIndex, part, &nonconste = engine](auto &e) {
+                unstreamPartPayload(nonconste, part, payload, partPath, monolithBinaryIndex);
+                // Always restart, else a failed load leaves audio permanently stopped.
+                e.getMessageController()->restartAudioThreadFromSerial();
+            });
     }
     else
     {
-        try
-        {
-            engine.immediatelyTerminateAllVoices();
-            scxt::json::unstreamPartState(engine, part, payload, true);
-        }
-        catch (std::exception &err)
-        {
-            SCLOG_IF(patchIO, "Unable to load [" << err.what() << "]");
-        }
+        // audio can start before the serialization thread notices
+        engine.stopEngineRequests++;
+        unstreamPartPayload(engine, part, payload, p, monolithBinaryIndex);
+        engine.stopEngineRequests--;
     }
 
     return true;
