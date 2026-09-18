@@ -33,6 +33,7 @@
 #include "sample/import_support/import_mapping.h"
 #include "sample/import_support/import_loop.h"
 #include "sample/import_support/import_numeric.h"
+#include "sample/import_support/import_variant_fold.h"
 #include "tinyxml/tinyxml.h"
 
 #include <miniz.h>
@@ -105,8 +106,19 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
 
     std::vector<int> addedGroupIndices;
 
+    // zones are built first and placed after the walk, so a round-robin set can
+    // be folded into one zone's variants once all of its members are known
+    struct PendingZone
+    {
+        int groupId;
+        bool roundRobin;
+        int sequencePosition;
+        std::unique_ptr<engine::Zone> zone;
+    };
+    std::vector<PendingZone> pending;
+
     auto addSampleFromElement = [&p, &ctx, &engine, &zip_archive, &fileToIndex, &addedGroupIndices,
-                                 &md5](TiXmlElement *fc, int32_t group_index = -1) {
+                                 &pending, &md5](TiXmlElement *fc, int32_t group_index = -1) {
         /*
          * <sample file="60 Clavinet E5 05.wav" gain="-0.96" group="4" parameter-1="0.0000"
     parameter-2="0.0000" parameter-3="0.0000" reverse="false" sample-start="0.000"
@@ -219,6 +231,11 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         if (rev)
             reverse = std::string(rev) == "true";
 
+        auto zl = fc->Attribute("zone-logic");
+        bool roundRobin = zl && std::string(zl) == "round-robin";
+        int sequencePosition{-1};
+        fc->QueryIntAttribute("round-robin", &sequencePosition);
+
         auto group_id = group_index;
         if (group_index == -1)
         {
@@ -282,7 +299,7 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
         variant.playReverse = reverse;
         variant.amplitude = import_support::dBToCubicAttenuation(gainDb);
 
-        ctx.addZoneToGroup(group_id, std::move(z));
+        pending.push_back({group_id, roundRobin, sequencePosition, std::move(z)});
 
         return true;
     };
@@ -332,6 +349,38 @@ bool importMultisample(const fs::path &p, engine::Engine &engine)
             ctx.unsupported("multisample field", eln);
         }
         fc = fc->NextSiblingElement();
+    }
+
+    std::map<int, std::vector<import_support::FoldableZone>> roundRobinByGroup;
+    for (auto &pz : pending)
+    {
+        if (pz.roundRobin)
+            roundRobinByGroup[pz.groupId].push_back({std::move(pz.zone), pz.sequencePosition});
+    }
+
+    std::map<int, std::vector<std::unique_ptr<engine::Zone>>> foldedByGroup;
+    for (auto &[gid, zones] : roundRobinByGroup)
+    {
+        foldedByGroup[gid] = import_support::foldZonesToVariants(
+            ctx, std::move(zones), engine::Zone::VariantPlaybackMode::FORWARD_RR);
+    }
+
+    // the folded set lands where the group's first round-robin sample was, so
+    // mixing round-robin and always-play in one group keeps document order
+    for (auto &pz : pending)
+    {
+        if (!pz.roundRobin)
+        {
+            ctx.addZoneToGroup(pz.groupId, std::move(pz.zone));
+            continue;
+        }
+
+        auto it = foldedByGroup.find(pz.groupId);
+        if (it == foldedByGroup.end())
+            continue;
+        for (auto &z : it->second)
+            ctx.addZoneToGroup(pz.groupId, std::move(z));
+        foldedByGroup.erase(it);
     }
 
     mz_zip_reader_end(&zip_archive);

@@ -36,6 +36,7 @@ add_library(${PROJECT_NAME} STATIC
         sample/import_support/import_harness.cpp
         sample/import_support/import_mapping.cpp
         sample/import_support/import_loop.cpp
+        sample/import_support/import_variant_fold.cpp
         sample/import_support/import_envelope.cpp
         sample/import_support/import_filter.cpp
         sample/import_support/import_generator.cpp

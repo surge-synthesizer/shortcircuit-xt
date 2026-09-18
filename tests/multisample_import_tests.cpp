@@ -391,3 +391,115 @@ TEST_CASE("multisample reads tune from the sample element", "[importer][multisam
 
     CHECK(f.onlyZone().mapping.pitchOffset == Approx(3.f));
 }
+
+namespace
+{
+// A group holding several <sample> elements, each supplied whole.
+std::string manySamples(const std::vector<std::string> &samples)
+{
+    std::string x = R"(<?xml version="1.0" encoding="UTF-8"?>
+<multisample name="T">
+   <group name="G"/>
+)";
+    for (const auto &s : samples)
+        x += s + "\n";
+    return x + "</multisample>";
+}
+
+std::string rrSample(const std::string &file, const std::string &extraAttrs = "")
+{
+    return "<sample file=\"" + file + "\" group=\"0\" zone-logic=\"round-robin\" " + extraAttrs +
+           "><key root=\"60\" low=\"48\" high=\"72\"/><velocity/></sample>";
+}
+
+int activeVariants(const scxt::engine::Zone &z)
+{
+    int n = 0;
+    for (const auto &v : z.variantData.variants)
+        if (v.active)
+            ++n;
+    return n;
+}
+} // namespace
+
+TEST_CASE("multisample round-robin samples fold into one zone's variants",
+          "[importer][multisample]")
+{
+    auto p = buildMultisample("rr_basic", manySamples({rrSample("A.wav"), rrSample("B.wav")}),
+                              {{"A.wav", 1000}, {"B.wav", 1000}});
+    Fixture f;
+    f.load(p);
+
+    auto &z = f.onlyZone();
+    CHECK(activeVariants(z) == 2);
+    CHECK(z.variantData.variantPlaybackMode == scxt::engine::Zone::VariantPlaybackMode::FORWARD_RR);
+}
+
+TEST_CASE("multisample round-robin honours the round-robin index order", "[importer][multisample]")
+{
+    // document order B then A, but the indices say A comes first
+    auto p = buildMultisample("rr_order",
+                              manySamples({rrSample("B.wav", R"(round-robin="1")"),
+                                           rrSample("A.wav", R"(round-robin="0")")}),
+                              {{"A.wav", 1000}, {"B.wav", 1000}});
+    Fixture f;
+    f.load(p);
+
+    auto &z = f.onlyZone();
+    REQUIRE(activeVariants(z) == 2);
+    CHECK(z.givenName == "A.wav");
+}
+
+TEST_CASE("multisample round-robin does not fold differing geometry", "[importer][multisample]")
+{
+    auto lowZone = R"(<sample file="A.wav" group="0" zone-logic="round-robin">)"
+                   R"(<key root="60" low="48" high="60"/><velocity/></sample>)";
+    auto highZone = R"(<sample file="B.wav" group="0" zone-logic="round-robin">)"
+                    R"(<key root="72" low="61" high="72"/><velocity/></sample>)";
+    auto p = buildMultisample("rr_geom", manySamples({lowZone, highZone}),
+                              {{"A.wav", 1000}, {"B.wav", 1000}});
+    Fixture f;
+    f.load(p);
+
+    auto &groups = f.part0().getGroups();
+    REQUIRE(groups.size() == 1);
+    CHECK(groups[0]->getZones().size() == 2);
+}
+
+TEST_CASE("multisample always-play samples stay separate zones", "[importer][multisample]")
+{
+    auto a = R"(<sample file="A.wav" group="0" zone-logic="always-play">)"
+             R"(<key root="60" low="48" high="72"/><velocity/></sample>)";
+    auto b = R"(<sample file="B.wav" group="0" zone-logic="always-play">)"
+             R"(<key root="60" low="48" high="72"/><velocity/></sample>)";
+    auto p = buildMultisample("rr_always", manySamples({a, b}), {{"A.wav", 1000}, {"B.wav", 1000}});
+    Fixture f;
+    f.load(p);
+
+    auto &groups = f.part0().getGroups();
+    REQUIRE(groups.size() == 1);
+    CHECK(groups[0]->getZones().size() == 2);
+}
+
+TEST_CASE("multisample round-robin beyond the variant limit spills to another zone",
+          "[importer][multisample]")
+{
+    std::vector<std::string> samples;
+    std::vector<WavSpec> wavs;
+    for (int i = 0; i < scxt::maxVariantsPerZone + 3; ++i)
+    {
+        auto nm = "S" + std::to_string(i) + ".wav";
+        samples.push_back(rrSample(nm));
+        wavs.push_back({nm, 1000});
+    }
+    auto p = buildMultisample("rr_overflow", manySamples(samples), wavs);
+    Fixture f;
+    f.load(p);
+
+    auto &groups = f.part0().getGroups();
+    REQUIRE(groups.size() == 1);
+    auto &zones = groups[0]->getZones();
+    REQUIRE(zones.size() == 2);
+    CHECK(activeVariants(*zones[0]) == scxt::maxVariantsPerZone);
+    CHECK(activeVariants(*zones[1]) == 3);
+}
