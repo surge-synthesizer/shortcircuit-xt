@@ -376,6 +376,8 @@ void SCXTEditorReceiver::onSelectedPart(const int16_t p)
         editor.editScreen->selectedPartChanged();
         editor.editScreen->onOtherTabSelection();
     }
+    if (editor.headerRegion)
+        editor.headerRegion->refreshName();
 
     editor.repaint();
 }
@@ -588,6 +590,31 @@ void SCXTEditorReceiver::onPartConfiguration(
         editor.editScreen->partSidebar->partConfigurationChanged(pt);
     if (editor.editScreen && editor.editScreen->partEditScreen)
         editor.editScreen->partEditScreen->partKeySwitchStateChanged(pt);
+}
+
+void SCXTEditorReceiver::onPatchFiles(const scxt::messaging::client::patchFilesPayload_t &payload)
+{
+    editor.patchFiles = payload;
+    if (editor.headerRegion)
+        editor.headerRegion->refreshName(true);
+}
+
+void SCXTEditorReceiver::onPartNames(const scxt::messaging::client::partNamesPayload_t &payload)
+{
+    const auto &[pt, n] = payload;
+    assert(pt >= 0 && pt < scxt::numParts);
+    editor.partNames[pt] = n;
+
+    if (editor.playScreen)
+    {
+        if (editor.playScreen->partSidebars[pt])
+            editor.playScreen->partSidebars[pt]->resetFromEditorCache();
+        editor.playScreen->partConfigurationChanged();
+    }
+    if (editor.editScreen && editor.editScreen->partSidebar)
+        editor.editScreen->partSidebar->partConfigurationChanged(pt);
+    if (editor.headerRegion && pt == editor.selectedPart)
+        editor.headerRegion->refreshName();
 }
 
 void SCXTEditorReceiver::onActivityNotification(

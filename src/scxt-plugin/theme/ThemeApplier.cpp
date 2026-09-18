@@ -41,6 +41,7 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/NameJogLabel.h"
 #include "sst/jucegui/components/VUMeter.h"
 #include "sst/jucegui/components/ScrollBar.h"
 #include "sst/jucegui/components/TabbedComponent.h"
@@ -330,6 +331,7 @@ void ThemeApplier::applyHeaderTheme(juce::Component *toThis)
     map.addCustomClass<jcmp::TextPushButton>(detail::header::TextPushButton);
     map.addCustomClass<jcmp::ToggleButton>(detail::header::ToggleButton);
     map.addCustomClass<jcmp::MenuButton>(detail::header::MenuButton);
+    map.addCustomClass<jcmp::NameJogLabel>(detail::header::MenuButton);
     map.addCustomClass<jcmp::GlyphButton>(detail::header::GlyphButton);
     map.applyMapTo(toThis);
 }

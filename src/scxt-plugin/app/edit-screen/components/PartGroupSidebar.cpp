@@ -41,6 +41,8 @@
 #include "GroupSettingsCard.h"
 #include "GroupTriggersCard.h"
 #include "app/shared/PartSidebarCard.h"
+#include "app/shared/HeaderRegion.h"
+#include "app/shared/PatchMultiIO.h"
 #include "app/shared/SampleDropHandler.h"
 
 namespace scxt::ui::app::edit_screen
@@ -458,6 +460,16 @@ struct PartSidebar : juce::Component,
     }
 };
 
+// a part which has been named says so; one which hasn't is just its number
+inline std::string partSelectorLabel(SCXTEditor *editor, int part)
+{
+    auto res = "Part " + std::to_string(part + 1);
+    std::string nm = editor->partNames[part].name;
+    if (!nm.empty() && nm != engine::Part::PartNames::defaultName)
+        res += ": " + nm;
+    return res;
+}
+
 template <typename T, bool forZone>
 struct GroupZoneSidebarBase : juce::Component,
                               HasEditor,
@@ -679,7 +691,7 @@ struct GroupZoneSidebarBase : juce::Component,
             if (w)
                 w->jogSelectedPart(dir);
         });
-        partSelector->setLabel("Part 1");
+        partSelector->setLabel(partSelectorLabel(editor, 0));
         addAndMakeVisible(*partSelector);
     }
 
@@ -711,7 +723,7 @@ struct GroupZoneSidebarBase : juce::Component,
         {
             if (editor->partConfigurations[i].active)
             {
-                p.addItem("Part " + std::to_string(i + 1), true, i == editor->selectedPart,
+                p.addItem(partSelectorLabel(editor, i), true, i == editor->selectedPart,
                           [w = juce::Component::SafePointer(this), index = i]() {
                               if (!w)
                                   return;
@@ -722,7 +734,7 @@ struct GroupZoneSidebarBase : juce::Component,
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 
-    void showSelectedPart(int part) { partSelector->setLabel("Part " + std::to_string(part + 1)); }
+    void showSelectedPart(int part) { partSelector->setLabel(partSelectorLabel(editor, part)); }
 
     juce::Rectangle<int> baseResize()
     {
@@ -1218,6 +1230,9 @@ void PartGroupSidebar::setSelectedTab(int t)
 
     editor->setTabSelection(editor->editScreen->tabKey("multi.pgz"),
                             (t == 0 ? "part" : (t == 1 ? "group" : "zone")));
+    // the header names the multi on the parts tab and the part on the others
+    if (editor->headerRegion)
+        editor->headerRegion->refreshName();
     repaint();
 }
 
@@ -1225,6 +1240,15 @@ void PartGroupSidebar::partConfigurationChanged(int i)
 {
     partSidebar->parts[i]->resetFromEditorCache();
     partSidebar->restackForActive();
+
+    // the group and zone tabs name the part they are showing
+    if (i == editor->selectedPart)
+    {
+        if (groupSidebar)
+            groupSidebar->showSelectedPart(i);
+        if (zoneSidebar)
+            zoneSidebar->showSelectedPart(i);
+    }
 }
 
 void PartGroupSidebar::groupTriggerConditionChanged(const scxt::engine::GroupTriggerConditions &c)
@@ -1263,6 +1287,10 @@ void PartGroupSidebar::showHamburgerMenu()
     if (selectedTab == 0)
     {
         auto p = juce::PopupMenu();
+        p.addSectionHeader("Part " + std::to_string(editor->selectedPart + 1));
+        p.addSeparator();
+        shared::populatePartIOMenu(this, p, editor->selectedPart);
+        p.addSeparator();
         p.addSectionHeader("Part Options");
         p.addSeparator();
         p.addItem("Expanded Display", true, partSidebar->tallMode,

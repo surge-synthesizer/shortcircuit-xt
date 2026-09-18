@@ -26,6 +26,8 @@
  */
 
 #include <fstream>
+#include <map>
+#include <optional>
 #include <set>
 
 #include "tao/json/to_string.hpp"
@@ -685,6 +687,10 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
 
         f->Save(riffPath.u8string());
 
+        // the multi is now named for the file it lives in
+        e.getSelectionManager()->setMultiFile(riffPath, style == SaveStyles::AS_MONOLITH);
+        e.getSelectionManager()->sendPatchFilesToClient();
+
         if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
         {
             e.getSampleManager()->clearReparenting();
@@ -722,6 +728,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
     fs::path riffPath = p;
     fs::path collectDir;
     std::string reparentInto;
+    auto priorName = e.getPatch()->getPart(part)->names;
 
     e.getSampleManager()->remapIds.clear();
     e.prepareToStream();
@@ -773,6 +780,12 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
 
         auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_PART);
         auto &pt = e.getPatch()->getPart(part);
+
+        // the part takes the name of the file, and the file carries it
+        auto priorName = pt->names;
+        auto stem = riffPath.filename().replace_extension("").u8string();
+        snprintf(pt->names.name, sizeof(pt->names.name), "%s", stem.c_str());
+
         auto &rid = e.getSampleManager()->remapIds;
         std::map<engine::Zone::SingleVariant *, SampleID> origIds;
         for (auto &g : *pt)
@@ -816,6 +829,10 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
 
         f->Save(riffPath.u8string());
 
+        e.getSelectionManager()->setPartFile(part, riffPath, style == SaveStyles::AS_MONOLITH);
+        e.getSelectionManager()->sendPatchFilesToClient();
+        e.sendPartNamesToClient(part);
+
         if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
         {
             e.getSampleManager()->clearReparenting();
@@ -832,9 +849,37 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
         if (style == SaveStyles::WITH_COLLECTED_SAMPLES)
             e.getSampleManager()->clearReparenting();
         e.getSampleManager()->remapIds.clear();
+        e.getPatch()->getPart(part)->names = priorName;
         return false;
     }
     return true;
+}
+
+/*
+ * A reset comes up untitled, so the first save has to ask where to put it. The
+ * built-in templates carry a name anyway, and their parts start out unnamed.
+ */
+void recordResetEngine(scxt::engine::Engine &e, const std::string &file)
+{
+    static const std::map<std::string, std::string> templateNames{
+        {"InitSampler.dat", "Init"},
+        {"InitSamplerMulti.dat", "Init 16 Part"},
+        {"InitSynth.dat", "Init Synth"}};
+
+    selection::SelectionManager::PatchFiles pf;
+    auto it = templateNames.find(file);
+    if (it != templateNames.end())
+        pf.multiName = it->second;
+    e.getSelectionManager()->setPatchFiles(std::move(pf));
+
+    for (auto &part : *(e.getPatch()))
+        part->names.setName(engine::Part::PartNames::defaultName);
+    if (file == "InitSynth.dat")
+        e.getPatch()->getPart(0)->names.setName("Synth");
+
+    e.getSelectionManager()->sendPatchFilesToClient();
+    for (int16_t p = 0; p < (int16_t)numParts; ++p)
+        e.sendPartNamesToClient(p);
 }
 
 bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &file)
@@ -856,11 +901,12 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
     auto &cont = engine.getMessageController();
     if (cont->isAudioRunning)
     {
-        cont->stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
+        cont->stopAudioThreadThenRunOnSerial([payload, file, &nonconste = engine](auto &e) {
             try
             {
                 nonconste.immediatelyTerminateAllVoices();
                 scxt::json::unstreamEngineState(nonconste, payload, true);
+                recordResetEngine(nonconste, file);
             }
             catch (std::exception &err)
             {
@@ -878,6 +924,7 @@ bool initFromResourceBundle(scxt::engine::Engine &engine, const std::string &fil
         {
             engine.immediatelyTerminateAllVoices();
             scxt::json::unstreamEngineState(engine, payload, true);
+            recordResetEngine(engine, file);
         }
         catch (std::exception &err)
         {
@@ -952,6 +999,85 @@ std::optional<std::pair<std::string, std::string>> retrieveSCManifestAndPayload(
     }
 }
 
+/*
+ * A multi carries the screen and tab it was saved on, but loading one shouldn't
+ * move you: you were looking at something for a reason. The part you were on is
+ * kept too, unless the multi you just loaded has nothing there.
+ */
+struct ClientViewAcrossLoad
+{
+    selection::SelectionManager::otherTabSelection_t tabs;
+    int16_t selectedPart{0};
+
+    static ClientViewAcrossLoad capture(const scxt::engine::Engine &e)
+    {
+        const auto &sm = e.getSelectionManager();
+        return {sm->otherTabSelection, sm->selectedPart};
+    }
+
+    void restore(scxt::engine::Engine &e) const
+    {
+        // nothing was on screen to preserve, as at startup, so let the file decide
+        if (tabs.empty())
+            return;
+
+        const auto &sm = e.getSelectionManager();
+        for (const auto &k : {"main_screen", "multi.pgz"})
+        {
+            auto p = tabs.find(k);
+            if (p != tabs.end())
+                sm->otherTabSelection[k] = p->second;
+        }
+        sm->sendOtherTabsSelectionToClient();
+
+        if (selectedPart != sm->selectedPart &&
+            e.getPatch()->getPart(selectedPart)->configuration.active)
+        {
+            sm->selectPart(selectedPart);
+        }
+    }
+};
+
+/*
+ * The multi is named for the file it came from. A part path that no longer resolves
+ * is pointed at the multi's own folder, which is where a shared multi's parts sit if
+ * they are anywhere, and keeps the name the part was saved under.
+ */
+void recordLoadedMulti(scxt::engine::Engine &e, const fs::path &p, bool monolith)
+{
+    auto &sm = e.getSelectionManager();
+    auto pf = sm->getPatchFiles();
+    pf.multi = {p, monolith};
+    pf.multiName = p.filename().replace_extension("").u8string();
+    for (auto &part : pf.parts)
+    {
+        if (part.path.empty())
+            continue;
+        try
+        {
+            if (!fs::is_directory(part.path.parent_path()))
+                part.path = p.parent_path() / part.path.filename();
+        }
+        catch (const fs::filesystem_error &)
+        {
+            part.path = fs::path{};
+        }
+    }
+    sm->setPatchFiles(std::move(pf));
+    sm->sendPatchFilesToClient();
+}
+
+void recordLoadedPart(scxt::engine::Engine &e, int part, const fs::path &p, bool monolith)
+{
+    auto &pt = e.getPatch()->getPart(part);
+    auto stem = p.filename().replace_extension("").u8string();
+    snprintf(pt->names.name, sizeof(pt->names.name), "%s", stem.c_str());
+
+    e.getSelectionManager()->setPartFile(part, p, monolith);
+    e.getSelectionManager()->sendPatchFilesToClient();
+    e.sendPartNamesToClient(part);
+}
+
 // the audio thread must be stopped around both of these
 static void unstreamMultiPayload(scxt::engine::Engine &engine, const std::string &payload,
                                  const fs::path &multiPath,
@@ -971,6 +1097,7 @@ static void unstreamMultiPayload(scxt::engine::Engine &engine, const std::string
         sm.clearReparenting();
         sm.clearMonolithBinaryIndex();
         sm.purgeUnreferencedSamples();
+        recordLoadedMulti(engine, multiPath, !monolithBinaryIndex.empty());
     }
     catch (std::exception &err)
     {
@@ -1010,6 +1137,7 @@ static void unstreamPartPayload(scxt::engine::Engine &engine, int part, const st
         {
             sm->applySelectActions({part, 0, -1});
         }
+        recordLoadedPart(engine, part, partPath, !monolithBinaryIndex.empty());
     }
     catch (std::exception &err)
     {
@@ -1042,12 +1170,15 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
         return false;
     }
 
+    auto priorView = ClientViewAcrossLoad::capture(engine);
+
     auto &cont = engine.getMessageController();
     if (cont->isAudioRunning)
     {
         cont->stopAudioThreadThenRunOnSerial(
-            [payload, multiPath = p, monolithBinaryIndex, &nonconste = engine](auto &e) {
+            [payload, multiPath = p, monolithBinaryIndex, priorView, &nonconste = engine](auto &e) {
                 unstreamMultiPayload(nonconste, payload, multiPath, monolithBinaryIndex);
+                priorView.restore(nonconste);
                 // Always restart, else a failed load leaves audio permanently stopped.
                 e.getMessageController()->restartAudioThreadFromSerial();
             });
@@ -1058,6 +1189,7 @@ bool loadMulti(const fs::path &p, scxt::engine::Engine &engine)
         engine.stopEngineRequests++;
         unstreamMultiPayload(engine, payload, p, monolithBinaryIndex);
         engine.stopEngineRequests--;
+        priorView.restore(engine);
     }
     return true;
 }

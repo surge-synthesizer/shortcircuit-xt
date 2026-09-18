@@ -1212,6 +1212,24 @@ TEST_CASE("Part config undo/redo", "[undo]")
     REQUIRE(part->configuration.channel == 5);
 }
 
+TEST_CASE("Part name undo/redo", "[undo]")
+{
+    UndoFixture f;
+    auto &part = f.engine().getPatch()->getPart(0);
+    auto orig = std::string(part->names.name);
+
+    auto next = part->names;
+    snprintf(next.name, sizeof(next.name), "%s", "Cello Sustain");
+    f.send(cmsg::UpdatePartNames({(int16_t)0, next}), 20);
+    REQUIRE(std::string(part->names.name) == "Cello Sustain");
+
+    f.sendUndo(20);
+    REQUIRE(std::string(part->names.name) == orig);
+
+    f.sendRedo(20);
+    REQUIRE(std::string(part->names.name) == "Cello Sustain");
+}
+
 TEST_CASE("Swap bus fx undo/redo", "[undo]")
 {
     UndoFixture f;

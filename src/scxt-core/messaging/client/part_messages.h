@@ -74,6 +74,24 @@ inline void updatePartFullConfig(const partConfigurationPayload_t &p, engine::En
 CLIENT_TO_SERIAL(UpdatePartFullConfig, c2s_send_full_part_config, partConfigurationPayload_t,
                  updatePartFullConfig(payload, engine, cont));
 
+using partNamesPayload_t = std::pair<int16_t, scxt::engine::Part::PartNames>;
+SERIAL_TO_CLIENT(SendPartNames, s2c_send_part_names, partNamesPayload_t, onPartNames);
+
+inline void updatePartNames(const partNamesPayload_t &p, engine::Engine &e,
+                            messaging::MessageController &cont)
+{
+    auto [pt, names] = p;
+    if (pt < 0 || pt >= scxt::numParts)
+        return;
+    undo::pushPayloadUndoFor<undo::PartNamesSpec>(e, {{pt, -1, -1}}, pt);
+    // no audio code reads these, so the serial thread writes them in place
+    e.getPatch()->getPart(pt)->names = names;
+    e.markDirty();
+    serializationSendToClient(s2c_send_part_names, partNamesPayload_t{pt, names}, cont);
+}
+CLIENT_TO_SERIAL(UpdatePartNames, c2s_update_part_names, partNamesPayload_t,
+                 updatePartNames(payload, engine, cont));
+
 // part, b1, part2 b2, FXSlotDragAction
 using partFxSwap_t = std::tuple<int16_t, int16_t, int16_t, int16_t, int16_t>;
 inline void doPartSwapFX(const partFxSwap_t &payload, engine::Engine &engine,

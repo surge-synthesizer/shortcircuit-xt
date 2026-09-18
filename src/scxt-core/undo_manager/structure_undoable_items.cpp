@@ -538,6 +538,7 @@ void PartStreamRestoreItem::store(engine::Engine &e, int16_t pt, const std::stri
 {
     part = pt;
     label = lbl;
+    partFile = e.getSelectionManager()->getPatchFiles().parts[pt];
     e.prepareToStream();
     auto sg = engine::Engine::StreamGuard(engine::Engine::FOR_PART);
     auto jv = json::scxt_value(*(e.getPatch()->getPart(pt)));
@@ -548,22 +549,26 @@ void PartStreamRestoreItem::restore(engine::Engine &e)
 {
     auto pt = part;
     auto payload = partJSON;
-    e.getMessageController()->stopAudioThreadThenRunOnSerial([pt, payload](const auto &engine) {
-        auto &e = const_cast<engine::Engine &>(engine);
-        try
-        {
-            e.immediatelyTerminateAllVoices();
-            // clears the groups then unstreams and sends a full refresh
-            json::unstreamPartState(e, pt, payload);
-            e.getSelectionManager()->guaranteeConsistencyAfterDeletes(e, true, {pt, -1, -1});
-        }
-        catch (std::exception &err)
-        {
-            RAISE_ERROR_ENGINE(e, "Undo Error",
-                               std::string("Unable to restore part state ") + err.what());
-        }
-        e.getMessageController()->restartAudioThreadFromSerial();
-    });
+    auto pfile = partFile;
+    e.getMessageController()->stopAudioThreadThenRunOnSerial(
+        [pt, payload, pfile](const auto &engine) {
+            auto &e = const_cast<engine::Engine &>(engine);
+            try
+            {
+                e.immediatelyTerminateAllVoices();
+                // clears the groups then unstreams and sends a full refresh
+                json::unstreamPartState(e, pt, payload);
+                e.getSelectionManager()->guaranteeConsistencyAfterDeletes(e, true, {pt, -1, -1});
+                e.getSelectionManager()->setPartFile(pt, pfile.path, pfile.monolith);
+                e.getSelectionManager()->sendPatchFilesToClient();
+            }
+            catch (std::exception &err)
+            {
+                RAISE_ERROR_ENGINE(e, "Undo Error",
+                                   std::string("Unable to restore part state ") + err.what());
+            }
+            e.getMessageController()->restartAudioThreadFromSerial();
+        });
 }
 
 std::unique_ptr<UndoableItem> PartStreamRestoreItem::makeRedo(engine::Engine &e)
@@ -592,6 +597,26 @@ void pushPartStreamUndo(engine::Engine &e, int16_t part, const std::string &labe
 }
 
 // --- EngineStateRestoreItem ---
+
+void MultiRenameItem::store(engine::Engine &e)
+{
+    oldName = e.getSelectionManager()->getPatchFiles().multiName;
+}
+
+void MultiRenameItem::restore(engine::Engine &e)
+{
+    e.getSelectionManager()->setMultiName(oldName);
+    e.getSelectionManager()->sendPatchFilesToClient();
+}
+
+std::unique_ptr<UndoableItem> MultiRenameItem::makeRedo(engine::Engine &e)
+{
+    auto redo = std::make_unique<MultiRenameItem>();
+    redo->store(e);
+    return redo;
+}
+
+std::string MultiRenameItem::describe() const { return "Rename Multi"; }
 
 void EngineStateRestoreItem::store(engine::Engine &e)
 {

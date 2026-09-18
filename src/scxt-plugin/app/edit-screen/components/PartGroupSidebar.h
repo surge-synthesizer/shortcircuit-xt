@@ -75,6 +75,9 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel,
     std::unique_ptr<GroupSidebar> groupSidebar;
     std::unique_ptr<PartSidebar> partSidebar;
 
+    // the hamburger offers the selected part's save and load items
+    std::unique_ptr<juce::FileChooser> fileChooser;
+
     void partConfigurationChanged(int i);
     void groupTriggerConditionChanged(const scxt::engine::GroupTriggerConditions &);
     void noteLearned(int16_t key);

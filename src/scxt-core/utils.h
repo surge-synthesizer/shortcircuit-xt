@@ -454,6 +454,28 @@ inline fs::path guaranteeExtension(const fs::path &p, const std::string &ext)
     return res;
 }
 
+/*
+ * A part or multi name is typed by the user but also used as a filename by a
+ * plain save, so strip what no filesystem we ship on will take. An empty result
+ * means there is no name to save under and the caller has to ask.
+ */
+inline std::string sanitizeFilename(const std::string &n)
+{
+    static const std::string illegal{"/\\:*?\"<>|"};
+    std::string res;
+    for (auto c : n)
+    {
+        if ((unsigned char)c < 0x20 || illegal.find(c) != std::string::npos)
+            continue;
+        res += c;
+    }
+    auto b = res.find_first_not_of(" .");
+    auto e = res.find_last_not_of(" .");
+    if (b == std::string::npos)
+        return {};
+    return res.substr(b, e - b + 1);
+}
+
 inline std::string humanReadableVersion(uint64_t v)
 {
     return fmt::format("{:04x}-{:02x}-{:02x}", (v >> 16) & 0xFFFF, (v >> 8) & 0xFF, v & 0xFF);

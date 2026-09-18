@@ -37,6 +37,19 @@
 
 namespace scxt::messaging::client
 {
+using patchFilesPayload_t = scxt::selection::SelectionManager::PatchFiles;
+SERIAL_TO_CLIENT(SendPatchFiles, s2c_send_patch_files, patchFilesPayload_t, onPatchFiles);
+
+inline void doRenameMulti(const std::string &nm, engine::Engine &engine, MessageController &cont)
+{
+    undo::pushUndo<undo::MultiRenameItem>(engine);
+    // the multi name is display and save-path data; no audio code reads it
+    engine.getSelectionManager()->setMultiName(nm);
+    engine.markDirty();
+    engine.getSelectionManager()->sendPatchFilesToClient();
+}
+CLIENT_TO_SERIAL(RenameMulti, c2s_rename_multi, std::string, doRenameMulti(payload, engine, cont));
+
 using saveMultiPayload_t = std::tuple<std::string, int>; // path, style
 inline void doSaveMulti(const saveMultiPayload_t &pl, engine::Engine &engine,
                         MessageController &cont)

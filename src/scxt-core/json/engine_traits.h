@@ -285,10 +285,7 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                           {"xps", from.transpose},
                           {"rt", (int)from.routeTo},
 
-                          {"nexg", from.numExclusiveGroups},
-
-                          {"nm", std::string(from.name)},
-                          {"bl", std::string(from.blurb)}};
+                          {"nexg", from.numExclusiveGroups}};
                      addUnlessDefault<val_t>(v, "dks", (int16_t)-1, from.defaultKeySwitchKey);),
              SC_TO({
                  int chTmp;
@@ -322,6 +319,11 @@ SC_STREAMDEF(scxt::engine::Part::PartConfiguration,
                  findOrSet(v, "pan", 0, to.pan);
                  findOrSet(v, "tun", 0, to.tuning);
                  findOrSet(v, "xps", 0, to.transpose);
+             }));
+
+SC_STREAMDEF(scxt::engine::Part::PartNames,
+             SC_FROM(v = {{"nm", std::string(from.name)}, {"bl", std::string(from.blurb)}};),
+             SC_TO({
                  std::string bStr;
                  findOrSet(v, "bl", "", bStr);
                  memset(to.blurb, 0, sizeof(to.blurb));
@@ -353,6 +355,7 @@ SC_STREAMDEF(scxt::engine::Part::ZoneMappingItem,
 SC_STREAMDEF(
     scxt::engine::Part, SC_FROM({
         v = {{"config", from.configuration},
+             {"names", from.names},
              {"groups", from.getGroups()},
              {"macros", from.macros},
              {"partEffectStorage", from.partEffectStorage}};
@@ -404,6 +407,16 @@ SC_STREAMDEF(
         else
         {
             findIf(v, "config", part.configuration);
+        }
+
+        if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'09'17))
+        {
+            // name and blurb used to live inside the config object
+            findIf(v, "config", part.names);
+        }
+        else
+        {
+            findIf(v, "names", part.names);
         }
         findIf(v, "macros", part.macros);
 

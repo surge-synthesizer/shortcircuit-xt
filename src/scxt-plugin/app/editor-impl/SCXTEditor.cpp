@@ -200,6 +200,8 @@ void SCXTEditor::setActiveScreen(ActiveScreen s)
     }
 
     setTabSelection("main_screen", val);
+    if (headerRegion)
+        headerRegion->refreshName();
     repaint();
 }
 

@@ -29,9 +29,11 @@
 #define SCXT_SRC_SCXT_PLUGIN_APP_SHARED_HEADERREGION_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <vector>
 #include <sst/jucegui/components/ToggleButton.h>
 #include <sst/jucegui/components/TextPushButton.h>
 #include <sst/jucegui/components/MenuButton.h>
+#include <sst/jucegui/components/NameJogLabel.h>
 #include <sst/jucegui/components/GlyphButton.h>
 #include <sst/jucegui/components/Label.h>
 #include <sst/jucegui/components/VUMeter.h>
@@ -59,7 +61,7 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     std::unique_ptr<sst::jucegui::components::Label> cpuLabel, ramLabel;
 
     std::unique_ptr<sst::jucegui::components::GlyphButton> chipButton, saveAsButton, scMenu;
-    std::unique_ptr<sst::jucegui::components::MenuButton> multiMenuButton;
+    std::unique_ptr<sst::jucegui::components::NameJogLabel> nameLabel;
     std::unique_ptr<ActivityDisplay> activityDisplay;
 
     HeaderRegion(SCXTEditor *);
@@ -110,14 +112,24 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     float cpuLevValue{-100};
     void setCPULevel(float);
 
-    void showSaveMenu();
+    void showSaveMenu(bool atMousePosition = false);
     void populateSaveMenu(juce::PopupMenu &);
     void doSaveMulti(patch_io::SaveStyles style);
     void doLoadMulti();
     void doSaveSelectedPart(patch_io::SaveStyles style);
     void doLoadIntoSelectedPart();
 
-    void showMultiSelectionMenu();
+    /*
+     * The label names the multi, or the selected part when the sidebar is showing
+     * groups or zones. rescanFolder re-reads the folder behind the jog arrows, so
+     * only a load or save pays for it.
+     */
+    void refreshName(bool rescanFolder = false);
+    bool nameIsForPart() const;
+    void jogTo(int direction);
+    std::vector<fs::path> jogFiles;
+    fs::path jogFilesFor;
+    bool jogFilesAreForPart{false};
 
     void addResetMenuItems(juce::PopupMenu &menu);
     void doChooseStartupPatch();
