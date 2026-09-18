@@ -31,6 +31,7 @@ add_executable(scxt-test
 		undo_tests.cpp
 		startup_patch_tests.cpp
 		importer_tests.cpp
+		multisample_import_tests.cpp
 		missing_sample_save_tests.cpp
 		patch_files_tests.cpp
 		midi_channel_tests.cpp

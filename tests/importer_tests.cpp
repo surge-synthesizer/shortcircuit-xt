@@ -285,14 +285,15 @@ TEST_CASE("Import multisample fixture", "[importer]")
     CHECK(z0->mapping.rootKey == 34);
     CHECK(z0->mapping.keyboardRange.keyStart == 33);
     CHECK(z0->mapping.keyboardRange.keyEnd == 35);
-    CHECK(z0->mapping.velocityRange.velStart == 0);
+    // neither <velocity> carries low, and the spec defaults it to 1
+    CHECK(z0->mapping.velocityRange.velStart == 1);
     CHECK(z0->mapping.velocityRange.velEnd == 39);
 
     auto &z1 = group->getZones()[1];
     CHECK(z1->mapping.rootKey == 37);
     CHECK(z1->mapping.keyboardRange.keyStart == 36);
     CHECK(z1->mapping.keyboardRange.keyEnd == 58);
-    CHECK(z1->mapping.velocityRange.velStart == 0);
+    CHECK(z1->mapping.velocityRange.velStart == 1);
     CHECK(z1->mapping.velocityRange.velEnd == 39);
 }
 
