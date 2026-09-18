@@ -103,6 +103,9 @@ concept SpecHasExtraClientRefreshAddr =
     };
 template <typename S>
 concept SpecSkipsLeadRefresh = requires { S::skipLeadRefresh; };
+// subtrees the audio thread never reads restore in place rather than on it
+template <typename S>
+concept SpecIsSerialWrite = requires { S::serialWrite; };
 
 template <typename Spec> struct PayloadUndoableItem : MultiSelectUndoBaseItem
 {
@@ -131,6 +134,28 @@ template <typename Spec> struct PayloadUndoableItem : MultiSelectUndoBaseItem
         auto sel = selectionList;
         auto vals = std::move(cached);
 
+        auto refresh = [sel, idx](const auto &eng) {
+            if constexpr (!SpecSkipsLeadRefresh<Spec>)
+                refreshLeadDisplay(eng, Spec::forZone);
+            if constexpr (SpecHasExtraClientRefresh<Spec>)
+                Spec::extraClientRefresh(eng);
+            if constexpr (SpecHasExtraClientRefreshAddr<Spec>)
+                Spec::extraClientRefresh(eng, sel, idx);
+        };
+
+        if constexpr (SpecIsSerialWrite<Spec>)
+        {
+            for (size_t i = 0; i < sel.size() && i < vals.size(); ++i)
+            {
+                if constexpr (SpecHasWrite<Spec>)
+                    Spec::write(e, sel[i], idx, vals[i]);
+                else
+                    Spec::ref(e, sel[i], idx) = vals[i];
+            }
+            refresh(e);
+            return;
+        }
+
         e.getMessageController()->scheduleAudioThreadCallback(
             [idx, sel, vals](auto &eng) {
                 for (size_t i = 0; i < sel.size() && i < vals.size(); ++i)
@@ -144,14 +169,7 @@ template <typename Spec> struct PayloadUndoableItem : MultiSelectUndoBaseItem
                         Spec::postWrite(eng, sel[i], idx);
                 }
             },
-            [sel, idx](const auto &eng) {
-                if constexpr (!SpecSkipsLeadRefresh<Spec>)
-                    refreshLeadDisplay(eng, Spec::forZone);
-                if constexpr (SpecHasExtraClientRefresh<Spec>)
-                    Spec::extraClientRefresh(eng);
-                if constexpr (SpecHasExtraClientRefreshAddr<Spec>)
-                    Spec::extraClientRefresh(eng, sel, idx);
-            });
+            refresh);
     }
 
     std::unique_ptr<UndoableItem> makeRedo(engine::Engine &e) override
@@ -612,6 +630,22 @@ struct PartConfigSpec
     static void postWrite(engine::Engine &e, const ZoneAddress &a, int32_t)
     {
         e.onPartConfigurationUpdated();
+    }
+    static void extraClientRefresh(const engine::Engine &e, const std::vector<ZoneAddress> &sel,
+                                   int32_t);
+};
+
+struct PartNamesSpec
+{
+    static constexpr bool forZone{false};
+    static constexpr bool skipLeadRefresh{true};
+    // no audio code reads the part text, so restore writes it on the serial thread
+    static constexpr bool serialWrite{true};
+    using value_t = engine::Part::PartNames;
+    static std::string name() { return "Part Names"; }
+    static value_t &ref(engine::Engine &e, const ZoneAddress &a, int32_t)
+    {
+        return e.getPatch()->getPart(a.part)->names;
     }
     static void extraClientRefresh(const engine::Engine &e, const std::vector<ZoneAddress> &sel,
                                    int32_t);

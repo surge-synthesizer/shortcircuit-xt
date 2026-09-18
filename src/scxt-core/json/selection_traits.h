@@ -40,6 +40,25 @@
 namespace scxt::json
 {
 
+SC_STREAMDEF(scxt::selection::SelectionManager::PatchFile,
+             SC_FROM({ v = {{"p", from.path.u8string()}, {"mono", from.monolith}}; }), SC_TO({
+                 std::string p;
+                 findIf(v, "p", p);
+                 to.path = unstreamPathFromString(p);
+                 findOrSet(v, "mono", false, to.monolith);
+             }));
+
+SC_STREAMDEF(scxt::selection::SelectionManager::PatchFiles, SC_FROM({
+                 v = {{"name", from.multiName}, {"multi", from.multi}, {"parts", from.parts}};
+             }),
+             SC_TO({
+                 findOrSet(v, "name",
+                           scxt::selection::SelectionManager::PatchFiles::defaultMultiName,
+                           to.multiName);
+                 findIf(v, "multi", to.multi);
+                 findIf(v, "parts", to.parts);
+             }));
+
 SC_STREAMDEF(scxt::selection::SelectionManager::SelectActionContents, SC_FROM({
                  auto &e = from;
                  assert(SC_STREAMING_FOR_IN_PROCESS);
@@ -93,7 +112,10 @@ SC_STREAMDEF(selection::SelectionManager::PerPartState, SC_FROM({
 SC_STREAMDEF(
     selection::SelectionManager, SC_FROM({
         auto &e = from;
-        v = {{"state", e.state}, {"tabs", e.otherTabSelection}, {"selectedPart", e.selectedPart}};
+        v = {{"state", e.state},
+             {"tabs", e.otherTabSelection},
+             {"selectedPart", e.selectedPart},
+             {"files", e.getPatchFiles()}};
     }),
     SC_TO({
         auto &z = to;
@@ -140,6 +162,10 @@ SC_STREAMDEF(
             findIf(v, "selectedPart", z.selectedPart);
             findIf(v, "state", z.state);
         }
+
+        selection::SelectionManager::PatchFiles pf;
+        findIf(v, "files", pf);
+        z.setPatchFiles(std::move(pf));
 
         // selectedPart comes from the stream and indexes state below
         if (z.selectedPart < 0 || z.selectedPart >= (int)scxt::numParts)

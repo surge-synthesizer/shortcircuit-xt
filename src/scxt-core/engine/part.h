@@ -28,6 +28,8 @@
 #define SCXT_SRC_SCXT_CORE_ENGINE_PART_H
 
 #include <memory>
+#include <array>
+#include <cstdio>
 #include <vector>
 #include <optional>
 #include <cassert>
@@ -67,7 +69,7 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
             configuration.active = true;
         }
 
-        snprintf(configuration.name, sizeof(configuration.name), "Part %d", partNumber + 1);
+        names.setName(PartNames::defaultName);
         std::fill(groupChannelMask.begin(), groupChannelMask.end(), false);
     }
     virtual ~Part() = default;
@@ -84,12 +86,15 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     int getChannelBasedTransposition(int16_t channel) const;
     void rebuildGroupChannelMask();
 
+    /*
+     * configuration is what the audio thread reads, and full config updates and undo
+     * assign it there. names is ui text no audio code touches, so the serial thread
+     * writes it directly. a new field goes in configuration unless it is text like these
+     */
     struct PartConfiguration
     {
-        static constexpr size_t maxName{256};
         static constexpr int16_t omniChannel{-1};
 
-        char name[maxName]{0};
         int mpePitchBendRange{24};
         int mpePitchSmoothingTime{0}; // in ms: 0 = off, or 25/50/100
         int mpeGlobalChannel{0};
@@ -112,12 +117,21 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         float pan{0.f};
         int32_t transpose{0};
         float tuning{0.f};
-
-        // This needs to be a standard object, and windows msvc doesn't like
-        // std::strings in those objects, so use a char*
-        static constexpr int maxDescription{2048};
-        char blurb[maxDescription]{0};
     } configuration;
+
+    struct PartNames
+    {
+        // These need to be standard objects, and windows msvc doesn't like
+        // std::strings in those objects, so use a char*
+        static constexpr size_t maxName{256};
+        static constexpr int maxDescription{2048};
+        static constexpr const char *defaultName{"Default Part"};
+
+        char name[maxName]{0};
+        char blurb[maxDescription]{0};
+
+        void setName(const std::string &n) { snprintf(name, sizeof(name), "%s", n.c_str()); }
+    } names;
     void process(Engine &onto);
     void reconfigureGroupSolo();
 

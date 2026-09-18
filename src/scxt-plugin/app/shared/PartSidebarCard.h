@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/NameJogLabel.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/TextEditor.h"
@@ -65,7 +66,7 @@ struct PartSidebarCard : juce::Component,
     std::unique_ptr<boolattachment_t> muteAtt, soloAtt;
     std::unique_ptr<attachment_t> levelAtt, panAtt, tuningAtt;
     std::unique_ptr<tsposeattachment_t> transposeAtt;
-    std::unique_ptr<sst::jucegui::components::MenuButton> patchName;
+    std::unique_ptr<sst::jucegui::components::NameJogLabel> patchName;
     std::unique_ptr<sst::jucegui::components::TextPushButton> midiMode, outBus, polyCount;
     std::unique_ptr<sst::jucegui::components::HSliderFilled> level, pan;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> tuning;

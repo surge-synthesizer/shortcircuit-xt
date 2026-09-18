@@ -1012,6 +1012,51 @@ void SelectionManager::sendOtherTabsSelectionToClient()
                               *(engine.getMessageController()));
 }
 
+SelectionManager::PatchFiles SelectionManager::getPatchFiles() const
+{
+    std::lock_guard<std::mutex> g(engine.patchFilesMutex);
+    return patchFiles;
+}
+
+void SelectionManager::setPatchFiles(PatchFiles pf)
+{
+    std::lock_guard<std::mutex> g(engine.patchFilesMutex);
+    patchFiles = std::move(pf);
+}
+
+void SelectionManager::sendPatchFilesToClient() const
+{
+    serializationSendToClient(cms::s2c_send_patch_files, getPatchFiles(),
+                              *(engine.getMessageController()));
+}
+
+void SelectionManager::setMultiFile(const fs::path &p, bool monolith)
+{
+    auto pf = getPatchFiles();
+    pf.multi = {p, monolith};
+    if (!p.empty())
+        pf.multiName = p.filename().replace_extension("").u8string();
+    setPatchFiles(std::move(pf));
+}
+
+void SelectionManager::setPartFile(int part, const fs::path &p, bool monolith)
+{
+    if (part < 0 || part >= (int)scxt::numParts)
+        return;
+    auto pf = getPatchFiles();
+    pf.parts[part] = {p, monolith};
+    setPatchFiles(std::move(pf));
+}
+
+void SelectionManager::setMultiName(const std::string &n)
+{
+    auto pf = getPatchFiles();
+    pf.multiName = n;
+    setPatchFiles(std::move(pf));
+}
+
+void SelectionManager::clearPartFile(int part) { setPartFile(part, {}, false); }
+
 // Fold state rides on s2c_send_pgz_structure: getPartGroupZoneStructure() stamps
 // the FOLDED bit onto group-row features using SelectionManager state.
 static void broadcastStructure(const engine::Engine &engine)

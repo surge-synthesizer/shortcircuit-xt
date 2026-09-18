@@ -224,6 +224,13 @@ struct ConsoleUI
     void onSelectedPart(const int16_t) ON_STUB;
 
     void onPartConfiguration(const scxt::messaging::client::partConfigurationPayload_t &) ON_STUB;
+    void onPartNames(const scxt::messaging::client::partNamesPayload_t &) ON_STUB;
+    // the header reads these, so tests check what actually reaches a client
+    scxt::selection::SelectionManager::PatchFiles clientPatchFiles;
+    void onPatchFiles(const scxt::messaging::client::patchFilesPayload_t &p)
+    {
+        clientPatchFiles = p;
+    }
 
     void
     onOtherTabSelection(const scxt::selection::SelectionManager::otherTabSelection_t &p) ON_STUB;

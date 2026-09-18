@@ -32,6 +32,7 @@
 #include <string>
 #include <utility>
 #include <functional>
+#include <optional>
 #include "filesystem/import.h"
 #include "sample/compound_file.h"
 
@@ -90,6 +91,15 @@ struct Browser
     void addRootPathForDeviceView(const fs::path &, bool indexed, messaging::MessageController &);
     void removeRootPathForDeviceView(const fs::path &, messaging::MessageController &);
     void reindexLocation(const fs::path &);
+
+    /*
+     * Stepping through the folder a patch came from, for the header jog arrows.
+     * Sorted case-insensitively so the order matches what a file list shows.
+     */
+    static std::vector<fs::path> patchFilesIn(const fs::path &dir, const std::string &extension);
+    // wraps at both ends; nullopt when there is nowhere else to go
+    static std::optional<fs::path> stepPatchFile(const std::vector<fs::path> &files,
+                                                 const fs::path &current, int direction);
 
     static bool isLoadableFile(const fs::path &);
     static bool isLoadableSample(const fs::path &);

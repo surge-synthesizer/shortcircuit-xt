@@ -471,6 +471,12 @@ inline void clearPart(const int p, engine::Engine &engine, MessageController &co
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false,
                                                                            {pt, -1, -1});
 
+            // an emptied slot is no longer the instrument it was loaded from
+            engine.getPatch()->getPart(pt)->names.setName(engine::Part::PartNames::defaultName);
+            engine.getSelectionManager()->clearPartFile(pt);
+            engine.getSelectionManager()->sendPatchFilesToClient();
+            engine.sendPartNamesToClient(pt);
+
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
             serializationSendToClient(s2c_send_selected_group_zone_mapping_summary,
@@ -733,6 +739,10 @@ inline void doDeactivatePart(int part, engine::Engine &engine, messaging::Messag
             }
         },
         [part](const auto &e) {
+            // a deactivated slot is no longer the instrument it was loaded from
+            e.getPatch()->getPart(part)->names.setName(engine::Part::PartNames::defaultName);
+            e.getSelectionManager()->clearPartFile(part);
+
             if (e.getSelectionManager()->selectedPart == part)
             {
                 int tpt{0}, spt{-1};

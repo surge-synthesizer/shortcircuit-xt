@@ -25,6 +25,9 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <algorithm>
+#include <cctype>
+
 #include "browser.h"
 #include "browser_db.h"
 #include "utils.h"
@@ -107,6 +110,55 @@ bool Browser::isShortCircuitFormatFile(const fs::path &p)
     return std::any_of(LoadableFile::shortcircuitFormats.begin(),
                        LoadableFile::shortcircuitFormats.end(),
                        [p](auto e) { return extensionMatches(p, e); });
+}
+
+std::vector<fs::path> Browser::patchFilesIn(const fs::path &dir, const std::string &extension)
+{
+    std::vector<fs::path> res;
+    if (dir.empty())
+        return res;
+    try
+    {
+        if (!fs::is_directory(dir))
+            return res;
+        for (const auto &e : fs::directory_iterator(dir))
+        {
+            if (e.is_regular_file() && extensionMatches(e.path(), extension))
+                res.push_back(e.path());
+        }
+    }
+    catch (const fs::filesystem_error &)
+    {
+        return {};
+    }
+
+    auto lower = [](std::string s) {
+        for (auto &c : s)
+            c = std::tolower((unsigned char)c);
+        return s;
+    };
+    std::sort(res.begin(), res.end(), [&lower](const auto &a, const auto &b) {
+        return lower(a.filename().u8string()) < lower(b.filename().u8string());
+    });
+    return res;
+}
+
+std::optional<fs::path> Browser::stepPatchFile(const std::vector<fs::path> &files,
+                                               const fs::path &current, int direction)
+{
+    if (files.size() < 2 || direction == 0)
+        return std::nullopt;
+
+    auto it = std::find(files.begin(), files.end(), current);
+    if (it == files.end())
+    {
+        // the file we were on is gone; land on whichever end we are heading for
+        return direction > 0 ? files.front() : files.back();
+    }
+
+    auto idx = (int)std::distance(files.begin(), it) + (direction > 0 ? 1 : -1);
+    auto n = (int)files.size();
+    return files[((idx % n) + n) % n];
 }
 
 void Browser::addRootPathForDeviceView(const fs::path &p, bool indexed,

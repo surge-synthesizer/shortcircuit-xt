@@ -33,7 +33,7 @@
 
 namespace scxt
 {
-static constexpr uint64_t currentStreamingVersion{0x2026'09'13};
+static constexpr uint64_t currentStreamingVersion{0x2026'09'17};
 
 static constexpr uint16_t blockSize{16};
 static constexpr uint16_t blockSizeQuad{16 >> 2};

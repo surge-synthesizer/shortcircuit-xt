@@ -1840,6 +1840,10 @@ void Engine::sendFullRefreshToClient() const
             messaging::client::s2c_send_part_configuration,
             messaging::client::partConfigurationPayload_t{p, getPatch()->getPart(p)->configuration},
             *(getMessageController()));
+        serializationSendToClient(
+            messaging::client::s2c_send_part_names,
+            messaging::client::partNamesPayload_t{p, getPatch()->getPart(p)->names},
+            *(getMessageController()));
         serializationSendToClient(messaging::client::s2c_send_part_keyswitch_display,
                                   messaging::client::partKeySwitchPayload_t{
                                       p, getPatch()->getPart(p)->keySwitchDisplay()},
@@ -1858,6 +1862,7 @@ void Engine::sendFullRefreshToClient() const
     getSelectionManager()->sendSelectedZonesToClient();
     getSelectionManager()->sendSelectedPartMacrosToClient();
     getSelectionManager()->sendOtherTabsSelectionToClient();
+    getSelectionManager()->sendPatchFilesToClient();
 
     auto missing = collectMissingResolutionWorkItems(*this);
     // send missing even if empty. An empty missing flags dont show dialog
@@ -1907,6 +1912,16 @@ void Engine::clearAll(bool alsoPurge)
 
     if (alsoPurge)
         sampleManager->purgeUnreferencedSamples();
+}
+
+void Engine::sendPartNamesToClient(int16_t part) const
+{
+    if (part < 0 || part >= numParts)
+        return;
+    serializationSendToClient(
+        messaging::client::s2c_send_part_names,
+        messaging::client::partNamesPayload_t{part, getPatch()->getPart(part)->names},
+        *(getMessageController()));
 }
 
 void Engine::sendKeySwitchStateToClient(int16_t part) const

@@ -27,6 +27,9 @@
 
 #include "HeaderRegion.h"
 #include "app/SCXTEditor.h"
+#include "app/edit-screen/EditScreen.h"
+#include "app/edit-screen/components/PartGroupSidebar.h"
+#include "browser/browser.h"
 #include "messaging/client/interaction_messages.h"
 #include "messaging/client/enginestatus_messages.h"
 #include "messaging/client/patch_io_messages.h"
@@ -235,13 +238,31 @@ HeaderRegion::HeaderRegion(SCXTEditor *e) : HasEditor(e)
     });
     addAndMakeVisible(*saveAsButton);
 
-    multiMenuButton = std::make_unique<jcmp::MenuButton>();
-    multiMenuButton->setLabel("Multi and Instrument IO");
-    multiMenuButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+    nameLabel = std::make_unique<jcmp::NameJogLabel>();
+    nameLabel->onRename = [w = juce::Component::SafePointer(this)](const auto &n) {
+        if (!w)
+            return;
+        if (w->nameIsForPart())
+        {
+            auto pt = w->editor->selectedPart;
+            w->editor->partNames[pt].setName(n);
+            w->sendToSerialization(cmsg::UpdatePartNames({pt, w->editor->partNames[pt]}));
+        }
+        else
+        {
+            w->sendToSerialization(cmsg::RenameMulti(n));
+        }
+    };
+    nameLabel->onJog = [w = juce::Component::SafePointer(this)](int dir) {
         if (w)
-            w->showMultiSelectionMenu();
-    });
-    addAndMakeVisible(*multiMenuButton);
+            w->jogTo(dir);
+    };
+    nameLabel->onPopupMenu = [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->showSaveMenu(true);
+    };
+    addAndMakeVisible(*nameLabel);
+    refreshName(true);
 
     activityDisplay = std::make_unique<ActivityDisplay>(editor);
     addChildComponent(*activityDisplay);
@@ -310,8 +331,8 @@ void HeaderRegion::resized()
     }
     saveAsButton->setBounds(b.withTrimmedLeft(755).withWidth(24));
 
-    multiMenuButton->setBounds(b.withTrimmedLeft(421).withWidth(330));
-    activityDisplay->setBounds(multiMenuButton->getBounds());
+    nameLabel->setBounds(b.withTrimmedLeft(421).withWidth(330));
+    activityDisplay->setBounds(nameLabel->getBounds());
 
     scMenu->setBounds(b.withTrimmedLeft(1248).withWidth(24));
 
@@ -423,7 +444,7 @@ void HeaderRegion::doLoadIntoSelectedPart()
     shared::doLoadPartInto(this, fileChooser, editor->selectedPart);
 }
 
-void HeaderRegion::showSaveMenu()
+void HeaderRegion::showSaveMenu(bool atMousePosition)
 {
     auto p = juce::PopupMenu();
     p.addSectionHeader("Save and Load");
@@ -434,36 +455,51 @@ void HeaderRegion::showSaveMenu()
 
     addResetMenuItems(p);
 
-    p.showMenuAsync(editor->defaultPopupMenuOptions(saveAsButton.get()));
+    // a button drops its menu below itself; a right click belongs at the pointer
+    if (atMousePosition)
+        p.showMenuAsync(editor->defaultPopupMenuOptions().withMousePosition());
+    else
+        p.showMenuAsync(editor->defaultPopupMenuOptions(saveAsButton.get()));
 }
 
 void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
 {
-    p.addItem("Save Multi Only", [w = juce::Component::SafePointer(this)]() {
+    auto pt = editor->selectedPart;
+    auto ptn = std::to_string(pt + 1);
+
+    p.addItem("Save Multi", !editor->patchFiles.multi.monolith, false,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                      shared::doSaveMultiInPlace(w.getComponent(), w->fileChooser);
+              });
+    p.addItem("Save Multi As...", [w = juce::Component::SafePointer(this)]() {
         if (w)
             w->doSaveMulti(patch_io::SaveStyles::NO_SAMPLES);
     });
-    p.addItem("Save Multi as Monolith", [w = juce::Component::SafePointer(this)]() {
+    p.addItem("Save Multi as Monolith...", [w = juce::Component::SafePointer(this)]() {
         if (w)
             w->doSaveMulti(patch_io::SaveStyles::AS_MONOLITH);
     });
-    p.addItem("Save Multi with Collected Samples", [w = juce::Component::SafePointer(this)]() {
+    p.addItem("Save Multi with Collected Samples...", [w = juce::Component::SafePointer(this)]() {
         if (w)
             w->doSaveMulti(patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
     });
     p.addSeparator();
-    p.addItem("Save Part " + std::to_string(editor->selectedPart + 1) + " Only",
-              [w = juce::Component::SafePointer(this)]() {
+    p.addItem("Save Part " + ptn, !editor->patchFiles.parts[pt].monolith, false,
+              [w = juce::Component::SafePointer(this), pt]() {
                   if (w)
-                      w->doSaveSelectedPart(patch_io::SaveStyles::NO_SAMPLES);
+                      shared::doSavePartInPlace(w.getComponent(), w->fileChooser, pt);
               });
+    p.addItem("Save Part " + ptn + " As...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doSaveSelectedPart(patch_io::SaveStyles::NO_SAMPLES);
+    });
 
-    p.addItem("Save Part " + std::to_string(editor->selectedPart + 1) + " as Monolith",
-              [w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                      w->doSaveSelectedPart(patch_io::SaveStyles::AS_MONOLITH);
-              });
-    p.addItem("Save Part " + std::to_string(editor->selectedPart + 1) + " with Collected Samples",
+    p.addItem("Save Part " + ptn + " as Monolith...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doSaveSelectedPart(patch_io::SaveStyles::AS_MONOLITH);
+    });
+    p.addItem("Save Part " + ptn + " with Collected Samples...",
               [w = juce::Component::SafePointer(this)]() {
                   if (w)
                       w->doSaveSelectedPart(patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
@@ -516,14 +552,61 @@ void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
               });
 }
 
-void HeaderRegion::showMultiSelectionMenu()
+bool HeaderRegion::nameIsForPart() const
 {
-    auto p = juce::PopupMenu();
-    juce::PopupMenu sm;
-    populateSaveMenu(sm);
-    p.addSubMenu("Save and Load", sm);
-    addResetMenuItems(p);
-    p.showMenuAsync(editor->defaultPopupMenuOptions(multiMenuButton.get()));
+    if (editor->activeScreen != SCXTEditor::MULTI)
+        return false;
+    if (!editor->editScreen || !editor->editScreen->partSidebar)
+        return false;
+    // the PARTS tab is about the multi as a whole; groups and zones are a part
+    return editor->editScreen->partSidebar->selectedTab != 0;
+}
+
+void HeaderRegion::refreshName(bool rescanFolder)
+{
+    if (!nameLabel)
+        return;
+
+    auto forPart = nameIsForPart();
+    auto pt = editor->selectedPart;
+    const auto &pf = forPart ? editor->patchFiles.parts[pt] : editor->patchFiles.multi;
+
+    if (forPart)
+    {
+        nameLabel->setPrefix("Part " + std::to_string(pt + 1) + ":");
+        nameLabel->setLabel(editor->partNames[pt].name);
+    }
+    else
+    {
+        nameLabel->setPrefix("");
+        nameLabel->setLabel(editor->patchFiles.multiName);
+    }
+
+    if (rescanFolder || forPart != jogFilesAreForPart || pf.path != jogFilesFor)
+    {
+        jogFilesAreForPart = forPart;
+        jogFilesFor = pf.path;
+        jogFiles = browser::Browser::patchFilesIn(pf.path.parent_path(), forPart ? ".scp" : ".scm");
+    }
+    // one file in the folder is nowhere to step to
+    nameLabel->setJogEnabled(jogFiles.size() > 1);
+}
+
+void HeaderRegion::jogTo(int direction)
+{
+    auto forPart = nameIsForPart();
+    auto pt = editor->selectedPart;
+    const auto &pf = forPart ? editor->patchFiles.parts[pt] : editor->patchFiles.multi;
+
+    auto next = browser::Browser::stepPatchFile(jogFiles, pf.path, direction);
+    if (!next)
+        return;
+
+    // both loads push undo, so stepping through a folder is recoverable
+    if (forPart)
+        sendToSerialization(cmsg::LoadPartInto({next->u8string(), pt}));
+    else
+        sendToSerialization(cmsg::LoadMulti(next->u8string()));
 }
 
 void HeaderRegion::addResetMenuItems(juce::PopupMenu &menu)

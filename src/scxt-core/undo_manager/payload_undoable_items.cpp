@@ -96,6 +96,19 @@ void PartConfigSpec::extraClientRefresh(const engine::Engine &e,
     }
 }
 
+void PartNamesSpec::extraClientRefresh(const engine::Engine &e, const std::vector<ZoneAddress> &sel,
+                                       int32_t)
+{
+    for (const auto &a : sel)
+    {
+        messaging::client::serializationSendToClient(
+            messaging::client::s2c_send_part_names,
+            messaging::client::partNamesPayload_t{(int16_t)a.part,
+                                                  e.getPatch()->getPart(a.part)->names},
+            *(e.getMessageController()));
+    }
+}
+
 void resendPGZStructure(const engine::Engine &e)
 {
     messaging::client::serializationSendToClient(messaging::client::s2c_send_pgz_structure,

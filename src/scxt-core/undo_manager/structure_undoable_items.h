@@ -163,6 +163,8 @@ struct PartStreamRestoreItem : public UndoableItem
     int16_t part{-1};
     std::string label{"Load Part"};
     std::string partJSON;
+    // the slot's file isn't in the part stream, so carry it alongside
+    selection::SelectionManager::PatchFile partFile;
 
     void store(engine::Engine &e, int16_t pt, const std::string &lbl);
     void restore(engine::Engine &e) override;
@@ -174,6 +176,16 @@ struct PartStreamRestoreItem : public UndoableItem
 // replace-part flow (snapshot, clear, import) coalesces to one undo entry
 void pushPartStreamUndo(engine::Engine &e, int16_t part, const std::string &label,
                         UndoGesture g = UndoGesture::Discrete);
+
+struct MultiRenameItem : public UndoableItem
+{
+    std::string oldName;
+
+    void store(engine::Engine &e);
+    void restore(engine::Engine &e) override;
+    std::unique_ptr<UndoableItem> makeRedo(engine::Engine &e) override;
+    std::string describe() const override;
+};
 
 // full pre-event engine stream; used when a multi load replaces everything
 struct EngineStateRestoreItem : public UndoableItem

@@ -107,6 +107,8 @@ struct SCXTEditorReceiver
     void onSelectedPart(const int16_t);
 
     void onPartConfiguration(const scxt::messaging::client::partConfigurationPayload_t &);
+    void onPartNames(const scxt::messaging::client::partNamesPayload_t &);
+    void onPatchFiles(const scxt::messaging::client::patchFilesPayload_t &);
 
     void onOtherTabSelection(const scxt::selection::SelectionManager::otherTabSelection_t &p);
 

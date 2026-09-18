@@ -290,6 +290,42 @@ TEST_CASE("Only a real windows path is remapped on unstream")
 #endif
 }
 
+TEST_CASE("Part names unstream from a pre-split config object")
+{
+    scxt::engine::Patch p1;
+    auto &part = *(p1.getPart(0));
+    snprintf(part.names.name, sizeof(part.names.name), "%s", "Cello Sustain");
+    snprintf(part.names.blurb, sizeof(part.names.blurb), "%s", "warm and slow");
+    part.configuration.channel = 4;
+
+    auto v = scxt::json::scxt_value(p1);
+
+    SECTION("This version round trips")
+    {
+        scxt::engine::Patch p2;
+        REQUIRE_NOTHROW(v.to(p2));
+        REQUIRE(std::string(p2.getPart(0)->names.name) == "Cello Sustain");
+        REQUIRE(std::string(p2.getPart(0)->names.blurb) == "warm and slow");
+    }
+
+    SECTION("An older stream carries the text inside config")
+    {
+        auto &p0 = v.at("parts").get_array()[0].get_object();
+        auto names = p0.at("names");
+        p0.erase("names");
+        auto &cfg = p0.at("config").get_object();
+        for (const auto &[k, val] : names.get_object())
+            cfg[k] = val;
+
+        scxt::engine::Engine::UnstreamGuard sg(0x2026'09'13);
+        scxt::engine::Patch p2;
+        REQUIRE_NOTHROW(v.to(p2));
+        REQUIRE(std::string(p2.getPart(0)->names.name) == "Cello Sustain");
+        REQUIRE(std::string(p2.getPart(0)->names.blurb) == "warm and slow");
+        REQUIRE(p2.getPart(0)->configuration.channel == 4);
+    }
+}
+
 TEST_CASE("A patch stream with too many parts is truncated")
 {
     scxt::engine::Patch p1;

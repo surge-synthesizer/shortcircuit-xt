@@ -254,6 +254,10 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     int16_t getSelectedPart() const;
 
     std::array<scxt::engine::Part::PartConfiguration, scxt::numParts> partConfigurations;
+    std::array<scxt::engine::Part::PartNames, scxt::numParts> partNames;
+
+    // where the multi and each part last came from, and the multi's name
+    selection::SelectionManager::PatchFiles patchFiles;
 
     selection::SelectionManager::otherTabSelection_t otherTabSelection;
     std::string queryTabSelection(const std::string &k);

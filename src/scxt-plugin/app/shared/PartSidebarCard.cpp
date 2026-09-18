@@ -32,7 +32,6 @@
 #include "messaging/client/structure_messages.h"
 #include "app/SCXTEditor.h"
 #include "app/shared/PatchMultiIO.h"
-#include "app/shared/MenuValueTypein.h"
 
 namespace scxt::ui::app::shared
 {
@@ -66,12 +65,23 @@ PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
     });
     addAndMakeVisible(*polyCount);
 
-    patchName = std::make_unique<jcmp::MenuButton>();
-    patchName->setLabel("Instrument Name");
-    patchName->setOnCallback([w = juce::Component::SafePointer(this)]() {
+    patchName = std::make_unique<jcmp::NameJogLabel>();
+    patchName->setLabel(editor->partNames[part].name);
+    // clicking the name is also how you pick the part, as clicking the card is
+    patchName->onBeforeRename = [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->sendToSerialization(cmsg::SelectPart(w->part));
+    };
+    patchName->onRename = [w = juce::Component::SafePointer(this)](const auto &n) {
+        if (!w)
+            return;
+        w->editor->partNames[w->part].setName(n);
+        w->sendToSerialization(cmsg::UpdatePartNames({w->part, w->editor->partNames[w->part]}));
+    };
+    patchName->onPopupMenu = [w = juce::Component::SafePointer(this)]() {
         if (w)
             w->showPartIOMenu();
-    });
+    };
     addAndMakeVisible(*patchName);
 
     auto onChange = [w = juce::Component::SafePointer(this)](const auto &a) {
@@ -345,74 +355,15 @@ void PartSidebarCard::showMidiModeMenu()
     p.showMenuAsync(editor->defaultPopupMenuOptions(midiMode.get()));
 }
 
-struct PartNameMenuTypein : scxt::ui::app::shared::MenuValueTypeinBase
-{
-    juce::Component::SafePointer<PartSidebarCard> sideBar{nullptr};
-    PartNameMenuTypein(SCXTEditor *e, juce::Component::SafePointer<PartSidebarCard> p)
-        : MenuValueTypeinBase(e), sideBar(p)
-    {
-    }
-    std::string getInitialText() const override
-    {
-        if (!sideBar)
-            return "";
-        return editor->partConfigurations[sideBar->part].name;
-    }
-    void setValueString(const std::string &s) override
-    {
-        if (!sideBar)
-            return;
-        auto w = sideBar;
-
-        memset(w->editor->partConfigurations[w->part].name, 0,
-               engine::Part::PartConfiguration::maxName);
-        strncpy(w->editor->partConfigurations[w->part].name, s.c_str(),
-                engine::Part::PartConfiguration::maxName - 1);
-        w->resetFromEditorCache();
-        w->sendToSerialization(
-            cmsg::UpdatePartFullConfig({w->part, w->editor->partConfigurations[w->part]}));
-    }
-};
-
 void PartSidebarCard::showPartIOMenu()
 {
     auto p = juce::PopupMenu();
-    p.addSectionHeader("Part I/O");
+    p.addSectionHeader("Part " + std::to_string(part + 1));
     p.addSeparator();
-    p.addCustomItem(-1, std::make_unique<PartNameMenuTypein>(editor, this));
-    p.addSeparator();
-    p.addItem("Save Part", [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        shared::doSavePart(w.getComponent(), w->fileChooser, w->part,
-                           patch_io::SaveStyles::NO_SAMPLES);
-    });
-    p.addItem("Save Part as Monolith", [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        shared::doSavePart(w.getComponent(), w->fileChooser, w->part,
-                           patch_io::SaveStyles::AS_MONOLITH);
-    });
-    p.addItem("Save Part with Collected Samples", [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        shared::doSavePart(w.getComponent(), w->fileChooser, w->part,
-                           patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
-    });
-    p.addSeparator();
-    p.addItem("Load Part", [w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        shared::doLoadPartInto(w.getComponent(), w->fileChooser, w->part);
-    });
-    p.addSeparator();
-    p.addItem("Deactivate Part", [p = this->part, w = juce::Component::SafePointer(this)]() {
-        if (!w)
-            return;
-        w->sendToSerialization(cmsg::DeactivatePart(p));
-    });
+    shared::populatePartIOMenu(this, p, part);
 
-    p.showMenuAsync(editor->defaultPopupMenuOptions(patchName.get()));
+    // only ever a right click, so it opens at the pointer
+    p.showMenuAsync(editor->defaultPopupMenuOptions().withMousePosition());
 }
 
 void PartSidebarCard::resetFromEditorCache()
@@ -451,26 +402,25 @@ void PartSidebarCard::resetFromEditorCache()
     else
         polyCount->setLabel(std::to_string(pv));
 
-    patchName->setLabel(conf.name);
+    patchName->setLabel(editor->partNames[part].name);
 
-    partBlurb->setAllText(conf.blurb);
+    partBlurb->setAllText(editor->partNames[part].blurb);
     repaint();
 }
 
 void PartSidebarCard::textEditorTextChanged(juce::TextEditor &e)
 {
-    memset(editor->partConfigurations[part].blurb, 0,
-           engine::Part::PartConfiguration::maxDescription);
-    strncpy(editor->partConfigurations[part].blurb, e.getText().toStdString().c_str(),
-            engine::Part::PartConfiguration::maxDescription - 1);
-    sendToSerialization(cmsg::UpdatePartFullConfig({part, editor->partConfigurations[part]}));
+    memset(editor->partNames[part].blurb, 0, engine::Part::PartNames::maxDescription);
+    strncpy(editor->partNames[part].blurb, e.getText().toStdString().c_str(),
+            engine::Part::PartNames::maxDescription - 1);
+    sendToSerialization(cmsg::UpdatePartNames({part, editor->partNames[part]}));
 }
 
 void PartSidebarCard::showPartBlurbTooltip()
 {
     if (!tallMode)
     {
-        std::string b = editor->partConfigurations[part].blurb;
+        std::string b = editor->partNames[part].blurb;
 
         if (!b.empty())
         {

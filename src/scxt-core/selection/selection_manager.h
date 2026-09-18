@@ -29,6 +29,7 @@
 #define SCXT_SRC_SCXT_CORE_SELECTION_SELECTION_MANAGER_H
 
 #include <optional>
+#include <array>
 #include <vector>
 #include <cstdint>
 #include <map>
@@ -224,6 +225,45 @@ struct SelectionManager
     void configureMatrixInternal(bool forZone, Mat &m, RT &routingTable);
 
     void copyZoneOrGroupProcessorLeadToAll(bool forZone, int which);
+
+  public:
+    /*
+     * Where the multi and each part slot last came from, so a plain save can write
+     * back without a dialog and the header can jog through the folder. The name is
+     * the multi's alone; a part is named by its configuration.
+     */
+    struct PatchFile
+    {
+        fs::path path; // empty until loaded or saved
+        bool monolith{false};
+
+        bool operator==(const PatchFile &o) const
+        {
+            return path == o.path && monolith == o.monolith;
+        }
+    };
+    struct PatchFiles
+    {
+        static constexpr const char *defaultMultiName{"Default Multi"};
+        std::string multiName{defaultMultiName};
+        PatchFile multi;
+        std::array<PatchFile, scxt::numParts> parts;
+    };
+
+    // engine.patchFilesMutex is held for the copy alone; the DAW save streams
+    // this from the host main thread while the serial thread writes it
+    PatchFiles getPatchFiles() const;
+    void setPatchFiles(PatchFiles);
+    void sendPatchFilesToClient() const;
+
+    // path empty leaves the name alone; used by loads, saves and rename
+    void setMultiFile(const fs::path &, bool monolith);
+    void setPartFile(int part, const fs::path &, bool monolith);
+    void setMultiName(const std::string &);
+    void clearPartFile(int part);
+
+  protected:
+    PatchFiles patchFiles;
 
   public:
     using otherTabSelection_t = std::unordered_map<std::string, std::string>;

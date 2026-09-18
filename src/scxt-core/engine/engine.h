@@ -46,6 +46,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <cassert>
 #include <thread>
@@ -517,6 +518,10 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         return selectionManager;
     }
 
+    // guards SelectionManager::patchFiles, which the DAW save streams from the host
+    // main thread. It lives here because clearAll replaces the selection manager.
+    mutable std::mutex patchFilesMutex;
+
     /**
      * Notify the host that the serialized state has changed.
      */
@@ -774,6 +779,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     // the keyboard marks the live articulation and the group tree marks what it silenced
     void sendKeySwitchStateToClient(int16_t part) const;
+    void sendPartNamesToClient(int16_t part) const;
     // audio thread: a switch press moved the live articulation in this part
     void notifyKeySwitchStateChanged(int16_t part);
 

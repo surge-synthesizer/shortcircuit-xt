@@ -71,6 +71,7 @@ enum ClientToSerializationMessagesIds
     c2s_save_part,
 
     c2s_load_multi,
+    c2s_rename_multi,
     c2s_load_part_into,
 
     c2s_apply_select_actions,
@@ -210,6 +211,7 @@ enum ClientToSerializationMessagesIds
     c2s_set_all_groups_collapsed,
 
     c2s_send_full_part_config,
+    c2s_update_part_names,
 
     c2s_resolve_sample,
     c2s_resolve_multiple_samples,
@@ -268,6 +270,8 @@ enum SerializationToClientMessageIds
     s2c_respond_single_processor_metadata_and_data,
 
     s2c_send_part_configuration,
+    s2c_send_part_names,
+    s2c_send_patch_files,
     s2c_send_selected_part,
     s2c_send_selected_group_zone_mapping_summary,
     s2c_send_selection_state,
