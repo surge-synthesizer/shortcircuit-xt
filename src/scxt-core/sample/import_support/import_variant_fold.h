@@ -50,10 +50,11 @@ struct FoldableZone
  * covering the same ground, which shortcircuit spells as one zone with several
  * variants. This folds the first spelling into the second.
  *
- * Zones sharing root key and key/velocity geometry collapse into the variants
- * of the first of them, which takes the supplied playback mode; a geometry
- * with only one zone comes back untouched. Past maxVariantsPerZone the surplus
- * spills into a further zone rather than being dropped.
+ * Zones sharing key/velocity geometry collapse into the variants of the first
+ * of them, which takes the supplied playback mode; a geometry with only one
+ * zone comes back untouched. A member mapped from a different root key keeps
+ * its pitch through the variant's own offset. Past maxVariantsPerZone the
+ * surplus spills into a further zone rather than being dropped.
  *
  * The mode is the caller's because the formats disagree about it: the
  * multisample zone-logic attribute means FORWARD_RR, while SFZ's lorand/hirand
