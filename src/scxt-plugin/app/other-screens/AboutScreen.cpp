@@ -29,6 +29,7 @@
 #include "utils.h"
 #include "sst/plugininfra/version_information.h"
 #include "sst/plugininfra/cpufeatures.h"
+#include "sst/plugininfra/paths.h"
 #include "app/SCXTEditor.h"
 #include "connectors/SCXTResources.h"
 
@@ -83,6 +84,31 @@ struct AboutLink : juce::Component, HasEditor
     std::function<void()> onClick{nullptr};
 };
 
+// the executable inside a plugin or app bundle is noise; name the bundle instead
+static std::string installedBinaryPath()
+{
+    static constexpr const char *bundleExtensions[]{".clap", ".vst3",  ".vst",      ".component",
+                                                    ".app",  ".appex", ".aaxplugin"};
+    try
+    {
+        auto binary = sst::plugininfra::paths::sharedLibraryBinaryPath();
+        auto cp = binary;
+        while (cp.has_parent_path() && cp != cp.parent_path())
+        {
+            cp = cp.parent_path();
+            auto ext = cp.extension().u8string();
+            for (const auto &be : bundleExtensions)
+                if (ext == be)
+                    return cp.u8string();
+        }
+        return binary.u8string();
+    }
+    catch (const std::exception &)
+    {
+        return "Unknown";
+    }
+}
+
 AboutScreen::AboutScreen(SCXTEditor *e) : HasEditor(e)
 {
     icon = connectors::resources::loadImageDrawable("images/SCAppIcon.svg");
@@ -127,6 +153,9 @@ void AboutScreen::resetInfo()
                     fmt::format("{} at {} Hz", editor->engineStatus.runningEnvironment,
                                 (int)editor->engineStatus.sampleRate),
                     false});
+    if (!editor->engineStatus.runningHost.empty())
+        info.push_back({"Host", editor->engineStatus.runningHost, false});
+    info.push_back({"Path", installedBinaryPath(), false});
 
     if (openSourceText.empty())
     {
@@ -277,6 +306,10 @@ void AboutScreen::resized()
 void AboutScreen::visibilityChanged()
 {
     if (isVisible())
+    {
+        // the host row comes and goes, so the layout has to follow the row count
         resetInfo();
+        resized();
+    }
 }
 } // namespace scxt::ui::app::other_screens

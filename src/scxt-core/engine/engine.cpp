@@ -1661,6 +1661,7 @@ void Engine::sendEngineStatusToClient() const
     ec.isAudioRunning = messageController->isAudioRunning;
     ec.sampleRate = sampleRate;
     ec.runningEnvironment = runningEnvironment;
+    ec.runningHost = runningHost;
     messaging::client::serializationSendToClient(messaging::client::s2c_engine_status, ec,
                                                  *messageController);
 }

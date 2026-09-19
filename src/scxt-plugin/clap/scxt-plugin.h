@@ -74,6 +74,9 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
     size_t blockPos{0};
 
   protected:
+    // host extensions are only readable from here on, so the wrapper probe lives here
+    bool init() noexcept override;
+
     bool activate(double sampleRate, uint32_t minFrameCount,
                   uint32_t maxFrameCount) noexcept override;
 

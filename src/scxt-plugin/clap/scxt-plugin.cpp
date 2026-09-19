@@ -30,6 +30,7 @@
 #include <cstring>
 
 #include "sst/basic-blocks/modulators/Transport.h"
+#include "clapwrapper/wrapper_host.h"
 
 #include "scxt-plugin.h"
 #include "sst/plugininfra/version_information.h"
@@ -79,7 +80,8 @@ SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
 {
     engine = std::make_unique<scxt::engine::Engine>();
     engine->getMessageController()->passWrapperEventsToWrapperQueue = true;
-    engine->runningEnvironment = std::string(h->name) + " " + std::string(h->version);
+    engine->runningEnvironment = "CLAP";
+    engine->runningHost = std::string(h->name) + " " + std::string(h->version);
     engine->getMessageController()->requestHostCallback = [this, h](uint64_t flag) {
         if (h)
         {
@@ -102,6 +104,49 @@ SCXTPlugin::SCXTPlugin(const clap_host *h) : plugHelper_t(getDescription(), h)
 }
 
 SCXTPlugin::~SCXTPlugin() { engine.reset(nullptr); }
+
+bool SCXTPlugin::init() noexcept
+{
+    // no extension means a native clap host, so the constructor's guess already holds
+    auto *cwh = static_cast<const clap_wrapper_host_information_t *>(
+        _host.host()->get_extension(_host.host(), CLAP_WRAPPER_HOST_INFORMATION));
+    if (!cwh)
+        return true;
+
+    std::string flavor{};
+    if (cwh->get_wrapper_flavor)
+    {
+        auto *f = cwh->get_wrapper_flavor(_host.host());
+        flavor = f ? f : "";
+    }
+
+    if (!flavor.empty())
+    {
+        static const std::unordered_map<std::string, std::string> flavorNames{
+            {CLAP_WRAPPER_HOST_FLAVOR_VST3, "VST3"},
+            {CLAP_WRAPPER_HOST_FLAVOR_AUV2, "AUv2"},
+            {CLAP_WRAPPER_HOST_FLAVOR_AUV3, "AUv3"},
+            {CLAP_WRAPPER_HOST_FLAVOR_AAX, "AAX"},
+            {CLAP_WRAPPER_HOST_FLAVOR_STANDALONE, "Standalone"}};
+        auto fn = flavorNames.find(flavor);
+        engine->runningEnvironment = (fn == flavorNames.end() ? flavor : fn->second);
+    }
+
+    // the standalone names itself here, which isn't a host worth showing
+    engine->runningHost = "";
+    if (cwh->get_underlying_host_name && flavor != CLAP_WRAPPER_HOST_FLAVOR_STANDALONE)
+    {
+        auto *hostName = cwh->get_underlying_host_name(_host.host());
+        if (hostName)
+            engine->runningHost = hostName;
+    }
+
+    SCLOG_IF(always, "    Running   = "
+                         << engine->runningEnvironment
+                         << (engine->runningHost.empty() ? "" : " in " + engine->runningHost));
+
+    return true;
+}
 
 std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
 {

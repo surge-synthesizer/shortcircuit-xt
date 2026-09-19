@@ -100,9 +100,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     std::unique_ptr<infrastructure::DefaultsProvider> defaults;
 
     /**
-     * An option to add a description of your running environment, like "VST3 in Reaper"
+     * The format we are running as, like "CLAP" or "VST3", and the host which loaded
+     * us, like "Reaper 7.28". The host is empty when there isn't one to name.
      */
     std::string runningEnvironment{"Unknown"};
+    std::string runningHost{};
 
     /**
      * Audio processing
@@ -790,6 +792,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         bool isAudioRunning;
         double sampleRate;
         std::string runningEnvironment;
+        std::string runningHost;
     };
 
     /*
