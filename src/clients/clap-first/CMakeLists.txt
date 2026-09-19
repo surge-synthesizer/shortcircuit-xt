@@ -26,7 +26,7 @@ make_clapfirst_plugins(
         ENTRY_SOURCE scxt-clap-entry.cpp
 
         BUNDLE_IDENTIFER "org.surge-synth-team.shortcircuit-xt"
-        BUNDLE_VERSION ${PROJECT_VERSION}
+        BUNDLE_VERSION ${ShortcircuitXT_VERSION}
 
         COPY_AFTER_BUILD ${SCXT_COPY_PLUGIN_AFTER_BUILD}
 
