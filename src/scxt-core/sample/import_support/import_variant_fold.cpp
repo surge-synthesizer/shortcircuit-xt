@@ -34,12 +34,13 @@ namespace scxt::import_support
 {
 namespace
 {
-// Two zones fold only if a voice could not tell which it landed on: same root
-// key and the same key and velocity ground, fades included.
+// Two zones fold only if a voice could not tell which it landed on: the same
+// key and velocity ground, fades included. Root key is deliberately not part of
+// it - it says how the sample is pitched once chosen, not where it is chosen,
+// and a stack whose members disagree about it is the usual library typo.
 bool sameGeometry(const engine::Zone &a, const engine::Zone &b)
 {
-    return a.mapping.rootKey == b.mapping.rootKey &&
-           a.mapping.keyboardRange == b.mapping.keyboardRange &&
+    return a.mapping.keyboardRange == b.mapping.keyboardRange &&
            a.mapping.velocityRange == b.mapping.velocityRange;
 }
 } // namespace
@@ -90,8 +91,18 @@ foldZonesToVariants(ImporterContext &ctx, std::vector<FoldableZone> &&candidates
             continue;
         }
 
+        // the host's mapping now pitches this sample, so carry the difference on
+        // the variant rather than transposing it. Root key moves through the
+        // host's keytrack, the zone's own offset one for one
+        const auto &hm = (*host)->mapping;
+        const auto &cm = c.zone->mapping;
+
+        auto variant = c.zone->variantData.variants[0];
+        variant.pitchOffset +=
+            (hm.rootKey - cm.rootKey) * hm.tracking + cm.pitchOffset - hm.pitchOffset;
+
         (*host)->variantData.variantPlaybackMode = mode;
-        (*host)->insertVariant(nv, c.zone->variantData.variants[0], manager);
+        (*host)->insertVariant(nv, variant, manager);
     }
 
     return out;

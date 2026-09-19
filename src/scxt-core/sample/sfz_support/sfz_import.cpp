@@ -34,6 +34,7 @@
 #include "sample/import_support/import_loop.h"
 #include "sample/import_support/import_modulation.h"
 #include "sample/import_support/import_numeric.h"
+#include "sample/import_support/import_variant_fold.h"
 #include "selection/selection_manager.h"
 #include "sfz_parse.h"
 #include "messaging/messaging.h"
@@ -221,6 +222,33 @@ void zonePlayback(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes)
     {
         mp.pitchOffset = std::atoi(v->c_str());
     }
+}
+
+// SFZ lorand/hirand: every note-on draws one uniform value and a region sounds
+// only inside its slice. Returns the slice width when the region claims less
+// than the whole range, which means it alternates with its neighbours rather
+// than layering on them.
+std::optional<float> zoneRandSlice(opCodeMap_t &opCodes)
+{
+    float lo{0.f}, hi{1.f};
+    bool any{false};
+
+    if (auto v = consumeOpcode(opCodes, "lorand"); v.has_value())
+    {
+        lo = (float)std::atof(v->c_str());
+        any = true;
+    }
+
+    if (auto v = consumeOpcode(opCodes, "hirand"); v.has_value())
+    {
+        hi = (float)std::atof(v->c_str());
+        any = true;
+    }
+
+    if (!any || (lo <= 0.f && hi >= 1.f))
+        return std::nullopt;
+
+    return std::max(0.f, hi - lo);
 }
 
 // Parse SFZ loop_* opcodes into LoopArgs. Side-effect: masks engine::Zone::LOOP
@@ -589,6 +617,29 @@ void zoneEnvelopeMods(opCodeMap_t &opCodes, import_support::ImporterContext &ctx
     }
 }
 
+// The lorand/hirand regions of one group, held back until the file is read.
+// A group commonly holds one stack per velocity layer, so the dice are only
+// comparable within a single key and velocity range.
+struct RandStack
+{
+    std::vector<import_support::FoldableZone> zones;
+    std::map<std::tuple<int, int, int, int>, float> widthByRange;
+    bool uneven{false};
+
+    void add(std::unique_ptr<engine::Zone> zn, float width)
+    {
+        const auto &mp = zn->mapping;
+        auto range = std::make_tuple(mp.keyboardRange.keyStart, mp.keyboardRange.keyEnd,
+                                     mp.velocityRange.velStart, mp.velocityRange.velEnd);
+
+        auto [it, fresh] = widthByRange.try_emplace(range, width);
+        if (!fresh && std::fabs(width - it->second) > 1e-4)
+            uneven = true;
+
+        zones.push_back({std::move(zn)});
+    }
+};
+
 bool importSFZ(const fs::path &f, engine::Engine &e)
 {
     int octaveOffset{0};
@@ -610,6 +661,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     // to ctx.recordUnusedItem at the end of the import.
     std::map<std::string, std::string> unusedZoneOpcodes;
     std::set<std::string> reportedSfzFilTypes;
+    std::map<int, RandStack> randStacks;
     for (const auto &[r, list] : doc)
     {
         if (r.type != SFZParser::Header::region)
@@ -792,6 +844,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             };
             zoneGeometry(zn, mergedOpcodes, loadInfo, onAutofix, octaveOffset);
             zonePlayback(zn, mergedOpcodes);
+            auto randSlice = zoneRandSlice(mergedOpcodes);
             auto loopArgs = zoneLoopParse(mergedOpcodes, loadInfo);
             zoneEnvelope(zn, ctx, mergedOpcodes, 0, "ampeg");
             zoneEnvelope(zn, ctx, mergedOpcodes, 1, "fileg");
@@ -931,7 +984,10 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
             if (roundRobinPosition <= 0)
             {
-                ctx.addZoneToGroup(groupId, std::move(zn));
+                if (randSlice.has_value())
+                    randStacks[groupId].add(std::move(zn), *randSlice);
+                else
+                    ctx.addZoneToGroup(groupId, std::move(zn));
             }
         }
         break;
@@ -971,6 +1027,39 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
         break;
         }
     }
+    // a rand stack is only complete once the file is, so it folds and places
+    // after the walk rather than as each region is read
+    for (auto &[gid, stack] : randStacks)
+    {
+        if (stack.uneven)
+        {
+            ctx.unsupported("SFZ lorand/hirand weighting",
+                            "ranges of unequal width import as evenly picked variants");
+        }
+
+        auto fits = stack.zones.size() <= (size_t)scxt::maxVariantsPerZone;
+        auto folded = import_support::foldZonesToVariants(
+            ctx, std::move(stack.zones), engine::Zone::VariantPlaybackMode::TRUE_RANDOM);
+
+        // several zones out of one stack is just a stack per velocity layer, the
+        // ordinary shape. A zone holding a lone variant is the loss: that region
+        // was meant to sound on its slice of the dice and now sounds on every note
+        auto stranded = std::any_of(folded.begin(), folded.end(), [](const auto &z) {
+            return !z->variantData.variants[1].active;
+        });
+
+        if (fits && stranded)
+        {
+            ctx.warn("SFZ Random Round Robin",
+                     "A region chosen by lorand/hirand shares its key and velocity range "
+                     "with no other, so it will sound on every note rather than on its "
+                     "share of the random draw. Check the mapping.");
+        }
+
+        for (auto &z : folded)
+            ctx.addZoneToGroup(gid, std::move(z));
+    }
+
     for (auto &[k, v] : unusedZoneOpcodes)
         ctx.recordUnusedItem("sfz", k, v);
 
