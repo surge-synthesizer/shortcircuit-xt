@@ -952,12 +952,14 @@ SC_STREAMDEF(scxt::engine::VelocityRange, SC_FROM({
 SC_STREAMDEF(engine::Engine::EngineStatusMessage, SC_FROM({
                  v = {{"isAudioRunning", t.isAudioRunning},
                       {"sampleRate", t.sampleRate},
-                      {"runningEnvironment", t.runningEnvironment}};
+                      {"runningEnvironment", t.runningEnvironment},
+                      {"runningHost", t.runningHost}};
              }),
              SC_TO({
                  findIf(v, "isAudioRunning", to.isAudioRunning);
                  findIf(v, "sampleRate", to.sampleRate);
                  findIf(v, "runningEnvironment", to.runningEnvironment);
+                 findIf(v, "runningHost", to.runningHost);
              }));
 
 SC_STREAMDEF(engine::Bus, SC_FROM({
