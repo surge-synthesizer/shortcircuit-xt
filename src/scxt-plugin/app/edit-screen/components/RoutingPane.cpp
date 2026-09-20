@@ -25,6 +25,9 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <algorithm>
+#include <array>
+
 #include "RoutingPane.h"
 #include "ProcessorPane.h"
 #include "app/SCXTEditor.h"
@@ -58,6 +61,61 @@ engine::Group::GroupOutputInfo &RoutingPaneGroupTraits::outputInfo(SCXTEditor *e
 {
     return e->editorDataCache.groupOutputInfo;
 }
+
+namespace
+{
+std::string oversampleModeLabel(engine::Group::OversampleMode m)
+{
+    switch (m)
+    {
+    case engine::Group::OS_OFF:
+        return "HQ: OFF";
+    case engine::Group::OS_AUTO:
+        return "HQ: AUTO";
+    case engine::Group::OS_ON:
+        return "HQ: ON";
+    }
+    return "HQ: ON";
+}
+
+std::string oversampleModeMenuLabel(engine::Group::OversampleMode m)
+{
+    switch (m)
+    {
+    case engine::Group::OS_OFF:
+        return "Off (1x)";
+    case engine::Group::OS_AUTO:
+        return "Auto (2x when pitched up)";
+    case engine::Group::OS_ON:
+        return "On (2x)";
+    }
+    return "On (2x)";
+}
+
+// the order the header offers, which is the two plain rates before the clever one
+constexpr std::array<engine::Group::OversampleMode, 3> oversampleOrder{
+    engine::Group::OS_OFF, engine::Group::OS_ON, engine::Group::OS_AUTO};
+
+int oversampleOrderIndexOf(engine::Group::OversampleMode m)
+{
+    auto p = std::find(oversampleOrder.begin(), oversampleOrder.end(), m);
+    if (p == oversampleOrder.end())
+        return 0;
+    return (int)std::distance(oversampleOrder.begin(), p);
+}
+
+engine::Group::OversampleMode nextOversampleMode(engine::Group::OversampleMode m)
+{
+    return oversampleOrder[(oversampleOrderIndexOf(m) + 1) % oversampleOrder.size()];
+}
+
+// the wheel steps rather than wraps, so it cannot roll past an end and come back
+engine::Group::OversampleMode jogOversampleMode(engine::Group::OversampleMode m, int dir)
+{
+    auto n = std::clamp(oversampleOrderIndexOf(m) + dir, 0, (int)oversampleOrder.size() - 1);
+    return oversampleOrder[n];
+}
+} // namespace
 
 template <typename RPTraits>
 struct RoutingPaneContents : juce::Component, HasEditor, sst::jucegui::layouts::JsonLayoutHost
@@ -545,9 +603,6 @@ RoutingPane<RPTraits>::RoutingPane(SCXTEditor *e)
 
     if constexpr (!RPTraits::forZone)
     {
-        using bfac = connectors::BooleanSingleValueFactory<
-            bool_attachment_t, scxt::messaging::client::UpdateGroupOutputBoolValue>;
-        oversampleAttachment = bfac::attachOnly(info, info.oversample, this);
         addOversampleButton();
     }
 
@@ -565,13 +620,68 @@ template <typename RPTraits> void RoutingPane<RPTraits>::resized()
 
 template <typename RPTraits> void RoutingPane<RPTraits>::addOversampleButton()
 {
-    auto ob = std::make_unique<jcmp::ToggleButton>();
-    ob->setSource(oversampleAttachment.get());
-    ob->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
-    ob->setLabel("2xOS");
-    ob->setLabelDrawsBackground(false);
-    setupFloatWidget(ob.get(), oversampleAttachment);
-    addAdditionalHamburgerComponent(std::move(ob), 28);
+    if constexpr (!RPTraits::forZone)
+    {
+        auto ob = std::make_unique<jcmp::TextPushButton>();
+        oversampleButton = ob.get();
+        ob->setDrawMode(jcmp::TextPushButton::DrawMode::VALUE_NO_BG);
+        ob->setLabel(oversampleModeLabel(info.oversample));
+        ob->setOnCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->setOversampleMode(nextOversampleMode(w->info.oversample));
+        });
+        ob->setOnRightMouseCallback([w = juce::Component::SafePointer(this)]() {
+            if (w)
+                w->showOversampleMenu();
+        });
+        ob->setOnJogCallback([w = juce::Component::SafePointer(this)](int dir) {
+            if (w)
+                w->setOversampleMode(jogOversampleMode(w->info.oversample, dir));
+        });
+        addAdditionalHamburgerComponent(std::move(ob), 54);
+    }
+}
+
+template <typename RPTraits> void RoutingPane<RPTraits>::updateOversampleButton()
+{
+    if constexpr (!RPTraits::forZone)
+    {
+        if (oversampleButton)
+        {
+            oversampleButton->setLabel(oversampleModeLabel(info.oversample));
+            oversampleButton->repaint();
+        }
+    }
+}
+
+template <typename RPTraits>
+void RoutingPane<RPTraits>::setOversampleMode(engine::Group::OversampleMode m)
+{
+    if constexpr (!RPTraits::forZone)
+    {
+        info.oversample = m;
+        sendSingleToSerialization<typename RPTraits::int16Msg_t>(info, info.oversample);
+        updateOversampleButton();
+    }
+}
+
+template <typename RPTraits> void RoutingPane<RPTraits>::showOversampleMenu()
+{
+    if constexpr (!RPTraits::forZone)
+    {
+        auto p = juce::PopupMenu();
+        p.addSectionHeader("Oversampling");
+        p.addSeparator();
+        for (auto m : oversampleOrder)
+        {
+            p.addItem(oversampleModeMenuLabel(m), true, info.oversample == m,
+                      [w = juce::Component::SafePointer(this), m]() {
+                          if (w)
+                              w->setOversampleMode(m);
+                      });
+        }
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
+    }
 }
 
 template <typename RPTraits> void RoutingPane<RPTraits>::setActive(bool b)
@@ -594,6 +704,7 @@ template <typename RPTraits> void RoutingPane<RPTraits>::updateFromOutputInfo()
 {
     contents->updateProcRoutingFromInfo();
     contents->repaint();
+    updateOversampleButton();
 }
 
 template <typename RPTraits> void RoutingPane<RPTraits>::updateFromProcessorPanes()

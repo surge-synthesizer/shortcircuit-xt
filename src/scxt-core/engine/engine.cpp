@@ -86,13 +86,6 @@ namespace scxt::engine
 
 Engine::Engine()
 {
-    SCLOG_IF(always, "Shortcircuit XT : Constructing Engine");
-    SCLOG_IF(always,
-             "    Version   = " << sst::plugininfra::VersionInformation::git_implied_display_version
-                                << " / "
-                                << sst::plugininfra::VersionInformation::project_version_and_hash);
-    SCLOG_IF(always, "    Stream V  = " << humanReadableVersion(scxt::currentStreamingVersion));
-
     memset(cpuAverages, 0, sizeof(cpuAverages));
 
     id.id = rng.unifU32() % 1024;

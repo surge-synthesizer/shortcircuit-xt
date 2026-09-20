@@ -29,6 +29,7 @@
 #define SCXT_SRC_SCXT_PLUGIN_APP_EDIT_SCREEN_COMPONENTS_ROUTINGPANE_H
 
 #include "sst/jucegui/components/NamedPanel.h"
+#include "sst/jucegui/components/TextPushButton.h"
 #include "app/HasEditor.h"
 #include "engine/zone.h"
 #include "engine/group.h"
@@ -83,9 +84,11 @@ template <typename RPTraits> struct RoutingPane : sst::jucegui::components::Name
 
     void updateFromOutputInfo();
 
-    typedef connectors::BooleanPayloadDataAttachment<typename RPTraits::info_t> bool_attachment_t;
-    std::unique_ptr<bool_attachment_t> oversampleAttachment;
+    juce::Component::SafePointer<sst::jucegui::components::TextPushButton> oversampleButton;
     void addOversampleButton();
+    void updateOversampleButton();
+    void setOversampleMode(engine::Group::OversampleMode);
+    void showOversampleMenu();
     std::unique_ptr<RoutingPaneContents<RPTraits>> contents;
     bool active{false};
 

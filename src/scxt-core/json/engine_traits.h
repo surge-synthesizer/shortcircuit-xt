@@ -511,6 +511,8 @@ STREAM_ENUM(engine::Group::PlayMode, engine::Group::toStringPlayMode,
             engine::Group::fromStringPlayMode);
 STREAM_ENUM(engine::Group::NotePriority, engine::Group::toStringNotePriority,
             engine::Group::fromStringNotePriority);
+STREAM_ENUM(engine::Group::OversampleMode, engine::Group::toStringOversampleMode,
+            engine::Group::fromStringOversampleMode);
 STREAM_ENUM(scxt::dsp::processor::ProcessorStorage::GroupProcessorPitch,
             scxt::dsp::processor::ProcessorStorage::toStringGroupProcessorPitch,
             scxt::dsp::processor::ProcessorStorage::fromStringGroupProcessorPitch);
@@ -519,7 +521,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  v = {{"amplitude", t.amplitude},
                       {"pan", t.pan},
                       {"tn", t.tuning},
-                      {"oversample", t.oversample},
+                      {"osm", t.oversample},
                       {"velocitySensitivity", t.velocitySensitivity},
                       {"muted", t.muted},
                       {"procRouting", t.procRouting},
@@ -546,7 +548,14 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findOrSet(v, "soloed", false, result.soloed);
                  findIf(v, "procRouting", result.procRouting);
                  findIf(v, "velocitySensitivity", result.velocitySensitivity);
-                 findIf(v, "oversample", result.oversample);
+                 // before the three way mode, a bare bool meant "always 2x" or "2x when pitched up"
+                 if (!findIf(v, "osm", result.oversample))
+                 {
+                     bool legacyOversample{true};
+                     findIf(v, "oversample", legacyOversample);
+                     result.oversample =
+                         legacyOversample ? engine::Group::OS_ON : engine::Group::OS_AUTO;
+                 }
                  int rt{engine::BusAddress::DEFAULT_BUS};
                  findIf(v, "routeTo", rt);
                  findIf(v, "hip", result.hasIndependentPolyLimit);

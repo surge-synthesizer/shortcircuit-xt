@@ -91,7 +91,7 @@ int ImporterContext::addGroup(const std::string &name)
     if (!name.empty())
         group->name = name;
     // Imported content rarely needs the default 2x oversample
-    group->outputInfo.oversample = false;
+    group->outputInfo.oversample = engine::Group::OS_AUTO;
     addedGroups.push_back(idx);
     return idx;
 }
