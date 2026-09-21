@@ -55,7 +55,6 @@ void SampleWaveform::rebuildHotZones()
     }
     auto r = getInsetBounds();
 
-    auto fade = xPixelForSampleDistance(v.loopFade);
     auto start = xPixelForSample(v.startSample);
     auto end = xPixelForSample(v.endSample);
     auto ls = xPixelForSample(v.startLoop);
@@ -75,8 +74,11 @@ void SampleWaveform::rebuildHotZones()
     startLoopHZ = juce::Rectangle<int>(rangeStartBox(ls), r.getY(), hotZoneSize, hotZoneSize);
     endLoopHZ = juce::Rectangle<int>(rangeEndBox(le), r.getY(), hotZoneSize, hotZoneSize);
 
-    // the fade runs up to the loop start, so it sits on the far side of it when mirrored
-    fadeLoopHz = juce::Rectangle<int>(isReversed() ? ls : ls - fade, r.getY(), fade, r.getHeight());
+    // the fade sits at the end of the loop, not before its start, and so runs up to it
+    // - the far side of it when mirrored
+    auto fadeLen = (int)scxt::dsp::clampLoopFade(v.loopFade, v.startSample, v.startLoop, v.endLoop);
+    auto fade = xPixelForSampleDistance(fadeLen);
+    fadeLoopHz = juce::Rectangle<int>(isReversed() ? le : le - fade, r.getY(), fade, r.getHeight());
     repaint();
 
     slicePixelAndSamplePositions.clear();
@@ -674,8 +676,6 @@ void SampleWaveform::paint(juce::Graphics &g)
     auto ss = xPixelForSample(v.startSample, false);
     auto se = xPixelForSample(v.endSample, false);
     auto ls = xPixelForSample(v.startLoop, false);
-    auto fs = xPixelForSample(v.startLoop - v.loopFade, false);
-    auto fe = xPixelForSample(v.startLoop + v.loopFade, false);
     auto le = xPixelForSample(v.endLoop, false);
 
     auto bg1 = editor->themeColor(theme::ColorMap::bg_1);
@@ -690,13 +690,32 @@ void SampleWaveform::paint(juce::Graphics &g)
     auto startLetter = isReversed() ? "E" : "S";
     auto endLetter = isReversed() ? "S" : "E";
 
+    /*
+     * Draw the crossfade where the engine actually performs it, at the clamped length
+     * the engine actually uses. This used to be a symmetric triangle around startLoop,
+     * which is neither: nothing happens after startLoop, and the fade itself lives in
+     * the window running up to each marker, whichever way the loop runs.
+     */
+    const auto fadeLen =
+        scxt::dsp::clampLoopFade(v.loopFade, v.startSample, v.startLoop, v.endLoop);
+
     // this order matters. We want the fade line below the hot zones
-    if (v.loopActive && v.loopFade > 0 &&
-        ((fe >= 0 && fe <= getWidth()) || (fs >= 0 && fs <= getWidth())))
+    if (v.loopActive && fadeLen > 0)
     {
         g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
-        g.drawLine(fs, r.getBottom(), ls, r.getY());
-        g.drawLine(ls, r.getY(), fe, r.getBottom());
+        // a ramp from silent at one end of the window to full at the seam
+        auto ramp = [&](int64_t fromSample, int64_t toSample) {
+            auto a = xPixelForSample(fromSample, false);
+            auto b = xPixelForSample(toSample, false);
+            if ((a < 0 || a > getWidth()) && (b < 0 || b > getWidth()))
+                return;
+            g.drawLine(a, r.getBottom(), b, r.getY());
+        };
+
+        // the tail of the loop crossfading into the material before startLoop, which is
+        // where a ping-pong loop fades too - it just traverses the window both ways
+        ramp(v.endLoop - fadeLen, v.endLoop);
+        ramp(v.startLoop - fadeLen, v.startLoop);
     }
 
     // Draw slices before markers so they don't occlude on overdrat

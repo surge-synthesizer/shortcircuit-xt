@@ -279,7 +279,8 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
     addLabel(endP, "End");
     attachSamplePoint(startL, "StartL", variantView.variants[selectedVariation].startLoop);
     sampleAttachments[startL]->precheckGuiAdjust = [this](auto f) {
-        return std::min(f, this->variantView.variants[this->selectedVariation].endLoop);
+        const auto &v = this->variantView.variants[this->selectedVariation];
+        return std::clamp(f, v.startSample, v.endLoop);
     };
 
     editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[startL].get());
@@ -291,6 +292,10 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
     editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[endL].get());
     addLabel(endL, "End");
     attachSamplePoint(fadeL, "fadeL", variantView.variants[selectedVariation].loopFade);
+    sampleAttachments[fadeL]->precheckGuiAdjust = [this](auto f) {
+        const auto &v = this->variantView.variants[this->selectedVariation];
+        return scxt::dsp::clampLoopFade(f, v.startSample, v.startLoop, v.endLoop);
+    };
     editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[fadeL].get());
     addLabel(fadeL, "XF");
 
