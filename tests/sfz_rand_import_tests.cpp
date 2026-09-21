@@ -574,3 +574,103 @@ lorand=0.5
     CHECK(activeVariants(*groups[0]->getZones()[0]) == 2);
     CHECK(activeVariants(*groups[1]->getZones()[0]) == 2);
 }
+
+/*
+ * lorand/hirand on a <group> header is a statement about the whole group, not about picking
+ * between its regions - the regions underneath are usually a velocity split, and folding them
+ * into variants of one zone both loses the split and leaves each slice sounding on every note.
+ * So group level rand imports as a dice trigger on the group instead.
+ */
+namespace
+{
+// The lo/hi of a group's dice condition, or nullopt when it has none
+std::optional<std::pair<float, float>> diceOf(const scxt::engine::Group &g)
+{
+    const auto &tc = g.triggerConditions;
+    for (int i = 0; i < scxt::triggerConditionsPerGroup; ++i)
+        if (tc.active[i] && tc.storage[i].id == scxt::engine::GroupTriggerID::DICE)
+            return std::make_pair(tc.storage[i].args[0], tc.storage[i].args[1]);
+    return std::nullopt;
+}
+
+// Two groups splitting the dice in half, each holding a two layer velocity split - the shape
+// SMDrums and friends are written in
+const std::string groupDice = R"(
+<group>
+lokey=60 hikey=60 pitch_keycenter=60
+hirand=0.5
+
+<region>
+sample=a.wav
+hivel=64
+
+<region>
+sample=b.wav
+lovel=65
+
+<group>
+lokey=60 hikey=60 pitch_keycenter=60
+lorand=0.5
+
+<region>
+sample=c.wav
+hivel=64
+
+<region>
+sample=d.wav
+lovel=65
+)";
+} // namespace
+
+TEST_CASE("SFZ group level rand becomes a dice trigger", "[importer][sfz]")
+{
+    auto p = buildSfz("group_dice", groupDice, quartetWavs);
+
+    Fixture f;
+    f.load(p);
+
+    auto &groups = f.part0().getGroups();
+    REQUIRE(groups.size() == 2);
+
+    auto d0 = diceOf(*groups[0]);
+    REQUIRE(d0.has_value());
+    CHECK(d0->first == Approx(0.f));
+    CHECK(d0->second == Approx(0.5f));
+
+    auto d1 = diceOf(*groups[1]);
+    REQUIRE(d1.has_value());
+    CHECK(d1->first == Approx(0.5f));
+    CHECK(d1->second == Approx(1.f));
+}
+
+TEST_CASE("SFZ group level rand leaves the velocity split alone", "[importer][sfz]")
+{
+    auto p = buildSfz("group_dice_split", groupDice, quartetWavs);
+
+    Fixture f;
+    f.load(p);
+
+    // Two zones per group, one per velocity layer, each with its own single sample. Folding
+    // them to variants would give one zone of two and lose the split.
+    auto &groups = f.part0().getGroups();
+    REQUIRE(groups.size() == 2);
+    for (const auto &g : groups)
+    {
+        REQUIRE(g->getZones().size() == 2);
+        for (const auto &z : g->getZones())
+            CHECK(activeVariants(*z) == 1);
+    }
+}
+
+TEST_CASE("SFZ region level rand still folds to variants and sets no dice", "[importer][sfz]")
+{
+    auto p = buildSfz("region_rand_no_dice", quartet, quartetWavs);
+
+    Fixture f;
+    f.load(p);
+
+    auto &groups = f.part0().getGroups();
+    REQUIRE(groups.size() == 1);
+    CHECK_FALSE(diceOf(*groups[0]).has_value());
+    CHECK(activeVariants(f.onlyZone()) == 4);
+}

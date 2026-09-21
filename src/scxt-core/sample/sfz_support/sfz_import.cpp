@@ -251,6 +251,56 @@ std::optional<float> zoneRandSlice(opCodeMap_t &opCodes)
     return std::max(0.f, hi - lo);
 }
 
+/*
+ * The same opcodes on a <group> header mean something else: they gate the whole group, whose
+ * regions are usually a velocity split rather than alternatives to each other. So they become a
+ * dice condition on the group, and are consumed from the group opcodes so the regions below
+ * don't inherit them and fold themselves into a variant stack. Returns whether one was set.
+ */
+bool groupRandToDice(engine::Group &group, engine::GroupTriggerInstrumentState &gis,
+                     SFZParser::opCodes_t &groupOpcodes)
+{
+    float lo{0.f}, hi{1.f};
+    bool any{false};
+    for (const auto &oc : groupOpcodes)
+    {
+        if (oc.name == "lorand")
+        {
+            lo = (float)std::atof(oc.value.c_str());
+            any = true;
+        }
+        if (oc.name == "hirand")
+        {
+            hi = (float)std::atof(oc.value.c_str());
+            any = true;
+        }
+    }
+
+    // The whole range gates nothing, and zoneRandSlice ignores it too, so leave it to be consumed
+    if (!any || (lo <= 0.f && hi >= 1.f))
+        return false;
+
+    groupOpcodes.erase(
+        std::remove_if(groupOpcodes.begin(), groupOpcodes.end(),
+                       [](const auto &oc) { return oc.name == "lorand" || oc.name == "hirand"; }),
+        groupOpcodes.end());
+
+    auto &tc = group.triggerConditions;
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        if (tc.storage[i].id != engine::GroupTriggerID::NONE)
+            continue;
+
+        tc.storage[i].id = engine::GroupTriggerID::DICE;
+        tc.storage[i].args[0] = lo;
+        tc.storage[i].args[1] = hi;
+        tc.active[i] = true;
+        tc.setupOnUnstream(gis);
+        return true;
+    }
+    return false;
+}
+
 // Parse SFZ loop_* opcodes into LoopArgs. Side-effect: masks engine::Zone::LOOP
 // out of loadInfo if explicit bounds were given (so the later attach call won't
 // overwrite them from sample meta).
@@ -657,6 +707,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     // SFZ opcode inheritance runs global -> group -> region, innermost wins
     SFZParser::opCodes_t currentGlobalOpcodes;
     SFZParser::opCodes_t currentGroupOpcodes;
+    bool currentGroupHasDice{false};
     // Captures (opcode -> first observed value) across all regions; flushed
     // to ctx.recordUnusedItem at the end of the import.
     std::map<std::string, std::string> unusedZoneOpcodes;
@@ -677,6 +728,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             // still in flight from the previous one stop applying.
             currentGlobalOpcodes = list;
             currentGroupOpcodes.clear();
+            currentGroupHasDice = false;
         }
         break;
         case SFZParser::Header::group:
@@ -684,6 +736,8 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             groupId = ctx.addGroup();
             currentGroupOpcodes = list;
             auto &group = ctx.getPart().getGroup(groupId);
+            currentGroupHasDice = groupRandToDice(*group, ctx.getPart().groupTriggerInstrumentState,
+                                                  currentGroupOpcodes);
             for (auto &oc : list)
             {
                 if (oc.name == "group_label" || oc.name == "name")
@@ -845,6 +899,13 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             zoneGeometry(zn, mergedOpcodes, loadInfo, onAutofix, octaveOffset);
             zonePlayback(zn, mergedOpcodes);
             auto randSlice = zoneRandSlice(mergedOpcodes);
+            if (randSlice && currentGroupHasDice)
+            {
+                // SFZ would have the region's range replace the group's; we end up with both,
+                // which narrows rather than overrides
+                ctx.unsupported("SFZ lorand/hirand nesting",
+                                "a region range inside a group that already has one");
+            }
             auto loopArgs = zoneLoopParse(mergedOpcodes, loadInfo);
             zoneEnvelope(zn, ctx, mergedOpcodes, 0, "ampeg");
             zoneEnvelope(zn, ctx, mergedOpcodes, 1, "fileg");
