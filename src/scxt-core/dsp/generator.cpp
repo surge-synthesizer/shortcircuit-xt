@@ -168,6 +168,8 @@ struct KernelProcessor
 {
     int32_t SamplePos, SampleSubPos;
     int32_t m0, i;
+    // the fade read is not always at the playhead's fraction - see mirrorRead
+    int32_t FadeSubPos, FadeM0;
 
     T *ReadSample[NUM_CHANNELS];
 
@@ -248,6 +250,8 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
 
     auto f_subPos = (float)(ks.SampleSubPos);
     f_subPos /= (1 << 24);
+    // a mirrored fade read carries its own fraction, so it interpolates at its own phase
+    auto f_fadeSubPos = (float)(ks.FadeSubPos) / (float)(1 << 24);
 
     auto readPos = FIRoffset - 1;
     auto y0{NormalizeSampleToF32(readSampleL[readPos])};
@@ -261,7 +265,7 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
         {
             auto fadeVal0{NormalizeSampleToF32(readFadeSampleL[readPos])};
             auto fadeVal1{NormalizeSampleToF32(readFadeSampleL[readPos + 1])};
-            auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
+            auto fadeVal = fadeVal0 * (1 - f_fadeSubPos) + fadeVal1 * f_fadeSubPos;
             OutputL[i] = OutputL[i] * ks.mainGain + fadeVal * ks.partnerGain;
         }
     }
@@ -283,7 +287,7 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
             {
                 float fadeVal0{NormalizeSampleToF32(readFadeSampleR[readPos])};
                 float fadeVal1{NormalizeSampleToF32(readFadeSampleR[readPos + 1])};
-                auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
+                auto fadeVal = fadeVal0 * (1 - f_fadeSubPos) + fadeVal1 * f_fadeSubPos;
 
                 OutputR[i] = OutputR[i] * ks.mainGain + fadeVal * ks.partnerGain;
             }
@@ -304,16 +308,24 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
     auto m0{ks.m0};
     auto i{ks.i};
 
-    auto f_subPos = (float)(ks.SampleSubPos) / (float)(1 << 24);
     auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
-    f_subPos = std::pow(f_subPos, 0.5f * subRatio + 0.5f / subRatio);
+    auto warp = [subRatio](float v) { return std::pow(v, 0.5f * subRatio + 0.5f / subRatio); };
+    auto f_subPos = warp((float)(ks.SampleSubPos) / (float)(1 << 24));
+    // a wrap translates the read and keeps the playhead's fraction; only a mirror turns it
+    // round, and warp is a pow, so do not pay for a second one unless it differs
+    auto f_fadeSubPos = f_subPos;
+    if constexpr (LOOP_ACTIVE)
+    {
+        if (ks.fadeActive && ks.FadeSubPos != ks.SampleSubPos)
+            f_fadeSubPos = warp((float)(ks.FadeSubPos) / (float)(1 << 24));
+    }
 
     auto readPos = FIRoffset - 2;
 
     // The crossfade partner has to be interpolated exactly like the main read. It used
     // to be a linear blend of [readPos, readPos+1] - one sample early, since the cubic
     // sits between readPos+1 and readPos+2 - using the already pow-warped subposition.
-    auto cubic = [readPos, f_subPos](const T *__restrict src) {
+    auto cubic = [readPos](const T *__restrict src, float f_subPos) {
         auto y0{NormalizeSampleToF32(src[readPos])};
         auto y1{NormalizeSampleToF32(src[readPos + 1])};
         auto y2{NormalizeSampleToF32(src[readPos + 2])};
@@ -324,12 +336,13 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
         return ((a * f_subPos + b) * f_subPos + c) * f_subPos + y1;
     };
 
-    OutputL[i] = cubic(readSampleL);
+    OutputL[i] = cubic(readSampleL, f_subPos);
 
     if constexpr (LOOP_ACTIVE)
     {
         if (ks.fadeActive)
-            OutputL[i] = OutputL[i] * ks.mainGain + cubic(readFadeSampleL) * ks.partnerGain;
+            OutputL[i] =
+                OutputL[i] * ks.mainGain + cubic(readFadeSampleL, f_fadeSubPos) * ks.partnerGain;
     }
 
     if constexpr (NUM_CHANNELS == 2)
@@ -338,12 +351,13 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
         auto readFadeSampleR{ks.ReadFadeSample[1]};
         auto OutputR{ks.Output[1]};
 
-        OutputR[i] = cubic(readSampleR);
+        OutputR[i] = cubic(readSampleR, f_subPos);
 
         if constexpr (LOOP_ACTIVE)
         {
             if (ks.fadeActive)
-                OutputR[i] = OutputR[i] * ks.mainGain + cubic(readFadeSampleR) * ks.partnerGain;
+                OutputR[i] = OutputR[i] * ks.mainGain +
+                             cubic(readFadeSampleR, f_fadeSubPos) * ks.partnerGain;
         }
     }
 }
@@ -391,6 +405,29 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
     tmp[3] =
         SIMD_MM(add_ps)(SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[m0 + 12]), lipol0),
                         *((SIMD_M128 *)&sincTable.SincTableF32[m0 + 12]));
+    SIMD_M128 ftmp[4];
+    if constexpr (LOOP_ACTIVE)
+    {
+        // a mirrored fade read sits at its own fraction, so it needs its own filter phase;
+        // a wrap shares the playhead's and can reuse the coefficients already built
+        if (ks.fadeActive && ks.FadeSubPos == ks.SampleSubPos)
+        {
+            for (int q = 0; q < 4; ++q)
+                ftmp[q] = tmp[q];
+        }
+        else if (ks.fadeActive)
+        {
+            SIMD_M128 flipol0 = SIMD_MM(setzero_ps)();
+            flipol0 = SIMD_MM(cvtsi32_ss)(flipol0, ks.FadeSubPos & 0xffff);
+            flipol0 = SIMD_MM(shuffle_ps)(flipol0, flipol0, SIMD_MM_SHUFFLE(0, 0, 0, 0));
+            const auto fm0 = ks.FadeM0;
+            for (int q = 0; q < 4; ++q)
+                ftmp[q] = SIMD_MM(add_ps)(
+                    SIMD_MM(mul_ps)(*((SIMD_M128 *)&sincTable.SincOffsetF32[fm0 + 4 * q]), flipol0),
+                    *((SIMD_M128 *)&sincTable.SincTableF32[fm0 + 4 * q]));
+        }
+    }
+
     sL4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readSampleL));
     sL4 = SIMD_MM(add_ps)(sL4, SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readSampleL + 4)));
     sL4 = SIMD_MM(add_ps)(sL4, SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readSampleL + 8)));
@@ -405,13 +442,13 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
     {
         if (ks.fadeActive)
         {
-            sR4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readFadeSampleL));
+            sR4 = SIMD_MM(mul_ps)(ftmp[0], SIMD_MM(loadu_ps)(readFadeSampleL));
             sR4 = SIMD_MM(add_ps)(sR4,
-                                  SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readFadeSampleL + 4)));
+                                  SIMD_MM(mul_ps)(ftmp[1], SIMD_MM(loadu_ps)(readFadeSampleL + 4)));
             sR4 = SIMD_MM(add_ps)(sR4,
-                                  SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readFadeSampleL + 8)));
-            sR4 = SIMD_MM(add_ps)(sR4,
-                                  SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readFadeSampleL + 12)));
+                                  SIMD_MM(mul_ps)(ftmp[2], SIMD_MM(loadu_ps)(readFadeSampleL + 8)));
+            sR4 = SIMD_MM(add_ps)(
+                sR4, SIMD_MM(mul_ps)(ftmp[3], SIMD_MM(loadu_ps)(readFadeSampleL + 12)));
             // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
             sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
             sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
@@ -442,13 +479,13 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
         {
             if (ks.fadeActive)
             {
-                sR4 = SIMD_MM(mul_ps)(tmp[0], SIMD_MM(loadu_ps)(readFadeSampleR));
+                sR4 = SIMD_MM(mul_ps)(ftmp[0], SIMD_MM(loadu_ps)(readFadeSampleR));
                 sR4 = SIMD_MM(add_ps)(
-                    sR4, SIMD_MM(mul_ps)(tmp[1], SIMD_MM(loadu_ps)(readFadeSampleR + 4)));
+                    sR4, SIMD_MM(mul_ps)(ftmp[1], SIMD_MM(loadu_ps)(readFadeSampleR + 4)));
                 sR4 = SIMD_MM(add_ps)(
-                    sR4, SIMD_MM(mul_ps)(tmp[2], SIMD_MM(loadu_ps)(readFadeSampleR + 8)));
+                    sR4, SIMD_MM(mul_ps)(ftmp[2], SIMD_MM(loadu_ps)(readFadeSampleR + 8)));
                 sR4 = SIMD_MM(add_ps)(
-                    sR4, SIMD_MM(mul_ps)(tmp[3], SIMD_MM(loadu_ps)(readFadeSampleR + 12)));
+                    sR4, SIMD_MM(mul_ps)(ftmp[3], SIMD_MM(loadu_ps)(readFadeSampleR + 12)));
                 // sR4 = sst::basic_blocks::mechanics::sum_ps_to_ss(sR4);
                 sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
                 sR4 = SIMD_MM(hadd_ps)(sR4, sR4);
@@ -501,6 +538,29 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
     if constexpr (stereo)
         sR8B = SIMD_MM(madd_epi16)(tmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readSampleR + 8)));
 
+    SIMD_M128I ftmp, ftmp2;
+    if constexpr (LOOP_ACTIVE)
+    {
+        // a mirrored fade read sits at its own fraction, so it needs its own filter phase;
+        // a wrap shares the playhead's and can reuse the coefficients already built
+        if (ks.fadeActive && ks.FadeSubPos == ks.SampleSubPos)
+        {
+            ftmp = tmp;
+            ftmp2 = tmp2;
+        }
+        else if (ks.fadeActive)
+        {
+            SIMD_M128I flipol0 = SIMD_MM(set1_epi16)(ks.FadeSubPos & 0xffff);
+            const auto fm0 = ks.FadeM0;
+            ftmp = SIMD_MM(add_epi16)(
+                SIMD_MM(mulhi_epi16)(*((SIMD_M128I *)&sincTable.SincOffsetI16[fm0]), flipol0),
+                *((SIMD_M128I *)&sincTable.SincTableI16[fm0]));
+            ftmp2 = SIMD_MM(add_epi16)(
+                SIMD_MM(mulhi_epi16)(*((SIMD_M128I *)&sincTable.SincOffsetI16[fm0 + 8]), flipol0),
+                *((SIMD_M128I *)&sincTable.SincTableI16[fm0 + 8]));
+        }
+    }
+
     sL8A = SIMD_MM(add_epi32)(sL8A, sL8B);
     if constexpr (stereo)
         sR8A = SIMD_MM(add_epi32)(sR8A, sR8B);
@@ -531,15 +591,15 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
                 readFadeSampleR = ks.ReadFadeSample[1];
             }
 
-            sL8A = SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readFadeSampleL));
+            sL8A = SIMD_MM(madd_epi16)(ftmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readFadeSampleL));
             if constexpr (stereo)
                 sR8A =
-                    SIMD_MM(madd_epi16)(tmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readFadeSampleR));
-            sL8B = SIMD_MM(madd_epi16)(tmp2,
+                    SIMD_MM(madd_epi16)(ftmp, SIMD_MM(loadu_si128)((SIMD_M128I *)readFadeSampleR));
+            sL8B = SIMD_MM(madd_epi16)(ftmp2,
                                        SIMD_MM(loadu_si128)((SIMD_M128I *)(readFadeSampleL + 8)));
             if constexpr (stereo)
                 sR8B = SIMD_MM(madd_epi16)(
-                    tmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readFadeSampleR + 8)));
+                    ftmp2, SIMD_MM(loadu_si128)((SIMD_M128I *)(readFadeSampleR + 8)));
 
             sL8A = SIMD_MM(add_epi32)(sL8A, sL8B);
             if constexpr (stereo)
@@ -773,6 +833,8 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     {
         bool active{false};
         int partnerPos{0};
+        // a wrap translates the read so it keeps the playhead's fraction; a mirror does not
+        int partnerSubPos{0};
         float mainGain{1.f}, partnerGain{0.f};
     };
 
@@ -795,7 +857,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     };
     auto mirrorGains = [](float g) -> std::pair<float, float> { return {1.f - g, g}; };
 
-    auto fadeStateAt = [&](int p) -> FadeAt {
+    auto fadeStateAt = [&](int p, int subPos) -> FadeAt {
         if (loopFade <= 0 || !loopIsContinuing())
             return {};
 
@@ -819,7 +881,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             if (Travel < 0 && !GD->hasLooped)
                 return {};
             auto [mg, pg] = wrapGains((float)(p - fadeLo) / (float)loopFade);
-            return {true, GD->loopLowerBound - (GD->loopUpperBound - p), mg, pg};
+            return {true, GD->loopLowerBound - (GD->loopUpperBound - p), subPos, mg, pg};
         }
         else
         {
@@ -866,7 +928,8 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
              */
             auto g = std::clamp(0.5f * (1.f - std::abs((float)past) / (float)half), 0.f, 0.5f);
             auto [mg, pg] = mirrorGains(g);
-            return {true, 2 * bound - p, mg, pg};
+            auto [mpos, msub] = mirrorRead(p, subPos, bound);
+            return {true, mpos, msub, mg, pg};
         }
     };
 
@@ -951,7 +1014,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     // fade it blends against is loop-only
     FadeAt fade{};
     if constexpr (loopActive)
-        fade = fadeStateAt(SamplePos);
+        fade = fadeStateAt(SamplePos, SampleSubPos);
     refreshReads(SamplePos, fade);
 
     int NSamples = GD->blockSize;
@@ -960,16 +1023,26 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     for (i = 0; i < NSamples && !IsFinished; i++)
     {
 #define KPStereo(E, T, C, dataL, dataR, fadeL, fadeR)                                              \
-    KernelProcessor<E, T, C, loopActive> kp{                                                       \
-        SamplePos,        SampleSubPos,       int32_t(m0), i,                                      \
-        {dataL, dataR},   {fadeL, fadeR},     fade.active, fade.mainGain,                          \
-        fade.partnerGain, {OutputL, OutputR}, IO};                                                 \
+    KernelProcessor<E, T, C, loopActive> kp{SamplePos,                                             \
+                                            SampleSubPos,                                          \
+                                            int32_t(m0),                                           \
+                                            i,                                                     \
+                                            fade.partnerSubPos,                                    \
+                                            int32_t(fadeM0),                                       \
+                                            {dataL, dataR},                                        \
+                                            {fadeL, fadeR},                                        \
+                                            fade.active,                                           \
+                                            fade.mainGain,                                         \
+                                            fade.partnerGain,                                      \
+                                            {OutputL, OutputR},                                    \
+                                            IO};                                                   \
     kp.ProcessKernel(GD);
 
 #define KPMono(E, T, C, data, fadeData)                                                            \
     KernelProcessor<E, T, C, loopActive> ks{                                                       \
-        SamplePos,   SampleSubPos,  int32_t(m0),      i,         {data}, {fadeData},               \
-        fade.active, fade.mainGain, fade.partnerGain, {OutputL}, IO};                              \
+        SamplePos,        SampleSubPos, int32_t(m0), i,           fade.partnerSubPos,              \
+        int32_t(fadeM0),  {data},       {fadeData},  fade.active, fade.mainGain,                   \
+        fade.partnerGain, {OutputL},    IO};                                                       \
     ks.ProcessKernel(GD);
 
         using type_from_cond = typename std::conditional<fp, float, int16_t>::type;
@@ -991,6 +1064,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
         // 2. Resample
         unsigned int m0 = ((SampleSubPos >> 12) & 0xff0);
+        unsigned int fadeM0 = ((fade.partnerSubPos >> 12) & 0xff0);
         if (stereo)
         {
             switch (GD->interpolationType)
@@ -1208,7 +1282,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         }
 
         if constexpr (loopActive)
-            fade = fadeStateAt(SamplePos);
+            fade = fadeStateAt(SamplePos, SampleSubPos);
         refreshReads(SamplePos, fade);
     }
 
