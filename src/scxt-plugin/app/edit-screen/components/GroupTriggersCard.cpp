@@ -80,6 +80,8 @@ static argMetadata_t argMetadataFor(engine::GroupTriggerID id)
     {
     case engine::GroupTriggerID::PROGRAM_CHANGE:
         return range(0, 127, 0);
+    case engine::GroupTriggerID::DICE:
+        return range(0, 1, 2);
     case engine::GroupTriggerID::PITCH_BEND:
         return range(-8192, 8191, 0); // signed 14 bit, as the part carries it
     case engine::GroupTriggerID::KEYSWITCH_LATCH:
@@ -316,6 +318,8 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
 
         p.addItem("Program Change", mkv((int)engine::GroupTriggerID::PROGRAM_CHANGE));
         p.addItem("Pitch Bend", mkv((int)engine::GroupTriggerID::PITCH_BEND));
+
+        p.addItem("Dice per Key Press", mkv((int)engine::GroupTriggerID::DICE));
 
         /*
          * A group can only be in one round robin - being in two cycles at once means nothing -

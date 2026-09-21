@@ -58,6 +58,8 @@ enum struct GroupTriggerID : int32_t
     ROUND_ROBIN_RANDOM,
     ROUND_ROBIN_SHUFFLE,
 
+    DICE,
+
     // Leave these at the end please
     MACRO,
     MIDICC = MACRO + scxt::macrosPerPart,
@@ -129,6 +131,13 @@ struct GroupTriggerInstrumentState
     };
     std::array<std::array<RoundRobinSetState, scxt::maxRoundRobinSets>, numRoundRobinKinds>
         roundRobin{};
+
+    /*
+     * One roll per note on, shared by every group the note reaches, so groups carving up [0,1)
+     * between them sound exactly one. Runtime state like the round robin position - which number
+     * a performance happened to draw is not part of the instrument.
+     */
+    float noteDice{0.f};
 
     void resetRoundRobin()
     {

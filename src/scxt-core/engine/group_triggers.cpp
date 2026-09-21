@@ -65,6 +65,8 @@ std::string toStringGroupTriggerID(const GroupTriggerID &p)
         return "rrR";
     case GroupTriggerID::ROUND_ROBIN_SHUFFLE:
         return "rrS";
+    case GroupTriggerID::DICE:
+        return "dice";
     case GroupTriggerID::MACRO:
     case GroupTriggerID::MIDICC:
     case GroupTriggerID::LAST_MIDICC:
@@ -318,6 +320,33 @@ struct GTRoundRobin : GroupTrigger
     }
 };
 
+/*
+ * The dice. The part rolls once per note on before any group is asked, so this only reads the
+ * number - which keeps every group of a note looking at the same roll. Half open at the top so
+ * neighbouring slices tile [0,1) with no overlap and no gap, matching SFZ lorand/hirand.
+ */
+struct GTDice : GroupTrigger
+{
+    float lo{0.f}, hi{1.f};
+    GTDice(GroupTriggerID id, GroupTriggerInstrumentState &onState, GroupTriggerStorage &onStorage)
+        : GroupTrigger(id, onState, onStorage)
+    {
+    }
+
+    bool conditionHolds(const Engine &, const Group &, int16_t, int16_t) const override
+    {
+        return state.noteDice >= lo && state.noteDice < hi;
+    }
+
+    void storageAdjusted() override
+    {
+        lo = std::clamp(storage.args[0], 0.f, 1.f);
+        hi = std::clamp(storage.args[1], 0.f, 1.f);
+        if (lo > hi)
+            std::swap(lo, hi);
+    }
+};
+
 GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &gis,
                                GroupTriggerStorage &st, GroupTriggerBuffer &bf)
 {
@@ -345,6 +374,7 @@ GroupTrigger *makeGroupTrigger(GroupTriggerID id, GroupTriggerInstrumentState &g
         CS(GroupTriggerID::ROUND_ROBIN_CYCLE, GTRoundRobin);
         CS(GroupTriggerID::ROUND_ROBIN_RANDOM, GTRoundRobin);
         CS(GroupTriggerID::ROUND_ROBIN_SHUFFLE, GTRoundRobin);
+        CS(GroupTriggerID::DICE, GTDice);
     default:
         return nullptr;
     }
@@ -381,6 +411,8 @@ std::string getGroupTriggerDisplayName(GroupTriggerID id)
         return "RR/RND";
     case GroupTriggerID::ROUND_ROBIN_SHUFFLE:
         return "RR/SHF";
+    case GroupTriggerID::DICE:
+        return "DICE/KEY";
     default:
     {
         SCLOG_IF(groupTrigggers, "Un-named group trigger id=" << (int)id);

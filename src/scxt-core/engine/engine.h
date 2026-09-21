@@ -194,9 +194,15 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                  * note-on chose rather than spending a second one on the way up.
                  */
                 if (!inReleaseTriggerPass)
+                {
+                    // Same one-answer-per-note rule for the dice, and for the same reason: every
+                    // group of a note must see the roll the press made, including on the way up
+                    part->groupTriggerInstrumentState.noteDice = rng.unif01();
+
                     part->advanceRoundRobinSets(
                         *this, part->roundRobinSetsForNote(*this, channel, key, midiKey, velocity,
                                                            (int16_t)kt));
+                }
 
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
                 {

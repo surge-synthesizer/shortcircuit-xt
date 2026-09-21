@@ -27,6 +27,8 @@
 
 #include "catch2/catch2.hpp"
 
+#include <bit>
+
 #include "engine/engine.h"
 #include "engine/group_triggers.h"
 
@@ -604,6 +606,109 @@ TEST_CASE("Round robin group trigger ids round trip as strings", "[grouptrigger]
         REQUIRE(scxt::engine::getGroupTriggerDisplayName(id) != "ERROR");
         REQUIRE(scxt::engine::isRoundRobinTriggerID(id));
     }
+}
+
+/*
+ * The dice. One draw per note on, shared by every group the note reaches, so a set of groups
+ * carving up [0,1) between them behaves as a random round robin without agreeing on a set.
+ */
+static uint32_t addDiceGroup(scxt::engine::Part &part, float lo, float hi, int keyLo = 48,
+                             int keyHi = 72)
+{
+    auto gidx = (int)part.addGroup() - 1;
+    addBlankZoneToGroup(part, gidx, keyLo, keyHi);
+
+    auto &tc = part.getGroup(gidx)->triggerConditions;
+    tc.storage[0].id = scxt::engine::GroupTriggerID::DICE;
+    tc.storage[0].args[0] = lo;
+    tc.storage[0].args[1] = hi;
+    tc.active[0] = true;
+    tc.setupOnUnstream(part.groupTriggerInstrumentState);
+    return 1u << gidx;
+}
+
+TEST_CASE("Dice trigger - the whole range always sounds", "[grouptrigger]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto g0 = addDiceGroup(*eng->getPatch()->getPart(0), 0.f, 1.f);
+
+    for (int i = 0; i < 20; ++i)
+        REQUIRE(playAndSoundingGroups(*eng) == g0);
+}
+
+TEST_CASE("Dice trigger - an empty slice never sounds", "[grouptrigger]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    addDiceGroup(*eng->getPatch()->getPart(0), 0.5f, 0.5f);
+
+    for (int i = 0; i < 20; ++i)
+        REQUIRE(playAndSoundingGroups(*eng) == 0);
+}
+
+TEST_CASE("Dice trigger - slices tiling the range sound exactly one group", "[grouptrigger]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto &part = *eng->getPatch()->getPart(0);
+
+    addDiceGroup(part, 0.f, 1.f / 3);
+    addDiceGroup(part, 1.f / 3, 2.f / 3);
+    addDiceGroup(part, 2.f / 3, 1.f);
+
+    // The point of the half open top: no draw falls in two slices, and none falls in none
+    uint32_t everWon{0};
+    for (int i = 0; i < 200; ++i)
+    {
+        auto m = playAndSoundingGroups(*eng);
+        REQUIRE(std::popcount(m) == 1);
+        everWon |= m;
+    }
+    REQUIRE(everWon == 0b111);
+}
+
+TEST_CASE("Dice trigger - one draw is shared by every group of a note", "[grouptrigger]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto &part = *eng->getPatch()->getPart(0);
+
+    // Identical slices, so a per-group draw would let them disagree and a shared one cannot
+    addDiceGroup(part, 0.f, 0.5f);
+    addDiceGroup(part, 0.f, 0.5f);
+
+    int sounded{0};
+    for (int i = 0; i < 200; ++i)
+    {
+        auto m = playAndSoundingGroups(*eng);
+        REQUIRE((m == 0 || m == 0b11));
+        sounded += (m != 0);
+    }
+    // and they are really drawing, not stuck on one side
+    REQUIRE(sounded > 0);
+    REQUIRE(sounded < 200);
+}
+
+TEST_CASE("Dice trigger - a half slice sounds about half the time", "[grouptrigger]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    addDiceGroup(*eng->getPatch()->getPart(0), 0.f, 0.5f);
+
+    constexpr int n{400};
+    int sounded{0};
+    for (int i = 0; i < n; ++i)
+        sounded += (playAndSoundingGroups(*eng) != 0) ? 1 : 0;
+
+    // eight sigma either way; a real bias shows up long before this trips
+    REQUIRE(sounded > 120);
+    REQUIRE(sounded < 280);
+}
+
+TEST_CASE("Dice group trigger id round trips as a string", "[grouptrigger]")
+{
+    auto id = scxt::engine::GroupTriggerID::DICE;
+    auto s = scxt::engine::toStringGroupTriggerID(id);
+    REQUIRE(s != "n");
+    REQUIRE(scxt::engine::fromStringGroupTriggerID(s) == id);
+    REQUIRE(scxt::engine::getGroupTriggerDisplayName(id) != "ERROR");
+    REQUIRE(!scxt::engine::isRoundRobinTriggerID(id));
 }
 
 } // namespace grouptrigger_test
