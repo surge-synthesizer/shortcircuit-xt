@@ -1,0 +1,24 @@
+// Fixture for ARIA #define support.
+//
+// Nothing here parses unless $NAME is text-substituted before the tokenizer
+// runs. The include consumes a define made here and makes one the rest of THIS
+// file then uses, so defines have to flow through the expansion in order.
+
+#define $KICKKEY 36
+#define $SNAREKEY 38
+#define $KICKCC 20
+// a prefix of $KICKCC, so the longest defined name has to win
+#define $KICK 99
+
+<control>
+label_cc$KICKCC=Kick Level
+
+<group>
+lokey=$KICKKEY hikey=$KICKKEY pitch_keycenter=$KICKKEY
+<region>sample=noise.wav
+
+#include "includes/define_included.sfz"
+
+<group>
+lokey=$HATKEY hikey=$HATKEY pitch_keycenter=$HATKEY
+<region>sample=noise.wav

@@ -30,6 +30,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <map>
 #include <string_view>
 #include <system_error>
 
@@ -84,6 +85,11 @@ bool advanceCommentState(std::string_view line, bool inBlock)
         }
     }
     return inBlock;
+}
+
+bool isDefineNameChar(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }
 
 // Matches a leading `#word`, lower-casing the word and handing back the
@@ -144,10 +150,132 @@ struct IncludeExpander
     // diamond include is legal and must expand twice; only a cycle is an error.
     std::vector<fs::path> stack;
     int fileCount{0};
+    // `$name` to its text, in expansion order, so a define made in an included
+    // file is live in the rest of the file that included it
+    std::map<std::string, std::string> defines;
 
     void expand(const std::string &contents, const fs::path &includingDir, std::string &out);
     void expandFile(const fs::path &file, std::string &out);
+    void addDefine(std::string_view rest);
+    void substitute(std::string_view in, std::string &out);
+    bool emitLine(std::string_view line, bool inBlock, std::string &out);
 };
+
+// `rest` is everything after `#define`, so ` $NAME value` up to end of line.
+void IncludeExpander::addDefine(std::string_view rest)
+{
+    size_t i{0};
+    while (i < rest.size() && (rest[i] == ' ' || rest[i] == '\t'))
+        ++i;
+    auto nameAt = i;
+    if (i < rest.size() && rest[i] == '$')
+        ++i;
+    while (i < rest.size() && isDefineNameChar(rest[i]))
+        ++i;
+    if (i < nameAt + 2 || rest[nameAt] != '$')
+    {
+        onError("Malformed #define; expected '#define $name value'");
+        return;
+    }
+    auto name = std::string(rest.substr(nameAt, i - nameAt));
+
+    while (i < rest.size() && (rest[i] == ' ' || rest[i] == '\t'))
+        ++i;
+    auto value = rest.substr(i);
+    if (auto c = value.find("//"); c != std::string_view::npos)
+        value = value.substr(0, c);
+    auto e = value.size();
+    while (e > 0 && (value[e - 1] == ' ' || value[e - 1] == '\t' || value[e - 1] == '\r' ||
+                     value[e - 1] == '\n'))
+        --e;
+    if (e == 0)
+    {
+        onError("Malformed #define of '" + name + "'; no value given");
+        return;
+    }
+    defines[name] = std::string(value.substr(0, e));
+}
+
+// Replaces each `$name` with its define. Longest defined name wins, so a
+// library can have both `$HAT` and `$HATCV`.
+void IncludeExpander::substitute(std::string_view in, std::string &out)
+{
+    size_t pos{0};
+    while (pos < in.size())
+    {
+        auto d = in.find('$', pos);
+        if (d == std::string_view::npos)
+            break;
+        out += in.substr(pos, d - pos);
+
+        auto e = d + 1;
+        while (e < in.size() && isDefineNameChar(in[e]))
+            ++e;
+
+        auto len = e - d;
+        while (len > 1)
+        {
+            auto it = defines.find(std::string(in.substr(d, len)));
+            if (it != defines.end())
+            {
+                out += it->second;
+                break;
+            }
+            --len;
+        }
+        if (len > 1)
+        {
+            pos = d + len;
+        }
+        else
+        {
+            if (e > d + 1)
+                onError("Undefined variable '" + std::string(in.substr(d, e - d)) + "'");
+            out += '$';
+            pos = d + 1;
+        }
+    }
+    out += in.substr(pos);
+}
+
+// Emits one line, substituting defines in the code and copying comments
+// through untouched, and hands back the block-comment state at end of line.
+bool IncludeExpander::emitLine(std::string_view line, bool inBlock, std::string &out)
+{
+    size_t start{0};
+    for (size_t i = 0; i < line.size(); ++i)
+    {
+        auto next = (i + 1 < line.size()) ? line[i + 1] : '\0';
+        if (inBlock)
+        {
+            if (line[i] == '*' && next == '/')
+            {
+                out += line.substr(start, i + 2 - start);
+                start = i + 2;
+                inBlock = false;
+                ++i;
+            }
+        }
+        else if (line[i] == '/' && next == '*')
+        {
+            substitute(line.substr(start, i - start), out);
+            start = i;
+            inBlock = true;
+            ++i;
+        }
+        else if (line[i] == '/' && next == '/')
+        {
+            substitute(line.substr(start, i - start), out);
+            out += line.substr(i);
+            return false;
+        }
+    }
+    if (inBlock)
+        out += line.substr(start);
+    else
+        substitute(line.substr(start), out);
+    return inBlock;
+}
 
 void IncludeExpander::expandFile(const fs::path &file, std::string &out)
 {
@@ -199,21 +327,21 @@ void IncludeExpander::expand(const std::string &contents, const fs::path &includ
         auto line = std::string_view(contents).substr(pos, lineEnd - pos);
         pos = lineEnd;
 
-        // The directive is live only if the line *started* outside a comment;
-        // advance the flag afterwards so a trailing `/*` still carries over.
-        auto wasInComment = inBlockComment;
-        inBlockComment = advanceCommentState(line, inBlockComment);
-
-        if (wasInComment || !matchHashDirective(line, directive, rest))
+        // The directive is live only if the line *started* outside a comment
+        if (inBlockComment || !matchHashDirective(line, directive, rest))
         {
-            out += line;
+            inBlockComment = emitLine(line, inBlockComment, out);
             continue;
         }
+        // advance the flag so a trailing `/*` on the directive carries over
+        inBlockComment = advanceCommentState(line, inBlockComment);
 
         if (directive == "include")
         {
+            std::string expandedRest;
+            substitute(rest, expandedRest);
             std::string raw;
-            if (!extractIncludePath(rest, raw))
+            if (!extractIncludePath(expandedRest, raw))
             {
                 onError("Malformed #include directive");
             }
@@ -234,10 +362,14 @@ void IncludeExpander::expand(const std::string &contents, const fs::path &includ
                     onError("Unable to resolve #include \"" + raw + "\"");
             }
         }
+        else if (directive == "define")
+        {
+            addDefine(rest);
+        }
         else
         {
-            // #define and friends. Recognized here purely so the tokenizer
-            // never sees the '#' and reports it as a syntax error.
+            // recognized here purely so the tokenizer never sees the '#' and
+            // reports it as a syntax error
             onError("Unsupported directive '#" + directive + "' ignored");
         }
         out += '\n';
