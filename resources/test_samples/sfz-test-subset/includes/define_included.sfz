@@ -1,0 +1,8 @@
+// Consumes $SNAREKEY from the file that included this one, and defines
+// $HATKEY for it to use after the include.
+
+#define $HATKEY 42
+
+<group>
+lokey=$SNAREKEY hikey=$SNAREKEY pitch_keycenter=$SNAREKEY
+<region>sample=noise.wav

@@ -72,12 +72,13 @@ struct SFZParser
         SCLOG_IF(warnings, "SFZParser error: " << s);
     };
 
-    // ARIA's `#include "path.sfz"` is a pre-tokenize text substitution, so it
-    // gets expanded before the state machine in parse(std::string) ever runs.
+    // ARIA's `#include "path.sfz"` and `#define $name value` are pre-tokenize
+    // text substitutions, so both get expanded before the state machine in
+    // parse(std::string) ever runs.
     static constexpr int maxIncludeDepth{16};
     static constexpr int maxIncludeFiles{4096};
 
-    // Reads `file` and returns its text with every #include recursively expanded.
+    // Reads `file` and returns its text with the directives expanded.
     std::string preprocessIncludes(const fs::path &file);
     // Same expansion over an in-memory buffer; rootDir anchors relative includes.
     // Public so tests can cover comment/line-ending handling without fixtures.

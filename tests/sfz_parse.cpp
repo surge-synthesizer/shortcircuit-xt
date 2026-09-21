@@ -61,6 +61,16 @@ std::vector<std::string> lokeysOf(const scxt::sfz_support::SFZParser::document_t
                 res.push_back(oc.value);
     return res;
 }
+
+std::string opcodeNamed(const scxt::sfz_support::SFZParser::document_t &doc,
+                        const std::string &name)
+{
+    for (const auto &[hdr, opcodes] : doc)
+        for (const auto &oc : opcodes)
+            if (oc.name == name)
+                return oc.value;
+    return "<absent>";
+}
 } // namespace
 
 TEST_CASE("SFZ Tokens", "[sfz]")
@@ -390,14 +400,85 @@ TEST_CASE("SFZ Include", "[sfz]")
 
     SECTION("Warns rather than mis-parsing an unsupported directive")
     {
-        // #define is the other ARIA directive; we don't implement it, but the
-        // pre-pass must swallow the line rather than let a bare '#' reach the
-        // tokenizer and come back as "Invalid syntax"
+        // the pre-pass must swallow the line rather than let a bare '#' reach
+        // the tokenizer and come back as "Invalid syntax"
         CountingParser cp;
-        auto res = cp.p.expandIncludes("#define $NUMOCT 3\n<region>key=60\n", sfzFixture(""));
+        auto res = cp.p.expandIncludes("#frobnicate yes\n<region>key=60\n", sfzFixture(""));
+        REQUIRE(cp.errors.size() == 1);
+        REQUIRE(cp.errors[0].find("#frobnicate") != std::string::npos);
+        REQUIRE(res.find("frobnicate") == std::string::npos);
+        REQUIRE(res.find("<region>key=60") != std::string::npos);
+    }
+}
+
+TEST_CASE("SFZ Define", "[sfz]")
+{
+    SECTION("Substitutes defines from the root file and its includes")
+    {
+        CountingParser cp;
+        auto doc = cp.p.parse(sfzFixture("define_main.sfz"));
+        INFO("errors: " << (cp.errors.empty() ? "" : cp.errors[0]));
+        REQUIRE(cp.errors.empty());
+
+        // 38 comes from the included file reading a define made before the
+        // include; 42 from the root file reading one made inside it
+        REQUIRE(lokeysOf(doc) == std::vector<std::string>{"36", "38", "42"});
+        REQUIRE(opcodeNamed(doc, "label_cc20") == "Kick Level");
+    }
+
+    SECTION("The longest defined name wins")
+    {
+        CountingParser cp;
+        auto res = cp.p.expandIncludes("#define $KICK 99\n#define $KICKCC 20\n"
+                                       "<control>label_cc$KICKCC=Kick\n",
+                                       sfzFixture(""));
+        REQUIRE(cp.errors.empty());
+        REQUIRE(res.find("label_cc20=Kick") != std::string::npos);
+    }
+
+    SECTION("A redefinition applies from that point on")
+    {
+        CountingParser cp;
+        auto doc = cp.p.parse(cp.p.expandIncludes(
+            "#define $K 36\n<group>lokey=$K\n#define $K 48\n<group>lokey=$K\n", sfzFixture("")));
+        REQUIRE(cp.errors.empty());
+        REQUIRE(lokeysOf(doc) == std::vector<std::string>{"36", "48"});
+    }
+
+    SECTION("Substitutes into an include path")
+    {
+        CountingParser cp;
+        auto res = cp.p.expandIncludes(
+            "#define $DIR includes\n#include \"$DIR/include_nested.sfz\"\n", sfzFixture(""));
+        REQUIRE(cp.errors.empty());
+        REQUIRE(res.find("lokey=60") != std::string::npos);
+    }
+
+    SECTION("Warns on an undefined variable and leaves the text alone")
+    {
+        CountingParser cp;
+        auto res = cp.p.expandIncludes("<group>lokey=$NOPE\n", sfzFixture(""));
+        REQUIRE(cp.errors.size() == 1);
+        REQUIRE(cp.errors[0].find("$NOPE") != std::string::npos);
+        REQUIRE(res.find("lokey=$NOPE") != std::string::npos);
+    }
+
+    SECTION("Warns on a malformed define and keeps parsing")
+    {
+        CountingParser cp;
+        auto res = cp.p.expandIncludes("#define 36\n<region>key=60\n", sfzFixture(""));
         REQUIRE(cp.errors.size() == 1);
         REQUIRE(cp.errors[0].find("#define") != std::string::npos);
-        REQUIRE(res.find("$NUMOCT") == std::string::npos);
         REQUIRE(res.find("<region>key=60") != std::string::npos);
+    }
+
+    SECTION("Leaves a define out of the token stream")
+    {
+        CountingParser cp;
+        auto doc = cp.p.parse(sfzFixture("define_main.sfz"));
+        REQUIRE(cp.errors.empty());
+        for (const auto &[hdr, opcodes] : doc)
+            for (const auto &oc : opcodes)
+                REQUIRE(oc.value.find('$') == std::string::npos);
     }
 }
