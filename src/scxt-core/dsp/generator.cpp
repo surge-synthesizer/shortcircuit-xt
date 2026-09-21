@@ -38,6 +38,7 @@
 #include "sst/basic-blocks/mechanics/simd-ops.h"
 #include "utils.h"
 #include <array>
+#include <utility>
 #include <cassert>
 
 /*
@@ -108,12 +109,6 @@ inline float getFadeGainToAmp(float g)
     // return 4.f / 3.f * (1 - 1 / ((1 + g) * (1 + g)));
     return 2 * (1 - 1 / (1 + g));
 }
-inline float getFadeGain(int32_t samplePos, int32_t x1, int32_t x2)
-{
-    assert(x1 <= samplePos && samplePos <= x2);
-    auto gain = ((float)(x1 - samplePos)) / (x1 - x2);
-    return gain;
-}
 
 template <InterpolationTypes KT, typename T> struct KernelOp
 {
@@ -178,7 +173,9 @@ struct KernelProcessor
 
     T *ReadFadeSample[NUM_CHANNELS];
     bool fadeActive;
-    int32_t loopFade;
+    // the gain law lives in the harness, since it differs per loop shape; a kernel
+    // just mixes its two reads
+    float mainGain, partnerGain;
 
     float *Output[NUM_CHANNELS];
 
@@ -213,12 +210,7 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
         if (ks.fadeActive)
         {
             auto fadeVal{NormalizeSampleToF32(readFadeSampleL[readPos])};
-            auto fadeGain(
-                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
-            auto aOut = getFadeGainToAmp(1.f - fadeGain);
-            fadeGain = getFadeGainToAmp(fadeGain);
-
-            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
+            OutputL[i] = OutputL[i] * ks.mainGain + fadeVal * ks.partnerGain;
         }
     }
 
@@ -235,12 +227,7 @@ void KernelOp<InterpolationTypes::ZeroOrderHold, T>::Process(
             if (ks.fadeActive)
             {
                 float fadeVal{NormalizeSampleToF32(readFadeSampleR[readPos])};
-                auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
-                                          GD->loopUpperBound));
-                auto aOut = getFadeGainToAmp(1.f - fadeGain);
-                fadeGain = getFadeGainToAmp(fadeGain);
-
-                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
+                OutputR[i] = OutputR[i] * ks.mainGain + fadeVal * ks.partnerGain;
             }
         }
     }
@@ -275,12 +262,7 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
             auto fadeVal0{NormalizeSampleToF32(readFadeSampleL[readPos])};
             auto fadeVal1{NormalizeSampleToF32(readFadeSampleL[readPos + 1])};
             auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
-            auto fadeGain(
-                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
-            auto aOut = getFadeGainToAmp(1.f - fadeGain);
-            fadeGain = getFadeGainToAmp(fadeGain);
-
-            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
+            OutputL[i] = OutputL[i] * ks.mainGain + fadeVal * ks.partnerGain;
         }
     }
 
@@ -303,12 +285,7 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
                 float fadeVal1{NormalizeSampleToF32(readFadeSampleR[readPos + 1])};
                 auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
 
-                auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
-                                          GD->loopUpperBound));
-                auto aOut = getFadeGainToAmp(1.f - fadeGain);
-                fadeGain = getFadeGainToAmp(fadeGain);
-
-                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
+                OutputR[i] = OutputR[i] * ks.mainGain + fadeVal * ks.partnerGain;
             }
         }
     }
@@ -332,30 +309,27 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
     f_subPos = std::pow(f_subPos, 0.5f * subRatio + 0.5f / subRatio);
 
     auto readPos = FIRoffset - 2;
-    auto y0{NormalizeSampleToF32(readSampleL[readPos])};
-    auto y1{NormalizeSampleToF32(readSampleL[readPos + 1])};
-    auto y2{NormalizeSampleToF32(readSampleL[readPos + 2])};
-    auto y3{NormalizeSampleToF32(readSampleL[readPos + 3])};
-    auto a = ((3.f * (y1 - y2)) - y0 + y3) * 0.5f;
-    auto b = y2 + y2 + y0 - (5.f * y1 + y3) * 0.5f;
-    auto c = (y2 - y0) * 0.5f;
 
-    OutputL[i] = ((a * f_subPos + b) * f_subPos + c) * f_subPos + y1;
+    // The crossfade partner has to be interpolated exactly like the main read. It used
+    // to be a linear blend of [readPos, readPos+1] - one sample early, since the cubic
+    // sits between readPos+1 and readPos+2 - using the already pow-warped subposition.
+    auto cubic = [readPos, f_subPos](const T *__restrict src) {
+        auto y0{NormalizeSampleToF32(src[readPos])};
+        auto y1{NormalizeSampleToF32(src[readPos + 1])};
+        auto y2{NormalizeSampleToF32(src[readPos + 2])};
+        auto y3{NormalizeSampleToF32(src[readPos + 3])};
+        auto a = ((3.f * (y1 - y2)) - y0 + y3) * 0.5f;
+        auto b = y2 + y2 + y0 - (5.f * y1 + y3) * 0.5f;
+        auto c = (y2 - y0) * 0.5f;
+        return ((a * f_subPos + b) * f_subPos + c) * f_subPos + y1;
+    };
+
+    OutputL[i] = cubic(readSampleL);
 
     if constexpr (LOOP_ACTIVE)
     {
         if (ks.fadeActive)
-        {
-            auto fadeVal0{NormalizeSampleToF32(readFadeSampleL[readPos])};
-            auto fadeVal1{NormalizeSampleToF32(readFadeSampleL[readPos + 1])};
-            auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
-            auto fadeGain(
-                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
-            auto aOut = getFadeGainToAmp(1.f - fadeGain);
-            fadeGain = getFadeGainToAmp(fadeGain);
-
-            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
-        }
+            OutputL[i] = OutputL[i] * ks.mainGain + cubic(readFadeSampleL) * ks.partnerGain;
     }
 
     if constexpr (NUM_CHANNELS == 2)
@@ -364,31 +338,12 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
         auto readFadeSampleR{ks.ReadFadeSample[1]};
         auto OutputR{ks.Output[1]};
 
-        auto y4{NormalizeSampleToF32(readSampleR[readPos])};
-        auto y5{NormalizeSampleToF32(readSampleR[readPos + 1])};
-        auto y6{NormalizeSampleToF32(readSampleR[readPos + 2])};
-        auto y7{NormalizeSampleToF32(readSampleR[readPos + 3])};
-        auto a = ((3.f * (y5 - y6)) - y4 + y7) * 0.5f;
-        auto b = y6 + y6 + y4 - (5.f * y5 + y7) * 0.5f;
-        auto c = (y6 - y4) * 0.5f;
-
-        OutputR[i] = ((a * f_subPos + b) * f_subPos + c) * f_subPos + y5;
+        OutputR[i] = cubic(readSampleR);
 
         if constexpr (LOOP_ACTIVE)
         {
             if (ks.fadeActive)
-            {
-                float fadeVal0{NormalizeSampleToF32(readFadeSampleR[readPos])};
-                float fadeVal1{NormalizeSampleToF32(readFadeSampleR[readPos + 1])};
-                auto fadeVal = fadeVal0 * (1 - f_subPos) + fadeVal1 * f_subPos;
-
-                auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
-                                          GD->loopUpperBound));
-                auto aOut = getFadeGainToAmp(1.f - fadeGain);
-                fadeGain = getFadeGainToAmp(fadeGain);
-
-                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
-            }
+                OutputR[i] = OutputR[i] * ks.mainGain + cubic(readFadeSampleR) * ks.partnerGain;
         }
     }
 }
@@ -463,12 +418,7 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
 
             float fadeVal{0.f};
             SIMD_MM(store_ss)(&fadeVal, sR4);
-            auto fadeGain(
-                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
-            auto aOut = getFadeGainToAmp(1.f - fadeGain);
-            fadeGain = getFadeGainToAmp(fadeGain);
-
-            OutputL[i] = OutputL[i] * aOut + fadeVal * fadeGain;
+            OutputL[i] = OutputL[i] * ks.mainGain + fadeVal * ks.partnerGain;
         }
     }
 
@@ -505,12 +455,7 @@ void KernelOp<InterpolationTypes::Sinc, float>::Process(
 
                 float fadeVal{0.f};
                 SIMD_MM(store_ss)(&fadeVal, sR4);
-                auto fadeGain(getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade,
-                                          GD->loopUpperBound));
-                auto aOut = getFadeGainToAmp(1.f - fadeGain);
-                fadeGain = getFadeGainToAmp(fadeGain);
-
-                OutputR[i] = OutputR[i] * aOut + fadeVal * fadeGain;
+                OutputR[i] = OutputR[i] * ks.mainGain + fadeVal * ks.partnerGain;
             }
         }
     }
@@ -618,57 +563,56 @@ void KernelOp<InterpolationTypes::Sinc, int16_t>::Process(
             if constexpr (stereo)
                 SIMD_MM(store_ss)(&fadeValR, fR);
 
-            auto fadeGain(
-                getFadeGain(ks.SamplePos, GD->loopUpperBound - ks.loopFade, GD->loopUpperBound));
-
-            auto aOut = getFadeGainToAmp(1.f - fadeGain);
-            fadeGain = getFadeGainToAmp(fadeGain);
-
-            OutputL[i] = OutputL[i] * aOut + fadeValL * fadeGain;
+            OutputL[i] = OutputL[i] * ks.mainGain + fadeValL * ks.partnerGain;
             if constexpr (stereo)
-                OutputR[i] = OutputR[i] * aOut + fadeValR * fadeGain;
+                OutputR[i] = OutputR[i] * ks.mainGain + fadeValR * ks.partnerGain;
         }
     }
 }
 
 // mirrors a playhead that ran past a ping-pong bound back in, however many times it crossed
-inline void reflectPingPong(int &samplePos, int &sampleSubPos, int &direction, int64_t ratio,
-                            GeneratorState *GD)
+// the turn points, which a crossfade moves half a fade below the loop bounds
+inline void reflectPingPong(int &samplePos, int &sampleSubPos, int &travel, int ratioSign,
+                            int64_t ratio, int mirrorLo, int mirrorHi, GeneratorState *GD)
 {
-    const int64_t lo = (int64_t)GD->loopLowerBound << 24;
-    const int64_t len = (int64_t)std::max(1, GD->loopUpperBound - GD->loopLowerBound) << 24;
+    const int64_t lo = (int64_t)mirrorLo << 24;
+    const int64_t len = (int64_t)std::max(1, mirrorHi - mirrorLo) << 24;
     const int64_t hi = lo + len;
     int64_t pos = ((int64_t)samplePos << 24) + sampleSubPos;
 
-    auto over = direction > 0 ? pos - hi : lo - pos;
+    auto over = travel > 0 ? pos - hi : lo - pos;
     if (over < 0)
         return;
+
+    GD->hasLooped = true;
 
     if (over > ratio)
     {
         // already outside before this step, so head back rather than jump in
-        direction = -direction;
+        travel = -travel;
         return;
     }
 
     const auto trips = over / (2 * len);
     const auto phase = over % (2 * len);
-    const auto directionBefore = direction;
+    const auto travelBefore = travel;
     if (phase < len)
     {
-        pos = direction > 0 ? hi - phase : lo + phase;
-        direction = -direction;
+        pos = travel > 0 ? hi - phase : lo + phase;
+        travel = -travel;
     }
     else
     {
-        pos = direction > 0 ? lo + (phase - len) : hi - (phase - len);
+        pos = travel > 0 ? lo + (phase - len) : hi - (phase - len);
     }
 
-    // a loop counts when the playhead turns at the bound it set out from
+    // a loop counts when the playhead turns at the bound it set out from, and
+    // directionAtOutset is a loop direction, so fold the ratio sign back out first
     const auto turnsAtFirstBound = trips + 1;
     const auto turnsAtOtherBound = trips + (phase >= len ? 1 : 0);
     GD->loopCount +=
-        (int16_t)(directionBefore != GD->directionAtOutset ? turnsAtFirstBound : turnsAtOtherBound);
+        (int16_t)(travelBefore * ratioSign != GD->directionAtOutset ? turnsAtFirstBound
+                                                                    : turnsAtOtherBound);
 
     samplePos = (int)(pos >> 24);
     sampleSubPos = (int)(pos & ((1 << 24) - 1));
@@ -739,22 +683,38 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     int IsFinished = GD->isFinished;
     int WaveSize = IO->waveSize;
     int LoopOffset = std::max(1, GD->loopUpperBound - GD->loopLowerBound);
-    int64_t Ratio = GD->ratio;
-    int RatioSign = Ratio < 0 ? -1 : 1;
-    Ratio = std::abs(Ratio);
-    int Direction = GD->direction * RatioSign;
+    const int RatioSign = GD->ratio < 0 ? -1 : 1;
+    const int64_t Ratio = std::abs(GD->ratio);
+
+    // shared with the editor so the XF value on screen is the one you hear
+    const int loopFade = (int)clampLoopFade(GD->loopFade, GD->playbackLowerBound,
+                                            GD->loopLowerBound, GD->loopUpperBound);
+    const int fadeLo = GD->loopUpperBound - loopFade;
+
+    // a ping-pong fade fills the loopFade samples up to each bound rather than straddling
+    // it, which puts the turn half a fade inside the loop
+    const int fadeHalf = loopForward ? 0 : loopFade / 2;
+    const int mirrorLo = GD->loopLowerBound - fadeHalf;
+    const int mirrorHi = GD->loopUpperBound - fadeHalf;
+
+    /*
+     * Both directions are named locals and are kept in lockstep by reflect(). Travel is
+     * what moves the playhead and what decides we have run off the end; LoopDir is what
+     * the loop logic reasons about and what directionAtOutset compares against. See the
+     * comment on GeneratorState.
+     */
+    int Travel = GD->loopDirection * RatioSign;
+    int LoopDir = GD->loopDirection;
+    auto reflect = [&]() {
+        reflectPingPong(SamplePos, SampleSubPos, Travel, RatioSign, Ratio, mirrorLo, mirrorHi, GD);
+        LoopDir = Travel * RatioSign;
+    };
     int16_t *__restrict SampleDataL;
     int16_t *__restrict SampleDataR;
     float *__restrict SampleDataFL;
     float *__restrict SampleDataFR;
     float *__restrict OutputL;
     float *__restrict OutputR;
-
-    int loopFade = std::min(GD->loopFade, GD->loopLowerBound - GD->playbackLowerBound);
-    loopFade = std::min(loopFade, GD->loopUpperBound - GD->loopLowerBound);
-
-    bool fadeActive =
-        SamplePos > (GD->loopUpperBound - loopFade) && SamplePos <= GD->loopUpperBound;
 
     GD->positionWithinLoop = 0.f;
     GD->isInLoop = false;
@@ -784,70 +744,215 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     float *__restrict readFadeSampleRF32 = nullptr;
     float loopEndBufferLF32[resampFIRSize], loopEndBufferRF32[resampFIRSize];
 
-    if (fp)
+    /*
+     * Is the loop still what is driving playback? Once a gated loop is released the
+     * playhead runs on past loopUpperBound into the tail and there is no seam left to
+     * smooth, so the crossfade has to stop rather than blend in unrelated pre-loop
+     * material on the way out.
+     */
+    auto loopIsContinuing = [&]() -> bool {
+        if constexpr (loopWhileGated)
+            return GD->gated || (LoopDir != GD->directionAtOutset);
+        else
+            return true;
+    };
+
+    /*
+     * Where the crossfade is, what it blends against, and how far through it we are.
+     *
+     * This is a pure function of position and direction, evaluated identically at block
+     * entry and after every advance. It used to be a bool computed once per block and
+     * from then on only ever cleared, so a fade could not begin in the middle of a block.
+     * A forward loop approaches its seam through the window and therefore enters at gain
+     * ~0, where starting a fraction of a block late is nearly inaudible. Reverse playback
+     * leaves the seam through the window and has to engage at gain ~1 the instant it
+     * wraps, which the old code could not do - so every wrap emitted pure loop tail until
+     * the next block boundary and then jumped to the partner. That is the click in #2149.
+     */
+    struct FadeAt
     {
-        // See comment above - the generator wants an FIRoffset centered data set
-        readSampleLF32 = SampleDataFL + SamplePos - FIRoffset;
-        if (stereo)
-            readSampleRF32 = SampleDataFR + SamplePos - FIRoffset;
+        bool active{false};
+        int partnerPos{0};
+        float mainGain{1.f}, partnerGain{0.f};
+    };
+
+    /*
+     * Two crossfades, two gain laws, for a reason.
+     *
+     * Across a wrap the two streams are unrelated material, so what matters is that the
+     * power stays put. getFadeGainToAmp is concave, and applying it to both sides sums to
+     * more than one in amplitude but close to one in power, which suits that case and is
+     * the long-standing behaviour.
+     *
+     * Across a ping-pong turnaround the two streams are a signal and its own reflection.
+     * At the bound they are literally the same sample and near it they are strongly
+     * correlated, so they add coherently and it is amplitude that has to be preserved.
+     * The same concave law would put a factor of 4/3 - about 2.5dB - on every single
+     * turnaround. Linear is also what the Kontakt and HALion references use.
+     */
+    auto wrapGains = [](float g) -> std::pair<float, float> {
+        return {getFadeGainToAmp(1.f - g), getFadeGainToAmp(g)};
+    };
+    auto mirrorGains = [](float g) -> std::pair<float, float> { return {1.f - g, g}; };
+
+    auto fadeStateAt = [&](int p) -> FadeAt {
+        if (loopFade <= 0 || !loopIsContinuing())
+            return {};
+
+        if constexpr (loopForward)
+        {
+            /*
+             * The seam is the wrap from endLoop back to startLoop. Over the last
+             * loopFade samples of the loop the output morphs into the material
+             * immediately preceding startLoop, which is what playback continues with
+             * after the wrap.
+             */
+            if (p <= fadeLo || p > GD->loopUpperBound)
+                return {};
+            /*
+             * Travelling toward the seam the window is the approach and we always
+             * fade. Travelling away from it the window is the departure, and there is
+             * only something to smooth once a wrap has actually happened - otherwise
+             * the first reverse descent past endLoop would jump straight to gain ~1
+             * and play the pre-loop material with no seam to hide.
+             */
+            if (Travel < 0 && !GD->hasLooped)
+                return {};
+            auto [mg, pg] = wrapGains((float)(p - fadeLo) / (float)loopFade);
+            return {true, GD->loopLowerBound - (GD->loopUpperBound - p), mg, pg};
+        }
+        else
+        {
+            /*
+             * A ping-pong loop has no discontinuity at its bounds - the playhead
+             * reverses, so the value is continuous - but it does audibly mirror the
+             * waveform. The crossfade blends the playhead against its reflection in the
+             * turn, and the two are the same sample there, so the blend is continuous
+             * whatever the gain.
+             */
+            const int half = fadeHalf;
+            if (half <= 0)
+                return {};
+
+            int bound;
+            if (std::abs(p - mirrorHi) <= half)
+                bound = mirrorHi;
+            else if (std::abs(p - mirrorLo) <= half)
+                bound = mirrorLo;
+            else
+                return {};
+
+            // negative while approaching the bound, positive once past it
+            const int past = Travel * (p - bound);
+            // nothing to blend against until it has turned somewhere: outside the turn
+            // range it is still on its way in, and a voice starting at the sample start
+            // walks the whole lower window to get there
+            if (!GD->hasLooped && (past > 0 || p < mirrorLo || p > mirrorHi))
+                return {};
+
+            /*
+             * The two reads swap roles at the bound: the one arriving as the playhead
+             * leaves as the reflection, and the reflection arriving becomes the
+             * playhead. So the blend turns on the distance from the bound and not on
+             * which side of it we are. That gives each of the two streams one monotone
+             * ramp across the whole window - which is what the references do - and
+             * leaves the mix on the playhead at both edges, so the window can end
+             * without a step. Signing it instead lands the mix on the reflection at
+             * the far edge, a whole fade away from where playback continues.
+             *
+             * Scaled by half rather than by loopFade so an odd fade still reaches
+             * exactly zero at the edge the window test uses, and does not leave a
+             * step of a half sample's worth of gain behind it.
+             */
+            auto g = std::clamp(0.5f * (1.f - std::abs((float)past) / (float)half), 0.f, 0.5f);
+            auto [mg, pg] = mirrorGains(g);
+            return {true, 2 * bound - p, mg, pg};
+        }
+    };
+
+    /*
+     * Point the main and crossfade reads at p. The fade pointer is refreshed whenever the
+     * fade is running, including on the loop-end-buffer path; it used to live only on the
+     * else of that branch, so it froze whenever the loop ended within a FIR window of the
+     * end of the wave - which is the common case, and precisely where the partner
+     * dominates the output.
+     */
+    auto refreshReads = [&](int p, const FadeAt &fade) {
+        if constexpr (fp)
+        {
+            // See comment above - the generator wants an FIRoffset centered data set
+            readSampleLF32 = SampleDataFL + p - FIRoffset;
+            if (stereo)
+                readSampleRF32 = SampleDataFR + p - FIRoffset;
+        }
+        else
+        {
+            readSampleL = SampleDataL + p - FIRoffset;
+            if (stereo)
+                readSampleR = SampleDataR + p - FIRoffset;
+        }
 
         if constexpr (loopActive)
         {
-            if (fadeActive)
+            if (fade.active)
             {
-                auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
-                readFadeSampleLF32 = SampleDataFL + fadeSamplePos - FIRoffset;
-                if (stereo)
-                    readFadeSampleRF32 = SampleDataFR + fadeSamplePos - FIRoffset;
+                const auto fadeSamplePos = fade.partnerPos;
+                if constexpr (fp)
+                {
+                    readFadeSampleLF32 = SampleDataFL + fadeSamplePos - FIRoffset;
+                    if (stereo)
+                        readFadeSampleRF32 = SampleDataFR + fadeSamplePos - FIRoffset;
+                }
+                else
+                {
+                    readFadeSampleL = SampleDataL + fadeSamplePos - FIRoffset;
+                    if (stereo)
+                        readFadeSampleR = SampleDataR + fadeSamplePos - FIRoffset;
+                }
             }
 
-            if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
+            // we need both checks because if we are just doing a post-release playdown
+            // we don't want to re-pad
+            if (p >= WaveSize - resampFIRSize && p <= GD->loopUpperBound)
             {
                 for (int k = 0; k < resampFIRSize; ++k)
                 {
-                    auto q = loopEndIndex(k, SamplePos, GD->loopUpperBound, WaveSize, LoopOffset);
-                    loopEndBufferLF32[k] = SampleDataFL[q];
-                    if (stereo)
-                        loopEndBufferRF32[k] = SampleDataFR[q];
+                    auto q = loopEndIndex(k, p, GD->loopUpperBound, WaveSize, LoopOffset);
+                    if constexpr (fp)
+                    {
+                        loopEndBufferLF32[k] = SampleDataFL[q];
+                        if (stereo)
+                            loopEndBufferRF32[k] = SampleDataFR[q];
+                    }
+                    else
+                    {
+                        loopEndBufferL[k] = SampleDataL[q];
+                        if (stereo)
+                            loopEndBufferR[k] = SampleDataR[q];
+                    }
                 }
-                readSampleLF32 = loopEndBufferLF32;
-                if (stereo)
-                    readSampleRF32 = loopEndBufferRF32;
-            }
-        }
-    }
-    else
-    {
-        readSampleL = SampleDataL + SamplePos - FIRoffset;
-        if (stereo)
-            readSampleR = SampleDataR + SamplePos - FIRoffset;
-
-        if constexpr (loopActive)
-        {
-            if (fadeActive)
-            {
-                auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
-                readFadeSampleL = SampleDataL + fadeSamplePos - FIRoffset;
-                if (stereo)
-                    readFadeSampleR = SampleDataR + fadeSamplePos - FIRoffset;
-            }
-
-            if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
-            {
-                for (int k = 0; k < resampFIRSize; ++k)
+                if constexpr (fp)
                 {
-                    auto q = loopEndIndex(k, SamplePos, GD->loopUpperBound, WaveSize, LoopOffset);
-
-                    loopEndBufferL[k] = SampleDataL[q];
+                    readSampleLF32 = loopEndBufferLF32;
                     if (stereo)
-                        loopEndBufferR[k] = SampleDataR[q];
+                        readSampleRF32 = loopEndBufferRF32;
                 }
-                readSampleL = loopEndBufferL;
-                if (stereo)
-                    readSampleR = loopEndBufferR;
+                else
+                {
+                    readSampleL = loopEndBufferL;
+                    if (stereo)
+                        readSampleR = loopEndBufferR;
+                }
             }
         }
-    }
+    };
+
+    // refreshReads points the reads at the playhead, so every path needs it; only the
+    // fade it blends against is loop-only
+    FadeAt fade{};
+    if constexpr (loopActive)
+        fade = fadeStateAt(SamplePos);
+    refreshReads(SamplePos, fade);
 
     int NSamples = GD->blockSize;
 
@@ -856,14 +961,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     {
 #define KPStereo(E, T, C, dataL, dataR, fadeL, fadeR)                                              \
     KernelProcessor<E, T, C, loopActive> kp{                                                       \
-        SamplePos,  SampleSubPos, int32_t(m0),        i, {dataL, dataR}, {fadeL, fadeR},           \
-        fadeActive, loopFade,     {OutputL, OutputR}, IO};                                         \
+        SamplePos,        SampleSubPos,       int32_t(m0), i,                                      \
+        {dataL, dataR},   {fadeL, fadeR},     fade.active, fade.mainGain,                          \
+        fade.partnerGain, {OutputL, OutputR}, IO};                                                 \
     kp.ProcessKernel(GD);
 
-#define KPMono(E, T, C, data, fade)                                                                \
+#define KPMono(E, T, C, data, fadeData)                                                            \
     KernelProcessor<E, T, C, loopActive> ks{                                                       \
-        SamplePos, SampleSubPos, int32_t(m0), i,         {data},                                   \
-        {fade},    fadeActive,   loopFade,    {OutputL}, IO};                                      \
+        SamplePos,   SampleSubPos,  int32_t(m0),      i,         {data}, {fadeData},               \
+        fade.active, fade.mainGain, fade.partnerGain, {OutputL}, IO};                              \
     ks.ProcessKernel(GD);
 
         using type_from_cond = typename std::conditional<fp, float, int16_t>::type;
@@ -965,7 +1071,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
         // 3. Forward sample position
         // wide so a ratio past 128x cannot overflow
-        int64_t subPos = SampleSubPos + Ratio * Direction;
+        int64_t subPos = SampleSubPos + Ratio * Travel;
         auto incr = (int)(subPos >> 24);
         SamplePos += incr;
         SampleSubPos = (int)(subPos - ((int64_t)incr << 24));
@@ -977,41 +1083,29 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 SamplePos = GD->playbackUpperBound;
                 SampleSubPos = 0;
-                if (GD->direction == 1)
+                if (Travel == 1)
                     IsFinished = true;
             }
             if (SamplePos < GD->playbackLowerBound)
             {
                 SamplePos = GD->playbackLowerBound;
                 SampleSubPos = 0;
-                if (GD->direction == -1)
+                if (Travel == -1)
                     IsFinished = true;
-            }
-
-            if constexpr (fp)
-            {
-                readSampleLF32 = SampleDataFL + SamplePos - FIRoffset;
-                if (stereo)
-                    readSampleRF32 = SampleDataFR + SamplePos - FIRoffset;
-            }
-            else
-            {
-                readSampleL = SampleDataL + SamplePos - FIRoffset;
-                if (stereo)
-                    readSampleR = SampleDataR + SamplePos - FIRoffset;
             }
         }
         else if constexpr (!loopWhileGated && loopForward)
         {
             int offset = SamplePos;
 
-            if (Direction > 0)
+            if (Travel > 0)
             {
                 // Upper
                 if (offset > GD->loopUpperBound)
                 {
                     offset -= LoopOffset;
                     GD->loopCount++;
+                    GD->hasLooped = true;
                 }
             }
             else
@@ -1021,6 +1115,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     offset += LoopOffset;
                     GD->loopCount++;
+                    GD->hasLooped = true;
                 }
             }
 
@@ -1032,7 +1127,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         else if constexpr (!loopWhileGated && !loopForward)
         {
             // bidirectional
-            reflectPingPong(SamplePos, SampleSubPos, Direction, Ratio, GD);
+            reflect();
             SamplePos = std::clamp(SamplePos, 0, WaveSize);
         }
         else if constexpr (loopForward)
@@ -1042,12 +1137,13 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             {
                 int offset = SamplePos;
 
-                if (Direction > 0)
+                if (Travel > 0)
                 {
                     if (offset > GD->loopUpperBound)
                     {
                         offset -= LoopOffset;
                         GD->loopCount++;
+                        GD->hasLooped = true;
                     }
                 }
                 else
@@ -1056,6 +1152,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                     {
                         offset += LoopOffset;
                         GD->loopCount++;
+                        GD->hasLooped = true;
                     }
                 }
 
@@ -1070,14 +1167,14 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     SamplePos = GD->playbackUpperBound;
                     SampleSubPos = 0;
-                    if (GD->direction == 1)
+                    if (Travel == 1)
                         IsFinished = true;
                 }
                 if (SamplePos < GD->playbackLowerBound)
                 {
                     SamplePos = GD->playbackLowerBound;
                     SampleSubPos = 0;
-                    if (GD->direction == -1)
+                    if (Travel == -1)
                         IsFinished = true;
                 }
             }
@@ -1085,9 +1182,9 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         else if constexpr (!loopForward && loopWhileGated)
         {
             // gated bidirecational
-            if (GD->gated || (GD->direction != GD->directionAtOutset))
+            if (GD->gated || (LoopDir != GD->directionAtOutset))
             {
-                reflectPingPong(SamplePos, SampleSubPos, Direction, Ratio, GD);
+                reflect();
                 SamplePos = std::clamp(SamplePos, 0, WaveSize);
             }
             else
@@ -1097,92 +1194,22 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 {
                     SamplePos = GD->playbackUpperBound;
                     SampleSubPos = 0;
-                    if (GD->direction == 1)
+                    if (Travel == 1)
                         IsFinished = true;
                 }
                 if (SamplePos < GD->playbackLowerBound)
                 {
                     SamplePos = GD->playbackLowerBound;
                     SampleSubPos = 0;
-                    if (GD->direction == -1)
+                    if (Travel == -1)
                         IsFinished = true;
                 }
             }
         }
 
         if constexpr (loopActive)
-        {
-            if constexpr (fp)
-            {
-                if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
-                {
-                    for (int k = 0; k < resampFIRSize; ++k)
-                    {
-                        auto q =
-                            loopEndIndex(k, SamplePos, GD->loopUpperBound, WaveSize, LoopOffset);
-                        loopEndBufferLF32[k] = SampleDataFL[q];
-                        if (stereo)
-                            loopEndBufferRF32[k] = SampleDataFR[q];
-                    }
-                    readSampleLF32 = loopEndBufferLF32;
-                    if (stereo)
-                        readSampleRF32 = loopEndBufferRF32;
-                }
-                else
-                {
-                    readSampleLF32 = SampleDataFL + SamplePos - FIRoffset;
-                    if (stereo)
-                        readSampleRF32 = SampleDataFR + SamplePos - FIRoffset;
-
-                    if (fadeActive)
-                    {
-                        auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
-                        readFadeSampleLF32 = SampleDataFL + fadeSamplePos - FIRoffset;
-                        if (stereo)
-                            readFadeSampleRF32 = SampleDataFR + fadeSamplePos - FIRoffset;
-                    }
-                }
-            }
-            else
-            {
-                // we need both checks because if we are just doing a post-release playdown
-                // we don't want to re-pad
-                if (SamplePos >= WaveSize - resampFIRSize && SamplePos <= GD->loopUpperBound)
-                {
-                    for (int k = 0; k < resampFIRSize; ++k)
-                    {
-                        auto q =
-                            loopEndIndex(k, SamplePos, GD->loopUpperBound, WaveSize, LoopOffset);
-                        loopEndBufferL[k] = SampleDataL[q];
-                        if (stereo)
-                            loopEndBufferR[k] = SampleDataR[q];
-                    }
-                    readSampleL = loopEndBufferL;
-                    if (stereo)
-                        readSampleR = loopEndBufferR;
-                }
-                else
-                {
-                    readSampleL = SampleDataL + SamplePos - FIRoffset;
-                    if (stereo)
-                        readSampleR = SampleDataR + SamplePos - FIRoffset;
-
-                    if (fadeActive)
-                    {
-                        auto fadeSamplePos{GD->loopLowerBound - (GD->loopUpperBound - SamplePos)};
-                        readFadeSampleL = SampleDataL + fadeSamplePos - FIRoffset;
-                        if (stereo)
-                            readFadeSampleR = SampleDataR + fadeSamplePos - FIRoffset;
-                    }
-                }
-            }
-        }
-
-        if constexpr (loopActive)
-        {
-            fadeActive = fadeActive && (SamplePos > (GD->loopUpperBound - loopFade)) &&
-                         (SamplePos <= GD->loopUpperBound);
-        }
+            fade = fadeStateAt(SamplePos);
+        refreshReads(SamplePos, fade);
     }
 
     // Clean up any items left
@@ -1193,34 +1220,34 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             OutputR[i] = 0.f;
     }
 
-    GD->direction = Direction * RatioSign;
+    GD->travelDirection = Travel;
+    GD->loopDirection = LoopDir;
     GD->samplePos = SamplePos;
     GD->sampleSubPos = SampleSubPos;
     GD->isFinished = IsFinished;
 
     if constexpr (loopActive)
     {
+        /*
+         * Inside the loop region, not merely past its lower bound. A reverse voice
+         * starts at playbackUpperBound, which is above the loop, so the old test made it
+         * "in loop" on its very first block and bumped loopCount from -1 to 0 before any
+         * loop had been entered - which fed the Is Looping and Loop Count modulation
+         * sources and the loop-count play mode. A released gated loop running out into
+         * the tail is past the upper bound and likewise is no longer looping.
+         */
+        // the turn points, since a ping-pong fade moves the whole excursion half a fade down
+        const bool withinLoopBounds = SamplePos >= mirrorLo && SamplePos <= mirrorHi;
+
+        GD->positionWithinLoop =
+            std::clamp((SamplePos - mirrorLo) * GD->loopInvertedBounds, 0.f, 1.f);
+
         if (!loopWhileGated)
-        {
-            GD->isInLoop = (SamplePos >= GD->loopLowerBound);
-            GD->positionWithinLoop =
-                std::clamp((SamplePos - GD->loopLowerBound) * GD->loopInvertedBounds, 0.f, 1.f);
-        }
+            GD->isInLoop = withinLoopBounds;
         else
-        {
-            if (GD->gated || (GD->directionAtOutset != GD->direction))
-            {
-                GD->isInLoop = (SamplePos >= GD->loopLowerBound);
-                GD->positionWithinLoop =
-                    std::clamp((SamplePos - GD->loopLowerBound) * GD->loopInvertedBounds, 0.f, 1.f);
-            }
-            else
-            {
-                GD->isInLoop = false;
-                GD->positionWithinLoop =
-                    std::clamp((SamplePos - GD->loopLowerBound) * GD->loopInvertedBounds, 0.f, 1.f);
-            }
-        }
+            GD->isInLoop =
+                withinLoopBounds && (GD->gated || (GD->directionAtOutset != GD->loopDirection));
+
         if (GD->isInLoop && GD->loopCount < 0)
             GD->loopCount = 0;
     }

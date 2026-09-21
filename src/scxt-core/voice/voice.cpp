@@ -487,12 +487,17 @@ template <bool OS> bool Voice::processWithOS()
             {
                 auto &s = zone->samplePointers[currIndex];
                 auto &variantData = zone->variantData.variants[currIndex];
-                if (!variantData.playReverse && s)
+                if (s)
                 {
-                    GD[currGen].samplePos = std::clamp(
-                        (int64_t)(GD[currGen].playbackLowerBound +
-                                  (*endpoints->sampleTarget.startPosP * s->sampleLengthPerChannel)),
-                        (int64_t)0, (int64_t)GD[currGen].playbackUpperBound);
+                    // reverse starts at the top of the region, so the offset walks back
+                    // down from there rather than up from the bottom. It used to just be
+                    // skipped, leaving Start Pos modulation inert on a reversed zone.
+                    auto offset =
+                        (int64_t)(*endpoints->sampleTarget.startPosP * s->sampleLengthPerChannel);
+                    auto lo = (int64_t)GD[currGen].playbackLowerBound;
+                    auto hi = (int64_t)GD[currGen].playbackUpperBound;
+                    GD[currGen].samplePos = (int32_t)std::clamp(
+                        variantData.playReverse ? hi - offset : lo + offset, lo, hi);
                 }
                 currGen++;
             }
@@ -555,9 +560,6 @@ template <bool OS> bool Voice::processWithOS()
                         GDIO[gidx].outputL = loutput[0];
                         GDIO[gidx].outputR = loutput[1];
                     }
-                    GD[gidx].sampleStart = 0;
-                    GD[gidx].sampleStop = s->sampleLengthPerChannel;
-
                     /*
                      * We implement loop for count by gating on loop count
                      */
@@ -1082,7 +1084,7 @@ void Voice::initializeGenerator()
         GD[currGen].loopFade = variantData.loopFade;
         GD[currGen].playbackLowerBound = variantData.startSample;
         GD[currGen].playbackUpperBound = variantData.endSample;
-        GD[currGen].direction = 1;
+        GD[currGen].loopDirection = 1;
         GD[currGen].isFinished = false;
 
         if (loopActive)
@@ -1094,9 +1096,9 @@ void Voice::initializeGenerator()
         if (variantData.playReverse)
         {
             GD[currGen].samplePos = GD[currGen].playbackUpperBound;
-            GD[currGen].direction = -1;
+            GD[currGen].loopDirection = -1;
         }
-        GD[currGen].directionAtOutset = GD[currGen].direction;
+        GD[currGen].directionAtOutset = GD[currGen].loopDirection;
 
         calculateGeneratorRatio(calculateVoicePitch(), currIndex, currGen);
 

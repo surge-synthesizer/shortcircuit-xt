@@ -27,6 +27,7 @@
 
 #ifndef SCXT_SRC_SCXT_CORE_DSP_GENERATOR_H
 #define SCXT_SRC_SCXT_CORE_DSP_GENERATOR_H
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include "configuration.h"
@@ -71,9 +72,24 @@ inline InterpolationTypes fromStringInterpolationTypes(const std::string &s)
     return p->second;
 }
 
+/*
+ * There are two directions here and they are not the same thing.
+ *
+ * loopDirection is what the loop logic tracks: it is seeded from playReverse at
+ * note on, flipped at ping-pong turnarounds, and is what directionAtOutset is
+ * compared against.
+ *
+ * travelDirection is loopDirection folded with the sign of ratio, which goes
+ * negative under playback-ratio modulation. It is the direction the playhead
+ * actually moves, and it is the only one the position advance and the
+ * end-of-playback tests may use. Reaching for loopDirection in that code is wrong
+ * whenever ratio is negative, which is how six termination tests ended up stalling
+ * voices instead of finishing them.
+ */
 struct GeneratorState
 {
-    int16_t direction{0}; // +1 for forward, -1 for back
+    int16_t loopDirection{0};   // +1 for forward, -1 for back. NOT the travel direction.
+    int16_t travelDirection{0}; // loopDirection * sign(ratio); derived, written per block
     int32_t samplePos{0};
     int32_t sampleSubPos{0};
 
@@ -87,19 +103,42 @@ struct GeneratorState
     int64_t ratio{1 << 24};        // 1 << 24 is playback-at-tempo
     int16_t blockSize{scxt::blockSize};
     bool isFinished{true};
-    int32_t sampleStart{0};
-    int32_t sampleStop{0};
     bool gated{0};
     int16_t loopCount{-1};        // if this is positive then we play this many loops no matter what
-    int16_t directionAtOutset{1}; // is our 'ur-' direction forward or backwards?
+    int16_t directionAtOutset{1}; // the loopDirection we started with
 
     float positionWithinLoop{0};
     bool isInLoop{false};
+
+    // has the playhead crossed a loop boundary at least once - wrapped, or turned
+    // around in an alternate loop? Retreating from a seam there is nothing to
+    // crossfade against until it has.
+    bool hasLooped{false};
 
     int32_t loopFade{0};
 
     InterpolationTypes interpolationType{InterpolationTypes::Sinc};
 };
+
+/*
+ * How much of a loop crossfade is actually usable, given where the partner stream has
+ * to read from.
+ *
+ * Both directions fade across the loopFade samples running up to a loop marker, so both
+ * need that much ahead of startLoop and neither reads past endLoop. Loop length binds
+ * first and sample start second, the order HALion clamps in.
+ *
+ * The engine and the editor both go through here, so the XF value on screen is the one
+ * you hear. The engine used to clamp silently while the editor showed whatever you
+ * dialled in.
+ */
+inline int64_t clampLoopFade(int64_t loopFade, int64_t startSample, int64_t startLoop,
+                             int64_t endLoop)
+{
+    auto f = std::min(std::max((int64_t)0, loopFade), endLoop - startLoop);
+    f = std::min(f, startLoop - startSample);
+    return std::max((int64_t)0, f);
+}
 
 struct GeneratorIO
 {
