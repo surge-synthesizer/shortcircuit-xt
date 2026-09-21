@@ -64,6 +64,7 @@
 namespace fs = std::filesystem;
 
 using Zone = scxt::engine::Zone;
+using OSMode = scxt::engine::Group::OversampleMode;
 
 namespace
 {
@@ -83,7 +84,8 @@ struct OversampleFixture
     Zone *zone{nullptr};
     bool groupOversample;
 
-    OversampleFixture(bool oversample, int nVariants) : groupOversample(oversample)
+    OversampleFixture(OSMode oversample, int nVariants)
+        : groupOversample(oversample == OSMode::OS_ON)
     {
         eng.reset(makeEngine());
 
@@ -255,11 +257,11 @@ Divergence firstSoundIn(const std::vector<float> &ch, int blockLen, float bound)
 TEST_CASE("Variant amplitude scales the whole block when a pitched up voice oversamples",
           "[oversample]")
 {
-    OversampleFixture ref(false, 1);
+    OversampleFixture ref(OSMode::OS_AUTO, 1);
     auto flat = ref.render(72, renderedBlocks);
     requireAudible(flat);
 
-    OversampleFixture cut(false, 1);
+    OversampleFixture cut(OSMode::OS_AUTO, 1);
     cut.zone->variantData.variants[0].amplitude = 0.5f;
     auto scaled = cut.render(72, renderedBlocks);
 
@@ -272,7 +274,7 @@ TEST_CASE("Variant amplitude scales the whole block when a pitched up voice over
 TEST_CASE("A hard panned variant empties the other channel when a pitched up voice oversamples",
           "[oversample]")
 {
-    OversampleFixture f(false, 1);
+    OversampleFixture f(OSMode::OS_AUTO, 1);
     f.zone->variantData.variants[0].pan = 1.f;
     auto r = f.render(72, renderedBlocks);
 
@@ -287,11 +289,11 @@ TEST_CASE("A hard panned variant empties the other channel when a pitched up voi
 
 TEST_CASE("A unison stack accumulates every generator across the whole block", "[oversample]")
 {
-    OversampleFixture one(false, 1);
+    OversampleFixture one(OSMode::OS_AUTO, 1);
     auto single = one.render(72, renderedBlocks);
     requireAudible(single);
 
-    OversampleFixture two(false, 2);
+    OversampleFixture two(OSMode::OS_AUTO, 2);
     auto stacked = two.render(72, renderedBlocks);
 
     // two copies of one file at one pitch, so the stack is the single voice twice over
@@ -302,7 +304,7 @@ TEST_CASE("A unison stack accumulates every generator across the whole block", "
 
 TEST_CASE("Every generator in a voice runs at one block length", "[oversample]")
 {
-    OversampleFixture f(false, 2);
+    OversampleFixture f(OSMode::OS_AUTO, 2);
     // straddle the rate threshold: at the root key the first variant is under it and the
     // second, an octave up, is well over
     f.zone->variantData.variants[1].pitchOffset = 12.f;
@@ -325,6 +327,46 @@ TEST_CASE("Every generator in a voice runs at one block length", "[oversample]")
 }
 
 /*
+ * The three way mode is only about what a voice does when it is pitched up past the rate
+ * threshold. An octave above the root key is well past it, so the modes separate cleanly:
+ * auto reaches for the higher rate, off refuses it, and on was never asking.
+ */
+TEST_CASE("The group oversample mode decides whether a pitched up voice oversamples",
+          "[oversample]")
+{
+    auto oversamplesAtOctave = [](OSMode m) {
+        OversampleFixture f(m, 1);
+        f.eng->processNoteOnEvent(0, 0, 72, -1, 1.f, 0.f);
+        f.eng->processAudio();
+
+        auto *v = f.onlyVoice();
+        REQUIRE(v);
+        REQUIRE(v->numGeneratorsActive == 1);
+        REQUIRE(v->GD[0].blockSize == scxt::blockSize * (v->useOversampling ? 2 : 1));
+        return v->useOversampling;
+    };
+
+    REQUIRE(oversamplesAtOctave(OSMode::OS_AUTO));
+    REQUIRE(oversamplesAtOctave(OSMode::OS_ON));
+    REQUIRE_FALSE(oversamplesAtOctave(OSMode::OS_OFF));
+}
+
+TEST_CASE("Oversample off still plays a voice below the threshold at one times", "[oversample]")
+{
+    // off and auto only differ past the threshold, so at the root key they render the same
+    OversampleFixture off(OSMode::OS_OFF, 1);
+    auto quiet = off.render(60, renderedBlocks);
+    requireAudible(quiet);
+
+    OversampleFixture various(OSMode::OS_AUTO, 1);
+    auto ref = various.render(60, renderedBlocks);
+
+    auto d = divergenceFrom(quiet, ref, 1.f);
+    INFO(d.what);
+    REQUIRE(d.index == -1);
+}
+
+/*
  * The controls. Group oversampling and the root key are the two arrangements where the voice's
  * block length and its group's already agree, so nothing above should have moved them.
  */
@@ -332,11 +374,11 @@ TEST_CASE("Variant gain and pan are unchanged when the group oversamples", "[ove
 {
     SECTION("amplitude")
     {
-        OversampleFixture ref(true, 1);
+        OversampleFixture ref(OSMode::OS_ON, 1);
         auto flat = ref.render(72, renderedBlocks);
         requireAudible(flat);
 
-        OversampleFixture cut(true, 1);
+        OversampleFixture cut(OSMode::OS_ON, 1);
         cut.zone->variantData.variants[0].amplitude = 0.5f;
         auto scaled = cut.render(72, renderedBlocks);
 
@@ -347,7 +389,7 @@ TEST_CASE("Variant gain and pan are unchanged when the group oversamples", "[ove
 
     SECTION("pan")
     {
-        OversampleFixture f(true, 1);
+        OversampleFixture f(OSMode::OS_ON, 1);
         f.zone->variantData.variants[0].pan = 1.f;
         auto r = f.render(72, renderedBlocks);
 
@@ -361,11 +403,11 @@ TEST_CASE("Variant gain and pan are unchanged when the group oversamples", "[ove
 
     SECTION("unison stack")
     {
-        OversampleFixture one(true, 1);
+        OversampleFixture one(OSMode::OS_ON, 1);
         auto single = one.render(72, renderedBlocks);
         requireAudible(single);
 
-        OversampleFixture two(true, 2);
+        OversampleFixture two(OSMode::OS_ON, 2);
         auto stacked = two.render(72, renderedBlocks);
 
         auto d = divergenceFrom(stacked, single, 2.f);
@@ -378,11 +420,11 @@ TEST_CASE("Variant gain and pan are unchanged below the oversampling threshold",
 {
     SECTION("amplitude")
     {
-        OversampleFixture ref(false, 1);
+        OversampleFixture ref(OSMode::OS_AUTO, 1);
         auto flat = ref.render(60, renderedBlocks);
         requireAudible(flat);
 
-        OversampleFixture cut(false, 1);
+        OversampleFixture cut(OSMode::OS_AUTO, 1);
         cut.zone->variantData.variants[0].amplitude = 0.5f;
         auto scaled = cut.render(60, renderedBlocks);
 
@@ -393,7 +435,7 @@ TEST_CASE("Variant gain and pan are unchanged below the oversampling threshold",
 
     SECTION("pan")
     {
-        OversampleFixture f(false, 1);
+        OversampleFixture f(OSMode::OS_AUTO, 1);
         f.zone->variantData.variants[0].pan = 1.f;
         auto r = f.render(60, renderedBlocks);
 
@@ -407,11 +449,11 @@ TEST_CASE("Variant gain and pan are unchanged below the oversampling threshold",
 
     SECTION("unison stack")
     {
-        OversampleFixture one(false, 1);
+        OversampleFixture one(OSMode::OS_AUTO, 1);
         auto single = one.render(60, renderedBlocks);
         requireAudible(single);
 
-        OversampleFixture two(false, 2);
+        OversampleFixture two(OSMode::OS_AUTO, 2);
         auto stacked = two.render(60, renderedBlocks);
 
         auto d = divergenceFrom(stacked, single, 2.f);
@@ -424,7 +466,7 @@ TEST_CASE("A voice at the root key does not reach for oversampling", "[oversampl
 {
     // the premise the controls above rest on - if this ever stopped holding they would stop
     // being controls without saying so
-    OversampleFixture f(false, 1);
+    OversampleFixture f(OSMode::OS_AUTO, 1);
     f.eng->processNoteOnEvent(0, 0, 60, -1, 1.f, 0.f);
     f.eng->processAudio();
 
@@ -437,7 +479,7 @@ TEST_CASE("A voice at the root key does not reach for oversampling", "[oversampl
 TEST_CASE("A voice an octave up reaches for oversampling on its own", "[oversample]")
 {
     // and the premise the failing cases rest on
-    OversampleFixture f(false, 1);
+    OversampleFixture f(OSMode::OS_AUTO, 1);
     f.eng->processNoteOnEvent(0, 0, 72, -1, 1.f, 0.f);
     f.eng->processAudio();
 

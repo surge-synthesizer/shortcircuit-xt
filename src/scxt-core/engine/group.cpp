@@ -115,7 +115,7 @@ void Group::rePrepareAndBindGroupMatrix()
 
 void Group::process(Engine &e)
 {
-    if (outputInfo.oversample)
+    if (outputInfo.oversample == OS_ON)
         processWithOS<true>(e);
     else
         processWithOS<false>(e);
@@ -139,8 +139,8 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         {
             onProcessorTypeChanged(i, processorStorage[i].type);
         }
-        envelopeFollowers[0].ballistics.setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
-        envelopeFollowers[1].ballistics.setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
+        envelopeFollowers[0].ballistics.setSampleRate(sampleRate * (OS ? 2 : 1));
+        envelopeFollowers[1].ballistics.setSampleRate(sampleRate * (OS ? 2 : 1));
     }
 
     namespace blk = sst::basic_blocks::mechanics;
@@ -577,7 +577,8 @@ void Group::setupOnUnstream(engine::Engine &e)
     for (int i = 0U; i < envFollowersPerGroupOrZone; ++i)
     {
         envelopeFollowers[i].assign(&audioSourceStorage.followers[i]);
-        envelopeFollowers[i].ballistics.setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
+        envelopeFollowers[i].ballistics.setSampleRate(sampleRate *
+                                                      (outputInfo.oversample == OS_ON ? 2 : 1));
     }
 
     for (int p = 0; p < processorCount; ++p)
@@ -632,11 +633,11 @@ void Group::onProcessorTypeChanged(int w, dsp::processor::ProcessorType t)
             t, asT()->getEngine(), asT()->getEngine()->getMemoryPool().get(),
             processorPlacementStorage[w], dsp::processor::processorMemoryBufferSize,
             processorStorage[w], endpoints.processorTarget[w].fp,
-            processorStorage[w].intParams.data(), outputInfo.oversample, false);
+            processorStorage[w].intParams.data(), outputInfo.oversample == OS_ON, false);
 
         if (processors[w])
         {
-            processors[w]->setSampleRate(sampleRate * (outputInfo.oversample ? 2 : 1));
+            processors[w]->setSampleRate(sampleRate * (outputInfo.oversample == OS_ON ? 2 : 1));
             processors[w]->setTempoPointer(&(getEngine()->transport.tempo));
 
             endpoints.processorTarget[w].snapValues();
@@ -1042,6 +1043,30 @@ Group::NotePriority Group::fromStringNotePriority(const std::string &s)
     auto p = inverse.find(s);
     if (p == inverse.end())
         return LATEST;
+    return p->second;
+}
+
+std::string Group::toStringOversampleMode(const OversampleMode &m)
+{
+    switch (m)
+    {
+    case OS_OFF:
+        return "off";
+    case OS_AUTO:
+        return "auto";
+    case OS_ON:
+        return "on";
+    }
+    return "on";
+}
+
+Group::OversampleMode Group::fromStringOversampleMode(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Group::OversampleMode, Group::toStringOversampleMode>(
+        Group::OversampleMode::OS_OFF, Group::OversampleMode::OS_ON);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return OS_ON;
     return p->second;
 }
 

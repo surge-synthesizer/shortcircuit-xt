@@ -43,7 +43,7 @@ namespace scxt::engine
 {
 void Zone::process(Engine &e)
 {
-    if (parentGroup->outputInfo.oversample)
+    if (parentGroup->outputInfo.oversample == Group::OS_ON)
     {
         processWithOS<true>(e);
     }

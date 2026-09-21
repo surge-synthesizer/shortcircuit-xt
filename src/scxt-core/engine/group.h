@@ -98,12 +98,20 @@ struct Group : MoveableOnly<Group>,
     };
     DECLARE_ENUM_STRING(NotePriority);
 
+    enum OversampleMode : int16_t
+    {
+        OS_OFF = 0, // never oversample, however far up the note is pitched
+        OS_AUTO,    // oversample only a voice pitched far enough up to alias
+        OS_ON       // always oversample the whole group
+    };
+    DECLARE_ENUM_STRING(OversampleMode);
+
     struct GroupOutputInfo
     {
         float amplitude{1.f}, pan{0.f}, velocitySensitivity{0.6f}, tuning{0.f};
         bool muted{false};
         bool soloed{false};
-        bool oversample{true};
+        OversampleMode oversample{OS_ON};
 
         ProcRoutingPath procRouting{procRoute_linear};
         bool procRoutingConsistent{true};
@@ -156,7 +164,7 @@ struct Group : MoveableOnly<Group>,
     void resetLFOs(int whichLFO = -1);
     void process(Engine &onto);
     template <bool OS> void processWithOS(Engine &onto);
-    bool lastOversample{true};
+    OversampleMode lastOversample{OS_ON};
 
     void setupOnUnstream(engine::Engine &e);
     void onGroupMidiChannelSubscriptionChanged();
@@ -445,7 +453,14 @@ SC_DESCRIBE(
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_par3, "P3"},
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_bypass, "BYP"},
                           }));
-    SC_FIELD(oversample, pmd().asOnOffBool().withName("Oversample"));
+    SC_FIELD(oversample, pmd()
+                             .asInt()
+                             .withName("Oversample")
+                             .withUnorderedMapFormatting({
+                                 {scxt::engine::Group::OversampleMode::OS_OFF, "OFF"},
+                                 {scxt::engine::Group::OversampleMode::OS_AUTO, "AUTO"},
+                                 {scxt::engine::Group::OversampleMode::OS_ON, "ON"},
+                             }));
     SC_FIELD(velocitySensitivity,
              pmd().asPercent().withName("Velocity Sensitivity").withDefault(0.6f));
     SC_FIELD(glideTime, pmd().as25SecondExpTime().withDefault(0.f).withName("Glide Time"));)

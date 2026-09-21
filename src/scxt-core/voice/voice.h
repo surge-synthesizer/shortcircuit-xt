@@ -65,6 +65,8 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float inLoopF{0.f}, currentLoopPercentageF{0.f}, currentSamplePercentageF{0.f}, loopCountF{0.0};
 
     bool forceOversample{true};
+    // in OS_OFF the group refuses the rate the generator would otherwise reach for
+    bool allowAliasOversample{true};
 
     std::array<dsp::GeneratorState, maxGeneratorsPerVoice> GD;
     std::array<dsp::GeneratorIO, maxGeneratorsPerVoice> GDIO;

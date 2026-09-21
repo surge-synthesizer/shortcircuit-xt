@@ -114,7 +114,9 @@ void Voice::voiceStarted()
         noteExpressions[i] = 0.0;
     }
 
-    forceOversample = zone->parentGroup->outputInfo.oversample;
+    auto osMode = zone->parentGroup->outputInfo.oversample;
+    forceOversample = (osMode == engine::Group::OS_ON);
+    allowAliasOversample = (osMode != engine::Group::OS_OFF);
 
     lfosActive = zone->lfosActive;
     egsActive = zone->egsActive;
@@ -1105,6 +1107,9 @@ void Voice::initializeGenerator()
         // zero order hold is a deliberate lo-fi effect, so don't antialias it away
         if (variantData.interpolationType == dsp::ZeroOrderHold ||
             variantData.interpolationType == dsp::ZOHAA)
+            fastEnoughToAlias = false;
+
+        if (!allowAliasOversample)
             fastEnoughToAlias = false;
 
         useOversampling = useOversampling || fastEnoughToAlias;

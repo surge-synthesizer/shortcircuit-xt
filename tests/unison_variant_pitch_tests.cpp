@@ -78,7 +78,7 @@ struct VariantPitchFixture
         group = part.getGroup(0).get();
         // pinned rather than assumed: oversampling halves every ratio, and the cases below
         // compare ratios taken from two separate fixtures
-        group->outputInfo.oversample = true;
+        group->outputInfo.oversample = scxt::engine::Group::OS_ON;
 
         auto z = std::make_unique<Zone>();
         z->mapping.keyboardRange = {48, 84};
