@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <utility>
 #include "configuration.h"
 #include "string"
 #include "utils.h"
@@ -138,6 +139,21 @@ inline int64_t clampLoopFade(int64_t loopFade, int64_t startSample, int64_t star
     auto f = std::min(std::max((int64_t)0, loopFade), endLoop - startLoop);
     f = std::min(f, startLoop - startSample);
     return std::max((int64_t)0, f);
+}
+
+/*
+ * Where a ping-pong crossfade's mirrored read sits.
+ *
+ * The playhead is at pos + sub/2^24, so its reflection in bound is at
+ * 2*bound - pos - sub/2^24 - the fraction runs the other way. Reading the mirror at the
+ * playhead's own sub-position leaves it up to a whole sample out at any ratio but 1,
+ * which is every ratio once the sample rate differs from the engine's.
+ */
+inline std::pair<int32_t, int32_t> mirrorRead(int32_t pos, int32_t subPos, int32_t bound)
+{
+    if (subPos == 0)
+        return {2 * bound - pos, 0};
+    return {2 * bound - pos - 1, (1 << 24) - subPos};
 }
 
 struct GeneratorIO
