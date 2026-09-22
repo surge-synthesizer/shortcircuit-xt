@@ -13,6 +13,7 @@ add_library(${PROJECT_NAME} STATIC
         engine/engine.cpp
         engine/engine_voice_responder.cpp
         engine/zone.cpp
+        engine/drop_mapping.cpp
         engine/group.cpp
         engine/part.cpp
         engine/patch.cpp

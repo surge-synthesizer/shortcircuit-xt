@@ -574,24 +574,25 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                     paths.push_back(e->getDirEnt()->path().u8string());
                 auto &loc = r[0];
                 sendToSerialization(cmsg::AddSamplesAsVariantsWithRange(
-                    {paths, loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                    {paths, loc.root, loc.keyLo, loc.keyHi, loc.velLo, loc.velHi}));
             }
             else
             {
-                assert(r.size() == dropElementCount);
+                // alt with a compound in the selection lands here with a single range,
+                // so clamp against what we got, not against what we asked for
                 std::vector<cmsg::addCompoundElementWithRange_t> compounds;
                 std::vector<cmsg::addSampleSpec_t> samples;
                 int idx{0};
                 for (auto e : els)
                 {
-                    auto &loc = r[std::min(idx++, (int)nEls - 1)];
+                    auto &loc = r[std::min(idx++, (int)r.size() - 1)];
 
                     if (e->getCompoundElement().has_value())
-                        compounds.push_back(
-                            {*e->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi});
+                        compounds.push_back({*e->getCompoundElement(), loc.root, loc.keyLo,
+                                             loc.keyHi, loc.velLo, loc.velHi});
                     else if (e->getDirEnt().has_value())
-                        samples.push_back({e->getDirEnt()->path().u8string(), loc.root, loc.lo,
-                                           loc.hi, loc.vlo, loc.vhi, false});
+                        samples.push_back({e->getDirEnt()->path().u8string(), loc.root, loc.keyLo,
+                                           loc.keyHi, loc.velLo, loc.velHi, false});
                 }
 
                 // a container file among the samples still imports on its own
@@ -616,8 +617,9 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                     {(int32_t)cmsg::EditSubtree::part_stream, false, editor->selectedPart}));
                 sendToSerialization(cmsg::ClearPart(editor->selectedPart));
             }
-            sendToSerialization(cmsg::AddCompoundElementWithRange(
-                {*wsi->getCompoundElement(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+            sendToSerialization(
+                cmsg::AddCompoundElementWithRange({*wsi->getCompoundElement(), loc.root, loc.keyLo,
+                                                   loc.keyHi, loc.velLo, loc.velHi}));
         }
         else if (wsi->getDirEnt().has_value())
         {
@@ -645,14 +647,14 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                 auto inst = browser::Browser::getMultiInstrumentElements(wsi->getDirEnt()->path());
                 if (inst.empty())
                     sendToSerialization(cmsg::AddSampleWithRange(
-                        {src.pathStr, loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                        {src.pathStr, loc.root, loc.keyLo, loc.keyHi, loc.velLo, loc.velHi}));
                 else
                     promptForMultiInstrument(inst);
             }
             else if (src.isSingleSample())
             {
                 sendToSerialization(cmsg::AddSampleWithRange(
-                    {src.pathStr, loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                    {src.pathStr, loc.root, loc.keyLo, loc.keyHi, loc.velLo, loc.velHi}));
             }
         }
     }
@@ -863,7 +865,7 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
             }
             auto &loc = regions[0];
             sendToSerialization(cmsg::AddSamplesAsVariantsWithRange(
-                {paths, loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi}));
+                {paths, loc.root, loc.keyLo, loc.keyHi, loc.velLo, loc.velHi}));
             if (editor->editScreen->partSidebar)
                 editor->editScreen->partSidebar->setSelectedTab(2);
             repaint();
@@ -879,7 +881,8 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
         auto p = fs::path{(const char *)(f.toUTF8())};
         auto inst = browser::Browser::getMultiInstrumentElements(p);
         if (inst.empty())
-            samples.push_back({f.toStdString(), loc.root, loc.lo, loc.hi, loc.vlo, loc.vhi, false});
+            samples.push_back(
+                {f.toStdString(), loc.root, loc.keyLo, loc.keyHi, loc.velLo, loc.velHi, false});
         else
             promptForMultiInstrument(inst);
     }
