@@ -51,6 +51,7 @@ add_executable(scxt-test
 		zone_bound_edit_tests.cpp
 		fx_slot_drag_tests.cpp
 		mapping_selection_tests.cpp
+		mapping_drop_geometry_tests.cpp
 		value_edit_lag_tests.cpp
 		voice_oversampling_tests.cpp
 		file_map_view_tests.cpp
