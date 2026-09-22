@@ -306,6 +306,10 @@ CLIENT_TO_SERIAL(DuplicateGroups, c2s_duplicate_groups, zoneAddressList_t,
                  engine.duplicateGroups(payload));
 CLIENT_TO_SERIAL(CopyGroups, c2s_copy_groups, zoneAddressList_t, engine.copyGroups(payload));
 
+// a whole part slot, which pastes over the slot named rather than inserting
+CLIENT_TO_SERIAL(CopyPart, c2s_copy_part, int16_t, engine.copyPart(payload));
+CLIENT_TO_SERIAL(PastePart, c2s_paste_part, int16_t, engine.pastePart(payload));
+
 SERIAL_TO_CLIENT(SendClipboardType, s2c_send_clipboard_type, engine::Clipboard::ContentType,
                  onClipboardType);
 

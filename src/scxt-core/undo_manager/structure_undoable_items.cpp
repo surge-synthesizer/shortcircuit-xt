@@ -485,6 +485,7 @@ void PartsStateItem::store(engine::Engine &e, const std::vector<int16_t> &whichP
         ent.part = pt;
         auto &partO = e.getPatch()->getPart(pt);
         ent.active = partO->configuration.active;
+        ent.names = partO->names;
         for (const auto &g : *partO)
         {
             auto jv = json::scxt_value(*g);
@@ -509,6 +510,8 @@ void PartsStateItem::restore(engine::Engine &e)
                 partO->addGroup(gptr);
             }
             partO->configuration.active = ent.active;
+            partO->names = ent.names;
+            e.sendPartNamesToClient(ent.part);
         }
         e.onPartConfigurationUpdated();
         e.sendFullRefreshToClient();

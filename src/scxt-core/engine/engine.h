@@ -765,6 +765,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void copyVariant(int variant);
     void pasteVariant(int afterVariant);
 
+    // the 16 part slots are fixed, so a paste replaces the slot rather than inserting.
+    // the destination keeps its own channel, routing and file; everything else comes over
+    void copyPart(int16_t part);
+    void pastePart(int16_t part);
+
     bool isValidZoneAddress(const selection::SelectionManager::ZoneAddress &) const;
     bool isValidGroupAddress(const selection::SelectionManager::ZoneAddress &) const;
 

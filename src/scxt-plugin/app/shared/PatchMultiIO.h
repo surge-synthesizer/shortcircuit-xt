@@ -33,7 +33,9 @@
 #include <optional>
 #include <string>
 #include "patch_io/patch_io.h"
+#include "engine/clipboard.h"
 #include "messaging/client/patch_io_messages.h"
+#include "messaging/client/structure_messages.h"
 #include "infrastructure/user_defaults.h"
 #include "UIHelpers.h"
 
@@ -337,6 +339,16 @@ void populatePartIOMenu(T *that, juce::PopupMenu &p, int part, bool withDeactiva
     p.addItem("Load Part...", [w = juce::Component::SafePointer(that), part]() {
         if (w)
             doLoadPartInto(w.getComponent(), w->fileChooser, part);
+    });
+    p.addSeparator();
+    p.addItem("Copy Part", [w = juce::Component::SafePointer(that), part]() {
+        if (w)
+            w->sendToSerialization(cmsg::CopyPart((int16_t)part));
+    });
+    auto hasPart = that->editor->clipboardType == engine::Clipboard::ContentType::PART;
+    p.addItem("Paste Part", hasPart, false, [w = juce::Component::SafePointer(that), part]() {
+        if (w)
+            w->sendToSerialization(cmsg::PastePart((int16_t)part));
     });
     if (withDeactivate)
     {

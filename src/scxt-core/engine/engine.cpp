@@ -1631,6 +1631,89 @@ void Engine::pasteVariant(int afterVariant)
         [](auto &e) { e.sendFullRefreshToClient(); });
 }
 
+void Engine::copyPart(int16_t part)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+    if (part < 0 || part >= numParts)
+        return;
+
+    const auto &pt = getPatch()->getPart(part);
+
+    prepareToStream();
+    Clipboard::ContentType type;
+    {
+        // the .scp shape, so names, macros, part effects and the sample table ride along
+        auto sg = Engine::StreamGuard(Engine::FOR_PART);
+        type = clipboard.streamToClipboard(Clipboard::ContentType::PART,
+                                           std::vector<const Part *>{pt.get()},
+                                           {std::string(pt->names.name)});
+    }
+
+    // clearing or reloading the source before the paste would otherwise let a purge drop these
+    std::vector<std::shared_ptr<sample::Sample>> held;
+    for (const auto &sid : pt->getSamplesUsedByPart())
+    {
+        if (auto smp = sampleManager->getSample(sid))
+            held.push_back(smp);
+    }
+    clipboard.holdSamples(std::move(held));
+
+    messaging::client::serializationSendToClient(messaging::client::s2c_send_clipboard_type, type,
+                                                 *messageController);
+}
+
+void Engine::pastePart(int16_t part)
+{
+    if (clipboard.getClipboardType() != Clipboard::ContentType::PART)
+        return;
+    if (part < 0 || part >= numParts)
+        return;
+
+    undo::pushPartStreamUndo(*this, part, "Paste Part");
+
+    // a whole-part replace, so the audio thread stops the way a part load does
+    messageController->stopAudioThreadThenRunOnSerial([part](const auto &engine) {
+        auto &e = const_cast<Engine &>(engine);
+        try
+        {
+            e.immediatelyTerminateAllVoices();
+
+            auto &pt = e.getPatch()->getPart(part);
+            // the slot is layout rather than sound, so it keeps its own of these
+            auto channel = pt->configuration.channel;
+            auto routeTo = pt->configuration.routeTo;
+
+            {
+                auto sg = Engine::StreamGuard(Engine::FOR_PART);
+                if (!e.clipboard.unstreamFromClipboard(Clipboard::ContentType::PART, *pt))
+                {
+                    RAISE_ERROR_ENGINE(e, "Unable to Paste Part",
+                                       "The clipboard no longer holds a part.");
+                    e.getMessageController()->restartAudioThreadFromSerial();
+                    return;
+                }
+            }
+
+            pt->configuration.channel = channel;
+            pt->configuration.routeTo = routeTo;
+            e.onPartConfigurationUpdated();
+
+            e.getSelectionManager()->guaranteeConsistencyAfterDeletes(e, true, {part, -1, -1});
+            // the slot isn't the file it was loaded from any more, so Save must not write back
+            e.getSelectionManager()->clearPartFile(part);
+            e.getSelectionManager()->sendPatchFilesToClient();
+            e.sendPartNamesToClient(part);
+            e.sendFullRefreshToClient();
+        }
+        catch (std::exception &err)
+        {
+            RAISE_ERROR_ENGINE(e, "Paste Part Error",
+                               std::string("Unable to paste the part ") + err.what());
+        }
+        e.getMessageController()->restartAudioThreadFromSerial();
+    });
+}
+
 void Engine::sendMetadataToClient() const
 {
     // On register send metadata

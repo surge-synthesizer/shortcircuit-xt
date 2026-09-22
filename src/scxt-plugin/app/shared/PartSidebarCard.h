@@ -38,6 +38,7 @@
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
 #include "app/HasEditor.h"
+#include "app/KeyCommands.h"
 #include "connectors/PayloadDataAttachment.h"
 #include "engine/part.h"
 
@@ -45,6 +46,7 @@ namespace scxt::ui::app::shared
 {
 struct PartSidebarCard : juce::Component,
                          HasEditor,
+                         KeyCommandTarget,
                          sst::jucegui::components::WithIdleTimer,
                          juce::TextEditor::Listener
 {
@@ -99,6 +101,8 @@ struct PartSidebarCard : juce::Component,
     void mouseDown(const juce::MouseEvent &e) override;
     void mouseEnter(const juce::MouseEvent &event) override { beginTimer(); }
     void mouseExit(const juce::MouseEvent &event) override { endTimer(); }
+
+    bool handleKeyCommand(KeyCommands command) override;
 
     void resized() override;
 
