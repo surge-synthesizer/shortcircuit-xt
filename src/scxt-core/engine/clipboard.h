@@ -54,7 +54,8 @@ struct Clipboard
         NONE,
         ZONE,
         GROUP,
-        VARIANT // add after this and remember to extend inverse below
+        VARIANT,
+        PART // add after this and remember to extend inverse below
     };
 
     // the clipboard holds one or more items of a single type, each with the name it showed
@@ -94,13 +95,15 @@ struct Clipboard
             return "g";
         case VARIANT:
             return "v";
+        case PART:
+            return "p";
         }
         return "";
     }
     static ContentType fromStringContentType(const std::string &s)
     {
-        static auto inverse = makeEnumInverse<ContentType, toStringContentType>(
-            ContentType::NONE, ContentType::VARIANT);
+        static auto inverse =
+            makeEnumInverse<ContentType, toStringContentType>(ContentType::NONE, ContentType::PART);
         auto p = inverse.find(s);
         if (p == inverse.end())
             return NONE;

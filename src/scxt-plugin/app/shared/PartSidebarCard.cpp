@@ -40,6 +40,9 @@ namespace jcmp = sst::jucegui::components;
 
 PartSidebarCard::PartSidebarCard(int p, SCXTEditor *e) : part(p), HasEditor(e)
 {
+    // the card claims focus when clicked, so the edit keys reach handleKeyCommand
+    setWantsKeyboardFocus(true);
+
     midiMode = std::make_unique<jcmp::TextPushButton>();
     midiMode->setLabel("MIDI");
     midiMode->setOnCallback([w = juce::Component::SafePointer(this)]() {
@@ -171,7 +174,26 @@ void PartSidebarCard::mouseDown(const juce::MouseEvent &event)
         showPartIOMenu();
         return;
     }
+    grabKeyboardFocus();
     sendToSerialization(cmsg::SelectPart(part));
+}
+
+bool PartSidebarCard::handleKeyCommand(KeyCommands command)
+{
+    switch (command)
+    {
+    case COPY:
+        sendToSerialization(cmsg::CopyPart((int16_t)part));
+        return true;
+    case PASTE:
+        if (editor->clipboardType != engine::Clipboard::ContentType::PART)
+            return false;
+        sendToSerialization(cmsg::PastePart((int16_t)part));
+        return true;
+    default:
+        break;
+    }
+    return false;
 }
 
 void PartSidebarCard::paint(juce::Graphics &g)

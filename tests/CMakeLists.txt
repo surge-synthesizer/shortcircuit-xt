@@ -41,6 +41,7 @@ add_executable(scxt-test
 		tuning_tests.cpp
 		variant_edit_all_tests.cpp
 		variant_clipboard_tests.cpp
+		part_clipboard_tests.cpp
 		unison_variant_pitch_tests.cpp
 		sample_pitch_shift_tests.cpp
 		unknown_mod_endpoint_tests.cpp

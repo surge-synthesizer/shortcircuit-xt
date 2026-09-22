@@ -167,6 +167,8 @@ enum ClientToSerializationMessagesIds
     c2s_paste_group,
     c2s_duplicate_groups,
     c2s_copy_groups,
+    c2s_copy_part,
+    c2s_paste_part,
     c2s_clear_part,
     c2s_rename_zone,
     c2s_rename_group,

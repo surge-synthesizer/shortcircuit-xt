@@ -42,6 +42,7 @@
 #include "undoable_items.h"
 #include "undo.h"
 #include "utils.h"
+#include "engine/part.h"
 
 namespace scxt::undo
 {
@@ -146,6 +147,8 @@ struct PartsStateItem : public UndoableItem
     {
         int16_t part{-1};
         bool active{false};
+        // deactivating a slot blanks its name, so the undo has to carry it
+        engine::Part::PartNames names;
         std::vector<std::string> groupsJSON;
     };
     std::vector<Entry> parts;
