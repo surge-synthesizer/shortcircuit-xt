@@ -408,7 +408,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     }
 
     // multiply by vca level from matrix
-    auto mlev = std::clamp(*endpoints.outputTarget.ampP, 0.f, 1.f);
+    auto mlev = *endpoints.outputTarget.ampP;
     if (terminationSequence > 0)
     {
         mlev *= 1.f * (terminationSequence - 1) / blocksToTerminate;
