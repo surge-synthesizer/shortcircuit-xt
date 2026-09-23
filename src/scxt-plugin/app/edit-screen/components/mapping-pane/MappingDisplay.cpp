@@ -533,6 +533,7 @@ bool MappingDisplay::isInterestedInDragSource(
 void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
     isUndertakingDrop = false;
+    ctrlLatchFromTop = -1.f;
     currentDragSource = {};
     // Recompute replace vs add from drop position — do not rely on saved drag state
     bool savedReplace = dragSourceDetails.localPosition.x <
@@ -667,6 +668,7 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
 void MappingDisplay::itemDragEnter(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
     isUndertakingDrop = true;
+    ctrlLatchFromTop = -1.f;
     currentDragPoint = dragSourceDetails.localPosition;
     currentDragSource = {};
 
@@ -686,6 +688,7 @@ void MappingDisplay::itemDragEnter(const juce::DragAndDropTarget::SourceDetails 
 void MappingDisplay::itemDragExit(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails)
 {
     isUndertakingDrop = false;
+    ctrlLatchFromTop = -1.f;
     currentDragSource = {};
     repaint();
 }
@@ -734,6 +737,7 @@ bool MappingDisplay::isInterestedInFileDrag(const juce::StringArray &files)
 void MappingDisplay::fileDragEnter(const juce::StringArray &files, int x, int y)
 {
     isUndertakingDrop = true;
+    ctrlLatchFromTop = -1.f;
     currentDragPoint = {x, y};
     currentDragSource = {};
 
@@ -757,6 +761,7 @@ void MappingDisplay::fileDragEnter(const juce::StringArray &files, int x, int y)
 void MappingDisplay::fileDragMove(const juce::StringArray &files, int x, int y)
 {
     isUndertakingDrop = true;
+    ctrlLatchFromTop = -1.f;
     currentDragPoint = {x, y};
     if (currentDragSource.isInstrumentWhichCanReplace())
         dragIsOnReplaceSide = x < (zoneLayoutViewport->getX() + zoneLayoutViewport->getWidth() / 2);
@@ -766,6 +771,7 @@ void MappingDisplay::fileDragMove(const juce::StringArray &files, int x, int y)
 void MappingDisplay::fileDragExit(const juce::StringArray &)
 {
     isUndertakingDrop = false;
+    ctrlLatchFromTop = -1.f;
     currentDragSource = {};
     repaint();
 }
@@ -775,6 +781,7 @@ void MappingDisplay::filesDropped(const juce::StringArray &files, int x, int y)
     // Do NOT rely on saved drag state — on macOS JUCE may call fileDragExit before filesDropped.
     // Recompute everything from files and drop position.
     isUndertakingDrop = false;
+    ctrlLatchFromTop = -1.f;
     currentDragSource = {};
 
     if (files.size() == 1)
