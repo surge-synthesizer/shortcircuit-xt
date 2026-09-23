@@ -63,12 +63,31 @@ struct DropGeometry
     // 0 at the top of the mapping area, 1 at the bottom
     float fromTop{0.f};
 
+    // the virtual keyboard below the mapping area, which has gestures of its own
+    bool overKeyboard{false};
+    bool inLowerKeyboardHalf{false};
+
     bool shift{false}; // spread over velocity rather than the keyboard
     bool alt{false};   // collapse to one range, to be stacked as variants
+
+    // bends a velocity split: -1 concave, 0 even bands, +1 convex
+    float velocityBend{0.f};
 
     // an sfz or similar carries its own mapping, so the gesture is ignored
     bool isMappedInstrument{false};
 };
+
+/**
+ * Semitones a zone spans at this point in the pull. The first 70% runs 0 to 24
+ * evenly; the rest climbs in octaves to a span that fills the keyboard.
+ */
+int16_t zoneSpanAt(float fromTop);
+
+/**
+ * At the top of the pull a zone that will not fit slides its start down rather
+ * than being truncated, so a single sample can be dragged to fill the keyboard.
+ */
+bool isFitToKeyboardAt(float fromTop);
 
 /**
  * One range per dropped element, in drop order. Always at least one entry, and
