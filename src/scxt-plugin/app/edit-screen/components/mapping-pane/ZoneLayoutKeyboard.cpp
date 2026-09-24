@@ -29,6 +29,7 @@
 
 #include "app/SCXTEditor.h"
 #include "app/edit-screen/components/mapping-pane/MappingDisplay.h"
+#include "app/edit-screen/components/mapping-pane/ZoneLayoutDisplay.h"
 #include "messaging/messaging.h"
 #include "messaging/client/interaction_messages.h"
 
@@ -42,6 +43,19 @@ void ZoneLayoutKeyboard::paint(juce::Graphics &g)
 {
     std::array<int, 128> midiState; // 0 == 0ff, 1 == gated, 2 == sounding
     std::fill(midiState.begin(), midiState.end(), 0);
+
+    // show where the roots will land while a drop is still in flight
+    std::array<bool, 128> pendingRoot{};
+    if (display->isUndertakingDrop && display->mappingZones &&
+        (display->currentDragSource.isNone() || display->currentDragSource.isSingleSample()))
+    {
+        for (const auto &r : display->mappingZones->rootAndRangeForPosition(
+                 display->currentDragPoint, display->dropElementCount, false))
+        {
+            if (r.root >= 0 && r.root < 128)
+                pendingRoot[r.root] = true;
+        }
+    }
     for (const auto &vd : display->editor->sharedUiMemoryState.voiceDisplayItems)
     {
         if (vd.active && vd.midiNote >= 0)
@@ -80,6 +94,12 @@ void ZoneLayoutKeyboard::paint(juce::Graphics &g)
         if (i == display->mappingView.rootKey)
         {
             g.setColour(selZoneColor);
+            g.fillRect(kr);
+        }
+
+        if (pendingRoot[i])
+        {
+            g.setColour(editor->themeColor(theme::ColorMap::accent_1a));
             g.fillRect(kr);
         }
 

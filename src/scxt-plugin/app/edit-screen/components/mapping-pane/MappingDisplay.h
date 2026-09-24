@@ -222,6 +222,8 @@ struct MappingDisplay : juce::Component,
     bool isUndertakingDrop{false};
     size_t dropElementCount{7};
     juce::Point<int> currentDragPoint;
+    // where the pull was when ctrl went down, which freezes the span; -1 when it is up
+    float ctrlLatchFromTop{-1.f};
     void itemDragEnter(const SourceDetails &dragSourceDetails) override;
 
     void itemDragExit(const SourceDetails &dragSourceDetails) override;

@@ -990,13 +990,13 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
         bool first = true;
         for (auto &rr : ranges)
         {
-            auto rb = rectangleForRange(rr.lo, rr.hi, rr.vlo, rr.vhi);
+            auto rb = rectangleForRange(rr.keyLo, rr.keyHi, rr.velLo, rr.velHi);
             g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.4f));
             g.fillRect(rb);
             if (mul && !first)
             {
                 g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.6f));
-                if (rr.vlo == 0 && rr.vhi == 127)
+                if (rr.velLo == 0 && rr.velHi == 127)
                     g.drawVerticalLine(rb.getX(), rb.getY(), rb.getBottom());
                 else
                     g.drawHorizontalLine(rb.getBottom(), rb.getX(), rb.getRight());
@@ -1009,7 +1009,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
         if (display->dropElementCount > 1 && ranges.size() == 1)
         {
             auto &rr = ranges[0];
-            auto rb = rectangleForRange(rr.lo, rr.hi, rr.vlo, rr.vhi);
+            auto rb = rectangleForRange(rr.keyLo, rr.keyHi, rr.velLo, rr.velHi);
             labelZoneRectangle(g, rb, std::to_string(display->dropElementCount) + " variants",
                                editor->themeColor(theme::ColorMap::accent_1a));
         }
@@ -1083,100 +1083,60 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
 
 void ZoneLayoutDisplay::resized() {}
 
-std::vector<ZoneLayoutDisplay::RootAndRange>
-ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Point<int> &p, size_t nEls,
-                                           bool isMappedInstrument)
+std::vector<engine::DropRange> ZoneLayoutDisplay::rootAndRangeForPosition(const juce::Point<int> &p,
+                                                                          size_t nEls,
+                                                                          bool isMappedInstrument)
 {
-    if (isMappedInstrument)
-        return {{60, 0, 127}};
-
     assert(ZoneLayoutKeyboard::lastMidiNote > ZoneLayoutKeyboard::firstMidiNote);
     auto lb = getLocalBounds().toFloat();
-    auto bip = getBoundsInParent();
+    // callers hand us a point in the mapping display, which sits below a header
+    auto lp = getLocalPoint(display, p);
     auto kw = hZoom * lb.getWidth() /
               (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
     auto k0 = hPct * 128;
 
-    auto rootKey = std::clamp(
-        (p.getX() - bip.getX()) * 1.f / kw + ZoneLayoutKeyboard::firstMidiNote + k0,
-        (float)ZoneLayoutKeyboard::firstMidiNote, (float)ZoneLayoutKeyboard::lastMidiNote);
+    // realtime: an OS file drag delivers no key events, so the cached modifiers go stale
+    auto mods = juce::ModifierKeys::getCurrentModifiersRealtime();
 
-    auto fromTop = std::clamp((p.getY() - bip.getY()), 0, getHeight()) * 1.f / getHeight();
-    // have the top 10% cover the entire zone since the sqrt is a bit sensitive
-    static constexpr float zoneTrim{0.15f};
-    fromTop = std::clamp((fromTop - zoneTrim) / (1.f - zoneTrim), 0.f, 1.f);
-    auto span = (1.0f - sqrt(fromTop)) * 80;
+    // the keyboard is our sibling directly below, so anything past our bottom edge is over it
+    auto belowUs = lp.getY() - getHeight();
+    static constexpr auto kbdHeight{ZoneLayoutKeyboard::keyboardHeight};
 
-    auto spanVel = juce::ModifierKeys::getCurrentModifiers().isShiftDown();
-    auto intoVar = juce::ModifierKeys::getCurrentModifiers().isAltDown();
+    engine::DropGeometry g;
+    g.nElements = (int)nEls;
+    g.key = std::clamp(lp.getX() * 1.f / kw + ZoneLayoutKeyboard::firstMidiNote + k0,
+                       (float)ZoneLayoutKeyboard::firstMidiNote,
+                       (float)ZoneLayoutKeyboard::lastMidiNote);
+    g.overKeyboard = belowUs >= 0;
+    g.inLowerKeyboardHalf = belowUs >= kbdHeight / 2;
+    g.shift = mods.isShiftDown();
+    g.alt = mods.isAltDown();
+    g.isMappedInstrument = isMappedInstrument;
 
-    if (nEls == 1 || intoVar)
+    auto fromTop = std::clamp(lp.getY(), 0, getHeight()) * 1.f / getHeight();
+
+    // ctrl freezes the span where it was and hands the rest of the pull to the distribution
+    if (mods.isCtrlDown())
     {
-        auto low = std::clamp(rootKey - span, 0.f, 127.f);
-        auto high = std::clamp(rootKey + span, 0.f, 127.f);
-
-        return {{(int16_t)rootKey, (int16_t)low, (int16_t)high}};
-    }
-
-    if (spanVel)
-    {
-        auto low = std::clamp(rootKey - span, 0.f, 127.f);
-        auto high = std::clamp(rootKey + span, 0.f, 127.f);
-        float velSpread = 127.0 / (nEls);
-        float cVel{0.f};
-        int nextS{0};
-        if (nEls >= 127)
-            velSpread = 1;
-
-        std::vector<RootAndRange> ranges;
-        for (int i = 0; i < nEls; ++i)
-        {
-            auto end = cVel + velSpread;
-            int endI = std::min((int)std::round(end), 127);
-            if (i == nEls - 1)
-                endI = 127;
-            int start = std::min(nextS, endI - 1);
-            if (i == 0)
-                start = 0;
-            nextS = endI + 1;
-            cVel = end;
-            ranges.emplace_back((int16_t)rootKey, (int16_t)low, (int16_t)high, start, endI);
-        }
-
-        return ranges;
+        if (display->ctrlLatchFromTop < 0.f)
+            display->ctrlLatchFromTop = fromTop;
     }
     else
     {
-        /* OK multi-element case */
-        auto wid = span;
-        auto per = wid / (nEls - 1);
-        auto rPer = std::max((int)std::round(per), 1);
-        auto toRoot = (int)(rPer / 2);
-        auto nwid = rPer * nEls;
-        auto start = rootKey - nwid / 2;
-
-        // bound constrain so end <= 127 and start >= 0
-        if (nEls < 127)
-        {
-            if (start < 0)
-                start = 0;
-            if (start + rPer * nEls > 127)
-                start = 127 - rPer * nEls;
-        }
-        else
-        {
-            start = 0;
-        }
-        std::vector<RootAndRange> ranges;
-        for (int i = 0; i < nEls; ++i)
-        {
-            ranges.emplace_back(start + toRoot, start, start + rPer - 1);
-            start += rPer;
-            if (start + rPer - 1 > 127)
-                start = 127 - rPer;
-        }
-        return ranges;
+        display->ctrlLatchFromTop = -1.f;
     }
+
+    if (display->ctrlLatchFromTop >= 0.f)
+    {
+        g.fromTop = display->ctrlLatchFromTop;
+        g.velocityBend = std::clamp(2.f * (display->ctrlLatchFromTop - fromTop), -1.f, 1.f);
+    }
+    else
+    {
+        g.fromTop = fromTop;
+    }
+
+    return engine::dropRangesFor(g);
 }
 
 void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectangle<float> &rIn,

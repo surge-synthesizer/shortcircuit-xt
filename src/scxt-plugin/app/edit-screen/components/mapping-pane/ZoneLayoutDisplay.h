@@ -30,6 +30,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "app/SCXTEditor.h"
+#include "engine/drop_mapping.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -42,16 +43,7 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     void paint(juce::Graphics &g) override;
     void resized() override;
 
-    struct RootAndRange
-    {
-        RootAndRange(int16_t r, int16_t l, int16_t h) : root(r), lo(l), hi(h), vlo(0), vhi(127) {}
-        RootAndRange(int16_t r, int16_t l, int16_t h, int16_t vl, int16_t vh)
-            : root(r), lo(l), hi(h), vlo(vl), vhi(vh)
-        {
-        }
-        int16_t root, lo, hi, vlo, vhi;
-    };
-    std::vector<RootAndRange>
+    std::vector<engine::DropRange>
     rootAndRangeForPosition(const juce::Point<int> &, size_t nFiles,
                             bool isMappedInstrument /* like an SFZ or such */);
 
