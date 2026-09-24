@@ -210,6 +210,61 @@ TEST_CASE("A one shot variant unstreams as a sample gated AEG")
     }
 }
 
+TEST_CASE("An unstreamed loop crossfade curve restores the law its patch was made under")
+{
+    auto zoneWith = [](bool loopActive, int64_t loopFade) {
+        scxt::engine::Zone z;
+        auto &v = z.variantData.variants[0];
+        v.active = true;
+        v.loopActive = loopActive;
+        v.loopFade = loopFade;
+        return z;
+    };
+
+    // what a patch written before #2689 looks like
+    auto strippedOfCurve = [](std::string s) {
+        auto at = s.find("\"loopCurve\"");
+        REQUIRE(at != std::string::npos);
+        auto end = s.find(',', at);
+        REQUIRE(end != std::string::npos);
+        s.erase(at, end - at + 1);
+        REQUIRE(s.find("loopCurve") == std::string::npos);
+        return s;
+    };
+
+    auto curveAfterRoundTrip = [&strippedOfCurve](const scxt::engine::Zone &z, bool strip) {
+        auto s = testStream(z);
+        scxt::engine::Zone k2;
+        testUnstream(strip ? strippedOfCurve(s) : s, k2);
+        return k2.variantData.variants[0].loopCurve;
+    };
+
+    SECTION("a new variant starts at equal power")
+    {
+        REQUIRE(scxt::engine::Zone::SingleVariant{}.loopCurve == Approx(1.f));
+    }
+
+    SECTION("a patch that sounded a crossfade keeps the law it had")
+    {
+        REQUIRE(curveAfterRoundTrip(zoneWith(true, 64), true) ==
+                Approx(scxt::dsp::loopCurveLegacy));
+    }
+
+    SECTION("a patch with no audible crossfade takes the modern default")
+    {
+        // nothing to preserve, so it lands where a new variant would
+        REQUIRE(curveAfterRoundTrip(zoneWith(true, 0), true) == Approx(1.f));
+        REQUIRE(curveAfterRoundTrip(zoneWith(false, 64), true) == Approx(1.f));
+    }
+
+    SECTION("a curve that was streamed round trips")
+    {
+        auto z = zoneWith(true, 64);
+        z.variantData.variants[0].loopCurve = 0.375f;
+        REQUIRE(curveAfterRoundTrip(z, false) == Approx(0.375f));
+    }
+}
+
 TEST_CASE("Only a real windows path is remapped on unstream")
 {
     auto un = [](const std::string &s) { return scxt::json::unstreamPathFromString(s).string(); };

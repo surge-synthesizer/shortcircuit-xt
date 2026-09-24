@@ -299,7 +299,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
     editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[fadeL].get());
     addLabel(fadeL, "XF");
 
-    attachToDummy(curve, "Curve", 'vcrv');
+    attachFloatSamplePoint(curve, "Curve", variantView.variants[selectedVariation].loopCurve);
     addGlyph(curve, jcmp::GlyphPainter::GlyphType::CURVE);
     editor->themeApplier.applyVariantLoopTheme(sampleEditors[curve].get());
 
@@ -723,8 +723,15 @@ void VariantDisplay::rebuild()
         discreteSampleEditors[c]->setEnabled(loopRuns);
         labels[c]->setEnabled(loopRuns);
     }
-    sampleEditors[curve]->setEnabled(loopRuns);
-    glyphLabels[curve]->setEnabled(loopRuns);
+    /*
+     * The curve shapes the forward wrap only. A ping-pong turn blends a signal against
+     * its own reflection - the same sample at the bound - so it has to stay amplitude
+     * preserving and there is no choice left to offer. XF stays live beside it.
+     */
+    bool curveApplies = loopRuns && variantView.variants[selectedVariation].loopDirection ==
+                                        engine::Zone::LoopDirection::FORWARD_ONLY;
+    sampleEditors[curve]->setEnabled(curveApplies);
+    glyphLabels[curve]->setEnabled(curveApplies);
     zoomButton->setEnabled(loopRuns);
 
     loopCnt->setVisible(variantView.variants[selectedVariation].loopMode ==

@@ -103,13 +103,6 @@ constexpr float I16InvScale = (1.f / (16384.f * 32768.f));
 constexpr float I16InvScale2 = (1.f / (32768.f));
 const auto I16InvScale_m128 = SIMD_MM(set1_ps)(I16InvScale);
 
-inline float getFadeGainToAmp(float g)
-{
-    // return std::cbrt(g);
-    // return 4.f / 3.f * (1 - 1 / ((1 + g) * (1 + g)));
-    return 2 * (1 - 1 / (1 + g));
-}
-
 template <InterpolationTypes KT, typename T> struct KernelOp
 {
 };
@@ -750,6 +743,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     const int loopFade = (int)clampLoopFade(GD->loopFade, GD->playbackLowerBound,
                                             GD->loopLowerBound, GD->loopUpperBound);
     const int fadeLo = GD->loopUpperBound - loopFade;
+    const float fadeT = fadeTFromCurve(GD->loopCurve);
 
     // a ping-pong fade fills the loopFade samples up to each bound rather than straddling
     // it, which puts the turn half a fade inside the loop
@@ -841,19 +835,19 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     /*
      * Two crossfades, two gain laws, for a reason.
      *
-     * Across a wrap the two streams are unrelated material, so what matters is that the
-     * power stays put. getFadeGainToAmp is concave, and applying it to both sides sums to
-     * more than one in amplitude but close to one in power, which suits that case and is
-     * the long-standing behaviour.
+     * Across a wrap the two streams are unrelated material, so where between preserving
+     * amplitude and preserving power the fade should sit depends on how correlated they
+     * happen to be. That is a judgement about the sample, not about the geometry, so it
+     * is the user's: getFadeGainToAmp takes the curve, and #2689 has the shape of it.
      *
      * Across a ping-pong turnaround the two streams are a signal and its own reflection.
      * At the bound they are literally the same sample and near it they are strongly
      * correlated, so they add coherently and it is amplitude that has to be preserved.
-     * The same concave law would put a factor of 4/3 - about 2.5dB - on every single
-     * turnaround. Linear is also what the Kontakt and HALion references use.
+     * There is no judgement left to make, so the curve does not reach here - running a
+     * concave law through a turn would put up to 2.5dB on every single one.
      */
-    auto wrapGains = [](float g) -> std::pair<float, float> {
-        return {getFadeGainToAmp(1.f - g), getFadeGainToAmp(g)};
+    auto wrapGains = [fadeT](float g) -> std::pair<float, float> {
+        return {getFadeGainToAmp(1.f - g, fadeT), getFadeGainToAmp(g, fadeT)};
     };
     auto mirrorGains = [](float g) -> std::pair<float, float> { return {1.f - g, g}; };
 

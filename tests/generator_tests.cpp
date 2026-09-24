@@ -121,6 +121,7 @@ struct GenConfig
     bool loopWhileGated{false};
     bool playReverse{false};
     int32_t loopFade{0};
+    float loopCurve{scxt::dsp::loopCurveLegacy}; // so the goldens below sit on the prior law
     int32_t ratio{unityRatio};
     scxt::dsp::InterpolationTypes interp{scxt::dsp::InterpolationTypes::Sinc};
     int warmupBlocks{32};
@@ -196,6 +197,7 @@ struct GenHarness
         gs.loopUpperBound = c.loopActive ? gEndLoop : gEndSample;
         gs.loopInvertedBounds = 1.f / std::max(1, gs.loopUpperBound - gs.loopLowerBound);
         gs.loopFade = c.loopFade;
+        gs.loopCurve = c.loopCurve;
         gs.ratio = c.ratio;
         gs.blockSize = c.blockSizeOverride > 0 ? c.blockSizeOverride : scxt::blockSize;
         gs.isFinished = false;
@@ -454,6 +456,156 @@ TEST_CASE("Generator output does not depend on block phase", "[generator]")
         c.playReverse = true;
         c.loopFade = gFade;
         checkBlockPhaseInvariance(c);
+    }
+}
+
+/*
+ * The curve control from #2689. loopCurve scales into the t of
+ *     G(g, t) = g * ((1 - t) + 2t / (1 + g))
+ * which is exactly linear at t=0, exactly the law shipped before the control at t=1,
+ * and exact equal power at t = 3(sqrt(2) - 1).
+ */
+TEST_CASE("Loop crossfade curve runs from linear to beyond equal power", "[generator]")
+{
+    using scxt::dsp::fadeTFromCurve;
+    using scxt::dsp::getFadeGainToAmp;
+
+    auto priorLaw = [](float g) { return 2 * (1 - 1 / (1 + g)); };
+
+    auto sweepCurve = [](auto &&fn) {
+        for (int i = 0; i <= 32; ++i)
+            fn(fadeTFromCurve(i * scxt::dsp::loopCurveMax / 32));
+    };
+
+    auto risesThroughout = [](float t) {
+        float prev{-1.f};
+        for (int i = 0; i <= 4096; ++i)
+        {
+            auto g = getFadeGainToAmp(i / 4096.f, t);
+            if (g < prev)
+                return false;
+            prev = g;
+        }
+        return true;
+    };
+
+    SECTION("the window edges are exact whatever the curve")
+    {
+        // a fade law that misses its endpoints leaves a click where one was removed
+        float worst{0.f};
+        sweepCurve([&worst](float t) {
+            worst = std::max(worst, std::abs(getFadeGainToAmp(0.f, t)));
+            worst = std::max(worst, std::abs(getFadeGainToAmp(1.f, t) - 1.f));
+        });
+        INFO("worst endpoint error " << worst);
+        REQUIRE(worst < 1e-7f);
+    }
+
+    SECTION("gain rises monotonically and stays within unity")
+    {
+        bool mono{true}, inRange{true};
+        sweepCurve([&](float t) {
+            mono = mono && risesThroughout(t);
+            for (int i = 0; i <= 4096; ++i)
+            {
+                auto g = getFadeGainToAmp(i / 4096.f, t);
+                inRange = inRange && g >= 0.f && g <= 1.f;
+            }
+        });
+        REQUIRE(mono);
+        REQUIRE(inRange);
+    }
+
+    SECTION("a curve of zero is exactly linear")
+    {
+        float worst{0.f};
+        for (int i = 0; i <= 256; ++i)
+        {
+            auto g = i / 256.f;
+            worst = std::max(worst, std::abs(getFadeGainToAmp(g, fadeTFromCurve(0.f)) - g));
+        }
+        INFO("worst departure from linear " << worst);
+        REQUIRE(worst < 1e-7f);
+    }
+
+    SECTION("a curve of one holds power at the fade centre")
+    {
+        auto m = getFadeGainToAmp(0.5f, fadeTFromCurve(1.f));
+        REQUIRE(2 * m * m == Approx(1.f).margin(1e-6));
+    }
+
+    SECTION("the legacy curve reproduces the law shipped before the control")
+    {
+        // this is what an unstreamed loopCurve resolves to, so it has to be exact
+        const auto t = fadeTFromCurve(scxt::dsp::loopCurveLegacy);
+        float worst{0.f};
+        for (int i = 0; i <= 256; ++i)
+        {
+            auto g = i / 256.f;
+            worst = std::max(worst, std::abs(getFadeGainToAmp(g, t) - priorLaw(g)));
+        }
+        INFO("worst departure from the prior law " << worst);
+        REQUIRE(worst < 1e-6f);
+    }
+
+    SECTION("the curve clamps what a client message can send")
+    {
+        REQUIRE(fadeTFromCurve(-5.f) == Approx(0.f).margin(1e-9));
+        REQUIRE(fadeTFromCurve(100.f) ==
+                Approx(fadeTFromCurve(scxt::dsp::loopCurveMax)).margin(1e-9));
+    }
+
+    SECTION("the ceiling sits below where monotonicity fails")
+    {
+        // G'(1) = 1 - t/2, so the far window edge turns over above t == 2
+        REQUIRE_FALSE(risesThroughout(2.1f));
+        REQUIRE(fadeTFromCurve(scxt::dsp::loopCurveMax) < 2.f);
+    }
+}
+
+TEST_CASE("Loop crossfade curve reaches the forward fade and not the alternate one", "[generator]")
+{
+    auto render = [](bool forward, float curve) {
+        GenConfig c;
+        c.name = "curve-wiring";
+        c.loopForward = forward;
+        c.loopFade = gFade;
+        c.recordBlocks = 24;
+        c.loopCurve = curve;
+        GenHarness h(c);
+        return capture(c, h);
+    };
+
+    auto worstDiff = [](const std::vector<float> &a, const std::vector<float> &b) {
+        REQUIRE(a.size() == b.size());
+        float w{0.f};
+        for (size_t i = 0; i < a.size(); ++i)
+            w = std::max(w, std::abs(a[i] - b[i]));
+        return w;
+    };
+
+    SECTION("a forward loop hears the curve")
+    {
+        auto linear = render(true, 0.f);
+        auto equalPower = render(true, 1.f);
+        auto beyond = render(true, scxt::dsp::loopCurveMax);
+
+        INFO("linear to equal power " << worstDiff(linear, equalPower));
+        REQUIRE(worstDiff(linear, equalPower) > 0.01f);
+        INFO("equal power to beyond " << worstDiff(equalPower, beyond));
+        REQUIRE(worstDiff(equalPower, beyond) > 0.01f);
+    }
+
+    SECTION("an alternate loop does not")
+    {
+        /*
+         * At a ping-pong turn the two reads are a signal and its own reflection - the
+         * same sample at the bound - so they add coherently and the blend has to stay
+         * amplitude preserving whatever the control says. Issue #2689.
+         */
+        auto linear = render(false, 0.f);
+        auto beyond = render(false, scxt::dsp::loopCurveMax);
+        REQUIRE(worstDiff(linear, beyond) == Approx(0.f).margin(1e-9));
     }
 }
 
@@ -1557,6 +1709,92 @@ TEST_CASE("Generator golden - forward loop with fade", "[generator][golden]")
     }
 }
 
+TEST_CASE("Generator golden - forward loop fade curve", "[generator][golden]")
+{
+    // The ends of the range: exactly linear, and as far past equal power as monotonicity
+    // allows. The legacy default in between is covered by "forward loop with fade" above.
+    struct Case
+    {
+        const char *name;
+        float curve;
+    };
+    static const std::array<Case, 2> cases{{
+        {"loop-fwd-fade-linear", 0.f},
+        {"loop-fwd-fade-steep", scxt::dsp::loopCurveMax},
+    }};
+
+    static const std::array<std::vector<float>, 2> expected{{
+        // loop-fwd-fade-linear
+        {-0.053108696f, 0.001856980f,  0.185085431f,  0.360920966f,  0.506477535f,  0.617504358f,
+         0.682960927f,  0.699159205f,  0.664669752f,  0.582028806f,  0.457221001f,  0.299288601f,
+         0.119673356f,  -0.068611972f, -0.251926482f, -0.416989505f, -0.551842451f, -0.646715641f,
+         -0.694735646f, -0.692423582f, -0.639946938f, -0.541107416f, -0.403065801f, -0.235822931f,
+         -0.051495228f, 0.136563197f,  0.314727873f,  0.470091254f,  0.591397583f,  0.669858217f,
+         0.699789107f,  0.679021835f,  0.609060943f,  0.464038819f,  0.290336609f,  0.101430096f,
+         -0.088956162f, -0.267909467f, -0.424269915f, -0.549381554f, -0.637603521f, -0.686549723f,
+         -0.697050810f, -0.672856987f, -0.620114326f, -0.546675384f, -0.461305052f, -0.372856915f,
+         -0.289491147f, -0.217999801f, -0.163292408f, -0.128081366f, -0.112782791f, -0.115635388f,
+         -0.133014426f, -0.159905240f, -0.190485060f, -0.218755811f, -0.239165142f, -0.247155949f,
+         -0.239633828f, -0.214940161f, -0.174417123f, -0.117248178f, -0.053108696f, 0.001856980f,
+         0.185085431f,  0.360920966f,  0.506477535f,  0.617504358f,  0.682960927f,  0.699159205f,
+         0.664669752f,  0.582028806f,  0.457221001f,  0.299288601f,  0.119673356f,  -0.068611972f,
+         -0.251926482f, -0.416989505f, -0.551842451f, -0.646715641f, -0.694735646f, -0.692423582f,
+         -0.639946938f, -0.541107416f, -0.403065801f, -0.235822931f, -0.051495228f, 0.136563197f,
+         0.314727873f,  0.470091254f,  0.591397583f,  0.669858217f,  0.699789107f,  0.679021835f,
+         0.609060943f,  0.464038819f,  0.290336609f,  0.101430096f,  -0.088956162f, -0.267909467f,
+         -0.424269915f, -0.549381554f, -0.637603521f, -0.686549723f, -0.697050810f, -0.672856987f,
+         -0.620114326f, -0.546675384f, -0.461305052f, -0.372856915f, -0.289491147f, -0.217999801f,
+         -0.163292408f, -0.128081366f, -0.112782791f, -0.115635388f, -0.133014426f, -0.159905240f,
+         -0.190485060f, -0.218755811f, -0.239165142f, -0.247155949f, -0.239633828f, -0.214940161f,
+         -0.174417123f, -0.117248178f, -0.053108696f, 0.001856980f,  0.185085431f,  0.360920966f,
+         0.506477535f,  0.617504358f,  0.682960927f,  0.699159205f,  0.664669752f,  0.582028806f,
+         0.457221001f,  0.299288601f,  0.119673356f,  -0.068611972f, -0.251926482f, -0.416989505f,
+         -0.551842451f, -0.646715641f, -0.694735646f, -0.692423582f, -0.639946938f, -0.541107416f,
+         -0.403065801f, -0.235822931f, -0.051495228f, 0.136563197f,  0.314727873f,  0.470091254f,
+         0.591397583f,  0.669858217f,  0.699789107f,  0.679021835f},
+        // loop-fwd-fade-steep
+        {-0.053108696f, 0.001856980f,  0.185085431f,  0.360920966f,  0.506477535f,  0.617504358f,
+         0.682960927f,  0.699159205f,  0.664669752f,  0.582028806f,  0.457221001f,  0.299288601f,
+         0.119673356f,  -0.068611972f, -0.251926482f, -0.416989505f, -0.551842451f, -0.646715641f,
+         -0.694735646f, -0.692423582f, -0.639946938f, -0.541107416f, -0.403065801f, -0.235822931f,
+         -0.051495228f, 0.136563197f,  0.314727873f,  0.470091254f,  0.591397583f,  0.669858217f,
+         0.699789107f,  0.679021835f,  0.609060943f,  0.451141506f,  0.255301327f,  0.034152806f,
+         -0.197996184f, -0.426196009f, -0.635970592f, -0.814402342f, -0.951099932f, -1.038964391f,
+         -1.074690223f, -1.058961034f, -0.996311784f, -0.894679129f, -0.764665782f, -0.618583739f,
+         -0.469357878f, -0.329381913f, -0.209426314f, -0.117699482f, -0.059141032f, -0.035022203f,
+         -0.042889591f, -0.076867059f, -0.128294751f, -0.186656594f, -0.240713730f, -0.279745370f,
+         -0.294823021f, -0.279585332f, -0.232705995f, -0.153015599f, -0.053108696f, 0.001856980f,
+         0.185085431f,  0.360920966f,  0.506477535f,  0.617504358f,  0.682960927f,  0.699159205f,
+         0.664669752f,  0.582028806f,  0.457221001f,  0.299288601f,  0.119673356f,  -0.068611972f,
+         -0.251926482f, -0.416989505f, -0.551842451f, -0.646715641f, -0.694735646f, -0.692423582f,
+         -0.639946938f, -0.541107416f, -0.403065801f, -0.235822931f, -0.051495228f, 0.136563197f,
+         0.314727873f,  0.470091254f,  0.591397583f,  0.669858217f,  0.699789107f,  0.679021835f,
+         0.609060943f,  0.451141506f,  0.255301327f,  0.034152806f,  -0.197996184f, -0.426196009f,
+         -0.635970592f, -0.814402342f, -0.951099932f, -1.038964391f, -1.074690223f, -1.058961034f,
+         -0.996311784f, -0.894679129f, -0.764665782f, -0.618583739f, -0.469357878f, -0.329381913f,
+         -0.209426314f, -0.117699482f, -0.059141032f, -0.035022203f, -0.042889591f, -0.076867059f,
+         -0.128294751f, -0.186656594f, -0.240713730f, -0.279745370f, -0.294823021f, -0.279585332f,
+         -0.232705995f, -0.153015599f, -0.053108696f, 0.001856980f,  0.185085431f,  0.360920966f,
+         0.506477535f,  0.617504358f,  0.682960927f,  0.699159205f,  0.664669752f,  0.582028806f,
+         0.457221001f,  0.299288601f,  0.119673356f,  -0.068611972f, -0.251926482f, -0.416989505f,
+         -0.551842451f, -0.646715641f, -0.694735646f, -0.692423582f, -0.639946938f, -0.541107416f,
+         -0.403065801f, -0.235822931f, -0.051495228f, 0.136563197f,  0.314727873f,  0.470091254f,
+         0.591397583f,  0.669858217f,  0.699789107f,  0.679021835f},
+    }};
+
+    for (size_t ci = 0; ci < cases.size(); ++ci)
+    {
+        GenConfig c;
+        c.name = cases[ci].name;
+        c.loopFade = gFade;
+        c.loopCurve = cases[ci].curve;
+        c.recordBlocks = 10;
+
+        GenHarness h(c);
+        goldenCheckOrPrint(c.name, capture(c, h), expected[ci]);
+    }
+}
+
 TEST_CASE("Generator golden - alternate loop with fade", "[generator][golden]")
 {
     // The mirror crossfade at each ping-pong turnaround. Previously these got the wrap
@@ -2137,6 +2375,30 @@ struct RootZeroZone
         return res;
     }
 };
+
+TEST_CASE("A zone's loop crossfade curve reaches the voice", "[generator]")
+{
+    RootZeroZone f;
+    auto &var = f.zone->variantData.variants[0];
+    var.loopActive = true;
+    var.startLoop = var.startSample + 100;
+    var.endLoop = var.endSample - 100;
+    var.loopFade = 64;
+    var.loopCurve = 0.375f;
+
+    f.eng->processNoteOnEvent(0, 0, 60, -1, 1.f, 0.f);
+    f.eng->processAudio();
+
+    scxt::voice::Voice *voice{nullptr};
+    for (int i = 0; i < (int)scxt::maxVoices; ++i)
+    {
+        auto *v = f.zone->voiceWeakPointers[i];
+        if (v && v->isVoiceAssigned && v->isVoicePlaying)
+            voice = v;
+    }
+    REQUIRE(voice);
+    REQUIRE(voice->GD[0].loopCurve == Approx(0.375f));
+}
 
 TEST_CASE("A single cycle keeps rising past seven octaves up", "[generator]")
 {
