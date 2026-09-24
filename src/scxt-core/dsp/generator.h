@@ -74,6 +74,33 @@ inline InterpolationTypes fromStringInterpolationTypes(const std::string &s)
 }
 
 /*
+ * The shape of the forward loop crossfade, issue #2689.
+ *
+ * Both sides fade with G(g, t) = g * ((1 - t) + 2t / (1 + g)), a straight interpolation
+ * between the linear law the references use and the concave one we shipped before this
+ * control. G(0) and G(1) are exactly 0 and 1 for every t, so no setting leaves a step at
+ * a window edge, and G stays monotone and within unity up to t == 2.
+ *
+ * loopCurve scales into t so the dial reads as a percentage: 0 is linear, 1 is exact
+ * equal power, 1.5 is as far beyond it as monotonicity allows.
+ *
+ * This is the forward wrap only. A ping-pong turn blends a signal against its own
+ * reflection, so it stays amplitude preserving - see mirrorGains in the cpp.
+ */
+constexpr float loopCurveEqualPowerT{1.2426407f}; // 3 * (sqrt(2) - 1), where 2*G(0.5)^2 == 1
+constexpr float loopCurveMax{1.5f};
+
+// what an unstreamed loopCurve resolves to: t == 1, the law shipped before the control
+constexpr float loopCurveLegacy{0.80473785f}; // (sqrt(2) + 1) / 3
+
+inline float fadeTFromCurve(float curve)
+{
+    return std::clamp(curve, 0.f, loopCurveMax) * loopCurveEqualPowerT;
+}
+
+inline float getFadeGainToAmp(float g, float t) { return g * ((1 - t) + 2 * t / (1 + g)); }
+
+/*
  * There are two directions here and they are not the same thing.
  *
  * loopDirection is what the loop logic tracks: it is seeded from playReverse at
@@ -117,6 +144,13 @@ struct GeneratorState
     bool hasLooped{false};
 
     int32_t loopFade{0};
+
+    /*
+     * Defaulted to the legacy value rather than to the zone's 1.0. A GeneratorState
+     * nobody has configured should sound the way it always did; the modern default
+     * belongs to SingleVariant, which is where a user's absent opinion actually lives.
+     */
+    float loopCurve{loopCurveLegacy};
 
     InterpolationTypes interpolationType{InterpolationTypes::Sinc};
 };

@@ -1082,6 +1082,7 @@ void Voice::initializeGenerator()
         GD[currGen].loopLowerBound = variantData.startSample;
         GD[currGen].loopUpperBound = variantData.endSample;
         GD[currGen].loopFade = variantData.loopFade;
+        GD[currGen].loopCurve = variantData.loopCurve;
         GD[currGen].playbackLowerBound = variantData.startSample;
         GD[currGen].playbackUpperBound = variantData.endSample;
         GD[currGen].loopDirection = 1;

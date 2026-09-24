@@ -131,6 +131,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         int loopCountWhenCounted{0};
 
         int64_t loopFade{0};
+        // shape of the forward loop crossfade; 0 linear, 1 equal power. See dsp/generator.h
+        float loopCurve{1.f};
         float normalizationAmplitude{1.f}; // linear scale
         // per-sample pitch and amplitude
         float pitchOffset{0.f}; // semitones
@@ -499,7 +501,12 @@ SC_DESCRIBE(scxt::engine::Zone::SingleVariant,
             SC_FIELD(amplitude,
                      pmd().asCubicDecibelAttenuationWithUpperDBBound(12).withName("Amplitude"));
             SC_FIELD(pitchOffset, pmd().asSemitoneRange(-36, 36).withName("Pitch Offset"));
-            SC_FIELD(pan, pmd().asPan().withName("Pan"));)
+            SC_FIELD(pan, pmd().asPan().withName("Pan"));
+            SC_FIELD(loopCurve, pmd()
+                                    .asPercent()
+                                    .withRange(0.f, dsp::loopCurveMax)
+                                    .withDefault(1.f)
+                                    .withName("Loop Crossfade Curve"));)
 
 SC_DESCRIBE(
     scxt::engine::Zone::ZoneMappingData, SC_FIELD(rootKey, pmd().asMIDINote().withName("Root Key"));
