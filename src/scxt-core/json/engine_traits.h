@@ -771,6 +771,7 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                           {"loopCountWhenCounted", s.loopCountWhenCounted},
                           {"interpolationType", s.interpolationType},
                           {"loopFade", s.loopFade},
+                          {"loopCurve", s.loopCurve},
                           {"normalizationAmplitude", s.normalizationAmplitude},
                           {"pitchOffset", s.pitchOffset},
                           {"amplitude", s.amplitude},
@@ -799,6 +800,15 @@ SC_STREAMDEF(scxt::engine::Zone::SingleVariant, SC_FROM({
                      findOrSet(v, "loopDirection", engine::Zone::LoopDirection::FORWARD_ONLY,
                                s.loopDirection);
                      findOrSet(v, "loopFade", 0, s.loopFade);
+                     /*
+                      * A patch written before the curve existed has to keep the fade it
+                      * had, but only where it had one: with no loop, or a loop with no
+                      * crossfade, nothing was ever shaped by the old law and the patch
+                      * lands on the modern default like a new variant would.
+                      */
+                     findOrSet(v, "loopCurve",
+                               (s.loopActive && s.loopFade > 0) ? dsp::loopCurveLegacy : 1.f,
+                               s.loopCurve);
                      findOrSet(v, "interpolationType", dsp::InterpolationTypes::Sinc,
                                s.interpolationType);
                      findOrSet(v, "loopCountWhenCounted", 0, s.loopCountWhenCounted);

@@ -175,6 +175,21 @@ cmsg::updateVariantFieldPayload_t fieldEdit(const Zone::SingleVariant &edited, s
 }
 } // namespace
 
+TEST_CASE("The loop crossfade curve describes as a percentage", "[variants]")
+{
+    // without an SC_DESCRIBE the mapping pane's attachment gets a NONE pmd named ERROR
+    Zone::SingleVariant v;
+    const auto &pmd = scxt::datamodel::describeValue(v, v.loopCurve);
+
+    REQUIRE(pmd.type == scxt::datamodel::pmd::FLOAT);
+    REQUIRE(pmd.minVal == Approx(0.f));
+    REQUIRE(pmd.maxVal == Approx(scxt::dsp::loopCurveMax));
+    REQUIRE(pmd.defaultVal == Approx(1.f));
+    // 100% is equal power, and that is where a new variant sits
+    REQUIRE(pmd.valueToString(1.f).has_value());
+    REQUIRE(pmd.valueToString(1.f)->find("100") != std::string::npos);
+}
+
 TEST_CASE("Edit all never crosses positions or identity", "[variants]")
 {
     using SV = Zone::SingleVariant;
@@ -196,11 +211,11 @@ TEST_CASE("Edit all never crosses positions or identity", "[variants]")
 
     SECTION("the settings edit-all exists for do cross")
     {
-        for (auto o :
-             {VAR_FIELD_OFF(pan), VAR_FIELD_OFF(pitchOffset), VAR_FIELD_OFF(amplitude),
-              VAR_FIELD_OFF(playMode), VAR_FIELD_OFF(loopActive), VAR_FIELD_OFF(playReverse),
-              VAR_FIELD_OFF(loopMode), VAR_FIELD_OFF(loopDirection),
-              VAR_FIELD_OFF(loopCountWhenCounted), VAR_FIELD_OFF(interpolationType)})
+        for (auto o : {VAR_FIELD_OFF(pan), VAR_FIELD_OFF(pitchOffset), VAR_FIELD_OFF(amplitude),
+                       VAR_FIELD_OFF(playMode), VAR_FIELD_OFF(loopActive),
+                       VAR_FIELD_OFF(playReverse), VAR_FIELD_OFF(loopMode),
+                       VAR_FIELD_OFF(loopDirection), VAR_FIELD_OFF(loopCountWhenCounted),
+                       VAR_FIELD_OFF(interpolationType), VAR_FIELD_OFF(loopCurve)})
         {
             INFO("offset " << o);
             REQUIRE(Zone::variantFieldCrossesVariants((ptrdiff_t)o));
