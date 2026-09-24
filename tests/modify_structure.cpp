@@ -356,7 +356,12 @@ TEST_CASE("Copy And Paste Several Zones At Once")
     REQUIRE(part->getGroup(1)->getZone(1)->mapping.keyboardRange.keyStart == 61);
     REQUIRE(part->getGroup(1)->getZone(0)->getName() == name0 + " (copy)");
     REQUIRE(part->getGroup(1)->getZone(1)->getName() == name1 + " (copy)");
-    th.stepUI();
+
+    // the zones arrive on the audio thread but the selection follows on a later pass, so
+    // waiting on the zone count above can land before the paste has selected anything
+    REQUIRE(mst::stepUntil(th, [&th]() {
+        return th.engine->getSelectionManager()->currentlySelectedZones().size() == 2;
+    }));
     auto sel = th.engine->getSelectionManager()->currentlySelectedZones();
     REQUIRE(sel.size() == 2);
     REQUIRE(sel.count(ZoneAddress{0, 1, 0}) == 1);
