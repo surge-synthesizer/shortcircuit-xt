@@ -703,19 +703,43 @@ void SampleWaveform::paint(juce::Graphics &g)
     if (v.loopActive && fadeLen > 0)
     {
         g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
-        // a ramp from silent at one end of the window to full at the seam
-        auto ramp = [&](int64_t fromSample, int64_t toSample) {
-            auto a = xPixelForSample(fromSample, false);
+
+        // the law the generator fades with, so the picture cannot drift from the sound. A
+        // ping-pong turn stays linear whatever the curve says, so it draws at t=0
+        const auto fadeT = v.loopDirection == scxt::engine::Zone::LoopDirection::FORWARD_ONLY
+                               ? scxt::dsp::fadeTFromCurve(v.loopCurve)
+                               : 0.f;
+
+        /*
+         * u runs 0 at the low end of the window and 1 at the marker, so the two windows
+         * take complementary gains: the loop tail fades out into endLoop while the
+         * material before startLoop fades in up to it. They used to both ramp up, which
+         * drew the tail backwards.
+         */
+        auto ramp = [&](int64_t toSample, bool fadingIn) {
+            auto a = xPixelForSample(toSample - fadeLen, false);
             auto b = xPixelForSample(toSample, false);
             if ((a < 0 || a > getWidth()) && (b < 0 || b > getWidth()))
                 return;
-            g.drawLine(a, r.getBottom(), b, r.getY());
+
+            juce::Path p;
+            auto steps = std::max(2, std::abs(b - a));
+            for (int i = 0; i <= steps; ++i)
+            {
+                auto u = (float)i / steps;
+                auto gain = scxt::dsp::getFadeGainToAmp(fadingIn ? u : 1.f - u, fadeT);
+                auto x = a + (b - a) * u;
+                auto y = r.getBottom() - gain * r.getHeight();
+                if (i == 0)
+                    p.startNewSubPath(x, y);
+                else
+                    p.lineTo(x, y);
+            }
+            g.strokePath(p, juce::PathStrokeType(1.f));
         };
 
-        // the tail of the loop crossfading into the material before startLoop, which is
-        // where a ping-pong loop fades too - it just traverses the window both ways
-        ramp(v.endLoop - fadeLen, v.endLoop);
-        ramp(v.startLoop - fadeLen, v.startLoop);
+        ramp(v.endLoop, false);
+        ramp(v.startLoop, true);
     }
 
     // Draw slices before markers so they don't occlude on overdrat
