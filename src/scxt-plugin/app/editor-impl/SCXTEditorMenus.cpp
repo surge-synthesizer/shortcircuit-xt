@@ -288,45 +288,40 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
         p.addSectionHeader("Tuning");
         p.addSeparator();
     }
+    using TM = engine::Engine::TuningMode;
     auto st = editScreen->editor->tuningStatus;
-    p.addItem("Twelve-Tone Equal Temperament", true,
-              st.first == engine::Engine::TuningMode::TWELVE_TET,
-              [st, w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                  {
-                      auto s = st;
-                      s.first = engine::Engine::TuningMode::TWELVE_TET;
-                      w->sendToSerialization(cmsg::SetTuningMode(s));
-                  }
-              });
-    p.addItem("MTS-ESP Continuous", true, st.first == engine::Engine::TuningMode::MTS_CONTINOUS,
-              [st, w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                  {
-                      auto s = st;
-                      s.first = engine::Engine::TuningMode::MTS_CONTINOUS;
-                      w->sendToSerialization(cmsg::SetTuningMode(s));
-                  }
-              });
-    p.addItem("MTS-ESP Note-On Only", true, st.first == engine::Engine::TuningMode::MTS_NOTE_ON,
-              [st, w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                  {
-                      auto s = st;
-                      s.first = engine::Engine::TuningMode::MTS_NOTE_ON;
-                      w->sendToSerialization(cmsg::SetTuningMode(s));
-                  }
-              });
+    auto usingMTS = st.first == TM::MTS_CONTINOUS || st.first == TM::MTS_NOTE_ON;
+
+    auto modeItem = [st, w = juce::Component::SafePointer(this)](TM m) {
+        return [st, w, m]() {
+            if (w)
+            {
+                auto s = st;
+                s.first = m;
+                w->sendToSerialization(cmsg::SetTuningMode(s));
+            }
+        };
+    };
+
+    /*
+     * MTS-ESP is one switch rather than one mode per update rate, #2312. A source can
+     * appear or vanish while we run, so the menu says whether there is one to talk to
+     * instead of leaving the user to infer it from silence.
+     */
+    p.addItem("Use MTS-ESP", true, usingMTS, modeItem(usingMTS ? tuningWithoutMTS : mtsUpdateMode));
+    p.addItem(sharedUiMemoryState.mtsSourceAvailable ? "MTS-ESP source found" : "No MTS-ESP source",
+              false, false, []() {});
+
+    p.addSectionHeader("MTS-ESP Updates");
+    p.addItem("Continuous", usingMTS, st.first == TM::MTS_CONTINOUS, modeItem(TM::MTS_CONTINOUS));
+    p.addItem("Note-On Only", usingMTS, st.first == TM::MTS_NOTE_ON, modeItem(TM::MTS_NOTE_ON));
+
+    // picking one of these is also how MTS-ESP gets turned off, so they stay live
+    p.addSectionHeader("Without MTS-ESP");
+    p.addItem("Twelve-Tone Equal Temperament", true, st.first == TM::TWELVE_TET,
+              modeItem(TM::TWELVE_TET));
     // Available only once a scale has been loaded from the SCL/KBM submenu below
-    p.addItem("SCL/KBM Scale", !sclText.empty(), st.first == engine::Engine::TuningMode::SCL_KBM,
-              [st, w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                  {
-                      auto s = st;
-                      s.first = engine::Engine::TuningMode::SCL_KBM;
-                      w->sendToSerialization(cmsg::SetTuningMode(s));
-                  }
-              });
+    p.addItem("SCL/KBM Scale", !sclText.empty(), st.first == TM::SCL_KBM, modeItem(TM::SCL_KBM));
 
     p.addSeparator();
 
@@ -350,8 +345,7 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
     p.addSubMenu("SCL/KBM", sclKbm);
 
     // Both MTS continuous and SCL/KBM retune per block, so the tuning-aware paths apply
-    auto continuousTuning = st.first == engine::Engine::TuningMode::MTS_CONTINOUS ||
-                            st.first == engine::Engine::TuningMode::SCL_KBM;
+    auto continuousTuning = st.first == TM::MTS_CONTINOUS || st.first == TM::SCL_KBM;
 
     p.addSeparator();
     p.addItem("Tuning-Aware Pitch Bend", continuousTuning, tuningAwareMPE,

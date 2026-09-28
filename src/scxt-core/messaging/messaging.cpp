@@ -274,6 +274,9 @@ void MessageController::runSerialization()
                 engine.sendEngineStatusToClient();
             }
 
+            if (isClientConnected)
+                engine.pollMTSStatus();
+
             // TODO: Drain SerToAudioQ if there's no audio thread
             bool tryToDrain{true};
             prepareSerializationThreadForAudioQueueDrain();

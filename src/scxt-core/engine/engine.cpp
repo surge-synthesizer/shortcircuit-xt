@@ -1794,6 +1794,20 @@ void Engine::sendEngineStatusToClient() const
                                                  *messageController);
 }
 
+void Engine::pollMTSStatus()
+{
+    assert(messageController->threadingChecker.isSerialThread());
+
+    // twice a second is enough for a label, and the serialization thread wakes far more often
+    static constexpr auto interval{std::chrono::milliseconds(500)};
+    auto now = std::chrono::steady_clock::now();
+    if (now - lastMTSPoll < interval)
+        return;
+    lastMTSPoll = now;
+
+    sharedUIMemoryState.mtsSourceAvailable = midikeyRetuner.hasMTSSource();
+}
+
 void Engine::onSampleRateChanged()
 {
     sst::basic_blocks::dsp::prepareEBOscillators(sampleRate);

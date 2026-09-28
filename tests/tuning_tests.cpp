@@ -218,6 +218,22 @@ TEST_CASE("SCL/KBM - the mode demotes to 12-TET with no scale behind it", "[tuni
     REQUIRE(eng->midikeyRetuner.tuningMode == scxt::tuning::MidikeyRetuner::TWELVE_TET);
 }
 
+TEST_CASE("MTS-ESP presence reaches the shared UI state", "[tuning]")
+{
+    /*
+     * The tuning menu says whether there is a source to talk to, and it reads that from
+     * the shared state rather than from a message, so the poll has to be what fills it in.
+     * There is no MTS master in a test run, so both answers are no - what is pinned here is
+     * that they are the same answer and that the poll is the thing that writes it.
+     */
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto bg = eng->getMessageController()->threadingChecker.bypassChecksInScope();
+
+    eng->sharedUIMemoryState.mtsSourceAvailable = true;
+    eng->pollMTSStatus();
+    REQUIRE(eng->sharedUIMemoryState.mtsSourceAvailable == eng->midikeyRetuner.hasMTSSource());
+}
+
 TEST_CASE("SCL/KBM - a loaded scale keeps the mode", "[tuning]")
 {
     std::unique_ptr<scxt::engine::Engine> eng(makeEngine());

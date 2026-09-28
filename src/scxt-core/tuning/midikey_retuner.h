@@ -69,6 +69,9 @@ struct MidikeyRetuner
     void clearSCLKBM();
     bool hasSCLKBM() const { return sclKbmValid; }
 
+    // an MTS-ESP source comes and goes while we run, so this is a question, not a state
+    bool hasMTSSource() const;
+
     int getRepetitionInterval() const;
 
     /*

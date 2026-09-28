@@ -44,6 +44,7 @@
 #include "sample/compound_file.h"
 #include "sample/sample_manager.h"
 
+#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <mutex>
@@ -317,6 +318,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void onPartConfigurationUpdated();
 
     tuning::MidikeyRetuner midikeyRetuner;
+
+    /*
+     * Serialization thread, rate limited internally. Refreshes
+     * sharedUIMemoryState.mtsSourceAvailable so the tuning menu can say whether there is
+     * anything to connect to.
+     */
+    void pollMTSStatus();
+    std::chrono::steady_clock::time_point lastMTSPoll{};
 
     enum struct TuningMode
     {
@@ -628,6 +637,12 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
             uint64_t total() const { return sampleMemory + memoryPool; }
         } ramUsage;
+
+        /*
+         * An MTS-ESP source can appear or vanish at any moment without telling us, so the
+         * answer is polled rather than messaged. See pollMTSStatus.
+         */
+        std::atomic<bool> mtsSourceAvailable{false};
     } sharedUIMemoryState;
 
     /* When we actually unstream an entire engine we want to know if we are doing

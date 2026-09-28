@@ -50,6 +50,8 @@ MidikeyRetuner::~MidikeyRetuner()
         MTS_DeregisterClient(mtsClient);
     }
 }
+bool MidikeyRetuner::hasMTSSource() const { return mtsClient && MTS_HasMaster(mtsClient); }
+
 float MidikeyRetuner::offsetKeyBy(int channel, int key)
 {
     switch (tuningMode)
