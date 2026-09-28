@@ -740,6 +740,54 @@ void Engine::loadSamplesIntoZone(const std::vector<VariantToAdd> &variants, int1
         });
 }
 
+bool Engine::autoLoadSampleIntoLeadZone(const fs::path &p)
+{
+    assert(messageController->threadingChecker.isSerialThread());
+
+    auto sz = getSelectionManager()->currentLeadZone(*this);
+    if (!sz.has_value())
+        return false;
+
+    auto sid = sampleManager->loadSampleByPath(p);
+    if (!sid.has_value())
+        return false;
+
+    undo::pushPayloadUndoFor<undo::ZoneVariantsSpec>(*this, {*sz});
+
+    messageController->scheduleAudioThreadCallbackUnderStructureLock(
+        [a = *sz, sample = *sid](auto &e) {
+            auto &zone = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+            zone->terminateAllVoices();
+
+            /*
+             * The point of auto-load is one sample under one zone, so the other variants
+             * go rather than sitting there holding samples the zone no longer reaches.
+             */
+            for (auto i = 1U; i < maxVariantsPerZone; ++i)
+            {
+                zone->variantData.variants[i] = {};
+                zone->samplePointers[i] = {};
+            }
+
+            auto &v = zone->variantData.variants[0];
+            v.sampleID = sample;
+            v.active = true;
+            // no MAPPING, so the zone keeps the geometry and the root key it was given
+            zone->attachToSample(*e.getSampleManager(), 0,
+                                 (Zone::SampleInformationRead)(Zone::LOOP | Zone::ENDPOINTS));
+
+            // a sample with no loop of its own gets no loop, not the last one's
+            if (zone->samplePointers[0] && !zone->samplePointers[0]->meta.loop_present)
+                v.loopActive = false;
+        },
+        [a = *sz](auto &e) {
+            e.getSelectionManager()->applySelectActions(
+                {a.part, a.group, a.zone, true, true, true});
+        });
+
+    return true;
+}
+
 void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound::CompoundElement &p,
                                                          int16_t rootKey, KeyboardRange krange,
                                                          VelocityRange vrange)

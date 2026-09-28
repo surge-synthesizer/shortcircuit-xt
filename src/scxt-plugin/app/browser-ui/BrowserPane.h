@@ -75,6 +75,7 @@ struct BrowserPane : public app::HasEditor, sst::jucegui::components::NamedPanel
     int lastClickedPotentialSample{-1};
     float previewAmplitude{1.f};
     bool autoPreviewEnabled{true};
+    bool autoLoadEnabled{false};
 };
 } // namespace scxt::ui::app::browser_ui
 

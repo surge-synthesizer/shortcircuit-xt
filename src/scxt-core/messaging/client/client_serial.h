@@ -146,6 +146,7 @@ enum ClientToSerializationMessagesIds
     c2s_add_samples_as_variants_with_range,
     c2s_add_sample_to_group,
     c2s_add_sample_in_zone,
+    c2s_auto_load_sample_into_lead_zone,
     c2s_add_compound_element_with_range,
     c2s_add_compound_element_in_zone,
     c2s_create_group,

@@ -178,6 +178,20 @@ inline void addSampleInZone(const addSampleInZone_t &payload, engine::Engine &en
 CLIENT_TO_SERIAL(AddSampleInZone, c2s_add_sample_in_zone, addSampleInZone_t,
                  addSampleInZone(payload, engine, cont);)
 
+/*
+ * Browser auto-load. No address: the lead zone is whatever it is when the click lands,
+ * and the engine stays quiet if there is no zone or the file will not load, because this
+ * arrives on every browser click rather than on a deliberate drop.
+ */
+inline void autoLoadSampleIntoLeadZone(const std::string &payload, engine::Engine &engine,
+                                       MessageController &cont)
+{
+    assert(cont.threadingChecker.isSerialThread());
+    engine.autoLoadSampleIntoLeadZone(fs::path(fs::u8path(payload)));
+}
+CLIENT_TO_SERIAL(AutoLoadSampleIntoLeadZone, c2s_auto_load_sample_into_lead_zone, std::string,
+                 autoLoadSampleIntoLeadZone(payload, engine, cont);)
+
 // sample, part, group, wone, sampleid
 using addCompoundElementInZone_t =
     std::tuple<sample::compound::CompoundElement, int, int, int, int>;

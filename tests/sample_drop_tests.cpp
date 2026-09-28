@@ -28,6 +28,8 @@
 #include "catch2/catch2.hpp"
 
 #include <array>
+#include <cmath>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -315,4 +317,204 @@ TEST_CASE("A multi sample variant drop is a single undo step", "[drop][variants]
     f.th.sendToSerialization(cmsg::Undo(true));
     f.th.stepUI(30);
     REQUIRE(f.zone().getNumSampleLoaded() == 1);
+}
+
+/*
+ * Browser auto-load (#2303): the browser swaps the sample under the lead zone as the
+ * selection moves, rather than adding a zone. So the zone's geometry has to survive, the
+ * variants have to collapse, and each swap has to be one undo step.
+ */
+namespace
+{
+// a 16 bit mono wav with a smpl chunk, since no checked in test sample carries loop points
+fs::path writeLoopedWav(const fs::path &dir, int32_t loopStart, int32_t loopEnd)
+{
+    constexpr int32_t frames{1024};
+    fs::create_directories(dir);
+    auto path = dir / "Looped.wav";
+    std::ofstream o(path, std::ios::binary);
+
+    auto u32 = [&o](uint32_t v) { o.write((const char *)&v, 4); };
+    auto u16 = [&o](uint16_t v) { o.write((const char *)&v, 2); };
+
+    const uint32_t dataBytes = frames * 2;
+    const uint32_t smplBytes = 36 + 24;
+
+    o.write("RIFF", 4);
+    u32(4 + (8 + 16) + (8 + dataBytes) + (8 + smplBytes));
+    o.write("WAVE", 4);
+
+    o.write("fmt ", 4);
+    u32(16);
+    u16(1); // pcm
+    u16(1); // mono
+    u32(48000);
+    u32(96000);
+    u16(2);
+    u16(16);
+
+    o.write("data", 4);
+    u32(dataBytes);
+    for (int32_t i = 0; i < frames; ++i)
+        u16((uint16_t)(int16_t)std::lround(8000 * std::sin(i * 0.05)));
+
+    o.write("smpl", 4);
+    u32(smplBytes);
+    for (int32_t i = 0; i < 9; ++i)
+        u32(i == 3 ? 60u : (i == 7 ? 1u : 0u)); // unity note, then one loop
+    u32(0);
+    u32(0); // forward
+    u32((uint32_t)loopStart);
+    u32((uint32_t)(loopEnd - 1)); // the reader adds the one back
+    u32(0);
+    u32(0);
+    return path;
+}
+
+std::string autoLoadPath(const std::string &name) { return samplePath("next/" + name).u8string(); }
+} // namespace
+
+TEST_CASE("Browser auto-load replaces the lead zone's sample", "[drop][autoload]")
+{
+    DropFixture f;
+    f.makeLeadZone();
+    REQUIRE(f.variantName(0) == "Beep.wav");
+
+    f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Kick.wav")));
+    f.th.stepUI(30);
+
+    REQUIRE(f.variantName(0) == "Kick.wav");
+    REQUIRE(f.zone().getNumSampleLoaded() == 1);
+}
+
+TEST_CASE("Browser auto-load leaves the zone geometry alone", "[drop][autoload]")
+{
+    DropFixture f;
+    f.th.sendToSerialization(cmsg::AddSamples({{beep(48, 36, 60)}, -1, -1}));
+    REQUIRE(f.drainUntilZones(0, 1));
+    f.th.sendToSerialization(cmsg::ApplySelectActions({{0, 0, 0, true, true, true}}));
+    f.th.stepUI(30);
+
+    auto &z = f.zone();
+    z.mapping.velocityRange = {20, 100};
+    z.mapping.keyboardRange.fadeStart = 3;
+    z.mapping.velocityRange.fadeEnd = 7;
+
+    // the looped wav carries a unity note of 60, which must not become the root key
+    auto dir = fs::temp_directory_path() / "scxt-auto-load-tests";
+    fs::remove_all(dir);
+    auto looped = writeLoopedWav(dir, 100, 200);
+
+    f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(looped.u8string()));
+    f.th.stepUI(30);
+
+    REQUIRE(f.variantName(0) == "Looped.wav");
+    REQUIRE(z.mapping.rootKey == 48);
+    REQUIRE(z.mapping.keyboardRange.keyStart == 36);
+    REQUIRE(z.mapping.keyboardRange.keyEnd == 60);
+    REQUIRE(z.mapping.keyboardRange.fadeStart == 3);
+    REQUIRE(z.mapping.velocityRange.velStart == 20);
+    REQUIRE(z.mapping.velocityRange.velEnd == 100);
+    REQUIRE(z.mapping.velocityRange.fadeEnd == 7);
+
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Browser auto-load collapses the zone to one variant", "[drop][autoload][variants]")
+{
+    DropFixture f;
+    f.makeLeadZone();
+    f.th.sendToSerialization(cmsg::AddSamplesInZone({variantSamples(3), {}, 0, 0, 0}));
+    REQUIRE(f.drainUntilVariants(4));
+
+    f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Hat.wav")));
+    f.th.stepUI(30);
+
+    REQUIRE(f.zone().getNumSampleLoaded() == 1);
+    REQUIRE(f.variantName(0) == "Hat.wav");
+    for (auto i = 1U; i < scxt::maxVariantsPerZone; ++i)
+    {
+        INFO("variant " << i);
+        REQUIRE(!f.zone().variantData.variants[i].active);
+    }
+}
+
+TEST_CASE("Browser auto-load takes the loop from the sample, or leaves none",
+          "[drop][autoload][loop]")
+{
+    DropFixture f;
+    f.makeLeadZone();
+
+    auto dir = fs::temp_directory_path() / "scxt-auto-load-tests";
+    fs::remove_all(dir);
+    auto looped = writeLoopedWav(dir, 100, 200);
+
+    SECTION("a sample with loop points brings them in")
+    {
+        f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(looped.u8string()));
+        f.th.stepUI(30);
+
+        const auto &v = f.zone().variantData.variants[0];
+        REQUIRE(v.loopActive);
+        REQUIRE(v.startLoop == 100);
+        REQUIRE(v.endLoop == 200);
+        REQUIRE(v.startSample == 0);
+    }
+
+    SECTION("a sample with none loses the loop the last one had")
+    {
+        f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(looped.u8string()));
+        f.th.stepUI(30);
+        REQUIRE(f.zone().variantData.variants[0].loopActive);
+
+        f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Kick.wav")));
+        f.th.stepUI(30);
+
+        const auto &v = f.zone().variantData.variants[0];
+        REQUIRE(f.variantName(0) == "Kick.wav");
+        REQUIRE(!v.loopActive);
+        REQUIRE(v.startSample == 0);
+    }
+
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Browser auto-load is one undo step each time", "[drop][autoload][undo]")
+{
+    DropFixture f;
+    f.makeLeadZone();
+    f.th.sendToSerialization(cmsg::AddSamplesInZone({variantSamples(2), {}, 0, 0, 0}));
+    REQUIRE(f.drainUntilVariants(3));
+
+    auto baseSize = f.th.engine->undoManager.undoStackSize();
+
+    f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Hat.wav")));
+    f.th.stepUI(30);
+    REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize + 1);
+
+    f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Kick.wav")));
+    f.th.stepUI(30);
+    REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize + 2);
+
+    // the second swap backs out to the first, and the first back to all three variants
+    f.th.sendToSerialization(cmsg::Undo(true));
+    f.th.stepUI(30);
+    REQUIRE(f.variantName(0) == "Hat.wav");
+
+    f.th.sendToSerialization(cmsg::Undo(true));
+    f.th.stepUI(30);
+    REQUIRE(f.zone().getNumSampleLoaded() == 3);
+    REQUIRE(f.variantName(0) == "Beep.wav");
+}
+
+TEST_CASE("Browser auto-load with no zone to load into does nothing", "[drop][autoload]")
+{
+    DropFixture f;
+    auto baseSize = f.th.engine->undoManager.undoStackSize();
+
+    f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Kick.wav")));
+    f.th.stepUI(30);
+
+    REQUIRE(f.part().getGroups().empty());
+    REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize);
 }
