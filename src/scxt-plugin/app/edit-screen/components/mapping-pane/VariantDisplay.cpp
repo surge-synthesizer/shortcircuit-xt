@@ -560,6 +560,7 @@ void VariantDisplay::resized()
         return r;
     };
 
+    // laid out whether or not they show, so File and the file info keep their place
     variantPlayModeLabel->setBounds(hP(42));
     variantPlaymodeButton->setBounds(hP(100));
     editAllButton->widget->setBounds(hP(55));
@@ -657,6 +658,12 @@ void VariantDisplay::rebuild()
         variantPlaymodeButton->setLabel("UNISON");
         break;
     }
+
+    // one variant has nothing to round robin between and nothing to edit across
+    auto manyVariants = activeVariantCount() > 1;
+    variantPlayModeLabel->setVisible(manyVariants);
+    variantPlaymodeButton->setVisible(manyVariants);
+    editAllButton->widget->setVisible(manyVariants);
 
     switch (variantView.variants[selectedVariation].interpolationType)
     {
