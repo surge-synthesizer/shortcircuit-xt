@@ -57,6 +57,7 @@ add_executable(scxt-test
 		file_map_view_tests.cpp
 		extension_guarantee_tests.cpp
 		browser_db_tests.cpp
+		ram_usage_tests.cpp
 )
 
 target_compile_definitions(scxt-test PRIVATE

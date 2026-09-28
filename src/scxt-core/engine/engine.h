@@ -620,7 +620,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         } transportDisplay;
 
         std::atomic<float> cpuLevel{0};
-        std::atomic<float> ramUsage{0};
+
+        struct RamUsageState
+        {
+            std::atomic<uint64_t> sampleMemory{0};
+            std::atomic<uint64_t> memoryPool{0};
+
+            uint64_t total() const { return sampleMemory + memoryPool; }
+        } ramUsage;
     } sharedUIMemoryState;
 
     /* When we actually unstream an entire engine we want to know if we are doing

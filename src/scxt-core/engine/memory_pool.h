@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_SCXT_CORE_ENGINE_MEMORY_POOL_H
 #define SCXT_SRC_SCXT_CORE_ENGINE_MEMORY_POOL_H
 
+#include <atomic>
 #include <cstdint>
 #include <cctype>
 #include <unordered_map>
@@ -50,6 +51,8 @@ struct MemoryPool : MoveableOnly<MemoryPool>
     data_t *checkoutBlock(size_t blockSize);
     void returnBlock(data_t *block, size_t blockSize);
 
+    uint64_t getAllocatedBytes() const { return allocatedBytes; }
+
   private:
     template <size_t N = 10> static inline size_t nearestBlock(size_t x)
     {
@@ -65,6 +68,9 @@ struct MemoryPool : MoveableOnly<MemoryPool>
     using pool_t = SinglePool;
     using cache_t = std::unordered_map<size_t, pool_t>;
     cache_t cache;
+
+    // grown on the audio thread, read by the ui
+    std::atomic<uint64_t> allocatedBytes{0};
 
     int64_t debugCheckouts{0}, debugReturns{0};
 };
