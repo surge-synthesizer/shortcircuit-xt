@@ -46,6 +46,7 @@ enum DefaultKeys
     playModeExpanded,
     partSidebarPartExpanded,
     browserAutoPreviewEnabled,
+    browserAutoLoadEnabled,
     browserPreviewAmplitude,
     useSoftwareRenderer,
     showUndoRedo,
@@ -82,6 +83,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "partSidebarPartExpanded";
     case browserAutoPreviewEnabled:
         return "browserAutoPreviewEnabled";
+    case browserAutoLoadEnabled:
+        return "browserAutoLoadEnabled";
     case browserPreviewAmplitude:
         return "browserPreviewAmplitude";
     case useSoftwareRenderer:

@@ -751,6 +751,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void loadSamplesIntoZone(const std::vector<VariantToAdd> &, int16_t part, int16_t group,
                              int16_t zone);
 
+    /*
+     * Browser auto-load: swap the sample under the lead zone as the browser selection
+     * moves, for the single sample workflow in #2303. Keeps the zone's geometry and its
+     * variant settings and collapses it to one variant. Quiet about a missing lead zone or
+     * an unloadable file, since it fires on every click rather than on a deliberate drop.
+     */
+    bool autoLoadSampleIntoLeadZone(const fs::path &);
+
     // use -1 for p and g here to get best choice
     void createEmptyZone(int part, int group, KeyboardRange krange = {48, 72},
                          VelocityRange vrange = {0, 127});

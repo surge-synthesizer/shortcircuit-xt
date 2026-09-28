@@ -482,6 +482,8 @@ struct DriveFSArea : juce::Component, HasEditor, KeyCommandTarget
     // plays the row if it is a sample, and says whether it did
     bool previewRow(int row);
     bool previewPlaying{false};
+    // swaps the row's sample under the lead zone if it is one, and says whether it did
+    bool autoLoadRow(int row);
 
     juce::String typedPrefix;
     uint32_t typedAt{0};
@@ -660,6 +662,9 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             hasStartedPreview = true;
             repaint();
         }
+
+        if (browserPane->autoLoadEnabled)
+            fsArea->autoLoadRow(rowNumber);
 
         if (event.mods.isPopupMenu())
         {
@@ -1079,7 +1084,13 @@ void DriveFSArea::selectRowFromKeys(int row, bool preview)
     scrollRowIntoView(row);
     browserPane->lastClickedPotentialSample = row;
 
-    if (!preview || !moved || !browserPane->autoPreviewEnabled)
+    if (!preview || !moved)
+        return;
+
+    if (browserPane->autoLoadEnabled)
+        autoLoadRow(row);
+
+    if (!browserPane->autoPreviewEnabled)
         return;
 
     if (!previewRow(row) && previewPlaying)
@@ -1115,6 +1126,24 @@ bool DriveFSArea::previewRow(int row)
         sample::Sample::sourceTypeFromPath(p), fs::path(fs::u8path(p.u8string())), "", -1, -1, -1};
     sendToSerialization(cmsg::PreviewBrowserSample({1, browserPane->previewAmplitude, address}));
     previewPlaying = true;
+    return true;
+}
+
+bool DriveFSArea::autoLoadRow(int row)
+{
+    if (row < 0 || row >= (int)contents.size())
+        return false;
+
+    const auto &entry = contents[row];
+    // an element of a container carries its own mapping, so those stay a deliberate drop
+    if (entry.expandableAddress.has_value())
+        return false;
+
+    const auto &p = entry.dirent.path();
+    if (entry.dirent.is_directory() || !browser::Browser::isLoadableSingleSample(p))
+        return false;
+
+    sendToSerialization(scxt::messaging::client::AutoLoadSampleIntoLeadZone(p.u8string()));
     return true;
 }
 
@@ -1233,11 +1262,12 @@ struct BrowserPaneFooter : HasEditor, juce::Component
 {
     BrowserPane *parent{nullptr};
     std::unique_ptr<jcmp::ToggleButton> autoPreview;
+    std::unique_ptr<jcmp::ToggleButton> autoLoad;
     std::unique_ptr<jcmp::GlyphButton> preview;
     std::unique_ptr<
         sst::jucegui::component_adapters::ContinuousToValueReference<jcmp::HSliderFilled>>
         previewLevelConnector;
-    std::unique_ptr<connectors::DirectBooleanPayloadDataAttachment> autoPreviewAtt;
+    std::unique_ptr<connectors::DirectBooleanPayloadDataAttachment> autoPreviewAtt, autoLoadAtt;
 
     BrowserPaneFooter(SCXTEditor *e, BrowserPane *p)
         : HasEditor(e), parent(p),
@@ -1262,6 +1292,21 @@ struct BrowserPaneFooter : HasEditor, juce::Component
         autoPreview->setSource(autoPreviewAtt.get());
         addAndMakeVisible(*autoPreview);
 
+        autoLoad = std::make_unique<jcmp::ToggleButton>();
+        autoLoad->setLabel("AUTO-LOAD");
+        autoLoadAtt = std::make_unique<connectors::DirectBooleanPayloadDataAttachment>(
+            [w = juce::Component::SafePointer(this)](auto v) {
+                if (!w)
+                    return;
+                w->editor->defaultsProvider.updateUserDefaultValue(
+                    infrastructure::DefaultKeys::browserAutoLoadEnabled, v);
+            },
+            parent->autoLoadEnabled);
+        autoLoadAtt->label = "Auto Load";
+        autoLoad->setSource(autoLoadAtt.get());
+        autoLoad->setTitle("Auto Load Into Selected Zone");
+        addAndMakeVisible(*autoLoad);
+
         preview = std::make_unique<jcmp::GlyphButton>(jcmp::GlyphPainter::GlyphType::JOG_RIGHT);
         preview->setOnCallback([this]() { launchPreview(); });
         preview->setTitle("Launch Preview");
@@ -1283,12 +1328,18 @@ struct BrowserPaneFooter : HasEditor, juce::Component
     }
     void resized() override
     {
+        static constexpr int autoLoadWidth{74};
+
         auto r = getLocalBounds();
+        // a word rather than a glyph, so it sits at the end of the row and the level fills to it
+        auto right = r.withLeft(r.getRight() - autoLoadWidth);
+        autoLoad->setBounds(right);
+
         autoPreview->setBounds(r.withWidth(r.getHeight()));
         r = r.translated(r.getHeight() + 2, 0);
         preview->setBounds(r.withWidth(r.getHeight()));
         r = r.translated(r.getHeight() + 2, 0);
-        previewLevelConnector->widget->setBounds(r.withWidth(100).reduced(0, 4));
+        previewLevelConnector->widget->setBounds(r.withRight(right.getX() - 4).reduced(0, 4));
     }
 
     void launchPreview()
@@ -1368,6 +1419,8 @@ BrowserPane::BrowserPane(SCXTEditor *e)
     hasHamburger = false;
     autoPreviewEnabled = editor->defaultsProvider.getUserDefaultValue(
         infrastructure::DefaultKeys::browserAutoPreviewEnabled, true);
+    autoLoadEnabled = editor->defaultsProvider.getUserDefaultValue(
+        infrastructure::DefaultKeys::browserAutoLoadEnabled, false);
     previewAmplitude = editor->defaultsProvider.getUserDefaultValue(
                            infrastructure::DefaultKeys::browserPreviewAmplitude, 100) /
                        100.f;
