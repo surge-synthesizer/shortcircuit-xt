@@ -451,6 +451,18 @@ GroupTriggersCard::GroupTriggersCard(SCXTEditor *e) : HasEditor(e)
         rows[i] = std::make_unique<ConditionRow>(this, i, i != scxt::triggerConditionsPerGroup - 1);
         addAndMakeVisible(*rows[i]);
     }
+
+    mixedLabel = std::make_unique<jcmp::Label>();
+    mixedLabel->setText("Mixed Triggers");
+    addChildComponent(*mixedLabel);
+
+    makeConsistentButton = std::make_unique<jcmp::TextPushButton>();
+    makeConsistentButton->setLabel("Make Consistent");
+    makeConsistentButton->setOnCallback([w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->sendToSerialization(scxt::messaging::client::CopyGroupTriggersLeadToAll(true));
+    });
+    addChildComponent(*makeConsistentButton);
 }
 GroupTriggersCard::~GroupTriggersCard()
 {
@@ -473,6 +485,13 @@ void GroupTriggersCard::resized()
         rows[i]->setBounds(r);
         r = r.translated(0, rowHeight);
     }
+
+    if (structureMixed())
+    {
+        auto w = getLocalBounds().withTop(r.getY()).withHeight(componentHeight);
+        mixedLabel->setBounds(w.withWidth(w.getWidth() / 2));
+        makeConsistentButton->setBounds(w.withTrimmedLeft(w.getWidth() / 2));
+    }
 }
 
 void GroupTriggersCard::paint(juce::Graphics &g)
@@ -494,10 +513,19 @@ void GroupTriggersCard::setGroupTriggerConditions(const scxt::engine::GroupTrigg
     // the row being learned may belong to a different group now
     if (learningRow >= 0)
         setLearningRow(-1);
+    auto wasMixed = structureMixed();
     cond = c;
     releaseRow->setupValuesFromData();
     for (auto &r : rows)
         r->setupValuesFromData();
+
+    mixedLabel->setVisible(structureMixed());
+    makeConsistentButton->setVisible(structureMixed());
+    if (structureMixed() != wasMixed && getParentComponent())
+    {
+        // the strip only takes height while it shows, so the sidebar has to re-split
+        getParentComponent()->resized();
+    }
     repaint();
 }
 

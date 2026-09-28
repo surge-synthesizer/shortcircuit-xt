@@ -226,6 +226,7 @@ struct GroupTriggerConditions
     {
         std::fill(conditions.begin(), conditions.end(), nullptr);
         std::fill(active.begin(), active.end(), true);
+        std::fill(conjunctions.begin(), conjunctions.end(), Conjunction::AND);
     }
     std::array<GroupTriggerStorage, scxt::triggerConditionsPerGroup> storage{};
     std::array<bool, scxt::triggerConditionsPerGroup> active{};
@@ -267,6 +268,13 @@ struct GroupTriggerConditions
 
     std::array<Conjunction, scxt::triggerConditionsPerGroup - 1> conjunctions;
 
+    /*
+     * Set by the selection manager on the way out to the client: false when the selected groups
+     * disagree on the shape of their conditions rather than merely on the values in them, since
+     * an edit addressed by offset only means the same thing in every group while the rows line up.
+     */
+    bool structureConsistent{true};
+
     void setupOnUnstream(GroupTriggerInstrumentState &);
 
     /*
@@ -292,6 +300,9 @@ struct GroupTriggerConditions
     bool hasKeySwitch() const;
     bool isKeySwitchLatchKey(int16_t midiKey) const;
     int16_t firstKeySwitchLatchKey() const; // -1 if this group has no latch
+
+    // the shape a multi-group edit has to agree on; args hold values and may differ freely
+    bool sameStructureAs(const GroupTriggerConditions &) const;
 
   protected:
     bool evaluate(const Engine &, const Group &, int16_t channel, int16_t midiKey,

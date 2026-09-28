@@ -440,6 +440,42 @@ TEST_CASE("fromIndexedArray is bounded by the target")
     }
 }
 
+TEST_CASE("Group trigger conjunctions are normalized out of older patches")
+{
+    using GTC = scxt::engine::GroupTriggerConditions;
+
+    GTC c;
+    c.storage[0].id = scxt::engine::GroupTriggerID::PROGRAM_CHANGE;
+    c.conjunctions[0] = GTC::Conjunction::OR_NOT;
+    auto s = testStream(c);
+
+    SECTION("an older patch cannot be trusted, so the conjunctions are reset")
+    {
+        // the field was uninitialized until 0x2026'09'28 and anything in range streamed
+        // back out looking like a real conjunction
+        scxt::engine::Engine::UnstreamGuard sg(0x2026'09'17);
+        GTC c2;
+        testUnstream(s, c2);
+        for (const auto &cj : c2.conjunctions)
+            REQUIRE(cj == GTC::Conjunction::AND);
+    }
+
+    SECTION("a patch this build wrote keeps what it says")
+    {
+        scxt::engine::Engine::UnstreamGuard sg(scxt::currentStreamingVersion);
+        GTC c2;
+        testUnstream(s, c2);
+        REQUIRE(c2.conjunctions[0] == GTC::Conjunction::OR_NOT);
+    }
+
+    SECTION("a fresh one ands by default")
+    {
+        GTC c2;
+        for (const auto &cj : c2.conjunctions)
+            REQUIRE(cj == GTC::Conjunction::AND);
+    }
+}
+
 // TODO: Add test for Group streaming
 // TODO: Add test for Part streaming
 // TODO: Add test for Patch streaming

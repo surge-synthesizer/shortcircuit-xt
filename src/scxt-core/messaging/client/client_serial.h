@@ -117,12 +117,11 @@ enum ClientToSerializationMessagesIds
     c2s_update_group_routing_row,
     c2s_update_group_output_float_value,
     c2s_update_group_output_int16_t_value,
+    c2s_update_group_output_int32_t_value,
     c2s_update_group_output_bool_value,
-    c2s_update_group_output_info_polyphony,
-    c2s_update_group_output_info_midichannel,
-    c2s_update_group_output_info_exclusive_group,
 
     c2s_update_group_trigger_conditions,
+    c2s_copy_group_triggers_lead_to_all,
 
     c2s_request_zone_data_refresh,
 

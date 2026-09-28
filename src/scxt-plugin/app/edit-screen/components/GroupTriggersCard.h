@@ -33,6 +33,9 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include <sst/jucegui/components/Label.h>
+#include <sst/jucegui/components/TextPushButton.h>
+
 #include "engine/group_triggers.h"
 
 #include "configuration.h"
@@ -69,6 +72,17 @@ struct GroupTriggersCard : juce::Component, HasEditor
 
     // the release trigger and the rule under it, above the condition stack
     static constexpr int releaseBlockHeight{26};
+
+    /*
+     * A multi-group selection whose conditions are shaped differently row for row. The card stays
+     * live on the lead - editing one group of a mixed selection is a fair thing to want - but an
+     * edit only reaches the others where the rows line up, so the strip says so and offers to
+     * flatten them. It costs height only while it is showing, hence the query for the sidebar.
+     */
+    std::unique_ptr<sst::jucegui::components::Label> mixedLabel;
+    std::unique_ptr<sst::jucegui::components::TextPushButton> makeConsistentButton;
+    bool structureMixed() const { return !cond.structureConsistent; }
+    static constexpr int warningStripHeight{22};
 };
 } // namespace scxt::ui::app::edit_screen
 #endif // GROUPTRIGGERSCARD_H

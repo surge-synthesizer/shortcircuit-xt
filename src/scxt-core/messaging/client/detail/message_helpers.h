@@ -134,41 +134,58 @@ updateZoneMemberValueGated(M m, const diffMsg_t<VT> &payload, engine::Engine &en
     }
 }
 
+/*
+ * The group equivalent of pokeZoneMemberValue; see there for why floats ramp.
+ */
+template <typename VT, typename G, typename DAT>
+inline void pokeGroupMemberValue(G &grp, DAT &dat, ptrdiff_t d, VT v)
+{
+    static_assert(std::is_standard_layout_v<std::remove_reference_t<DAT>>);
+    assert(d >= 0);
+    assert(d <= (ptrdiff_t)(sizeof(dat) - sizeof(v)));
+    if constexpr (std::is_same_v<VT, float>)
+    {
+        if (!grp->isActive())
+        {
+            *(VT *)(((uint8_t *)&dat) + d) = v;
+        }
+        else
+        {
+            grp->mUILag.setNewDestination((VT *)(((uint8_t *)&dat) + d), v);
+        }
+    }
+    else
+    {
+        *(VT *)(((uint8_t *)&dat) + d) = v;
+    }
+}
+
+/*
+ * A group value edit's side effect, run on each group just written. It takes the offset because
+ * only some fields owe one - a poly limit change has to reset the voice manager, a pan drag
+ * must not. A plain function pointer, since this rides into an audio thread callback.
+ */
+using groupAfterPoke_t = void (*)(engine::Engine &, engine::Group &, ptrdiff_t, size_t);
+
 template <typename Spec, typename VT, typename M>
 inline void updateGroupMemberValue(M m, const diffMsg_t<VT> &payload, engine::Engine &engine,
                                    MessageController &cont,
-                                   std::function<void(const engine::Engine &)> responseCB = nullptr)
+                                   std::function<void(const engine::Engine &)> responseCB = nullptr,
+                                   groupAfterPoke_t afterPoke = nullptr)
 {
     undo::pushPayloadUndo<Spec>(engine);
     auto sg = engine.getSelectionManager()->currentlySelectedGroups();
     if (!sg.empty())
     {
         cont.scheduleAudioThreadCallback(
-            [gs = sg, payload, m](auto &eng) {
+            [gs = sg, payload, m, afterPoke](auto &eng) {
                 auto [d, v] = payload;
                 for (const auto &[p, g, z] : gs)
                 {
                     auto &grp = eng.getPatch()->getPart(p)->getGroup(g);
-                    auto &dat = *grp.*m;
-                    static_assert(
-                        std::is_standard_layout_v<std::remove_reference_t<decltype(dat)>>);
-                    assert(d <= sizeof(dat) - sizeof(v));
-                    assert(d >= 0);
-                    if constexpr (std::is_same_v<VT, float>)
-                    {
-                        if (!grp->isActive())
-                        {
-                            *(VT *)(((uint8_t *)&dat) + d) = v;
-                        }
-                        else
-                        {
-                            grp->mUILag.setNewDestination((VT *)(((uint8_t *)&dat) + d), v);
-                        }
-                    }
-                    else
-                    {
-                        *(VT *)(((uint8_t *)&dat) + d) = v;
-                    }
+                    pokeGroupMemberValue<VT>(grp, *grp.*m, d, v);
+                    if (afterPoke)
+                        afterPoke(eng, *grp, d, sizeof(VT));
                 }
             },
             responseCB);

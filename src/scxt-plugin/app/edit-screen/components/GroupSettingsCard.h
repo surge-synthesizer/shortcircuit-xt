@@ -71,6 +71,8 @@ struct GroupSettingsCard : juce::Component, HasEditor
 
     using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
     using intMsg_t = scxt::messaging::client::UpdateGroupOutputInt16TValue;
+    using int32Msg_t = scxt::messaging::client::UpdateGroupOutputInt32TValue;
+    using boolMsg_t = scxt::messaging::client::UpdateGroupOutputBoolValue;
     typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo> attachment_t;
     typedef connectors::DiscretePayloadDataAttachment<engine::Group::GroupOutputInfo, int16_t>
         iattachment_t;

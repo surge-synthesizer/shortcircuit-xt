@@ -46,102 +46,158 @@ SERIAL_TO_CLIENT(GroupOutputInfoUpdated, s2c_update_group_output_info, groupOutp
 SERIAL_TO_CLIENT(SendGroupTriggerConditions, s2c_send_group_trigger_conditions,
                  scxt::engine::GroupTriggerConditions, onGroupTriggerConditions)
 
+/*
+ * Every output info edit is a field named by its offset, so it reaches the whole group selection
+ * and pays whatever side effect that field owes. The menus in the group settings pane send these
+ * too; a whole-struct write would carry the lead's gain and pan onto every selected group.
+ */
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputFloatValue, c2s_update_group_output_float_value,
                              detail::diffMsg_t<float>, engine::Group::GroupOutputInfo,
                              detail::updateGroupMemberValue<undo::GroupOutputInfoSpec>(
-                                 &engine::Group::outputInfo, payload, engine, cont));
+                                 &engine::Group::outputInfo, payload, engine, cont, nullptr,
+                                 &engine::Group::outputInfoFieldEdited));
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputInt16TValue, c2s_update_group_output_int16_t_value,
                              detail::diffMsg_t<int16_t>, engine::Group::GroupOutputInfo,
                              detail::updateGroupMemberValue<undo::GroupOutputInfoSpec>(
-                                 &engine::Group::outputInfo, payload, engine, cont));
+                                 &engine::Group::outputInfo, payload, engine, cont, nullptr,
+                                 &engine::Group::outputInfoFieldEdited));
+
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputInt32TValue, c2s_update_group_output_int32_t_value,
+                             detail::diffMsg_t<int32_t>, engine::Group::GroupOutputInfo,
+                             detail::updateGroupMemberValue<undo::GroupOutputInfoSpec>(
+                                 &engine::Group::outputInfo, payload, engine, cont, nullptr,
+                                 &engine::Group::outputInfoFieldEdited));
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateGroupOutputBoolValue, c2s_update_group_output_bool_value,
                              detail::diffMsg_t<bool>, engine::Group::GroupOutputInfo,
                              detail::updateGroupMemberValue<undo::GroupOutputInfoSpec>(
-                                 &engine::Group::outputInfo, payload, engine, cont));
+                                 &engine::Group::outputInfo, payload, engine, cont, nullptr,
+                                 &engine::Group::outputInfoFieldEdited));
+
+/*
+ * Which parts of a trigger payload the user actually touched. The client edits a copy of the
+ * lead's conditions and posts the whole struct back, so the edit is whatever differs from the
+ * lead as the engine still holds it, and only that travels to the rest of the selection. A row
+ * whose type changed moves as a row, because its args mean something else once its id does.
+ */
+struct groupTriggerDelta_t
+{
+    std::array<bool, scxt::triggerConditionsPerGroup> row{}, active{};
+    std::array<std::array<bool, engine::GroupTriggerStorage::numArgs>,
+               scxt::triggerConditionsPerGroup>
+        arg{};
+    std::array<bool, scxt::triggerConditionsPerGroup - 1> conjunction{};
+    bool voiceCreationMode{false};
+};
+
+inline groupTriggerDelta_t diffGroupTriggers(const engine::GroupTriggerConditions &was,
+                                             const engine::GroupTriggerConditions &now)
+{
+    groupTriggerDelta_t d;
+    d.voiceCreationMode = was.voiceCreationMode != now.voiceCreationMode;
+    for (int i = 0; i < scxt::triggerConditionsPerGroup; ++i)
+    {
+        d.row[i] = was.storage[i].id != now.storage[i].id;
+        d.active[i] = was.active[i] != now.active[i];
+        for (int j = 0; j < engine::GroupTriggerStorage::numArgs; ++j)
+            d.arg[i][j] = was.storage[i].args[j] != now.storage[i].args[j];
+    }
+    for (int i = 0; i < scxt::triggerConditionsPerGroup - 1; ++i)
+        d.conjunction[i] = was.conjunctions[i] != now.conjunctions[i];
+    return d;
+}
+
+inline void applyGroupTriggerDelta(engine::GroupTriggerConditions &tc,
+                                   const engine::GroupTriggerConditions &p,
+                                   const groupTriggerDelta_t &d)
+{
+    for (int i = 0; i < scxt::triggerConditionsPerGroup; ++i)
+    {
+        // arg 1 of a round robin is the group's ordinal, which is per-group by definition;
+        // setupOnUnstream clamps whatever this leaves behind back into an ordinal
+        auto ordinalIsTheirs = engine::isRoundRobinTriggerID(p.storage[i].id);
+
+        if (d.row[i])
+        {
+            tc.storage[i].id = p.storage[i].id;
+            for (int j = 0; j < engine::GroupTriggerStorage::numArgs; ++j)
+                if (!(j == 1 && ordinalIsTheirs))
+                    tc.storage[i].args[j] = p.storage[i].args[j];
+        }
+        else
+        {
+            for (int j = 0; j < engine::GroupTriggerStorage::numArgs; ++j)
+                if (d.arg[i][j] && !(j == 1 && ordinalIsTheirs))
+                    tc.storage[i].args[j] = p.storage[i].args[j];
+        }
+        if (d.active[i])
+            tc.active[i] = p.active[i];
+    }
+    for (int i = 0; i < scxt::triggerConditionsPerGroup - 1; ++i)
+        if (d.conjunction[i])
+            tc.conjunctions[i] = p.conjunctions[i];
+    if (d.voiceCreationMode)
+        tc.voiceCreationMode = p.voiceCreationMode;
+}
 
 inline void doUpdateGroupTriggerConditions(const engine::GroupTriggerConditions &payload,
                                            engine::Engine &engine, MessageController &cont)
 {
-    auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
-    if (ga.has_value())
-    {
-        undo::pushPayloadUndoFor<undo::GroupTriggerConditionsSpec>(engine, {*ga});
-        cont.scheduleAudioThreadCallback(
-            [p = payload, g = *ga](auto &eng) {
-                auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
-                grp->triggerConditions = p;
+    auto lead = engine.getSelectionManager()->currentLeadGroup(engine);
+    if (!lead.has_value())
+        return;
+
+    std::vector<selection::SelectionManager::ZoneAddress> targets{*lead};
+    for (const auto &ga : engine.getSelectionManager()->currentlySelectedGroups())
+        if (ga != *lead)
+            targets.push_back(ga);
+
+    const auto &leadGrp = engine.getPatch()->getPart(lead->part)->getGroup(lead->group);
+    auto delta = diffGroupTriggers(leadGrp->triggerConditions, payload);
+
+    undo::pushPayloadUndoFor<undo::GroupTriggerConditionsSpec>(engine, targets);
+
+    cont.scheduleAudioThreadCallback(
+        [p = payload, tg = targets, delta](auto &eng) {
+            for (const auto &ga : tg)
+            {
+                auto &grp = eng.getPatch()->getPart(ga.part)->getGroup(ga.group);
+                if (ga == tg.front())
+                    grp->triggerConditions = p;
+                else
+                    applyGroupTriggerDelta(grp->triggerConditions, p, delta);
                 grp->triggerConditions.setupOnUnstream(
-                    eng.getPatch()->getPart(g.part)->groupTriggerInstrumentState);
-                eng.getPatch()->getPart(g.part)->guaranteeKeyswitchLatchCoherence(eng);
-            },
-            [g = *ga](const auto &eng) {
-                // the edit may have moved a switch key or the live articulation
-                eng.sendKeySwitchStateToClient((int16_t)g.part);
-            });
-    }
+                    eng.getPatch()->getPart(ga.part)->groupTriggerInstrumentState);
+            }
+            // a group selection lives in one part, so its latches settle in one pass
+            eng.getPatch()->getPart(tg.front().part)->guaranteeKeyswitchLatchCoherence(eng);
+        },
+        [part = lead->part](const auto &eng) {
+            // the edit may have moved a switch key or the live articulation
+            eng.sendKeySwitchStateToClient((int16_t)part);
+        });
 }
 
 CLIENT_TO_SERIAL(UpdateGroupTriggerConditions, c2s_update_group_trigger_conditions,
                  scxt::engine::GroupTriggerConditions,
                  doUpdateGroupTriggerConditions(payload, engine, cont));
 
-inline void doUpdateGroupOutputInfoPolyphony(const scxt::engine::Group::GroupOutputInfo payload,
-                                             engine::Engine &engine,
-                                             messaging::MessageController &cont)
+inline void doCopyGroupTriggersLeadToAll(engine::Engine &engine)
 {
-    auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
-    if (ga.has_value())
-    {
-        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, {*ga});
-        cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
-            auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
-            grp->outputInfo = p;
-            grp->resetPolyAndPlaymode(eng);
-        });
-    }
-}
-CLIENT_TO_SERIAL(UpdateGroupOutputInfoPolyphony, c2s_update_group_output_info_polyphony,
-                 scxt::engine::Group::GroupOutputInfo,
-                 doUpdateGroupOutputInfoPolyphony(payload, engine, cont));
+    auto &sm = engine.getSelectionManager();
+    if (!sm->currentLeadGroup(engine).has_value())
+        return;
 
-inline void doUpdateGroupOutputInfoMidiChannel(const scxt::engine::Group::GroupOutputInfo payload,
-                                               engine::Engine &engine,
-                                               messaging::MessageController &cont)
-{
-    auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
-    if (ga.has_value())
-    {
-        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, {*ga});
-        cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
-            auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
-            grp->outputInfo = p;
-            grp->onGroupMidiChannelSubscriptionChanged();
-        });
-    }
-}
-CLIENT_TO_SERIAL(UpdateGroupOutputInfoMidiChannel, c2s_update_group_output_info_midichannel,
-                 scxt::engine::Group::GroupOutputInfo,
-                 doUpdateGroupOutputInfoMidiChannel(payload, engine, cont));
+    std::vector<selection::SelectionManager::ZoneAddress> targets;
+    for (const auto &ga : sm->currentlySelectedGroups())
+        targets.push_back(ga);
+    undo::pushPayloadUndoFor<undo::GroupTriggerConditionsSpec>(engine, targets);
 
-inline void
-doUpdateGroupOutputInfoExclusiveGroup(const scxt::engine::Group::GroupOutputInfo payload,
-                                      engine::Engine &engine, messaging::MessageController &cont)
-{
-    auto ga = engine.getSelectionManager()->currentLeadGroup(engine);
-    if (ga.has_value())
-    {
-        undo::pushPayloadUndoFor<undo::GroupOutputInfoSpec>(engine, {*ga});
-        cont.scheduleAudioThreadCallback([p = payload, g = *ga](auto &eng) {
-            auto &grp = eng.getPatch()->getPart(g.part)->getGroup(g.group);
-            grp->outputInfo = p;
-        });
-    }
+    sm->copyGroupTriggerStructureLeadToAll();
 }
-CLIENT_TO_SERIAL(UpdateGroupOutputInfoExclusiveGroup, c2s_update_group_output_info_exclusive_group,
-                 scxt::engine::Group::GroupOutputInfo,
-                 doUpdateGroupOutputInfoExclusiveGroup(payload, engine, cont));
+CLIENT_TO_SERIAL(CopyGroupTriggersLeadToAll, c2s_copy_group_triggers_lead_to_all, bool,
+                 doCopyGroupTriggersLeadToAll(engine));
 
 enum MuteOrSoloGesture : int32_t
 {
