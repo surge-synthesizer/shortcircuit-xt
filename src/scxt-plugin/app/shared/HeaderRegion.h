@@ -29,6 +29,7 @@
 #define SCXT_SRC_SCXT_PLUGIN_APP_SHARED_HEADERREGION_H
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <limits>
 #include <vector>
 #include <sst/jucegui/components/ToggleButton.h>
 #include <sst/jucegui/components/TextPushButton.h>
@@ -84,8 +85,8 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     bool isInterestedInFileDrag(const juce::StringArray &files) override;
     void filesDropped(const juce::StringArray &files, int x, int y) override;
 
-    float memUsageInBytes{-1.f};
-    void setMemUsage(float m)
+    uint64_t memUsageInBytes{std::numeric_limits<uint64_t>::max()};
+    void setMemUsage(uint64_t m)
     {
         if (m != memUsageInBytes)
         {

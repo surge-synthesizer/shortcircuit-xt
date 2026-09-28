@@ -324,7 +324,7 @@ void SCXTEditor::idle()
                                  sharedUiMemoryState.busVULevels[0][1]);
         headerRegion->setCPULevel((double)sharedUiMemoryState.cpuLevel);
 
-        headerRegion->setMemUsage(sampleManager.sampleMemoryInBytes);
+        headerRegion->setMemUsage(sharedUiMemoryState.ramUsage.total());
     }
     if (mixerScreen && mixerScreen->isVisible())
     {

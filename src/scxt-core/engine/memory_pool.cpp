@@ -106,6 +106,7 @@ void MemoryPool::growBlock(size_t requestBlockSize, bool initialize)
     for (auto i = cacheP->second.data.size(); i < gb; ++i)
     {
         cacheP->second.data.push(new data_t[blockSize]);
+        allocatedBytes += blockSize;
     }
 }
 

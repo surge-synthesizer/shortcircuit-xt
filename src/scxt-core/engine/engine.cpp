@@ -477,6 +477,10 @@ bool Engine::processAudio()
     cpuWP = (cpuWP + 1) & (cpuAverageObservation - 1);
     cpuAvg += (pct - ppct) / cpuAverageObservation;
     sharedUIMemoryState.cpuLevel = cpuAvg;
+
+    sharedUIMemoryState.ramUsage.sampleMemory = sampleManager->sampleMemoryInBytes.load();
+    sharedUIMemoryState.ramUsage.memoryPool = memoryPool->getAllocatedBytes();
+
     return true;
 }
 
