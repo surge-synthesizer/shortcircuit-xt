@@ -757,7 +757,16 @@ bool Engine::autoLoadSampleIntoLeadZone(const fs::path &p)
     messageController->scheduleAudioThreadCallbackUnderStructureLock(
         [a = *sz, sample = *sid](auto &e) {
             auto &zone = e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
-            zone->terminateAllVoices();
+            /*
+             * Asked for rather than done here. A group compacts its list of sounding zones
+             * only after walking it, so a zone that loses its last voice anywhere else
+             * leaves the group holding a zone it still believes is sounding. Letting the
+             * zone end its own voices on its next block puts that back inside the walk.
+             * Only worth latching while it is sounding, since a latch nothing consumes
+             * would take the next note instead.
+             */
+            if (zone->isActive())
+                zone->terminateOnNextProcess = true;
 
             /*
              * The point of auto-load is one sample under one zone, so the other variants

@@ -36,6 +36,7 @@
 #include "console_harness.h"
 #include "engine/engine.h"
 #include "engine/part.h"
+#include "voice/voice.h"
 #include "messaging/client/client_messages.h"
 #include "test_utils.h"
 
@@ -326,12 +327,15 @@ TEST_CASE("A multi sample variant drop is a single undo step", "[drop][variants]
  */
 namespace
 {
-// a 16 bit mono wav with a smpl chunk, since no checked in test sample carries loop points
-fs::path writeLoopedWav(const fs::path &dir, int32_t loopStart, int32_t loopEnd)
+// a 16 bit mono wav, with a smpl chunk when asked: no checked in test sample carries loop
+// points, and they are all at the same rate
+fs::path writeWav(const fs::path &dir, const std::string &name, uint32_t rate, int32_t loopStart,
+                  int32_t loopEnd)
 {
     constexpr int32_t frames{1024};
+    const bool withLoop = loopEnd > loopStart;
     fs::create_directories(dir);
-    auto path = dir / "Looped.wav";
+    auto path = dir / name;
     std::ofstream o(path, std::ios::binary);
 
     auto u32 = [&o](uint32_t v) { o.write((const char *)&v, 4); };
@@ -341,15 +345,15 @@ fs::path writeLoopedWav(const fs::path &dir, int32_t loopStart, int32_t loopEnd)
     const uint32_t smplBytes = 36 + 24;
 
     o.write("RIFF", 4);
-    u32(4 + (8 + 16) + (8 + dataBytes) + (8 + smplBytes));
+    u32(4 + (8 + 16) + (8 + dataBytes) + (withLoop ? 8 + smplBytes : 0));
     o.write("WAVE", 4);
 
     o.write("fmt ", 4);
     u32(16);
     u16(1); // pcm
     u16(1); // mono
-    u32(48000);
-    u32(96000);
+    u32(rate);
+    u32(rate * 2);
     u16(2);
     u16(16);
 
@@ -358,17 +362,25 @@ fs::path writeLoopedWav(const fs::path &dir, int32_t loopStart, int32_t loopEnd)
     for (int32_t i = 0; i < frames; ++i)
         u16((uint16_t)(int16_t)std::lround(8000 * std::sin(i * 0.05)));
 
-    o.write("smpl", 4);
-    u32(smplBytes);
-    for (int32_t i = 0; i < 9; ++i)
-        u32(i == 3 ? 60u : (i == 7 ? 1u : 0u)); // unity note, then one loop
-    u32(0);
-    u32(0); // forward
-    u32((uint32_t)loopStart);
-    u32((uint32_t)(loopEnd - 1)); // the reader adds the one back
-    u32(0);
-    u32(0);
+    if (withLoop)
+    {
+        o.write("smpl", 4);
+        u32(smplBytes);
+        for (int32_t i = 0; i < 9; ++i)
+            u32(i == 3 ? 60u : (i == 7 ? 1u : 0u)); // unity note, then one loop
+        u32(0);
+        u32(0); // forward
+        u32((uint32_t)loopStart);
+        u32((uint32_t)(loopEnd - 1)); // the reader adds the one back
+        u32(0);
+        u32(0);
+    }
     return path;
+}
+
+fs::path writeLoopedWav(const fs::path &dir, int32_t loopStart, int32_t loopEnd)
+{
+    return writeWav(dir, "Looped.wav", 48000, loopStart, loopEnd);
 }
 
 std::string autoLoadPath(const std::string &name) { return samplePath("next/" + name).u8string(); }
@@ -505,6 +517,104 @@ TEST_CASE("Browser auto-load is one undo step each time", "[drop][autoload][undo
     f.th.stepUI(30);
     REQUIRE(f.zone().getNumSampleLoaded() == 3);
     REQUIRE(f.variantName(0) == "Beep.wav");
+}
+
+namespace
+{
+/*
+ * Auto-load under a sounding voice. The browser can swap the sample while the zone is
+ * still making noise, so this drives the engine directly rather than through the harness's
+ * audio thread: every block here is one the test asked for.
+ */
+struct SoundingZone
+{
+    std::unique_ptr<scxt::engine::Engine> eng;
+    scxt::engine::Zone *zone{nullptr};
+    fs::path dir;
+
+    SoundingZone()
+    {
+        dir = fs::temp_directory_path() / "scxt-auto-load-rates";
+        fs::remove_all(dir);
+
+        eng.reset(makeEngine());
+        auto &part = *eng->getPatch()->getPart(0);
+        part.addGroup();
+
+        auto z = std::make_unique<scxt::engine::Zone>();
+        z->mapping.keyboardRange = {0, 127};
+        z->mapping.velocityRange = {0, 127};
+        z->mapping.rootKey = 60;
+        z->initialize();
+        part.getGroup(0)->addZone(z);
+        zone = part.getGroup(0)->getZone(0).get();
+
+        auto bypass = eng->getMessageController()->threadingChecker.bypassChecksInScope();
+        eng->getSelectionManager()->applySelectActions({0, 0, 0, true, true, true});
+    }
+
+    ~SoundingZone()
+    {
+        std::error_code ec;
+        fs::remove_all(dir, ec);
+    }
+
+    fs::path wav(const std::string &name, uint32_t rate) { return writeWav(dir, name, rate, 0, 0); }
+
+    void autoLoad(const fs::path &p)
+    {
+        auto bypass = eng->getMessageController()->threadingChecker.bypassChecksInScope();
+        REQUIRE(eng->autoLoadSampleIntoLeadZone(p));
+        // one block to pick the swap up off the queue, one for the zone to end its voices
+        eng->processAudio();
+        eng->processAudio();
+    }
+
+    /*
+     * How fast the newest voice on the zone eats its sample, per sample of output. An
+     * oversampled voice runs its generator twice per output sample, so its ratio is half
+     * the one you hear - fold that back in or two voices at the same pitch disagree.
+     */
+    double startNoteAndGetRate(int key)
+    {
+        auto bypass = eng->getMessageController()->threadingChecker.bypassChecksInScope();
+        eng->processNoteOnEvent(0, 0, key, -1, 1.f, 0.f);
+        eng->processAudio();
+
+        scxt::voice::Voice *newest{nullptr};
+        for (int i = 0; i < (int)scxt::maxVoices; ++i)
+        {
+            auto *v = zone->voiceWeakPointers[i];
+            if (v && v->isVoiceAssigned &&
+                (!newest || v->voiceCreationId > newest->voiceCreationId))
+                newest = v;
+        }
+        REQUIRE(newest);
+        REQUIRE(newest->numGeneratorsActive == 1);
+        return (double)newest->GD[0].ratio * (newest->useOversampling ? 2 : 1);
+    }
+};
+} // namespace
+
+TEST_CASE("Browser auto-load tunes the next note to the sample it just loaded", "[drop][autoload]")
+{
+    /*
+     * Swapping under a sounding voice and then playing had the new note come out at the
+     * rate of the sample before it - an octave up between a 48k and a 24k file.
+     */
+    SoundingZone f;
+    auto fast = f.wav("Fast.wav", 48000);
+    auto slow = f.wav("Slow.wav", 24000);
+
+    f.autoLoad(fast);
+    auto atRoot = f.startNoteAndGetRate(60);
+    REQUIRE(atRoot == Approx(1 << 24).epsilon(0.001));
+
+    // the first note is still sounding while both of these land
+    f.autoLoad(slow);
+    f.autoLoad(fast);
+
+    REQUIRE(f.startNoteAndGetRate(60) == Approx(atRoot).epsilon(0.001));
 }
 
 TEST_CASE("Browser auto-load with no zone to load into does nothing", "[drop][autoload]")
