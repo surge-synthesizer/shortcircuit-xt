@@ -160,9 +160,20 @@ void ThemeEditor::rebuildFromThemeApplier()
     };
 
     colorEditor = std::make_unique<jscr::ColorEditor>(std::move(entries), std::move(cb), true);
-    colorEditor->onAnyColorChanged = [ed = juce::Component::SafePointer(editor)]() {
+    colorEditor->onAnyColorChanged = [ed = juce::Component::SafePointer(editor),
+                                      me = juce::Component::SafePointer(this)]() {
         if (ed)
             ed->repaint();
+        /*
+         * We are a window of our own, so restyling the plugin editor reaches neither our
+         * background nor our buttons. It is the same stylesheet on both sides of the fence,
+         * so this only has to say again over here that it changed.
+         */
+        if (me)
+        {
+            if (auto s = me->style())
+                me->setStyle(s);
+        }
     };
     addAndMakeVisible(*colorEditor);
     resized();
