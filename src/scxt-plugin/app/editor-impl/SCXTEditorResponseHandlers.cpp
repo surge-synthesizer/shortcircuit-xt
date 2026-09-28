@@ -681,6 +681,13 @@ void SCXTEditorReceiver::onPartKeySwitchDisplay(
 void SCXTEditorReceiver::onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &t)
 {
     editor.tuningStatus = t;
+
+    // so that turning MTS-ESP off and on again lands back where it was
+    if (t.first == engine::Engine::TuningMode::MTS_CONTINOUS ||
+        t.first == engine::Engine::TuningMode::MTS_NOTE_ON)
+        editor.mtsUpdateMode = t.first;
+    else
+        editor.tuningWithoutMTS = t.first;
 }
 
 void SCXTEditorReceiver::onSclKbm(const scxt::messaging::client::sclKbmPayload_t &p)

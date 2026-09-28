@@ -269,6 +269,13 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     // inlined here to avoid pulling enginestatus_messages.h.
     std::pair<engine::Engine::TuningMode, engine::Engine::TuningZoneResolution> tuningStatus;
 
+    /*
+     * The tuning modes are one enum but the menu offers MTS-ESP as a switch of its own, so
+     * these remember what to go back to when it is turned off and on again.
+     */
+    engine::Engine::TuningMode tuningWithoutMTS{engine::Engine::TuningMode::TWELVE_TET};
+    engine::Engine::TuningMode mtsUpdateMode{engine::Engine::TuningMode::MTS_CONTINOUS};
+
     // Last applied scale and mapping. Empty scl means SCL/KBM tuning is unavailable.
     std::string sclText, kbmText;
 
