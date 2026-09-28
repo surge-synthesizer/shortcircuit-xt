@@ -740,6 +740,7 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
     SCLOG_WFUNC_IF(selection, SCD(part) << SCD(group));
     const auto &g = engine.getPatch()->getPart(part)->getGroup(group);
     g->outputInfo.procRoutingConsistent = acrossSelectionConsistency(false, PROC_ROUTING, 0);
+    g->outputInfo.busRoutingConsistent = acrossSelectionConsistency(false, OUTPUT_ROUTING, 0);
     serializationSendToClient(cms::s2c_update_group_output_info,
                               cms::groupOutputInfoUpdate_t{true, g->outputInfo},
                               *(engine.getMessageController()));
@@ -781,6 +782,8 @@ void SelectionManager::sendDisplayDataForGroupsBasedOnLead(int part, int group)
 
     configureAndSendZoneOrGroupModMatrixMetadata(part, group, -1);
 
+    g->triggerConditions.structureConsistent =
+        acrossSelectionConsistency(false, TRIGGER_STRUCTURE, 0);
     serializationSendToClient(cms::s2c_send_group_trigger_conditions, g->triggerConditions,
                               *(engine.getMessageController()));
     serializationSendToClient(
@@ -834,6 +837,52 @@ void SelectionManager::sendDisplayDataForNoGroupSelected()
     serializationSendToClient(cms::s2c_update_group_output_info,
                               cms::groupOutputInfoUpdate_t{false, {}},
                               *(engine.getMessageController()));
+}
+
+void SelectionManager::copyGroupTriggerStructureLeadToAll()
+{
+    auto lg = currentLeadGroup(engine);
+    if (!lg.has_value())
+        return;
+    if (state[selectedPart].selectedGroups.size() < 2)
+        return;
+
+    auto &cont = engine.getMessageController();
+    cont->scheduleAudioThreadCallback(
+        [asg = state[selectedPart].selectedGroups, from = *lg](auto &e) {
+            const auto &fg = e.getPatch()->getPart(from.part)->getGroup(from.group);
+            const auto &fc = fg->triggerConditions;
+            for (const auto &sg : asg)
+            {
+                if (sg == from)
+                    continue;
+
+                const auto &tg = e.getPatch()->getPart(sg.part)->getGroup(sg.group);
+                auto &tc = tg->triggerConditions;
+
+                tc.voiceCreationMode = fc.voiceCreationMode;
+                tc.conjunctions = fc.conjunctions;
+                tc.active = fc.active;
+                for (int i = 0; i < triggerConditionsPerGroup; ++i)
+                {
+                    // the ordinal is what distinguishes the groups in a cycle, so it stays put
+                    auto keepOrdinal = engine::isRoundRobinTriggerID(fc.storage[i].id);
+                    auto ordinal = tc.storage[i].args[1];
+                    tc.storage[i] = fc.storage[i];
+                    if (keepOrdinal)
+                        tc.storage[i].args[1] = ordinal;
+                }
+                tc.setupOnUnstream(e.getPatch()->getPart(sg.part)->groupTriggerInstrumentState);
+            }
+            // a group selection lives in one part, so its latches settle in one pass
+            e.getPatch()->getPart(from.part)->guaranteeKeyswitchLatchCoherence(e);
+        },
+        [this, part = lg->part](auto &e) {
+            auto lg = currentLeadGroup(e);
+            if (lg.has_value())
+                sendDisplayDataForGroupsBasedOnLead(lg->part, lg->group);
+            e.sendKeySwitchStateToClient((int16_t)part);
+        });
 }
 
 void SelectionManager::copyZoneOrGroupProcessorLeadToAll(bool forZone, int which)
@@ -1185,6 +1234,16 @@ void SelectionManager::clearAllSelections()
     }
 }
 
+/*
+ * Overloaded rather than guarded inside doCheck below: it is a generic lambda over zones and
+ * groups, and only groups carry conditions, so the zone arm needs an answer that compiles.
+ */
+static bool sameTriggerStructure(const engine::Zone &, const engine::Zone &) { return true; }
+static bool sameTriggerStructure(const engine::Group &a, const engine::Group &b)
+{
+    return a.triggerConditions.sameStructureAs(b.triggerConditions);
+}
+
 bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck,
                                                   int index)
 {
@@ -1221,6 +1280,10 @@ bool SelectionManager::acrossSelectionConsistency(bool forZone, ConsistencyCheck
                 return false;
             break;
         }
+        case TRIGGER_STRUCTURE:
+            if (!sameTriggerStructure(*lz, *it))
+                return false;
+            break;
         }
         return true;
     };

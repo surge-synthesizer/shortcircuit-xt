@@ -903,6 +903,33 @@ bool Group::isActive() const
 
 void Group::onRoutingChanged() { rePrepareAndBindGroupMatrix(); }
 
+void Group::outputInfoFieldEdited(engine::Engine &e, Group &g, ptrdiff_t off, size_t sz)
+{
+    using OI = Group::GroupOutputInfo;
+    static constexpr std::array<std::pair<size_t, size_t>, 5> polySpans{
+        {{offsetof(OI, hasIndependentPolyLimit), sizeof(OI::hasIndependentPolyLimit)},
+         {offsetof(OI, polyLimit), sizeof(OI::polyLimit)},
+         {offsetof(OI, playMode), sizeof(OI::playMode)},
+         {offsetof(OI, notePriority), sizeof(OI::notePriority)},
+         {offsetof(OI, glideRateMode), sizeof(OI::glideRateMode)}}};
+
+    auto hits = [off, sz](size_t so, size_t ss) {
+        return (size_t)off < so + ss && so < (size_t)off + sz;
+    };
+
+    for (const auto &[so, ss] : polySpans)
+    {
+        if (hits(so, ss))
+        {
+            g.resetPolyAndPlaymode(e);
+            return;
+        }
+    }
+
+    if (hits(offsetof(OI, midiChannel), sizeof(OI::midiChannel)))
+        g.onGroupMidiChannelSubscriptionChanged();
+}
+
 void Group::resetPolyAndPlaymode(engine::Engine &e)
 {
     auto pgrp = (uint64_t)this;

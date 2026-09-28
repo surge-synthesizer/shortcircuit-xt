@@ -135,6 +135,14 @@ struct Group : MoveableOnly<Group>,
                                    // choke each other on note-on
     } outputInfo;
 
+    /*
+     * The side effect an output info edit owes, dispatched on the edited field's offset. The
+     * voice manager has to be rebuilt for anything touching polyphony or play mode and the part
+     * has to resubscribe when the MIDI channel moves; every other field just takes its value,
+     * which is why this is offset-gated rather than run on every edit.
+     */
+    static void outputInfoFieldEdited(engine::Engine &, Group &, ptrdiff_t, size_t);
+
     GroupTriggerConditions triggerConditions;
 
     /*

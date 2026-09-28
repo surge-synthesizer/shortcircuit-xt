@@ -176,7 +176,8 @@ struct SelectionManager
         MATRIX_ROW,
         PROC_ROUTING,
         OUTPUT_ROUTING,
-        LFO_SHAPE
+        LFO_SHAPE,
+        TRIGGER_STRUCTURE
     };
     bool acrossSelectionConsistency(bool forZone, ConsistencyCheck whichCheck, int index);
 
@@ -227,6 +228,9 @@ struct SelectionManager
     void copyZoneOrGroupProcessorLeadToAll(bool forZone, int which);
 
   public:
+    // flattens the selection onto the lead's condition shape, leaving each round robin ordinal be
+    void copyGroupTriggerStructureLeadToAll();
+
     /*
      * Where the multi and each part slot last came from, so a plain save can write
      * back without a dialog and the header can jog through the folder. The name is

@@ -52,13 +52,6 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
         addAndMakeVisible(*res);
         return res;
     };
-    auto mkd = [this](auto idx, auto tx) {
-        auto res = connectors::makeConnectedToDummy<jcmp::DraggableTextEditableValue>(
-            'ptlv', tx, 0.0, false,
-            editor->makeComingSoon(std::string() + "Editing the Group Setting " + tx + " Control"));
-        addAndMakeVisible(*res);
-        return res;
-    };
     if (hasFeature::hasGroupMIDIChannel)
     {
         midiGlyph = mkg(jcmp::GlyphPainter::GlyphType::MIDI);
@@ -308,15 +301,15 @@ void GroupSettingsCard::showPolyMenu()
     auto p = juce::PopupMenu();
     p.addSectionHeader("Polyphony");
     p.addSeparator();
-    p.addItem(
-        "Part", true, !info.hasIndependentPolyLimit, [w = juce::Component::SafePointer(this)]() {
-            if (!w)
-                return;
-            w->info.hasIndependentPolyLimit = false;
+    p.addItem("Part", true, !info.hasIndependentPolyLimit,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  w->info.hasIndependentPolyLimit = false;
 
-            w->rebuildFromInfo();
-            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
-        });
+                  w->rebuildFromInfo();
+                  w->sendSingleToSerialization<boolMsg_t>(w->info, w->info.hasIndependentPolyLimit);
+              });
     p.addSeparator();
     for (auto pol : {1, 2, 3, 4, 5, 6, 7, 8, 12, 16, 24, 32, 48, 64})
     {
@@ -328,8 +321,9 @@ void GroupSettingsCard::showPolyMenu()
                       w->info.polyLimit = pol;
 
                       w->rebuildFromInfo();
-                      w->sendToSerialization(
-                          messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                      w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.polyLimit);
+                      w->sendSingleToSerialization<boolMsg_t>(w->info,
+                                                              w->info.hasIndependentPolyLimit);
                   });
     }
     p.showMenuAsync(editor->defaultPopupMenuOptions());
@@ -351,7 +345,7 @@ void GroupSettingsCard::showMidiChannelMenu()
             w->info.midiChannel = i;
 
             w->rebuildFromInfo();
-            w->sendToSerialization(messaging::client::UpdateGroupOutputInfoMidiChannel{w->info});
+            w->sendSingleToSerialization<intMsg_t>(w->info, w->info.midiChannel);
         });
         if (i == -1)
             p.addSeparator();
@@ -372,8 +366,7 @@ void GroupSettingsCard::showPolyModeMenu()
                   w->info.playMode = engine::Group::PlayMode::POLY;
 
                   w->rebuildFromInfo();
-                  w->sendToSerialization(
-                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.playMode);
               });
     p.addItem("Mono", true, info.playMode == engine::Group::PlayMode::MONO,
               [w = juce::Component::SafePointer(this)]() {
@@ -382,8 +375,7 @@ void GroupSettingsCard::showPolyModeMenu()
                   w->info.playMode = engine::Group::PlayMode::MONO;
 
                   w->rebuildFromInfo();
-                  w->sendToSerialization(
-                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.playMode);
               });
     p.addItem("Legato", true, info.playMode == engine::Group::PlayMode::LEGATO,
               [w = juce::Component::SafePointer(this)]() {
@@ -392,8 +384,7 @@ void GroupSettingsCard::showPolyModeMenu()
                   w->info.playMode = engine::Group::PlayMode::LEGATO;
 
                   w->rebuildFromInfo();
-                  w->sendToSerialization(
-                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.playMode);
               });
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
@@ -412,8 +403,7 @@ void GroupSettingsCard::showNotePrioMenu()
                   w->info.notePriority = engine::Group::NotePriority::LATEST;
 
                   w->rebuildFromInfo();
-                  w->sendToSerialization(
-                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.notePriority);
               });
     p.addItem("Highest", true, info.notePriority == engine::Group::NotePriority::HIGHEST,
               [w = juce::Component::SafePointer(this)]() {
@@ -422,8 +412,7 @@ void GroupSettingsCard::showNotePrioMenu()
                   w->info.notePriority = engine::Group::NotePriority::HIGHEST;
 
                   w->rebuildFromInfo();
-                  w->sendToSerialization(
-                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.notePriority);
               });
     p.addItem("Lowest", true, info.notePriority == engine::Group::NotePriority::LOWEST,
               [w = juce::Component::SafePointer(this)]() {
@@ -432,8 +421,7 @@ void GroupSettingsCard::showNotePrioMenu()
                   w->info.notePriority = engine::Group::NotePriority::LOWEST;
 
                   w->rebuildFromInfo();
-                  w->sendToSerialization(
-                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.notePriority);
               });
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
@@ -450,8 +438,7 @@ void GroupSettingsCard::showGlideRateModeMenu()
                       return;
                   w->info.glideRateMode = engine::Group::CONSTANT_TIME;
                   w->rebuildFromInfo();
-                  w->sendToSerialization(
-                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideRateMode);
               });
     p.addItem("Rate", true, info.glideRateMode == engine::Group::CONSTANT_RATE,
               [w = juce::Component::SafePointer(this)]() {
@@ -459,8 +446,7 @@ void GroupSettingsCard::showGlideRateModeMenu()
                       return;
                   w->info.glideRateMode = engine::Group::CONSTANT_RATE;
                   w->rebuildFromInfo();
-                  w->sendToSerialization(
-                      messaging::client::UpdateGroupOutputInfoPolyphony{w->info});
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideRateMode);
               });
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
@@ -481,7 +467,7 @@ void GroupSettingsCard::showExclusiveGroupMenu()
             return;
         w->info.exclusiveGroup = 0;
         w->rebuildFromInfo();
-        w->sendToSerialization(messaging::client::UpdateGroupOutputInfoExclusiveGroup{w->info});
+        w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.exclusiveGroup);
     });
 
     if (numExcGroups > 0)
@@ -495,8 +481,7 @@ void GroupSettingsCard::showExclusiveGroupMenu()
                               return;
                           w->info.exclusiveGroup = id;
                           w->rebuildFromInfo();
-                          w->sendToSerialization(
-                              messaging::client::UpdateGroupOutputInfoExclusiveGroup{w->info});
+                          w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.exclusiveGroup);
                       });
         }
     }
@@ -511,7 +496,7 @@ void GroupSettingsCard::showExclusiveGroupMenu()
         w->sendToSerialization(messaging::client::UpdatePartFullConfig({partIdx, partCfg}));
         w->info.exclusiveGroup = newId;
         w->rebuildFromInfo();
-        w->sendToSerialization(messaging::client::UpdateGroupOutputInfoExclusiveGroup{w->info});
+        w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.exclusiveGroup);
     });
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());

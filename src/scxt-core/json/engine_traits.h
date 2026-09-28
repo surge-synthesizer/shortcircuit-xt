@@ -496,6 +496,7 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  // Almost every group triggers on note on, so only the odd one out costs bytes
                  addUnlessDefault<val_t>(v, "vcm", scxt::engine::VoiceCreationMode::ON_NOTE_ON,
                                          from.voiceCreationMode);
+                 addUnlessDefault<val_t>(v, "sc", true, from.structureConsistent);
              }),
              SC_TO({
                  findIf(v, "st", to.storage);
@@ -503,6 +504,7 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  findIf(v, "conj", to.conjunctions);
                  findOrSet(v, "vcm", scxt::engine::VoiceCreationMode::ON_NOTE_ON,
                            to.voiceCreationMode);
+                 findOrSet(v, "sc", true, to.structureConsistent);
              }));
 
 STREAM_ENUM(engine::Group::GlideRateMode, engine::Group::toStringGlideRateMode,

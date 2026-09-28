@@ -551,6 +551,23 @@ int16_t GroupTriggerConditions::firstKeySwitchLatchKey() const
     return -1;
 }
 
+bool GroupTriggerConditions::sameStructureAs(const GroupTriggerConditions &o) const
+{
+    if (voiceCreationMode != o.voiceCreationMode)
+        return false;
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        if (storage[i].id != o.storage[i].id || active[i] != o.active[i])
+            return false;
+    }
+    for (int i = 0; i < triggerConditionsPerGroup - 1; ++i)
+    {
+        if (conjunctions[i] != o.conjunctions[i])
+            return false;
+    }
+    return true;
+}
+
 bool GroupTriggerConditions::keySwitchLatchHolds(const Engine &e, const Group &g, int16_t channel,
                                                  int16_t midiKey) const
 {
