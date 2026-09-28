@@ -502,6 +502,16 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  findIf(v, "st", to.storage);
                  findIf(v, "ac", to.active);
                  findIf(v, "conj", to.conjunctions);
+                 /*
+                  * conjunctions went unwritten by the constructor until 0x2026'09'28, so what an
+                  * older patch saved is whatever stack the group was built on. Anything that
+                  * landed in range streamed back out as a real conjunction, so the value has to be
+                  * thrown away rather than trusted. Nothing is lost: no editor sets one and
+                  * evaluate still ands the conditions regardless.
+                  */
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'09'28))
+                     std::fill(to.conjunctions.begin(), to.conjunctions.end(),
+                               scxt::engine::GroupTriggerConditions::Conjunction::AND);
                  findOrSet(v, "vcm", scxt::engine::VoiceCreationMode::ON_NOTE_ON,
                            to.voiceCreationMode);
                  findOrSet(v, "sc", true, to.structureConsistent);
