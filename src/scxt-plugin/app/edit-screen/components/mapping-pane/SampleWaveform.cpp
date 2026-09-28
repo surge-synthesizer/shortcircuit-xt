@@ -702,13 +702,21 @@ void SampleWaveform::paint(juce::Graphics &g)
     // this order matters. We want the fade line below the hot zones
     if (v.loopActive && fadeLen > 0)
     {
-        g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
+        const auto fadeCol = editor->themeColor(theme::ColorMap::generic_content_medium);
+        g.setColour(fadeCol);
+
+        const auto forward = v.loopDirection == scxt::engine::Zone::LoopDirection::FORWARD_ONLY;
 
         // the law the generator fades with, so the picture cannot drift from the sound. A
         // ping-pong turn stays linear whatever the curve says, so it draws at t=0
-        const auto fadeT = v.loopDirection == scxt::engine::Zone::LoopDirection::FORWARD_ONLY
-                               ? scxt::dsp::fadeTFromCurve(v.loopCurve)
-                               : 0.f;
+        const auto fadeT = forward ? scxt::dsp::fadeTFromCurve(v.loopCurve) : 0.f;
+
+        /*
+         * A ping-pong turn sits half a fade inside its marker and the window is the half
+         * either side of it, so an odd fade loses its spare sample to that truncation.
+         */
+        const auto half = fadeLen / 2;
+        const auto window = forward ? fadeLen : 2 * half;
 
         /*
          * u runs 0 at the low end of the window and 1 at the marker, so the two windows
@@ -717,7 +725,7 @@ void SampleWaveform::paint(juce::Graphics &g)
          * drew the tail backwards.
          */
         auto ramp = [&](int64_t toSample, bool fadingIn) {
-            auto a = xPixelForSample(toSample - fadeLen, false);
+            auto a = xPixelForSample(toSample - window, false);
             auto b = xPixelForSample(toSample, false);
             if ((a < 0 || a > getWidth()) && (b < 0 || b > getWidth()))
                 return;
@@ -735,7 +743,31 @@ void SampleWaveform::paint(juce::Graphics &g)
                 else
                     p.lineTo(x, y);
             }
+
+            if (forward)
+            {
+                g.strokePath(p, juce::PathStrokeType(1.f));
+                return;
+            }
+
+            /*
+             * A ping-pong loop turns half a fade inside its marker and never travels the
+             * rest of the window - that half is its reflection, and it is the only thing
+             * about the turn the markers cannot say. So the reflection draws faint and
+             * the weight changes where the loop actually reverses.
+             */
+            auto turnX = xPixelForSample(toSample - half, false);
+            auto x0 = fadingIn ? turnX : a;
+            auto x1 = fadingIn ? b : turnX;
+
+            g.setColour(fadeCol.withAlpha(0.35f));
             g.strokePath(p, juce::PathStrokeType(1.f));
+
+            g.saveState();
+            g.reduceClipRegion({std::min(x0, x1), 0, std::abs(x1 - x0) + 1, getHeight()});
+            g.setColour(fadeCol);
+            g.strokePath(p, juce::PathStrokeType(1.f));
+            g.restoreState();
         };
 
         ramp(v.endLoop, false);
