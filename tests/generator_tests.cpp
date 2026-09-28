@@ -2441,6 +2441,67 @@ TEST_CASE("A single cycle shorter than the interpolator loops at pitch", "[gener
     REQUIRE(peak < 2.f);
 }
 
+// level of what is left once a sine at the given frequency is fitted out, relative to the sine
+double residualDb(const std::vector<float> &v, int skip, double cyclesPerSample)
+{
+    // least squares against dc, sin and cos
+    double A[3][4]{};
+    for (int i = skip; i < (int)v.size(); ++i)
+    {
+        double w = 2.0 * M_PI * cyclesPerSample * i;
+        double b[3]{1.0, std::sin(w), std::cos(w)};
+        for (int r = 0; r < 3; ++r)
+        {
+            for (int c = 0; c < 3; ++c)
+                A[r][c] += b[r] * b[c];
+            A[r][3] += b[r] * v[i];
+        }
+    }
+    for (int p = 0; p < 3; ++p)
+        for (int r = p + 1; r < 3; ++r)
+        {
+            auto f = A[r][p] / A[p][p];
+            for (int c = p; c < 4; ++c)
+                A[r][c] -= f * A[p][c];
+        }
+    double x[3];
+    for (int r = 2; r >= 0; --r)
+    {
+        x[r] = A[r][3];
+        for (int c = r + 1; c < 3; ++c)
+            x[r] -= A[r][c] * x[c];
+        x[r] /= A[r][r];
+    }
+
+    double resid{0};
+    for (int i = skip; i < (int)v.size(); ++i)
+    {
+        double w = 2.0 * M_PI * cyclesPerSample * i;
+        auto e = v[i] - (x[0] + x[1] * std::sin(w) + x[2] * std::cos(w));
+        resid += e * e;
+    }
+    auto fundamental = 0.5 * (x[1] * x[1] + x[2] * x[2]) * (v.size() - skip);
+    return 10.0 * std::log10(resid / fundamental);
+}
+
+TEST_CASE("A loop from the first sample wraps its start rather than reading the pad", "[generator]")
+{
+    static constexpr double cps{0.0917};
+    auto cycle = GENERATE(8, 16, 64);
+    // the whole file, or the first cycle of a longer one so only the start meets the pad
+    auto longFile = GENERATE(false, true);
+    auto fileLength = longFile ? 4096 : cycle;
+    INFO("cycle " << cycle << " file " << fileLength);
+
+    LoopedGenerator g(fileLength, 0, cycle);
+    g.fillWithSine(cycle);
+    g.setRatio(cps * cycle);
+    auto out = g.render(1 << 14);
+
+    // looped from one cycle in this measures about -80dB, and from 0 before the fix -32dB
+    REQUIRE(residualDb(out, 512, cps) < -70.0);
+}
+
 TEST_CASE("A ping-pong loop plays at its true pitch", "[generator]")
 {
     static constexpr int loopLength{64};
