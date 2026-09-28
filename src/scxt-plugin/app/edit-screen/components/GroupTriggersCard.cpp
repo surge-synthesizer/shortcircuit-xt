@@ -453,7 +453,7 @@ GroupTriggersCard::GroupTriggersCard(SCXTEditor *e) : HasEditor(e)
     }
 
     mixedLabel = std::make_unique<jcmp::Label>();
-    mixedLabel->setText("Mixed Conditions");
+    mixedLabel->setText("Mixed Triggers");
     addChildComponent(*mixedLabel);
 
     makeConsistentButton = std::make_unique<jcmp::TextPushButton>();
