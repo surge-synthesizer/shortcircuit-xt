@@ -28,6 +28,8 @@
 #include "catch2/catch2.hpp"
 
 #include <cmath>
+#include <string>
+#include <vector>
 
 #include "engine/engine.h"
 #include "tuning/midikey_retuner.h"
@@ -432,4 +434,140 @@ TEST_CASE("SCL/KBM - the tuning mode round-trips as a string", "[tuning]")
     REQUIRE(s != "err");
     REQUIRE(scxt::engine::Engine::fromStringTuningMode(s) ==
             scxt::engine::Engine::TuningMode::SCL_KBM);
+}
+
+namespace
+{
+/*
+ * One part, one group, one blank zone over the whole keyboard, with a scale loaded. Blank
+ * zones still make voices, and a voice computes its pitch whether or not a sample is under
+ * it, so this is enough to ask what a key sounds at.
+ */
+struct RetunedGroup
+{
+    std::unique_ptr<scxt::engine::Engine> eng;
+    scxt::engine::Group *group{nullptr};
+
+    RetunedGroup(scxt::engine::Group::PlayMode pm, const std::string &scl,
+                 const std::string &kbm = "")
+    {
+        eng.reset(makeEngine());
+
+        RetuneTable table;
+        std::string err;
+        REQUIRE(scxt::tuning::buildRetuneTable(scl, kbm, table, err));
+        eng->midikeyRetuner.setSCLKBMTable(table);
+        eng->midikeyRetuner.setTuningMode(scxt::tuning::MidikeyRetuner::SCL_KBM);
+        eng->runtimeConfig.tuningMode = scxt::engine::Engine::TuningMode::SCL_KBM;
+
+        auto &part = *eng->getPatch()->getPart(0);
+        part.addGroup();
+        group = part.getGroup(0).get();
+        addBlankZoneToGroup(part, 0, 0, 127);
+        group->outputInfo.playMode = pm;
+        group->outputInfo.notePriority = scxt::engine::Group::NotePriority::LATEST;
+        group->resetPolyAndPlaymode(*eng);
+    }
+
+    void noteOn(int key) { eng->processNoteOnEvent(0, 0, key, -1, 1.f, 0.f); }
+    void noteOff(int key) { eng->processNoteOffEvent(0, 0, key, -1, 0.f); }
+
+    // The newest voice - a released voice is still assigned while it rings, so "the one
+    // this note made" is the most recently created rather than the first one found.
+    scxt::voice::Voice *soleVoice() const
+    {
+        scxt::voice::Voice *res{nullptr};
+        for (const auto &z : group->getZones())
+            for (int i = 0; i < (int)scxt::maxVoices; ++i)
+            {
+                auto *v = z->voiceWeakPointers[i];
+                if (v && v->isVoiceAssigned && (!res || v->voiceCreationId > res->voiceCreationId))
+                    res = v;
+            }
+        return res;
+    }
+
+    // What the engine will actually sound for this key, in 12-TET semitones
+    float pitchFor(int key)
+    {
+        noteOn(key);
+        auto *v = soleVoice();
+        REQUIRE(v != nullptr);
+        return v->pitchFloat;
+    }
+};
+} // namespace
+
+/*
+ * A legato move gets only the raw key, so it has to run the tuning's remap itself. It used
+ * to carry the remap of whatever key the phrase opened on forward instead, which sounds a
+ * different degree of the scale on every note after the first. 12-TET hides this (nothing
+ * is remapped) and so does any scale gentler than half a semitone (remapKeyTo rounds it
+ * away), which is why it took a very stretched scale to surface. GH #2715.
+ *
+ * 6-EDO is the smallest scale that shows it: every step is two semitones, so key k sounds
+ * at 2k - 60 and remapKeyTo moves whole keys.
+ */
+static std::string stretchedScale() { return Tunings::evenDivisionOfSpanByM(2, 6).rawText; }
+static float sixEdoPitch(int key) { return 2.f * key - 60.f; }
+
+TEST_CASE("SCL/KBM - a legato phrase sounds the pitches the same notes sound poly",
+          "[tuning][legato]")
+{
+    // Opens on 61, which the scale moves a whole key, so the voice carries a nonzero remap
+    // into every move that follows.
+    const std::vector<int> phrase{61, 66, 63, 70, 58};
+
+    RetunedGroup poly{scxt::engine::Group::PlayMode::POLY, stretchedScale()};
+    RetunedGroup legato{scxt::engine::Group::PlayMode::LEGATO, stretchedScale()};
+
+    for (auto k : phrase)
+    {
+        auto polyPitch = poly.pitchFor(k);
+        poly.noteOff(k);
+
+        REQUIRE(polyPitch == Approx(sixEdoPitch(k)).margin(1e-3));
+        CHECK(legato.pitchFor(k) == Approx(polyPitch).margin(1e-3));
+    }
+}
+
+TEST_CASE("SCL/KBM - a legato move keeps the voice and still retunes it", "[tuning][legato]")
+{
+    RetunedGroup legato{scxt::engine::Group::PlayMode::LEGATO, stretchedScale()};
+
+    REQUIRE(legato.pitchFor(61) == Approx(sixEdoPitch(61)).margin(1e-3));
+    auto id = legato.soleVoice()->voiceCreationId;
+
+    // Slurred under a held key - the moveVoice path
+    CHECK(legato.pitchFor(66) == Approx(sixEdoPitch(66)).margin(1e-3));
+    REQUIRE(legato.soleVoice()->voiceCreationId == id);
+
+    // and with the keys up, into the release tail - moveAndRetriggerVoice, same voice again
+    legato.noteOff(66);
+    legato.noteOff(61);
+    CHECK(legato.pitchFor(63) == Approx(sixEdoPitch(63)).margin(1e-3));
+    REQUIRE(legato.soleVoice()->voiceCreationId == id);
+}
+
+TEST_CASE("SCL/KBM - a part transpose survives a legato move", "[tuning][legato]")
+{
+    // The transpose is applied to the key before the scale sees it, so it has to be put
+    // back on both of the voice's keys - exactly as a note-on does.
+    constexpr int transpose{5};
+
+    RetunedGroup poly{scxt::engine::Group::PlayMode::POLY, stretchedScale()};
+    poly.eng->getPatch()->getPart(0)->configuration.transpose = transpose;
+    auto polyPitch = poly.pitchFor(66);
+    REQUIRE(polyPitch == Approx(sixEdoPitch(66 + transpose)).margin(1e-3));
+
+    RetunedGroup legato{scxt::engine::Group::PlayMode::LEGATO, stretchedScale()};
+    legato.eng->getPatch()->getPart(0)->configuration.transpose = transpose;
+
+    legato.pitchFor(61);
+    legato.pitchFor(66);
+
+    auto *v = legato.soleVoice();
+    REQUIRE(v != nullptr);
+    CHECK((int)v->originalMidiKey == 66 + transpose);
+    CHECK(v->pitchFloat == Approx(polyPitch).margin(1e-3));
 }

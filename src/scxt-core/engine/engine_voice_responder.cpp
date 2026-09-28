@@ -354,26 +354,38 @@ void Engine::VoiceManagerResponder::setVoiceMIDIMPETimbre(voice::Voice *v, int8_
     v->mpeTimbre = val / 127.0;
 }
 
+/*
+ * A legato move has to leave the voice exactly where a note-on for that key would have put
+ * it: originalMidiKey is what the keyboard sent, and key is that run back through the
+ * tuning's remap. Carrying the previous note's remap forward instead sounds a different
+ * degree of the scale, which stays invisible until a scale moves a key by more than the
+ * half semitone remapKeyTo rounds away. GH #2715.
+ */
+void Engine::VoiceManagerResponder::retuneVoiceToKey(VMConfig::voice_t *v, uint16_t channel,
+                                                     uint16_t key)
+{
+    const auto &part = *v->zone->parentGroup->parentPart;
+    auto kt = part.configuration.transpose + part.getChannelBasedTransposition(channel);
+    auto remapped = engine.midikeyRetuner.remapKeyTo(channel, key) + kt;
+
+    // glide runs in the remapped key space, the same one v->key lives in
+    v->initiateGlide(remapped);
+    v->key = remapped;
+    v->originalMidiKey = key + kt;
+    v->keyChangedInLegatoModeTrigger = 1.f;
+    v->calculateVoicePitch();
+}
+
 void Engine::VoiceManagerResponder::moveVoice(VMConfig::voice_t *v, uint16_t port, uint16_t channel,
                                               uint16_t key, float vel)
 {
-    auto dkey = v->key - v->originalMidiKey;
-    v->initiateGlide(key);
-    v->key = key;
-    v->originalMidiKey = key - dkey;
-    v->keyChangedInLegatoModeTrigger = 1.f;
-    v->calculateVoicePitch();
+    retuneVoiceToKey(v, channel, key);
 }
 
 void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, uint16_t port,
                                                           uint16_t channel, uint16_t key, float vel)
 {
-    auto dkey = v->key - v->originalMidiKey;
-    v->initiateGlide(key);
-    v->key = key;
-    v->originalMidiKey = key - dkey;
-    v->keyChangedInLegatoModeTrigger = 1.f;
-    v->calculateVoicePitch();
+    retuneVoiceToKey(v, channel, key);
     v->setIsGated(true);
     // aeg/aegOS are eg[0]/egOS[0], so this re-attacks the amp envelope too
     for (auto &eg : v->eg)
