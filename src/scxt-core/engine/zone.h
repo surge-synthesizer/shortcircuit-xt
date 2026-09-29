@@ -180,6 +180,18 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
                          (size_t)off) == variantLeadOnlyOffsets.end();
     }
 
+    // the fields a playing voice picks up; see Voice::refreshGeneratorBounds
+    static constexpr std::array<size_t, 6> variantLiveOffsets{
+        offsetof(SingleVariant, startSample), offsetof(SingleVariant, endSample),
+        offsetof(SingleVariant, startLoop),   offsetof(SingleVariant, endLoop),
+        offsetof(SingleVariant, loopFade),    offsetof(SingleVariant, loopCurve)};
+
+    static bool variantFieldReachesVoices(ptrdiff_t off)
+    {
+        return std::find(variantLiveOffsets.begin(), variantLiveOffsets.end(), (size_t)off) !=
+               variantLiveOffsets.end();
+    }
+
     // Copy the sz-byte field at off from lead onto t
     static void copyVariantField(SingleVariant &t, const SingleVariant &lead, ptrdiff_t off,
                                  size_t sz)
@@ -398,6 +410,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     void removeVoice(voice::Voice *);
     // End any parked voices; they are reaped on the next process block
     void endParkedVoices();
+    // audio thread, after variantData changed under playing voices
+    void refreshVoiceGeneratorBounds();
 
     voice::modulation::Matrix::RoutingTable routingTable;
     void onRoutingChanged();

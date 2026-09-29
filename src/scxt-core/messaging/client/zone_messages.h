@@ -241,6 +241,8 @@ inline void doUpdateVariantField(const updateVariantFieldPayload_t &payload, eng
             auto &zn = eng.getPatch()->getPart(za.part)->getGroup(za.group)->getZone(za.zone);
             engine::Zone::applyVariantFieldEdit(zn->variantData, var, off, sz, idx, editAll,
                                                 lz.has_value() && *lz == za);
+            if (engine::Zone::variantFieldReachesVoices(off))
+                zn->refreshVoiceGeneratorBounds();
         }
     });
 }
