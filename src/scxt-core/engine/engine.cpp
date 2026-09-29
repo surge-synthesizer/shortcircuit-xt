@@ -609,6 +609,8 @@ Engine::pgzStructure_t Engine::getPartGroupZoneStructure() const
             {
                 groupFeatures |= GroupZoneFeatures::FOLDED;
             }
+            if (group->linkZoneSelection)
+                groupFeatures |= GroupZoneFeatures::LINKED_SELECTION;
             res.push_back({{partidx, groupidx, -1}, group->getName(), groupFeatures});
             int32_t zoneidx{0};
             for (const auto &zone : *group)
@@ -1532,7 +1534,7 @@ void Engine::copyGroups(const std::vector<selection::SelectionManager::ZoneAddre
         clipboard.streamToClipboard(Clipboard::ContentType::GROUP, groups), *messageController);
 }
 
-void Engine::pasteGroup(const selection::SelectionManager::ZoneAddress &a)
+void Engine::pasteGroup(const selection::SelectionManager::ZoneAddress &a, bool withZones)
 {
     if (clipboard.getClipboardType() != Clipboard::ContentType::GROUP)
         return;
@@ -1553,6 +1555,8 @@ void Engine::pasteGroup(const selection::SelectionManager::ZoneAddress &a)
         if (!clipboard.unstreamFromClipboard(Clipboard::ContentType::GROUP, i, *gptr))
             continue;
         gptr->name = takeFreeCopyName(gptr->name, groupNames);
+        if (!withZones)
+            gptr->clearZones();
         gptr->warmup();
         groups.push_back(gptr.release());
     }

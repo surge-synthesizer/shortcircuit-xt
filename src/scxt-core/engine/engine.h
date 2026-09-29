@@ -789,7 +789,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     void duplicateGroup(const selection::SelectionManager::ZoneAddress &a) { duplicateGroups({a}); }
     void copyGroup(const selection::SelectionManager::ZoneAddress &a) { copyGroups({a}); }
     // pastes every group on the clipboard after group a, or at the end of its part if a has none
-    void pasteGroup(const selection::SelectionManager::ZoneAddress &a);
+    void pasteGroup(const selection::SelectionManager::ZoneAddress &a, bool withZones = true);
     void duplicateGroups(const std::vector<selection::SelectionManager::ZoneAddress> &);
     void copyGroups(const std::vector<selection::SelectionManager::ZoneAddress> &);
 
@@ -801,6 +801,39 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     // the destination keeps its own channel, routing and file; everything else comes over
     void copyPart(int16_t part);
     void pastePart(int16_t part);
+
+    // one undo step each; selection and folds follow what moves, copies take the selection
+    // lands before at.zone; zone -1 appends, group -1 makes a new group
+    void moveZonesTo(const std::vector<selection::SelectionManager::ZoneAddress> &,
+                     const selection::SelectionManager::ZoneAddress &at, bool copy);
+    // groups land before group `before`, or at the end for -1
+    void moveGroupsTo(int16_t part, const std::vector<int32_t> &groups, int32_t before, bool copy);
+    // new groups go at the end of the part, empty or cloned from the lead group's settings
+    void moveZonesToNewGroups(const std::vector<selection::SelectionManager::ZoneAddress> &,
+                              bool eachZoneItsOwnGroup, bool cloneLeadGroup);
+    void deleteZonesWithMissingSamples(int16_t part);
+
+    enum ZoneBatchOp : int32_t
+    {
+        ROOT_TO_FIRST_KEY,
+        ROOT_TO_CENTER_KEY,
+        ROOT_TO_LAST_KEY,
+        AUTO_KEY_CROSSFADES,
+        AUTO_VELOCITY_CROSSFADES,
+        REMOVE_KEY_CROSSFADES,
+        REMOVE_VELOCITY_CROSSFADES
+    };
+    // no zones means the selected zones of the selected part
+    void applyZoneBatchOp(ZoneBatchOp,
+                          const std::vector<selection::SelectionManager::ZoneAddress> &zones = {});
+
+    void setLinkZoneSelection(const std::vector<selection::SelectionManager::ZoneAddress> &groups,
+                              bool link);
+
+    // back to a fresh slot, keeping its channel and routing
+    void initializePart(int16_t part);
+    // into the first inactive slot
+    void duplicatePart(int16_t part);
 
     bool isValidZoneAddress(const selection::SelectionManager::ZoneAddress &) const;
     bool isValidGroupAddress(const selection::SelectionManager::ZoneAddress &) const;

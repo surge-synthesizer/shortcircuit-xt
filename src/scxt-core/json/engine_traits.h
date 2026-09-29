@@ -630,6 +630,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                       {"processorStorage", t.processorStorage},
                       {"triggerConditions", t.triggerConditions},
                       {"mbl", t.mutedByLatch}};
+                 addUnlessDefault<val_t>(v, "lzs", false, t.linkZoneSelection);
              }),
              SC_TO({
                  auto &group = to;
@@ -644,6 +645,7 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                  if (oldOutputInfo)
                      findIf(*oldOutputInfo, "mutedByLatch", group.mutedByLatch);
                  findIf(v, "mbl", group.mutedByLatch);
+                 findOrSet(v, "lzs", false, group.linkZoneSelection);
 
                  findIf(v, "processorStorage", group.processorStorage);
                  findIf(v, "routingTable", group.routingTable);

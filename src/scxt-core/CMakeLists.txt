@@ -11,6 +11,7 @@ add_library(${PROJECT_NAME} STATIC
         dsp/sample_analytics.cpp
 
         engine/engine.cpp
+        engine/structure_edits.cpp
         engine/engine_voice_responder.cpp
         engine/zone.cpp
         engine/drop_mapping.cpp

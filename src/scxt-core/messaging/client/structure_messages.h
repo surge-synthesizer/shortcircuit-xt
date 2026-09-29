@@ -689,6 +689,76 @@ inline void moveGroupTo(const moveGroupAddress_t &payload, engine::Engine &engin
 CLIENT_TO_SERIAL(MoveGroupTo, c2s_move_group, moveGroupAddress_t,
                  moveGroupTo(payload, engine, cont));
 
+// sources, destination and copy, as Engine::moveZonesTo reads them
+using moveZonesToPayload_t = std::tuple<std::vector<selection::SelectionManager::ZoneAddress>,
+                                        selection::SelectionManager::ZoneAddress, bool>;
+CLIENT_TO_SERIAL(MoveZonesTo, c2s_move_zones_to, moveZonesToPayload_t,
+                 engine.moveZonesTo(std::get<0>(payload), std::get<1>(payload),
+                                    std::get<2>(payload)));
+
+// part, groups, before and copy, as Engine::moveGroupsTo reads them
+using moveGroupsToPayload_t = std::tuple<int16_t, std::vector<int32_t>, int32_t, bool>;
+CLIENT_TO_SERIAL(MoveGroupsTo, c2s_move_groups_to, moveGroupsToPayload_t,
+                 engine.moveGroupsTo(std::get<0>(payload), std::get<1>(payload),
+                                     std::get<2>(payload), std::get<3>(payload)));
+
+// sources (none means the selection), each zone its own group, clone the lead group
+using moveZonesToNewGroupsPayload_t =
+    std::tuple<std::vector<selection::SelectionManager::ZoneAddress>, bool, bool>;
+CLIENT_TO_SERIAL(MoveZonesToNewGroups, c2s_move_zones_to_new_groups, moveZonesToNewGroupsPayload_t,
+                 engine.moveZonesToNewGroups(std::get<0>(payload), std::get<1>(payload),
+                                             std::get<2>(payload)));
+
+CLIENT_TO_SERIAL(DeleteZonesWithMissingSamples, c2s_delete_zones_with_missing_samples, int16_t,
+                 engine.deleteZonesWithMissingSamples(payload));
+
+// zones (none means the selection) and the operation
+using zoneBatchOpPayload_t =
+    std::pair<std::vector<selection::SelectionManager::ZoneAddress>, int32_t>;
+inline void doApplyZoneBatchOp(const zoneBatchOpPayload_t &payload, engine::Engine &engine)
+{
+    auto op = payload.second;
+    if (op < engine::Engine::ROOT_TO_FIRST_KEY || op > engine::Engine::REMOVE_VELOCITY_CROSSFADES)
+        return;
+    engine.applyZoneBatchOp((engine::Engine::ZoneBatchOp)op, payload.first);
+}
+CLIENT_TO_SERIAL(ApplyZoneBatchOp, c2s_apply_zone_batch_op, zoneBatchOpPayload_t,
+                 doApplyZoneBatchOp(payload, engine));
+
+using linkZoneSelectionPayload_t =
+    std::pair<std::vector<selection::SelectionManager::ZoneAddress>, bool>;
+CLIENT_TO_SERIAL(SetLinkZoneSelection, c2s_set_link_zone_selection, linkZoneSelectionPayload_t,
+                 engine.setLinkZoneSelection(payload.first, payload.second));
+
+CLIENT_TO_SERIAL(PasteGroupWithoutZones, c2s_paste_group_without_zones,
+                 selection::SelectionManager::ZoneAddress, engine.pasteGroup(payload, false));
+
+CLIENT_TO_SERIAL(InitializePart, c2s_initialize_part, int16_t, engine.initializePart(payload));
+CLIENT_TO_SERIAL(DuplicatePart, c2s_duplicate_part, int16_t, engine.duplicatePart(payload));
+
+SERIAL_TO_CLIENT(RevealFile, s2c_reveal_file, std::string, onRevealFile);
+
+// a variant with no sample falls back to the first
+using revealZoneSamplePayload_t = std::pair<selection::SelectionManager::ZoneAddress, int32_t>;
+inline void doRevealZoneSample(const revealZoneSamplePayload_t &payload,
+                               const engine::Engine &engine, MessageController &cont)
+{
+    const auto &[a, v] = payload;
+    if (!engine.isValidZoneAddress(a))
+        return;
+    const auto &z = engine.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone);
+    const auto &vars = z->variantData.variants;
+    auto vi = (v >= 0 && v < (int)vars.size() && vars[v].active) ? v : 0;
+    if (!vars[vi].active)
+        return;
+    auto smp = engine.getSampleManager()->getSample(vars[vi].sampleID);
+    if (!smp || smp->getPath().empty())
+        return;
+    serializationSendToClient(s2c_reveal_file, smp->getPath().u8string(), cont);
+}
+CLIENT_TO_SERIAL(RequestRevealZoneSample, c2s_request_reveal_zone_sample, revealZoneSamplePayload_t,
+                 doRevealZoneSample(payload, engine, cont));
+
 inline void doActivateNextPart(engine::Engine &engine, messaging::MessageController &cont)
 {
     {

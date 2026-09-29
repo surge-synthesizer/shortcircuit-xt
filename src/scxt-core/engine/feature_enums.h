@@ -38,6 +38,7 @@ enum GroupZoneFeatures
     SOLOED = 1 << 3,
     MUTED_BY_KEYSWITCH = 1 << 4, // group rows only: keyswitched off right now
     KEYSWITCHED = 1 << 5,        // group rows only: the group has a keyswitch condition
+    LINKED_SELECTION = 1 << 6,   // the group selects its zones together
 };
 }
 

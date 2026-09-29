@@ -135,6 +135,7 @@ struct SCXTEditorReceiver
     void onMissingResolutionWorkItemList(const std::vector<engine::MissingResolutionWorkItem> &);
 
     void onClipboardType(const scxt::engine::Clipboard::ContentType &s);
+    void onRevealFile(const std::string &path);
 
     void onMpeTuningAwarenessFromEngine(bool);
     void onPitchBendTuningAwarenessFromEngine(bool);
