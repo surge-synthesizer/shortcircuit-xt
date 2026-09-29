@@ -183,6 +183,9 @@ struct SelectionManager
 
     std::vector<SelectActionContents>
     transformSelectionActions(const std::vector<SelectActionContents> &);
+    // a zone in a linked group brings the rest of its group along
+    std::vector<SelectActionContents>
+    expandLinkedZoneSelections(const std::vector<SelectActionContents> &);
     void adjustInternalStateForAction(const SelectActionContents &);
     void guaranteeSelectedLead();
     void guaranteeSelectedLeadSomewhereIn(int part, int group, int zone);
@@ -313,6 +316,19 @@ struct SelectionManager
     void remapCollapsedOnMoveAfter(int part, int whichGroup, int toAfter);
     // count new groups now start at index at, and arrive unfolded
     void remapCollapsedOnInsert(int part, int at, int count);
+
+    // a part's selection and folds by identity, so they can follow a restructure
+    struct IdentitySnapshot
+    {
+        int16_t part{-1};
+        std::vector<ZoneID> zones;
+        std::vector<GroupID> groups, collapsed;
+        std::optional<ZoneID> leadZone;
+        std::optional<GroupID> leadGroup;
+    };
+    IdentitySnapshot snapshotIdentities(int16_t part) const;
+    // anything no longer in the part drops out; resends the selection if it is the selected part
+    void restoreIdentities(const IdentitySnapshot &);
 };
 } // namespace scxt::selection
 

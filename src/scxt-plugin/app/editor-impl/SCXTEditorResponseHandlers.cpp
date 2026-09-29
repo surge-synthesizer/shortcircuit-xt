@@ -720,4 +720,13 @@ void SCXTEditorReceiver::onClipboardType(const scxt::engine::Clipboard::ContentT
     editor.clipboardType = s;
 }
 
+void SCXTEditorReceiver::onRevealFile(const std::string &path)
+{
+    auto f = juce::File(juce::String::fromUTF8(path.c_str()));
+    if (f.exists())
+        f.revealToUser();
+    else
+        editor.displayError("Sample Not Found", "The sample file is not on disk:\n\n" + path);
+}
+
 } // namespace scxt::ui::app

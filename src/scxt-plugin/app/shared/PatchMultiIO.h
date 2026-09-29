@@ -316,7 +316,18 @@ void populatePartIOMenu(T *that, juce::PopupMenu &p, int part, bool withDeactiva
 {
     namespace cmsg = scxt::messaging::client;
 
-    auto mono = that->editor->patchFiles.parts[part].monolith;
+    const auto &pf = that->editor->patchFiles.parts[part];
+    auto mono = pf.monolith;
+    p.addItem("Load Part...", [w = juce::Component::SafePointer(that), part]() {
+        if (w)
+            doLoadPartInto(w.getComponent(), w->fileChooser, part);
+    });
+    // back to what is on disk, dropping any edits since
+    p.addItem("Reload Part", !pf.path.empty(), false,
+              [w = juce::Component::SafePointer(that), part, path = pf.path]() {
+                  if (w)
+                      w->sendToSerialization(cmsg::LoadPartInto({path.u8string(), part}));
+              });
     p.addItem("Save Part", !mono, false, [w = juce::Component::SafePointer(that), part]() {
         if (w)
             doSavePartInPlace(w.getComponent(), w->fileChooser, part);
@@ -336,9 +347,23 @@ void populatePartIOMenu(T *that, juce::PopupMenu &p, int part, bool withDeactiva
                                  patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
               });
     p.addSeparator();
-    p.addItem("Load Part...", [w = juce::Component::SafePointer(that), part]() {
+    p.addItem("Initialize Part", [w = juce::Component::SafePointer(that), part]() {
         if (w)
-            doLoadPartInto(w.getComponent(), w->fileChooser, part);
+            w->sendToSerialization(cmsg::InitializePart((int16_t)part));
+    });
+    if (withDeactivate)
+    {
+        p.addItem("Delete Part", [w = juce::Component::SafePointer(that), part]() {
+            if (w)
+                w->sendToSerialization(cmsg::DeactivatePart(part));
+        });
+    }
+    bool anyFree{false};
+    for (const auto &c : that->editor->partConfigurations)
+        anyFree = anyFree || !c.active;
+    p.addItem("Duplicate Part", anyFree, false, [w = juce::Component::SafePointer(that), part]() {
+        if (w)
+            w->sendToSerialization(cmsg::DuplicatePart((int16_t)part));
     });
     p.addSeparator();
     p.addItem("Copy Part", [w = juce::Component::SafePointer(that), part]() {
@@ -350,14 +375,6 @@ void populatePartIOMenu(T *that, juce::PopupMenu &p, int part, bool withDeactiva
         if (w)
             w->sendToSerialization(cmsg::PastePart((int16_t)part));
     });
-    if (withDeactivate)
-    {
-        p.addSeparator();
-        p.addItem("Deactivate Part", [w = juce::Component::SafePointer(that), part]() {
-            if (w)
-                w->sendToSerialization(cmsg::DeactivatePart(part));
-        });
-    }
 }
 } // namespace scxt::ui::app::shared
 #endif // PATCHMULTIIO_H

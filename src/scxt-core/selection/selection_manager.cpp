@@ -112,7 +112,7 @@ void SelectionManager::sendClientDataForLeadSelectionState()
 
 void SelectionManager::applySelectActions(const std::vector<SelectActionContents> &v)
 {
-    auto r = transformSelectionActions(v);
+    auto r = expandLinkedZoneSelections(transformSelectionActions(v));
     if (v.size() == 1 && v[0].isDeselectSentinel())
     {
         for (auto &g : state[selectedPart].selectedGroups)
@@ -173,9 +173,11 @@ SelectionManager::transformSelectionActions(const std::vector<SelectActionConten
             auto rc = z;
             rc.forZone = true;
             rc.distinct = (idx == 0) && z.distinct;
-            rc.selectingAsLead = (leadZoneForReSelect < 0 && idx == 0) ||
-                                 (leadZoneForReSelect >= 0 && idx == leadZoneForReSelect);
-            rc.selecting = true;
+            // a group joining without the lead leaves the lead be; deselecting lets go of its zones
+            rc.selectingAsLead = z.selecting && z.selectingAsLead &&
+                                 ((leadZoneForReSelect < 0 && idx == 0) ||
+                                  (leadZoneForReSelect >= 0 && idx == leadZoneForReSelect));
+            rc.selecting = z.selecting;
             rc.zone = idx++;
             res.push_back(rc);
         }
@@ -185,6 +187,41 @@ SelectionManager::transformSelectionActions(const std::vector<SelectActionConten
     }
 
     return inEls;
+}
+
+std::vector<SelectionManager::SelectActionContents>
+SelectionManager::expandLinkedZoneSelections(const std::vector<SelectActionContents> &inEls)
+{
+    std::set<ZoneAddress> seen;
+    for (const auto &a : inEls)
+        if (a.forZone && a.zone >= 0)
+            seen.insert(a.addr());
+
+    std::vector<SelectActionContents> res;
+    res.reserve(inEls.size());
+    for (const auto &a : inEls)
+    {
+        res.push_back(a);
+        if (!a.forZone || a.zone < 0 || !a.addr().isIn(engine))
+            continue;
+
+        const auto &g = engine.getPatch()->getPart(a.part)->getGroup(a.group);
+        if (!g->linkZoneSelection)
+            continue;
+
+        for (int z = 0; z < (int)g->getZones().size(); ++z)
+        {
+            auto sib = a;
+            sib.zone = z;
+            if (!seen.insert(sib.addr()).second)
+                continue;
+            sib.distinct = false;
+            // a plain click on a linked group leads from its first zone
+            sib.selectingAsLead = z == 0 && a.selecting && a.distinct && a.selectingAsLead;
+            res.push_back(sib);
+        }
+    }
+    return res;
 }
 
 void SelectionManager::selectPart(int16_t part)
@@ -1221,6 +1258,98 @@ void SelectionManager::remapCollapsedOnInsert(int part, int at, int count)
     for (auto i : s)
         shifted.insert(i >= at ? i + count : i);
     s = std::move(shifted);
+}
+
+SelectionManager::IdentitySnapshot SelectionManager::snapshotIdentities(int16_t part) const
+{
+    IdentitySnapshot res;
+    if (part < 0 || part >= scxt::numParts)
+        return res;
+    res.part = part;
+
+    const auto &pt = engine.getPatch()->getPart(part);
+    const auto &st = state[part];
+    auto groupAt = [&pt](int g) -> std::optional<GroupID> {
+        if (g < 0 || g >= (int)pt->getGroups().size())
+            return std::nullopt;
+        return pt->getGroup(g)->id;
+    };
+    auto zoneAt = [&pt](const ZoneAddress &a) -> std::optional<ZoneID> {
+        if (a.group < 0 || a.group >= (int)pt->getGroups().size())
+            return std::nullopt;
+        const auto &g = pt->getGroup(a.group);
+        if (a.zone < 0 || a.zone >= (int)g->getZones().size())
+            return std::nullopt;
+        return g->getZone(a.zone)->id;
+    };
+
+    for (const auto &z : st.selectedZones)
+        if (auto id = zoneAt(z))
+            res.zones.push_back(*id);
+    for (const auto &g : st.selectedGroups)
+        if (auto id = groupAt(g.group))
+            res.groups.push_back(*id);
+    for (auto g : st.collapsedGroups)
+        if (auto id = groupAt(g))
+            res.collapsed.push_back(*id);
+    if (st.leadZone.part == part)
+        res.leadZone = zoneAt(st.leadZone);
+    if (st.leadGroup.part == part)
+        res.leadGroup = groupAt(st.leadGroup.group);
+    return res;
+}
+
+void SelectionManager::restoreIdentities(const IdentitySnapshot &snap)
+{
+    if (snap.part < 0 || snap.part >= scxt::numParts)
+        return;
+
+    auto part = snap.part;
+    const auto &pt = engine.getPatch()->getPart(part);
+    std::unordered_map<int32_t, int32_t> groupIndex;
+    std::unordered_map<int32_t, ZoneAddress> zoneIndex;
+    for (int g = 0; g < (int)pt->getGroups().size(); ++g)
+    {
+        const auto &grp = pt->getGroup(g);
+        groupIndex[grp->id.id] = g;
+        for (int z = 0; z < (int)grp->getZones().size(); ++z)
+            zoneIndex[grp->getZone(z)->id.id] = {part, g, z};
+    }
+
+    auto &st = state[part];
+    st.selectedZones.clear();
+    st.selectedGroups.clear();
+    st.collapsedGroups.clear();
+    st.displayGroups.clear();
+    st.leadZone = {};
+    st.leadGroup = {};
+
+    for (const auto &id : snap.zones)
+        if (auto f = zoneIndex.find(id.id); f != zoneIndex.end())
+            st.selectedZones.insert(f->second);
+    for (const auto &id : snap.groups)
+        if (auto f = groupIndex.find(id.id); f != groupIndex.end())
+            st.selectedGroups.insert({part, f->second, -1});
+    for (const auto &id : snap.collapsed)
+        if (auto f = groupIndex.find(id.id); f != groupIndex.end())
+            st.collapsedGroups.insert(f->second);
+    if (snap.leadZone)
+        if (auto f = zoneIndex.find(snap.leadZone->id); f != zoneIndex.end())
+            st.leadZone = f->second;
+    if (snap.leadGroup)
+        if (auto f = groupIndex.find(snap.leadGroup->id); f != groupIndex.end())
+            st.leadGroup = {part, f->second, -1};
+
+    // a zone's group counts as selected, as adjustInternalStateForAction keeps it
+    for (const auto &z : st.selectedZones)
+        st.selectedGroups.insert({part, z.group, -1});
+
+    if (part == selectedPart)
+    {
+        guaranteeSelectedLead();
+        sendClientDataForLeadSelectionState();
+        sendSelectedZonesToClient();
+    }
 }
 
 void SelectionManager::clearAllSelections()

@@ -237,6 +237,17 @@ enum ClientToSerializationMessagesIds
 
     c2s_reset_engine_to_startup_patch,
 
+    c2s_move_zones_to,
+    c2s_move_groups_to,
+    c2s_move_zones_to_new_groups,
+    c2s_delete_zones_with_missing_samples,
+    c2s_apply_zone_batch_op,
+    c2s_set_link_zone_selection,
+    c2s_paste_group_without_zones,
+    c2s_initialize_part,
+    c2s_duplicate_part,
+    c2s_request_reveal_zone_sample,
+
     num_clientToSerializationMessages
 };
 
@@ -299,6 +310,8 @@ enum SerializationToClientMessageIds
     s2c_update_omni_flavor,
 
     s2c_set_colormap,
+
+    s2c_reveal_file,
 
     num_serializationToClientMessages
 };

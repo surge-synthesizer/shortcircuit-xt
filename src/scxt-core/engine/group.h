@@ -153,6 +153,9 @@ struct Group : MoveableOnly<Group>,
      */
     bool mutedByLatch{false};
 
+    // selecting any zone of the group selects all of them
+    bool linkZoneSelection{false};
+
     // unstreamed; Part::reconfigureGroupSolo derives it from the part's soloed groups
     bool mutedDueToSoloAway{false};
     // a solo beats the group's own mute, as on the busses

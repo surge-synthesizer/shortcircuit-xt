@@ -131,6 +131,7 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
     }
 
     bool isEditorInGroupMode() const;
+    bool zoneEditsAllowedInGroupMode() const;
 
     enum MouseState
     {

@@ -180,6 +180,15 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         }
     }
 
+    int groupCount() const
+    {
+        int res{0};
+        for (const auto &r : gzData)
+            if (r.address.zone < 0)
+                res++;
+        return res;
+    }
+
     selection::SelectionManager::ZoneAddress getZoneAddress(int rowNumber)
     {
         if (rowNumber < 0 || rowNumber >= (int)visibleRows.size())
@@ -373,8 +382,34 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         enum DragOverState
         {
             NONE,
-            DRAG_OVER
+            BEFORE,
+            AFTER,
+            INTO
         } dragOverState{NONE};
+
+        void paintDropIndicator(juce::Graphics &g, int left)
+        {
+            auto col = gsb->editor->themeColor(theme::ColorMap::accent_1b);
+            switch (dragOverState)
+            {
+            case BEFORE:
+                g.setColour(col);
+                g.fillRect(left, 0, getWidth() - left, 2);
+                break;
+            case AFTER:
+                g.setColour(col);
+                g.fillRect(left, getHeight() - 2, getWidth() - left, 2);
+                break;
+            case INTO:
+                g.setColour(col.withAlpha(0.1f));
+                g.fillRect(getLocalBounds());
+                g.setColour(col);
+                g.drawRect(getLocalBounds(), 1);
+                break;
+            case NONE:
+                break;
+            }
+        }
 
         // alt is exclusive, shift sweeps a range, command skips the selection
         void setMuteOrSoloTo(bool isSolo, bool v)
@@ -503,24 +538,21 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                         editor->themeColor(off ? theme::ColorMap::generic_content_low
                                                : theme::ColorMap::accent_1b));
                 }
-                g.setColour(textColor);
-                g.drawText(sg.name, nb, juce::Justification::centredLeft);
-
-                if (dragOverState == DRAG_OVER)
+                // its zones select as one
+                if (sg.features & engine::GroupZoneFeatures::LINKED_SELECTION)
                 {
-                    if (isZone())
-                    {
-                        g.setColour(editor->themeColor(theme::ColorMap::accent_1b));
-                        g.drawHorizontalLine(1, 0, getWidth());
-                    }
-                    else
-                    {
-                        g.setColour(editor->themeColor(theme::ColorMap::accent_1b).withAlpha(0.1f));
-                        g.fillRect(getLocalBounds());
-                        g.setColour(editor->themeColor(theme::ColorMap::accent_1b));
-                        g.drawRect(getLocalBounds(), 1);
-                    }
+                    auto lk = nb.removeFromRight(nb.getHeight()).reduced(1);
+                    jcmp::GlyphPainter::paintGlyph(g, lk, jcmp::GlyphPainter::LINK,
+                                                   editor->themeColor(theme::ColorMap::accent_1b));
                 }
+                g.setColour(textColor);
+                if (isPaintSnapshot && isDragMulti)
+                    g.drawText(std::to_string(dragSources.size()) + " Selected Groups", nb,
+                               juce::Justification::centredLeft);
+                else
+                    g.drawText(sg.name, nb, juce::Justification::centredLeft);
+
+                paintDropIndicator(g, 0);
             }
             else
             {
@@ -546,7 +578,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
                 if (isPaintSnapshot && isDragMulti)
                 {
-                    g.drawText(std::to_string(lbm->selectedZones.size()) + " Selected Zones",
+                    g.drawText(std::to_string(dragSources.size()) + " Selected Zones",
                                getLocalBounds().translated(zonePad + 2, 0),
                                juce::Justification::centredLeft);
                     return;
@@ -564,11 +596,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                     jcmp::GlyphPainter::paintGlyph(g, b, jcmp::GlyphPainter::SPEAKER, textColor);
                 }
 
-                if (dragOverState == DRAG_OVER)
-                {
-                    g.setColour(editor->themeColor(theme::ColorMap::accent_1b));
-                    g.drawHorizontalLine(1, zonePad, getWidth());
-                }
+                paintDropIndicator(g, zonePad);
             }
         }
 
@@ -599,111 +627,26 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
             if (e.mods.isPopupMenu())
             {
+                if (rowNumber < 0 || rowNumber >= (int)lbm->visibleRows.size())
+                    return;
                 juce::PopupMenu p;
-                if (isZone())
-                {
-                    auto za = getZoneAddress();
-                    const auto &tgl = lbm->gzData;
-                    const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
-
-                    shared::populateZoneRightMouseMenuForZone(gsb, this, p, za, sg.name);
-                    p.addSeparator();
-                    shared::populatePartRightMouseMenu(gsb, p, za.part);
-                }
-                else if (isGroup())
-                {
-                    const auto &tgl = lbm->gzData;
-                    if (rowNumber < 0 || rowNumber >= (int)lbm->visibleRows.size())
+                auto za = getZoneAddress();
+                const auto &sg = lbm->gzData[lbm->gzIndexForRow(rowNumber)];
+                auto rename = [w = juce::Component::SafePointer(this), za]() {
+                    if (!w)
                         return;
-
-                    const auto &sg = tgl[lbm->gzIndexForRow(rowNumber)];
-
-                    // inside a wider group selection the menu acts on all of it, bar rename
-                    using za_t = selection::SelectionManager::ZoneAddress;
-                    const auto &allGroups = gsb->editor->allGroupSelections;
-                    auto onSelection = allGroups.count(sg.address) > 0 && allGroups.size() > 1;
-                    std::vector<za_t> targets;
-                    if (onSelection)
-                        targets.assign(allGroups.begin(), allGroups.end());
+                    if (w->isZone())
+                        w->doZoneRename(za);
                     else
-                        targets.push_back(sg.address);
-
-                    p.addSectionHeader(onSelection
-                                           ? std::to_string(targets.size()) + " Selected Groups"
-                                           : sg.name);
-                    p.addSeparator();
-                    p.addItem("Rename", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
                         w->doGroupRename();
-                    });
-                    p.addItem("Copy", [w = juce::Component::SafePointer(this), targets]() {
-                        if (!w)
-                            return;
-                        w->gsb->sendToSerialization(cmsg::CopyGroups(targets));
-                    });
-                    p.addItem("Paste",
-                              gsb->editor->clipboardType == engine::Clipboard::ContentType::GROUP,
-                              false, [w = juce::Component::SafePointer(this)]() {
-                                  if (!w)
-                                      return;
-                                  auto za = w->getZoneAddress();
-                                  w->gsb->sendToSerialization(cmsg::PasteGroup(za));
-                              });
-                    p.addItem("Duplicate", [w = juce::Component::SafePointer(this), targets]() {
-                        if (!w)
-                            return;
-                        w->gsb->sendToSerialization(cmsg::DuplicateGroups(targets));
-                    });
-                    p.addItem("Paste Zone",
-                              gsb->editor->clipboardType == engine::Clipboard::ContentType::ZONE,
-                              false, [w = juce::Component::SafePointer(this)]() {
-                                  if (!w)
-                                      return;
-                                  auto za = w->getZoneAddress();
-                                  w->gsb->sendToSerialization(cmsg::PasteZone(za));
-                              });
-                    p.addItem("Create Empty Zone", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(
-                            cmsg::AddBlankZone({za.part, za.group, 48, 72, 0, 127}));
-                    });
-                    p.addItem("Delete", [w = juce::Component::SafePointer(this), onSelection]() {
-                        if (!w)
-                            return;
-                        if (onSelection)
-                            w->gsb->sendToSerialization(cmsg::DeleteAllSelectedGroups(true));
-                        else
-                            w->gsb->sendToSerialization(cmsg::DeleteGroup(w->getZoneAddress()));
-                    });
-                    p.addItem("Delete Empty Groups", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::DeleteEmptyGroups(za.part));
-                    });
+                };
+                if (isZone())
+                    shared::populateZoneMenu(gsb, p, za, sg.name, rename);
+                else
+                    shared::populateGroupMenu(gsb, p, za, sg.name, rename);
 
-                    p.addSeparator();
-                    p.addItem("Expand All Groups", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::SetAllGroupsCollapsed({za.part, false}));
-                    });
-                    p.addItem("Collapse All Groups", [w = juce::Component::SafePointer(this)]() {
-                        if (!w)
-                            return;
-                        auto za = w->getZoneAddress();
-                        w->gsb->sendToSerialization(cmsg::SetAllGroupsCollapsed({za.part, true}));
-                    });
-
-                    auto za = getZoneAddress();
-
-                    p.addSeparator();
-                    shared::populatePartRightMouseMenu(gsb, p, za.part);
-                }
+                p.addSeparator();
+                shared::populatePartRightMouseMenu(gsb, p, za.part);
 
                 isPopup = true;
                 p.showMenuAsync(gsb->editor->defaultPopupMenuOptions());
@@ -712,38 +655,64 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
         bool isPaintSnapshot{false};
         bool isDragMulti{false};
+        // taken when the drag starts, as rows are recycled under it
+        std::vector<selection::SelectionManager::ZoneAddress> dragSources;
+
+        // a selected row drags the whole selection unless shift singles it out
+        void beginRowDrag(const juce::MouseEvent &e)
+        {
+            auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this);
+            if (!container)
+                return;
+
+            auto za = getZoneAddress();
+            const auto &ed = gsb->editor;
+            dragSources.clear();
+            if (isZone())
+            {
+                isDragMulti =
+                    ed->isSelected(za) && ed->allZoneSelections.size() > 1 && !e.mods.isShiftDown();
+                if (isDragMulti)
+                    dragSources.assign(ed->allZoneSelections.begin(), ed->allZoneSelections.end());
+            }
+            else
+            {
+                isDragMulti = ed->allGroupSelections.count(za) > 0 &&
+                              ed->allGroupSelections.size() > 1 && !e.mods.isShiftDown();
+                if (isDragMulti)
+                    dragSources.assign(ed->allGroupSelections.begin(),
+                                       ed->allGroupSelections.end());
+            }
+            if (!isDragMulti)
+                dragSources.push_back(za);
+            std::erase_if(dragSources, [&za](const auto &a) { return a.part != za.part; });
+            std::sort(dragSources.begin(), dragSources.end());
+
+            isPaintSnapshot = true;
+            container->startDragging(isZone() ? "ZoneRow" : "GroupRow", this);
+            isPaintSnapshot = false;
+            isDragging = true;
+        }
 
         // big thanks to https://forum.juce.com/t/listbox-drag-to-reorder-solved/28477
         void mouseDrag(const juce::MouseEvent &e) override
         {
-            if (isZone() && !isDragging && e.getDistanceFromDragStart() > 2)
-            {
-                if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
-                {
-                    if (isSelected() && lbm->selectedZones.size() > 1 && !e.mods.isShiftDown())
-                    {
-                        isDragMulti = true;
-                    }
-                    else
-                    {
-                        isDragMulti = false;
-                    }
-                    isPaintSnapshot = true;
-                    container->startDragging("ZoneRow", this);
-                    isPaintSnapshot = false;
-                    isDragging = true;
-                }
-            }
+            if (consumedFoldClick || isPopup || isDragging || e.getDistanceFromDragStart() <= 2)
+                return;
+            if (isZone() || isGroup())
+                beginRowDrag(e);
+        }
 
-            if (isGroup() && !isDragging && e.getDistanceFromDragStart() > 2)
-            {
-                if (auto *container = juce::DragAndDropContainer::findParentDragContainerFor(this))
-                {
-                    container->startDragging("GroupRow", this);
-
-                    isDragging = true;
-                }
-            }
+        void mouseDoubleClick(const juce::MouseEvent &e) override
+        {
+            if (consumedFoldClick || e.mods.isPopupMenu())
+                return;
+            if (isGroup() && e.x < grouplabelPad)
+                return;
+            if (isZone())
+                doZoneRename(getZoneAddress());
+            else if (isGroup())
+                doGroupRename();
         }
 
         void mouseUp(const juce::MouseEvent &event) override
@@ -785,12 +754,47 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
             return false;
         }
 
-        void itemDragEnter(const SourceDetails &dragSourceDetails) override
+        // the last row showing for this row's group, where a group lands after it
+        bool isLastRowOfGroup()
         {
-            dragOverState = DRAG_OVER;
+            auto next = rowNumber + 1;
+            if (next >= (int)lbm->visibleRows.size())
+                return true;
+            return lbm->getZoneAddress(next).group != getZoneAddress().group;
+        }
+
+        DragOverState dropStateFor(const SourceDetails &sd)
+        {
+            auto rd = dynamic_cast<rowComponent *>(sd.sourceComponent.get());
+            if (!rd)
+                return INTO;
+            auto upper = sd.localPosition.y < getHeight() / 2;
+            if (rd->isZone())
+            {
+                if (isGroup())
+                    return INTO;
+                return upper ? BEFORE : AFTER;
+            }
+            // a group lands between groups; any zone row means after that zone's group
+            if (isGroup())
+                return (upper || !isLastRowOfGroup()) ? BEFORE : AFTER;
+            return isLastRowOfGroup() ? AFTER : INTO;
+        }
+
+        void itemDragEnter(const SourceDetails &sd) override
+        {
+            dragOverState = dropStateFor(sd);
             repaint();
         }
-        void itemDragMove(const SourceDetails &dragSourceDetails) override {}
+        void itemDragMove(const SourceDetails &sd) override
+        {
+            auto ns = dropStateFor(sd);
+            if (ns != dragOverState)
+            {
+                dragOverState = ns;
+                repaint();
+            }
+        }
         void itemDragExit(const SourceDetails &dragSourceDetails) override
         {
             dragOverState = NONE;
@@ -799,6 +803,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
         void itemDropped(const SourceDetails &dragSourceDetails) override
         {
+            auto where = dropStateFor(dragSourceDetails);
             dragOverState = NONE;
             repaint();
             auto sc = dragSourceDetails.sourceComponent;
@@ -811,48 +816,48 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
                 if (wsi)
                 {
                     auto za = getZoneAddress();
-                    // For zone rows, resolve to the parent group
-                    int targetGroup = za.group;
-                    int targetPart = za.part;
-                    if (isZone())
-                    {
-                        // already have the right part/group — zone index doesn't matter
-                    }
                     if (!isZone() && wsi->encompassesMultipleSampleInfos())
                     {
-                        shared::executeBatchDropOnGroup(wsi, targetPart, targetGroup, gsb);
+                        shared::executeBatchDropOnGroup(wsi, za.part, za.group, gsb);
                         return;
                     }
                     auto src = shared::SampleDropSource::fromBrowserItem(wsi);
                     if (src.isSingleSample())
                     {
-                        src.dropAsZoneInGroup(targetPart, targetGroup, gsb);
+                        src.dropAsZoneInGroup(za.part, za.group, gsb);
                         return;
                     }
                 }
             }
 
             auto rd = dynamic_cast<rowComponent *>(sc.get());
-            if (rd && rd->isZone())
+            if (!rd || rd->dragSources.empty())
+                return;
+
+            // command or alt at the drop copies rather than moves
+            auto mods = juce::ModifierKeys::getCurrentModifiersRealtime();
+            auto copy = mods.isCommandDown() || mods.isAltDown();
+            auto tgt = getZoneAddress();
+
+            if (rd->isZone())
             {
-                auto tgt = getZoneAddress();
-
-                if (rd->isDragMulti)
-                {
-                    gsb->sendToSerialization(cmsg::MoveZonesFromTo({lbm->selectedZones, tgt}));
-                }
-                else
-                {
-                    auto src = rd->getZoneAddress();
-
-                    gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
-                }
+                auto at = tgt;
+                if (where == INTO)
+                    at.zone = -1;
+                else if (where == AFTER)
+                    at.zone = tgt.zone + 1;
+                gsb->sendToSerialization(cmsg::MoveZonesTo({rd->dragSources, at, copy}));
             }
-            else if (rd && rd->isGroup())
+            else
             {
-                auto src = rd->getZoneAddress();
-                auto tgt = getZoneAddress();
-                gsb->sendToSerialization(cmsg::MoveGroupTo({src, tgt}));
+                std::vector<int32_t> groups;
+                for (const auto &a : rd->dragSources)
+                    groups.push_back(a.group);
+                auto before = where == BEFORE ? tgt.group : tgt.group + 1;
+                if (before >= lbm->groupCount())
+                    before = -1;
+                gsb->sendToSerialization(
+                    cmsg::MoveGroupsTo({(int16_t)tgt.part, groups, before, copy}));
             }
         }
         void resized() override
@@ -961,9 +966,7 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
 
         bool isInterestedInDragSource(const SourceDetails &dragSourceDetails) override
         {
-            if (!fz)
-                return false;
-            // Only accept drags from other tree rows (zone reordering), not browser drops
+            // tree rows only; zones go to a new group, groups go to the end
             return dynamic_cast<rowComponent *>(dragSourceDetails.sourceComponent.get()) != nullptr;
         }
 
@@ -983,43 +986,24 @@ template <typename SidebarParent, bool fz> struct GroupZoneSidebarWidget : jcmp:
         {
             isDroppingOn = false;
             repaint();
-            auto sc = dragSourceDetails.sourceComponent;
-            if (!sc) // weak component
+            auto rd = dynamic_cast<rowComponent *>(dragSourceDetails.sourceComponent.get());
+            if (!rd || rd->dragSources.empty())
                 return;
 
-            auto rd = dynamic_cast<rowComponent *>(sc.get());
-            if (rd)
+            auto mods = juce::ModifierKeys::getCurrentModifiersRealtime();
+            auto copy = mods.isCommandDown() || mods.isAltDown();
+            auto part = (int16_t)rd->dragSources.front().part;
+            if (rd->isZone())
             {
-                if (fz)
-                {
-                    auto tgt =
-                        selection::SelectionManager::ZoneAddress{gsb->editor->selectedPart, -1, -1};
-
-                    if (rd->isDragMulti)
-                    {
-                        auto sz = lbm->selectedZones;
-                        // Filter out any selected zones with zone == -1
-                        std::erase_if(sz, [](const auto &za) { return za.zone == -1; });
-                        // if theres still zones available (so !sz.empty) go for it
-                        if (!sz.empty())
-                        {
-                            gsb->sendToSerialization(
-                                cmsg::MoveZonesFromTo({lbm->selectedZones, tgt}));
-                        }
-                    }
-                    else
-                    {
-                        auto src = rd->getZoneAddress();
-                        if (src.zone > 0)
-                        {
-                            gsb->sendToSerialization(cmsg::MoveZonesFromTo({{src}, tgt}));
-                        }
-                    }
-                }
-                else
-                {
-                    // Dragging group onto a + we can happily do nothing
-                }
+                gsb->sendToSerialization(
+                    cmsg::MoveZonesTo({rd->dragSources, {part, -1, -1}, copy}));
+            }
+            else
+            {
+                std::vector<int32_t> groups;
+                for (const auto &a : rd->dragSources)
+                    groups.push_back(a.group);
+                gsb->sendToSerialization(cmsg::MoveGroupsTo({part, groups, -1, copy}));
             }
         }
 

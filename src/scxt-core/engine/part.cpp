@@ -210,6 +210,8 @@ Part::zoneMappingSummary_t Part::getZoneMappingSummary()
             {
                 features |= GroupZoneFeatures::MISSING_SAMPLE;
             }
+            if (g->linkZoneSelection)
+                features |= GroupZoneFeatures::LINKED_SELECTION;
             auto data = zoneMappingItem_t{addr, z->mapping.keyboardRange, z->mapping.velocityRange,
                                           z->getName(), features};
             // res[addr] = data;

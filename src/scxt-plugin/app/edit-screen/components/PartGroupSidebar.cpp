@@ -745,6 +745,37 @@ struct GroupZoneSidebarBase : juce::Component,
         return res;
     }
 
+    // rows from a to b inclusive in list order, as shown, else as the part holds them
+    std::vector<za_t> rowsBetween(const za_t &a, const za_t &b, bool zones)
+    {
+        auto collect = [&](const std::vector<za_t> &addresses) {
+            std::vector<za_t> res;
+            bool in{false};
+            for (const auto &r : addresses)
+            {
+                auto hit = r == a || r == b;
+                if (!in && !hit)
+                    continue;
+                if ((r.zone >= 0) == zones)
+                    res.push_back(r);
+                if (in && hit)
+                    return res;
+                in = true;
+                if (a == b)
+                    return res;
+            }
+            return std::vector<za_t>{};
+        };
+
+        std::vector<za_t> shown, all;
+        for (auto i : gzTreeControl->visibleRows)
+            shown.push_back(gzTreeControl->gzData[i].address);
+        for (const auto &r : gzTreeControl->gzData)
+            all.push_back(r.address);
+        auto res = collect(shown);
+        return res.empty() ? collect(all) : res;
+    }
+
     void addGroup()
     {
         auto &mc = partGroupSidebar->editor->msgCont;
@@ -818,31 +849,46 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
         groupSettings->setBounds(tb.reduced(4, 2));
     }
 
+    // shift sweeps from the anchor, command toggles, and shift with command adds the sweep
+    za_t lastGroupClicked{-1, -1, -1};
     void onRowClicked(const selection::SelectionManager::ZoneAddress &rowZone, bool isSelected,
                       const juce::ModifierKeys &mods)
     {
-        // For now just force it to select the group
-        auto se = selection::SelectionManager::SelectActionContents(rowZone);
-
-        if (rowZone.zone >= 0)
+        if (rowZone.zone >= 0 || rowZone.group < 0)
         {
-            /*
-            se.selecting = !isSelected;
-            se.distinct = !mods.isCommandDown();
-            se.selectingAsLead = true;
-            se.forZone = true;
-            editor->doSelectionAction({se});
-            */
             SCLOG_ONCE_IF(selection, "Supressing zone selection in group sidebar");
+            return;
         }
-        else
-        {
-            se.distinct = !(mods.isCommandDown() || mods.isShiftDown()); // for now
-            se.selecting = !se.distinct || !isSelected;
-            se.selectingAsLead = se.selecting;
+
+        using sac_t = selection::SelectionManager::SelectActionContents;
+        auto groupAction = [](const za_t &a, bool selecting, bool distinct, bool lead) {
+            auto se = sac_t(a, selecting, distinct, lead);
             se.forZone = false;
-            editor->doSelectionAction({se});
+            return se;
+        };
+
+        auto anchorOK = lastGroupClicked.part == rowZone.part && lastGroupClicked.group >= 0 &&
+                        lastGroupClicked != rowZone;
+        if (mods.isShiftDown() && anchorOK)
+        {
+            auto range = rowsBetween(lastGroupClicked, rowZone, false);
+            if (!range.empty())
+            {
+                auto additive = mods.isCommandDown();
+                // one action each so every group brings its zones, anchor first as the lead
+                editor->doSelectionAction(groupAction(lastGroupClicked, true, !additive, true));
+                for (const auto &g : range)
+                    if (g != lastGroupClicked)
+                        editor->doSelectionAction(groupAction(g, true, false, false));
+                return;
+            }
         }
+
+        if (mods.isCommandDown())
+            editor->doSelectionAction(groupAction(rowZone, !isSelected, false, !isSelected));
+        else
+            editor->doSelectionAction(groupAction(rowZone, true, true, true));
+        lastGroupClicked = rowZone;
     }
     std::unique_ptr<GroupSettingsCard> groupSettings;
     std::unique_ptr<GroupTriggersCard> groupTriggers;
@@ -857,11 +903,16 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
     void updateSelection()
     {
         updateSelectionFrom(partGroupSidebar->editor->allZoneSelections);
-        if (partGroupSidebar->editor->currentLeadZoneSelection.has_value())
-            lastZoneClicked = *(partGroupSidebar->editor->currentLeadZoneSelection);
+        // a lead moved from elsewhere becomes the anchor; a sweep keeping the lead does not
+        const auto &lead = partGroupSidebar->editor->currentLeadZoneSelection;
+        if (lead.has_value() && lead != lastLeadSeen)
+            lastZoneClicked = *lead;
+        lastLeadSeen = lead;
     }
+    std::optional<za_t> lastLeadSeen;
     void resized() override { gzTreeControl->setBounds(baseResize()); }
 
+    // the anchor a shift click sweeps from; a sweep leaves it where it is
     selection::SelectionManager::ZoneAddress lastZoneClicked{0, 0, 0};
     void onRowClicked(const selection::SelectionManager::ZoneAddress &rowZone, bool isSelected,
                       const juce::ModifierKeys &mods)
@@ -869,54 +920,36 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
         /*
           Zone Mode Sidebar
             - click zone is select distinct as lead everywhere
-            - click group is select entire groups zones
-            - shift click is contiguous select
-            - cmd/ctrl click is non-contiguous toggle select zone
+            - click group is select entire groups zones, command or alt adds them
+            - shift click sweeps from the anchor, replacing the selection
+            - shift command click adds the sweep to the selection
+            - command click is non-contiguous toggle select zone
             - alt-click is move lead or add and make lead
          */
-        if (mods.isShiftDown() && lastZoneClicked != rowZone && rowZone.zone >= 0)
+        using sac_t = selection::SelectionManager::SelectActionContents;
+        auto anchorOK = lastZoneClicked.part == rowZone.part && lastZoneClicked.zone >= 0 &&
+                        lastZoneClicked != rowZone;
+        if (mods.isShiftDown() && rowZone.zone >= 0 && anchorOK)
         {
-            std::vector<selection::SelectionManager::SelectActionContents> actions;
-            SCLOG_IF(selection, "Contiguous from " << lastZoneClicked << " to " << rowZone);
-
-            bool doPush{false};
-            for (auto &r : partGroupSidebar->pgzStructure)
+            auto range = rowsBetween(lastZoneClicked, rowZone, true);
+            if (!range.empty())
             {
-                bool firstDoPush{false};
-                if (r.address == lastZoneClicked || r.address == rowZone)
-                {
-                    if (!doPush)
-                    {
-                        doPush = true;
-                        firstDoPush = true;
-                    }
-                }
-                if (doPush && r.address.zone >= 0)
-                {
-                    SCLOG_IF(selection, "Including zone in selection " << r.address)
-                    auto se = selection::SelectionManager::SelectActionContents(r.address);
-                    se.selecting = true;
-                    se.distinct = false;
-                    se.selectingAsLead =
-                        (r.address == editor->currentLeadZoneSelection.value_or(
-                                          selection::SelectionManager::ZoneAddress()));
-                    se.forZone = true;
-                    actions.push_back(se);
-                }
-                if (r.address == lastZoneClicked || r.address == rowZone)
-                {
-                    if (!firstDoPush)
-                    {
-                        doPush = false;
-                        break;
-                    }
-                }
+                auto additive = mods.isCommandDown();
+                std::vector<sac_t> actions;
+                // the anchor goes first, so a fresh sweep clears and leads from it
+                if (!additive)
+                    actions.emplace_back(lastZoneClicked, true, true, true);
+                for (const auto &a : range)
+                    if (additive || a != lastZoneClicked)
+                        actions.emplace_back(a, true, false, false);
+                editor->doSelectionAction(actions);
+                return;
             }
-            editor->doSelectionAction(actions);
         }
-        else if (rowZone.zone >= 0)
+
+        if (rowZone.zone >= 0)
         {
-            auto se = selection::SelectionManager::SelectActionContents(rowZone);
+            auto se = sac_t(rowZone);
 
             if (mods.isAltDown())
             {
@@ -939,10 +972,10 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
         {
             // forZone=false so empty groups can become the lead group; for non-empty
             // groups the server still expands this into per-zone selections
-            auto se = selection::SelectionManager::SelectActionContents(rowZone);
+            auto se = sac_t(rowZone);
 
             se.selecting = true;
-            se.distinct = !mods.isAltDown();
+            se.distinct = !(mods.isAltDown() || mods.isCommandDown());
             se.selectingAsLead = true;
             se.forZone = false;
             editor->doSelectionAction(se);
@@ -1176,7 +1209,59 @@ void PartGroupSidebar::editorSelectionChanged()
     if (zoneSidebar)
         zoneSidebar->updateSelection();
 
+    autoExpandForSelection();
     markTreeRefresh(trlSelection);
+}
+
+void PartGroupSidebar::autoExpandForSelection()
+{
+    auto part = editor->selectedPart;
+    std::set<int32_t> groups;
+    for (const auto &g : editor->allGroupSelections)
+        if (g.part == part && g.group >= 0)
+            groups.insert(g.group);
+    std::set<selection::SelectionManager::ZoneAddress> zones;
+    for (const auto &z : editor->allZoneSelections)
+        if (z.part == part)
+            zones.insert(z);
+
+    auto groupsChanged = groups != lastSelectedGroupsSeen;
+    std::set<int32_t> revealZonesIn;
+    for (const auto &z : zones)
+        if (lastSelectedZonesSeen.count(z) == 0)
+            revealZonesIn.insert(z.group);
+    lastSelectedGroupsSeen = groups;
+    lastSelectedZonesSeen = zones;
+
+    auto &dp = editor->defaultsProvider;
+    // groups: the selected groups open and the rest close; zones: open whatever holds them
+    auto accordion =
+        groupsChanged &&
+        (bool)dp.getUserDefaultValue(infrastructure::DefaultKeys::autoExpandSelectedGroups, false);
+    auto reveal =
+        (bool)dp.getUserDefaultValue(infrastructure::DefaultKeys::autoExpandSelectedZones, false);
+    if (!accordion && !(reveal && !revealZonesIn.empty()))
+        return;
+
+    for (size_t i = 0; i < pgzStructure.size(); ++i)
+    {
+        const auto &r = pgzStructure[i];
+        if (r.address.part != part || r.address.group < 0 || r.address.zone >= 0)
+            continue;
+        auto hasZones = i + 1 < pgzStructure.size() && pgzStructure[i + 1].address.zone >= 0 &&
+                        pgzStructure[i + 1].address.group == r.address.group;
+        if (!hasZones)
+            continue;
+
+        auto folded = (r.features & engine::GroupZoneFeatures::FOLDED) != 0;
+        auto want = folded;
+        if (accordion)
+            want = groups.count(r.address.group) == 0;
+        if (reveal && revealZonesIn.count(r.address.group))
+            want = false;
+        if (want != folded)
+            sendToSerialization(cmsg::SetGroupCollapsed({part, r.address.group, want}));
+    }
 }
 
 void PartGroupSidebar::markTreeRefresh(TreeRefreshLevel l)
@@ -1336,7 +1421,43 @@ void PartGroupSidebar::showHamburgerMenu()
     }
     else
     {
-        // No hamburger on this tab!
+        auto forGroups = selectedTab == 1;
+        auto p = juce::PopupMenu();
+        p.addSectionHeader(forGroups ? "Groups" : "Zones");
+        p.addSeparator();
+        auto part = editor->selectedPart;
+        p.addItem("Expand All Groups", [w = juce::Component::SafePointer(this), part]() {
+            if (w)
+                w->sendToSerialization(cmsg::SetAllGroupsCollapsed({part, false}));
+        });
+        p.addItem("Collapse All Groups", [w = juce::Component::SafePointer(this), part]() {
+            if (w)
+                w->sendToSerialization(cmsg::SetAllGroupsCollapsed({part, true}));
+        });
+        p.addSeparator();
+        auto addToggle = [&](const std::string &label, infrastructure::DefaultKeys key) {
+            auto on = (bool)editor->defaultsProvider.getUserDefaultValue(key, false);
+            p.addItem(label, true, on, [w = juce::Component::SafePointer(this), key, on]() {
+                if (!w)
+                    return;
+                w->editor->defaultsProvider.updateUserDefaultValue(key, !on);
+                // act on what is already selected, as if it had just been chosen
+                w->lastSelectedGroupsSeen.clear();
+                w->lastSelectedZonesSeen.clear();
+                w->autoExpandForSelection();
+            });
+        };
+        addToggle("Auto-Expand Selected Groups",
+                  infrastructure::DefaultKeys::autoExpandSelectedGroups);
+        addToggle("Auto-Expand Selected Zones",
+                  infrastructure::DefaultKeys::autoExpandSelectedZones);
+        p.addSeparator();
+
+        if (forGroups)
+            shared::populateGroupMenu(this, p, std::nullopt, {});
+        else
+            shared::populateZoneMenu(this, p, std::nullopt, {});
+        p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 }
 

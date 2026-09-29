@@ -321,6 +321,19 @@ struct GroupOutputInfoSpec : GroupMemberSpec<&engine::Group::outputInfo>
     static void extraClientRefresh(const engine::Engine &e) { resendPGZStructure(e); }
 };
 
+struct GroupLinkZoneSelectionSpec : GroupMemberSpec<&engine::Group::linkZoneSelection>
+{
+    static std::string name() { return "Link Zone Selection"; }
+    static constexpr bool serialWrite{true};
+    static constexpr bool skipLeadRefresh{true};
+    // shows on the group rows and the mapping zones
+    static void extraClientRefresh(const engine::Engine &e)
+    {
+        resendPGZStructure(e);
+        refreshLeadDisplay(e, true);
+    }
+};
+
 struct ZoneVariantsSpec : ZoneMemberSpec<&engine::Zone::variantData>
 {
     static std::string name() { return "Zone Samples"; }
