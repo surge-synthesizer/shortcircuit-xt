@@ -33,6 +33,8 @@
 #include "ZoneLayoutKeyboard.h"
 #include "engine/zone.h"
 #include "app/shared/MultiInstrumentPrompt.h"
+#include "app/shared/ZoneRightMouseMenu.h"
+#include "infrastructure/user_defaults.h"
 
 #include <app/edit-screen/EditScreen.h>
 
@@ -425,6 +427,24 @@ void MappingDisplay::showHamburgerMenu()
         w->setShowZoneNames(!w->showZoneNames);
         w->editor->setTabSelection(showZoneNamesTabKey, w->showZoneNames ? "1" : "0");
     });
+
+    auto key = infrastructure::DefaultKeys::zoneEditsInGroupMode;
+    auto allow = (bool)editor->defaultsProvider.getUserDefaultValue(key, false);
+    p.addItem("Allow Zone Edits in Group Mode", true, allow,
+              [w = juce::Component::SafePointer(this), key, allow]() {
+                  if (w)
+                      w->editor->defaultsProvider.updateUserDefaultValue(key, !allow);
+              });
+
+    // the selected groups, else the lead zone's group
+    std::vector<selection::SelectionManager::ZoneAddress> groups(editor->allGroupSelections.begin(),
+                                                                 editor->allGroupSelections.end());
+    const auto &lg = editor->currentLeadGroupSelection;
+    if (groups.empty() && lg.has_value() && lg->group >= 0)
+        groups.push_back(*lg);
+    p.addSeparator();
+    shared::addLinkZoneSelectionItem(this, p, groups, "Link Zone Selection in Selected Groups");
+
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
@@ -978,7 +998,9 @@ bool MappingDisplay::handleKeyCommand(KeyCommands command)
         return false;
 
     // zone clicks do nothing here in group mode, so only the clipboard keys carry over
-    auto zoneMode = es->selectionMode == EditScreen::SelectionMode::ZONE;
+    auto zoneMode = es->selectionMode == EditScreen::SelectionMode::ZONE ||
+                    editor->defaultsProvider.getUserDefaultValue(
+                        infrastructure::DefaultKeys::zoneEditsInGroupMode, false);
     if (!zoneMode && command != COPY && command != PASTE)
         return false;
 

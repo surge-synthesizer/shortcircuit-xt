@@ -32,6 +32,7 @@
 #include "sst/jucegui/components/NamedPanel.h"
 #include "app/HasEditor.h"
 #include "engine/engine.h"
+#include <set>
 
 namespace scxt::ui::app::edit_screen
 {
@@ -89,6 +90,11 @@ struct PartGroupSidebar : sst::jucegui::components::NamedPanel,
     void setMpePitchSmoothingTime(int t);
 
     void showHamburgerMenu();
+
+    // the auto-expand options act on what a selection change newly brings in
+    void autoExpandForSelection();
+    std::set<int32_t> lastSelectedGroupsSeen;
+    std::set<selection::SelectionManager::ZoneAddress> lastSelectedZonesSeen;
 
     void resized() override;
 

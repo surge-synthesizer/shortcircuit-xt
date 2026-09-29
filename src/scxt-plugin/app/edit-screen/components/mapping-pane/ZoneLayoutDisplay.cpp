@@ -30,6 +30,7 @@
 #include "MappingDisplay.h"
 #include "engine/feature_enums.h"
 #include "app/shared/ZoneRightMouseMenu.h"
+#include "infrastructure/user_defaults.h"
 
 namespace scxt::ui::app::edit_screen
 {
@@ -121,9 +122,8 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
         }
     }
 
-    // We only undertake selection actions or morph in the grid in zone mode
-    // TODO: Make an option to allow it in group mode also
-    if (isEditorInGroupMode())
+    // grid edits belong to zone mode unless the user lets them happen in group mode
+    if (isEditorInGroupMode() && !zoneEditsAllowedInGroupMode())
     {
         if (editor->editScreen->partSidebar)
         {
@@ -408,23 +408,12 @@ void ZoneLayoutDisplay::showMappingNonZoneMenu(const juce::Point<int> &pos)
         if (w)
             w->createEmptyZoneAt(pos);
     });
-
-    /*
-     * Into the lead group, as an empty zone would go. The lead group always arrives with a
-     * value, unset or not, so the group index is what says whether there is one; -1 leaves the
-     * engine to pick.
-     */
-    auto ga = editor->currentLeadGroupSelection;
-    auto pasteInto = selection::SelectionManager::ZoneAddress{editor->selectedPart, -1, -1};
-    if (ga.has_value() && ga->part >= 0 && ga->group >= 0)
-        pasteInto = *ga;
-    p.addItem("Paste", editor->clipboardType == engine::Clipboard::ContentType::ZONE, false,
-              [w = juce::Component::SafePointer(this), pasteInto]() {
-                  if (w)
-                      w->sendToSerialization(scxt::messaging::client::PasteZone(pasteInto));
-              });
     p.addSeparator();
-    p.addItem("More Coming Soon", []() {});
+
+    // the rest is the zones menu on the selection
+    app::shared::populateZoneMenu(display, p, std::nullopt, {});
+    p.addSeparator();
+    app::shared::populatePartRightMouseMenu(display, p, editor->selectedPart);
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
@@ -440,7 +429,7 @@ void ZoneLayoutDisplay::showZoneMenu(const selection::SelectionManager::ZoneAddr
         part = s.address.part;
         if (s.address == za)
         {
-            app::shared::populateZoneRightMouseMenuForZone(display, display, p, za, s.name);
+            app::shared::populateZoneMenu(display, p, za, s.name);
             added = true;
         }
     }
@@ -680,9 +669,7 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         tooltipActive = false;
     }
 
-    // We only edit these in zone mode
-    // TODO: make an option to allow this
-    if (isEditorInGroupMode())
+    if (isEditorInGroupMode() && !zoneEditsAllowedInGroupMode())
     {
         if (editor->editScreen->partSidebar)
         {
@@ -778,6 +765,12 @@ bool ZoneLayoutDisplay::isEditorInGroupMode() const
     return editor->editScreen->partSidebar->selectedTab == 1;
 }
 
+bool ZoneLayoutDisplay::zoneEditsAllowedInGroupMode() const
+{
+    return editor->defaultsProvider.getUserDefaultValue(
+        infrastructure::DefaultKeys::zoneEditsInGroupMode, false);
+}
+
 juce::Rectangle<float>
 ZoneLayoutDisplay::rectangleForZone(const engine::Part::zoneMappingItem_t &sum)
 {
@@ -824,6 +817,16 @@ juce::Rectangle<float> ZoneLayoutDisplay::rectangleForRangeSkipEnd(int kL, int k
         std::swap(y1, y0);
 
     return {(float)x0, (float)y0, (float)(x1 - x0), (float)(y1 - y0)};
+}
+
+// zones of a linked group are hatched, as they select together
+static void hatchZone(juce::Graphics &g, const juce::Rectangle<float> &r, const juce::Colour &c)
+{
+    juce::Graphics::ScopedSaveState ss(g);
+    g.reduceClipRegion(r.toNearestInt());
+    g.setColour(c.withAlpha(0.4f));
+    for (auto x = r.getX() - r.getHeight(); x < r.getRight(); x += 6.f)
+        g.drawLine(x, r.getBottom(), x + r.getHeight(), r.getY(), 1.f);
 }
 
 void ZoneLayoutDisplay::paint(juce::Graphics &g)
@@ -938,6 +941,8 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             }
 
             r = drawZone(g, z, fillColor, borderColor);
+            if (z.features & engine::GroupZoneFeatures::LINKED_SELECTION)
+                hatchZone(g, r, borderColor);
 
             if (display->showZoneNames)
                 labelZoneRectangle(g, r, z.name, textColor);
@@ -970,6 +975,8 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
                 borderColor = editor->themeColor(theme::ColorMap::warning_1a);
             }
             auto r = drawZone(g, z, selZoneColor, borderColor);
+            if (z.features & engine::GroupZoneFeatures::LINKED_SELECTION)
+                hatchZone(g, r, borderColor);
             if (display->showZoneNames)
                 labelZoneRectangle(g, r, z.name, textColor);
 

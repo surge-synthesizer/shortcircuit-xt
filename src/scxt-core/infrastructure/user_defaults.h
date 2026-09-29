@@ -52,6 +52,9 @@ enum DefaultKeys
     showUndoRedo,
     lastSavedPath,
     startupPatchPath,
+    autoExpandSelectedGroups,
+    autoExpandSelectedZones,
+    zoneEditsInGroupMode,
 
     nKeys // must be last K?
 };
@@ -95,6 +98,12 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "lastSavedPath";
     case startupPatchPath:
         return "startupPatchPath";
+    case autoExpandSelectedGroups:
+        return "autoExpandSelectedGroups";
+    case autoExpandSelectedZones:
+        return "autoExpandSelectedZones";
+    case zoneEditsInGroupMode:
+        return "zoneEditsInGroupMode";
     default:
         std::terminate(); // for now
     }
