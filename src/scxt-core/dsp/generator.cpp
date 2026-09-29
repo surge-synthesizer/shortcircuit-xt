@@ -671,14 +671,18 @@ inline void reflectPingPong(int &samplePos, int &sampleSubPos, int &travel, int 
     sampleSubPos = (int)(pos & ((1 << 24) - 1));
 }
 
-// sample index for a window straddling the loop end, wrapped back into the loop
-inline int loopEndIndex(int k, int samplePos, int loopUpperBound, int waveSize, int loopLength)
+// sample index for a window straddling a loop bound, wrapped back into the loop; pass a lower
+// bound of -FIRoffset to leave the pad before the sample alone
+inline int loopWrapIndex(int k, int samplePos, int loopLowerBound, int loopUpperBound, int waveSize,
+                         int loopLength)
 {
     // signed, since a short loop's window starts in the pad before the sample
     int q = k + samplePos - (int)FIRoffset;
     const auto top = std::min(loopUpperBound, waveSize);
     if (q >= top)
         q -= loopLength * ((q - top) / loopLength + 1);
+    else if (q < loopLowerBound)
+        q += loopLength * ((loopLowerBound - q - 1) / loopLength + 1);
     return std::max(q, -(int)FIRoffset);
 }
 
@@ -797,6 +801,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
     float *__restrict readFadeSampleLF32 = nullptr;
     float *__restrict readFadeSampleRF32 = nullptr;
     float loopEndBufferLF32[resampFIRSize], loopEndBufferRF32[resampFIRSize];
+
+    // only a forward loop starting within a window of the pad reads it once round
+    const int lowPadEdge = (loopForward && GD->loopLowerBound < (int)FIRoffset)
+                               ? resampFIRSize
+                               : std::numeric_limits<int>::min();
 
     /*
      * Is the loop still what is driving playback? Once a gated loop is released the
@@ -970,11 +979,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
             // we need both checks because if we are just doing a post-release playdown
             // we don't want to re-pad
-            if (p >= WaveSize - resampFIRSize && p <= GD->loopUpperBound)
+            if (((p < lowPadEdge && GD->hasLooped) || p >= WaveSize - resampFIRSize) &&
+                p <= GD->loopUpperBound)
             {
+                // the first pass heard the pad before the loop, so only wrap once round
+                const int wrapLo =
+                    (loopForward && GD->hasLooped) ? GD->loopLowerBound : -(int)FIRoffset;
                 for (int k = 0; k < resampFIRSize; ++k)
                 {
-                    auto q = loopEndIndex(k, p, GD->loopUpperBound, WaveSize, LoopOffset);
+                    auto q = loopWrapIndex(k, p, wrapLo, GD->loopUpperBound, WaveSize, LoopOffset);
                     if constexpr (fp)
                     {
                         loopEndBufferLF32[k] = SampleDataFL[q];
