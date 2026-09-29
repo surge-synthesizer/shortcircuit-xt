@@ -721,6 +721,51 @@ GeneratorFPtr GetFPtrGeneratorSample(bool Stereo, bool Float, bool loopActive, b
     return detail::generatorGet(loopValue, std::make_index_sequence<(1 << 5)>());
 }
 
+void retargetGeneratorBounds(GeneratorState &GD, int32_t playbackLo, int32_t playbackHi,
+                             int32_t loopLo, int32_t loopHi, bool loopActive, bool loopForward,
+                             bool loopWhileGated)
+{
+    playbackHi = std::max(playbackLo, playbackHi);
+    if (!loopActive)
+    {
+        loopLo = playbackLo;
+        loopHi = playbackHi;
+    }
+    loopHi = std::max(loopLo, loopHi);
+
+    GD.playbackLowerBound = playbackLo;
+    GD.playbackUpperBound = playbackHi;
+    GD.loopLowerBound = loopLo;
+    GD.loopUpperBound = loopHi;
+    GD.playbackInvertedBounds = 1.f / std::max(1, playbackHi - playbackLo);
+    GD.loopInvertedBounds = 1.f / std::max(1, loopHi - loopLo);
+
+    if (!loopActive || GD.isFinished)
+        return;
+
+    // a released gated loop is playing out to the end, which the loop no longer governs
+    if (loopWhileGated && !GD.gated && GD.loopDirection == GD.directionAtOutset)
+        return;
+
+    // the same turn points the generator uses; see mirrorLo there
+    const int fadeHalf =
+        loopForward ? 0 : (int)clampLoopFade(GD.loopFade, playbackLo, loopLo, loopHi) / 2;
+    const int lo = loopLo - fadeHalf;
+    const int hi = loopHi - fadeHalf;
+
+    const int travel = GD.loopDirection * (GD.ratio < 0 ? -1 : 1);
+    const bool pastLoop = travel > 0 ? GD.samplePos > hi : GD.samplePos < lo;
+    if (!GD.isInLoop && !pastLoop)
+        return;
+
+    const auto clamped = std::clamp(GD.samplePos, lo, hi);
+    if (clamped != GD.samplePos)
+    {
+        GD.samplePos = clamped;
+        GD.sampleSubPos = 0;
+    }
+}
+
 template <int loopValue>
 void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 {

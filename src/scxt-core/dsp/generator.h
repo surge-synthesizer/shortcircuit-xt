@@ -204,5 +204,18 @@ typedef void (*GeneratorFPtr)(GeneratorState *__restrict, GeneratorIO *__restric
 GeneratorFPtr GetFPtrGeneratorSample(bool isStereo, bool isFloat, bool loopActive, bool loopForward,
                                      bool loopWhileGated);
 
+/*
+ * Move a running generator onto new bounds, between blocks, issues #1613 and #2496.
+ *
+ * The loop flags are the ones its GeneratorFPtr was picked with. A playhead that the new
+ * loop leaves stranded - one that was looping, or one now past the loop in the direction it
+ * travels - is clamped onto the nearest turn point, so dragging a marker across it scrubs.
+ * The playback bounds need no rule: the termination test ends a voice whose end marker
+ * moved behind it.
+ */
+void retargetGeneratorBounds(GeneratorState &GD, int32_t playbackLo, int32_t playbackHi,
+                             int32_t loopLo, int32_t loopHi, bool loopActive, bool loopForward,
+                             bool loopWhileGated);
+
 } // namespace scxt::dsp
 #endif // SCXT_SRC_DSP_GENERATOR_H

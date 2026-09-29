@@ -72,6 +72,13 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     std::array<dsp::GeneratorIO, maxGeneratorsPerVoice> GDIO;
     std::array<dsp::GeneratorFPtr, maxGeneratorsPerVoice> Generator;
     std::array<bool, maxGeneratorsPerVoice> monoGenerator{};
+
+    // the loop flags each Generator was picked with, which a live edit must not outrun
+    struct GeneratorLoopFlags
+    {
+        bool active{false}, forward{true}, whileGated{false};
+    };
+    std::array<GeneratorLoopFlags, maxGeneratorsPerVoice> generatorLoopFlags{};
     bool allGeneratorsMono{};
     int16_t numGeneratorsActive{0};
 
@@ -247,6 +254,12 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
      * Initialize the dsp generator state
      */
     void initializeGenerator();
+
+    /**
+     * Carry the zone's current sample and loop points, fade and curve onto the running
+     * generators. Audio thread, between blocks.
+     */
+    void refreshGeneratorBounds();
 
     /**
      * Calculates the pitch of this voice with modulation, MPE, tuning etc in

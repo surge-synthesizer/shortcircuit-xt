@@ -1119,17 +1119,19 @@ void Voice::initializeGenerator()
         useOversampling = useOversampling || fastEnoughToAlias;
 
         Generator[currGen] = nullptr;
+        generatorLoopFlags[currGen] = {loopActive,
+                                       variantData.loopDirection == engine::Zone::FORWARD_ONLY,
+                                       variantData.loopMode == engine::Zone::LOOP_WHILE_GATED ||
+                                           variantData.loopMode == engine::Zone::LOOP_COUNT};
 
         monoGenerator[currGen] = s->channels == 1;
         allGeneratorsMono = allGeneratorsMono && monoGenerator[currGen] &&
                             (variantData.pan < 0.01f && variantData.pan > -0.01f);
+        // loop count is done by gating on loopCount < maxLoopCount
+        const auto &flags = generatorLoopFlags[currGen];
         Generator[currGen] = dsp::GetFPtrGeneratorSample(
-            !monoGenerator[currGen], s->bitDepth == sample::Sample::BD_F32, loopActive,
-            variantData.loopDirection == engine::Zone::FORWARD_ONLY,
-
-            // We doo loop count by gating on loopCount < maxLoopCount
-            variantData.loopMode == engine::Zone::LOOP_WHILE_GATED ||
-                variantData.loopMode == engine::Zone::LOOP_COUNT);
+            !monoGenerator[currGen], s->bitDepth == sample::Sample::BD_F32, flags.active,
+            flags.forward, flags.whileGated);
         SCLOG_IF(generatorInitialization,
                  "Generator : " << SCD(currGen) << SCD((size_t)Generator[currGen]));
         SCLOG_IF(generatorInitialization, "     SMP  : " << SCD(GDIO[currGen].sampleDataL)
@@ -1150,6 +1152,38 @@ void Voice::initializeGenerator()
      */
     for (int i = 0; i < numGeneratorsActive; ++i)
         GD[i].blockSize = blockSize * (useOversampling ? 2 : 1);
+}
+
+void Voice::refreshGeneratorBounds()
+{
+    if (sampleIndex < 0 || numGeneratorsActive <= 0)
+        return;
+
+    auto [firstIndex, lastIndex] = sampleIndexRange();
+    // a unison stack which changed size is not the one these generators were built from
+    if (firstIndex < 0 || lastIndex - firstIndex != numGeneratorsActive)
+        return;
+
+    for (auto idx = firstIndex; idx < lastIndex; ++idx)
+    {
+        auto gidx = idx - firstIndex;
+        auto &s = zone->samplePointers[idx];
+        if (!s || s->isMissingPlaceholder || (int)s->sampleLengthPerChannel != GDIO[gidx].waveSize)
+            continue;
+
+        const auto &vd = zone->variantData.variants[idx];
+        const auto &flags = generatorLoopFlags[gidx];
+        auto &gd = GD[gidx];
+
+        gd.loopFade = vd.loopFade;
+        gd.loopCurve = vd.loopCurve;
+
+        auto last = (int64_t)s->sampleLengthPerChannel;
+        auto pos = [last](int64_t v) { return (int32_t)std::clamp(v, (int64_t)0, last); };
+        dsp::retargetGeneratorBounds(gd, pos(vd.startSample), pos(vd.endSample), pos(vd.startLoop),
+                                     pos(vd.endLoop), flags.active, flags.forward,
+                                     flags.whileGated);
+    }
 }
 
 float Voice::calculateVoicePitch()

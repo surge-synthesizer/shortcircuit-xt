@@ -329,6 +329,7 @@ struct ZoneVariantsSpec : ZoneMemberSpec<&engine::Zone::variantData>
         auto &z = zoneAt(e, a);
         for (auto i = 0U; i < maxVariantsPerZone; ++i)
             z.attachToSample(*(e.getSampleManager()), i, engine::Zone::NONE);
+        z.refreshVoiceGeneratorBounds();
     }
 };
 

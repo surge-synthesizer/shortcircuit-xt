@@ -2527,4 +2527,188 @@ TEST_CASE("A key eight octaves above the root keeps its full ratio", "[generator
     REQUIRE(twoOctaves > 0);
     REQUIRE(f.ratioForKey(96) == Approx(64.0 * twoOctaves).epsilon(1e-5));
 }
+
+namespace
+{
+void retargetLoop(LoopedGenerator &g, int lo, int hi)
+{
+    dsp::retargetGeneratorBounds(g.GD, g.GD.playbackLowerBound, g.GD.playbackUpperBound, lo, hi,
+                                 true, g.forward, g.whileGated);
+}
+
+// the ramp reads a sample or two behind the playhead
+void requireRampWithin(const std::vector<float> &out, size_t from, int lo, int hi)
+{
+    auto [mn, mx] = std::minmax_element(out.begin() + from, out.end());
+    REQUIRE(*mn > (lo - 3) * 1e-3f);
+    REQUIRE(*mx < (hi + 2) * 1e-3f);
+}
+} // namespace
+
+TEST_CASE("A loop end dragged behind a looping playhead scrubs it back", "[generator]")
+{
+    auto forward = GENERATE(true, false);
+    INFO("forward " << forward);
+
+    LoopedGenerator g(4096, 1024, 512, forward);
+    g.fillWithRamp();
+    g.render(256);
+    REQUIRE(g.GD.isInLoop);
+    REQUIRE(g.GD.samplePos > 1200);
+
+    retargetLoop(g, 1024, 1100);
+    REQUIRE(g.GD.samplePos == 1100);
+    requireRampWithin(g.render(2048), 16, 1024, 1100);
+}
+
+TEST_CASE("A loop start dragged past a looping playhead scrubs it forward", "[generator]")
+{
+    auto forward = GENERATE(true, false);
+    INFO("forward " << forward);
+
+    LoopedGenerator g(4096, 1024, 512, forward);
+    g.fillWithRamp();
+    g.render(256);
+    REQUIRE(g.GD.isInLoop);
+
+    retargetLoop(g, 1400, 1536);
+    REQUIRE(g.GD.samplePos == 1400);
+    requireRampWithin(g.render(2048), 16, 1400, 1536);
+}
+
+TEST_CASE("A loop moved behind a playhead that has not reached it pulls it in", "[generator]")
+{
+    LoopedGenerator g(4096, 1024, 512);
+    g.fillWithRamp();
+    g.GD.samplePos = 100;
+    g.render(512);
+    REQUIRE(!g.GD.isInLoop);
+
+    retargetLoop(g, 200, 400);
+    REQUIRE(g.GD.samplePos == 400);
+    requireRampWithin(g.render(2048), 16, 200, 400);
+}
+
+TEST_CASE("A loop moved ahead of a playhead leaves it to arrive", "[generator]")
+{
+    LoopedGenerator g(4096, 1024, 512);
+    g.fillWithRamp();
+    g.GD.samplePos = 100;
+    g.render(64);
+    auto before = g.GD.samplePos;
+
+    retargetLoop(g, 2000, 2400);
+    REQUIRE(g.GD.samplePos == before);
+}
+
+TEST_CASE("A released gated loop playing out ignores a moved loop", "[generator]")
+{
+    LoopedGenerator g(4096, 1024, 512);
+    g.fillWithRamp();
+    g.whileGated = true;
+    g.render(256);
+    g.GD.gated = false;
+    g.render(512);
+    REQUIRE(!g.GD.isInLoop);
+    auto before = g.GD.samplePos;
+
+    retargetLoop(g, 1024, 1100);
+    REQUIRE(g.GD.samplePos == before);
+}
+
+TEST_CASE("An end point dragged behind the playhead ends the sample", "[generator]")
+{
+    auto reverse = GENERATE(false, true);
+    INFO("reverse " << reverse);
+
+    LoopedGenerator g(4096, 0, 4096);
+    g.fillWithRamp();
+    if (reverse)
+    {
+        g.GD.samplePos = 4096;
+        g.GD.loopDirection = -1;
+        g.GD.directionAtOutset = -1;
+    }
+    auto gen = dsp::GetFPtrGeneratorSample(false, true, false, true, false);
+    for (int i = 0; i < 64; ++i)
+        gen(&g.GD, &g.IO);
+    REQUIRE(!g.GD.isFinished);
+
+    if (reverse)
+        dsp::retargetGeneratorBounds(g.GD, 3500, 4096, 0, 0, false, true, false);
+    else
+        dsp::retargetGeneratorBounds(g.GD, 0, 500, 0, 0, false, true, false);
+    gen(&g.GD, &g.IO);
+    REQUIRE(g.GD.isFinished);
+}
+
+namespace
+{
+scxt::voice::Voice *playingVoice(scxt::engine::Zone *zone)
+{
+    for (int i = 0; i < (int)scxt::maxVoices; ++i)
+    {
+        auto *v = zone->voiceWeakPointers[i];
+        if (v && v->isVoiceAssigned && v->isVoicePlaying)
+            return v;
+    }
+    return nullptr;
+}
+} // namespace
+
+TEST_CASE("A zone's loop points reach a playing voice", "[generator]")
+{
+    RootZeroZone f;
+    auto &var = f.zone->variantData.variants[0];
+    var.loopActive = true;
+    var.startLoop = var.startSample + 1000;
+    var.endLoop = var.startSample + 3000;
+    var.loopFade = 16;
+    var.loopCurve = 0.5f;
+
+    f.eng->processNoteOnEvent(0, 0, 0, -1, 1.f, 0.f);
+    for (int i = 0; i < 200; ++i)
+        f.eng->processAudio();
+
+    auto voice = playingVoice(f.zone);
+    REQUIRE(voice);
+    REQUIRE(voice->GD[0].isInLoop);
+
+    var.endLoop = var.startLoop + 64;
+    var.loopFade = 8;
+    var.loopCurve = 1.25f;
+    f.zone->refreshVoiceGeneratorBounds();
+
+    REQUIRE(voice->GD[0].loopUpperBound == var.endLoop);
+    REQUIRE(voice->GD[0].loopFade == 8);
+    REQUIRE(voice->GD[0].loopCurve == Approx(1.25f));
+
+    for (int i = 0; i < 100; ++i)
+    {
+        f.eng->processAudio();
+        INFO("block " << i);
+        REQUIRE(voice->GD[0].samplePos >= var.startLoop);
+        REQUIRE(voice->GD[0].samplePos <= var.endLoop);
+    }
+}
+
+TEST_CASE("A zone's end point behind a playing voice finishes its sample", "[generator]")
+{
+    RootZeroZone f;
+    auto &var = f.zone->variantData.variants[0];
+
+    f.eng->processNoteOnEvent(0, 0, 0, -1, 1.f, 0.f);
+    for (int i = 0; i < 100; ++i)
+        f.eng->processAudio();
+
+    auto voice = playingVoice(f.zone);
+    REQUIRE(voice);
+    REQUIRE(!voice->GD[0].isFinished);
+    REQUIRE(voice->GD[0].samplePos > var.startSample + 100);
+
+    var.endSample = var.startSample + 100;
+    f.zone->refreshVoiceGeneratorBounds();
+    f.eng->processAudio();
+    REQUIRE(voice->GD[0].isFinished);
+}
 } // namespace generator_test

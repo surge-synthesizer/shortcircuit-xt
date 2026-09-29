@@ -170,6 +170,16 @@ void Zone::endParkedVoices()
     }
 }
 
+void Zone::refreshVoiceGeneratorBounds()
+{
+    for (int i = 0; i < activeVoices; ++i)
+    {
+        auto v = voiceWeakPointers[i];
+        if (v && v->isVoiceAssigned)
+            v->refreshGeneratorBounds();
+    }
+}
+
 void Zone::removeVoice(voice::Voice *v)
 {
     for (auto &nv : voiceWeakPointers)
