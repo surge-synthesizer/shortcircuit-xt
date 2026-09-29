@@ -489,15 +489,16 @@ template <bool OS> bool Voice::processWithOS()
                 auto &variantData = zone->variantData.variants[currIndex];
                 if (s)
                 {
-                    // reverse starts at the top of the region, so the offset walks back
-                    // down from there rather than up from the bottom. It used to just be
-                    // skipped, leaving Start Pos modulation inert on a reversed zone.
+                    // negative amounts reach outside the region, as far as the sample goes
                     auto offset =
                         (int64_t)(*endpoints->sampleTarget.startPosP * s->sampleLengthPerChannel);
                     auto lo = (int64_t)GD[currGen].playbackLowerBound;
                     auto hi = (int64_t)GD[currGen].playbackUpperBound;
-                    GD[currGen].samplePos = (int32_t)std::clamp(
-                        variantData.playReverse ? hi - offset : lo + offset, lo, hi);
+                    auto last = (int64_t)s->sampleLengthPerChannel - 1;
+                    GD[currGen].samplePos =
+                        (int32_t)(variantData.playReverse
+                                      ? std::clamp(hi - offset, lo, last)
+                                      : std::clamp(lo + offset, (int64_t)0, hi));
                 }
                 currGen++;
             }

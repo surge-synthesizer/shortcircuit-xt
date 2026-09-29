@@ -1147,19 +1147,18 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
         if constexpr (!loopActive) // these constexprs just remind us not to refactor to break ce
         {
             // No loop, simple case: Play the bounds then done.
-            if (SamplePos > GD->playbackUpperBound)
+            // only the bound ahead ends play; start mod may begin outside the one behind
+            if (Travel == 1 && SamplePos > GD->playbackUpperBound)
             {
                 SamplePos = GD->playbackUpperBound;
                 SampleSubPos = 0;
-                if (Travel == 1)
-                    IsFinished = true;
+                IsFinished = true;
             }
-            if (SamplePos < GD->playbackLowerBound)
+            if (Travel == -1 && SamplePos < GD->playbackLowerBound)
             {
                 SamplePos = GD->playbackLowerBound;
                 SampleSubPos = 0;
-                if (Travel == -1)
-                    IsFinished = true;
+                IsFinished = true;
             }
         }
         else if constexpr (!loopWhileGated && loopForward)
@@ -1231,19 +1230,18 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             }
             else
             {
-                if (SamplePos > GD->playbackUpperBound)
+                // only the bound ahead ends play; start mod may begin outside the one behind
+                if (Travel == 1 && SamplePos > GD->playbackUpperBound)
                 {
                     SamplePos = GD->playbackUpperBound;
                     SampleSubPos = 0;
-                    if (Travel == 1)
-                        IsFinished = true;
+                    IsFinished = true;
                 }
-                if (SamplePos < GD->playbackLowerBound)
+                if (Travel == -1 && SamplePos < GD->playbackLowerBound)
                 {
                     SamplePos = GD->playbackLowerBound;
                     SampleSubPos = 0;
-                    if (Travel == -1)
-                        IsFinished = true;
+                    IsFinished = true;
                 }
             }
         }
@@ -1258,19 +1256,18 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             else
             {
                 // TODO : Careful with releasing a loop while going backwards
-                if (SamplePos > GD->playbackUpperBound)
+                // only the bound ahead ends play; start mod may begin outside the one behind
+                if (Travel == 1 && SamplePos > GD->playbackUpperBound)
                 {
                     SamplePos = GD->playbackUpperBound;
                     SampleSubPos = 0;
-                    if (Travel == 1)
-                        IsFinished = true;
+                    IsFinished = true;
                 }
-                if (SamplePos < GD->playbackLowerBound)
+                if (Travel == -1 && SamplePos < GD->playbackLowerBound)
                 {
                     SamplePos = GD->playbackLowerBound;
                     SampleSubPos = 0;
-                    if (Travel == -1)
-                        IsFinished = true;
+                    IsFinished = true;
                 }
             }
         }
