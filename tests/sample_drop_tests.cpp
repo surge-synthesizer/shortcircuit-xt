@@ -565,8 +565,7 @@ struct SoundingZone
     {
         auto bypass = eng->getMessageController()->threadingChecker.bypassChecksInScope();
         REQUIRE(eng->autoLoadSampleIntoLeadZone(p));
-        // one block to pick the swap up off the queue, one for the zone to end its voices
-        eng->processAudio();
+        // one block to pick the swap up off the queue
         eng->processAudio();
     }
 
@@ -627,4 +626,47 @@ TEST_CASE("Browser auto-load with no zone to load into does nothing", "[drop][au
 
     REQUIRE(f.part().getGroups().empty());
     REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize);
+}
+
+TEST_CASE("A zone whose voices end outside the group's walk leaves the group", "[drop][voices]")
+{
+    SoundingZone f;
+    f.autoLoad(f.wav("Fast.wav", 48000));
+    f.startNoteAndGetRate(60);
+
+    auto &part = *f.eng->getPatch()->getPart(0);
+    auto &group = *part.getGroup(0);
+    REQUIRE(group.activeZones == 1);
+    REQUIRE(part.activeGroups == 1);
+
+    f.zone->terminateAllVoices();
+    REQUIRE(!f.zone->isActive());
+    REQUIRE(group.activeZones == 0);
+
+    // the group still has to fade out and hand itself back to the part
+    for (int i = 0; i < 200; ++i)
+        f.eng->processAudio();
+    REQUIRE(part.activeGroups == 0);
+
+    REQUIRE(f.startNoteAndGetRate(60) == Approx(1 << 24).epsilon(0.001));
+    REQUIRE(group.activeZones == 1);
+    REQUIRE(part.activeGroups == 1);
+}
+
+TEST_CASE("A variant drop onto a sounding zone leaves the group", "[drop][variants][voices]")
+{
+    SoundingZone f;
+    f.autoLoad(f.wav("Fast.wav", 48000));
+    f.startNoteAndGetRate(60);
+
+    auto &group = *f.eng->getPatch()->getPart(0)->getGroup(0);
+    REQUIRE(group.activeZones == 1);
+
+    {
+        auto bypass = f.eng->getMessageController()->threadingChecker.bypassChecksInScope();
+        f.eng->loadSamplesIntoZone({{1, f.wav("Slow.wav", 24000), std::nullopt}}, 0, 0, 0);
+        f.eng->processAudio();
+    }
+    REQUIRE(!f.zone->isActive());
+    REQUIRE(group.activeZones == 0);
 }

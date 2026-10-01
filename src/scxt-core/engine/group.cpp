@@ -240,6 +240,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
 
     auto oAZ = activeZones;
     rescanWeakRefs = 0;
+    inZoneWalk = true;
     for (int i = 0; i < activeZones; ++i)
     {
         auto z = activeZoneWeakRefs[i];
@@ -291,6 +292,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
         }
     }
 
+    inZoneWalk = false;
     if (rescanWeakRefs)
     {
         postZoneTraversalRemoveHandler();
@@ -460,6 +462,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
                 SCLOG_IF(ringout, "Group terminated due to ringout");
                 mUILag.instantlySnap();
                 parentPart->removeActiveGroup();
+                heldByPart = false;
                 silenceMax = 0;
                 blocksToTerminate = -1;
                 terminationSequence = -1;
@@ -495,8 +498,11 @@ void Group::addActiveZone(engine::Zone *zwp)
 
     if (activeZones == 0)
     {
-        parentPart->addActiveGroup();
+        // a group still fading out is already counted
+        if (!heldByPart)
+            parentPart->addActiveGroup();
         attack();
+        heldByPart = true;
     }
     // Important we do this *after* the attack since it allows
     // isActive to be accurate with processor ringout
@@ -507,7 +513,24 @@ void Group::addActiveZone(engine::Zone *zwp)
 void Group::removeActiveZone(engine::Zone *zwp)
 {
     assert(activeZones);
-    rescanWeakRefs++;
+    if (inZoneWalk)
+    {
+        // the walk indexes this list, so it compacts once the walk is done
+        rescanWeakRefs++;
+        return;
+    }
+
+    for (uint32_t i = 0; i < activeZones; ++i)
+    {
+        if (activeZoneWeakRefs[i] == zwp)
+        {
+            activeZoneWeakRefs[i] = activeZoneWeakRefs[activeZones - 1];
+            activeZones--;
+            break;
+        }
+    }
+    if (activeZones == 0)
+        onLastActiveZoneGone();
 }
 
 void Group::postZoneTraversalRemoveHandler()
@@ -530,11 +553,14 @@ void Group::postZoneTraversalRemoveHandler()
     }
     assert(rescanWeakRefs == 0);
     if (activeZones == 0)
-    {
-        silenceMax = 0;
-        silenceTime = 0;
-        updateSilenceMax();
-    }
+        onLastActiveZoneGone();
+}
+
+void Group::onLastActiveZoneGone()
+{
+    silenceMax = 0;
+    silenceTime = 0;
+    updateSilenceMax();
 }
 
 engine::Engine *Group::getEngine()
@@ -898,7 +924,8 @@ bool Group::isActive() const
     auto ir = inSilenceCheck();
     auto et = isInTerminationFadeout();
 
-    return haz || hae || ir || et;
+    // a group whose zones went quiet outside its own process still has to fade and hand back
+    return haz || hae || ir || et || heldByPart;
 }
 
 void Group::onRoutingChanged() { rePrepareAndBindGroupMatrix(); }
