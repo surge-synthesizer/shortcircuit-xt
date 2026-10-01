@@ -312,7 +312,8 @@ void SCXTEditor::idle()
                     v.part == currentLeadZoneSelection->part &&
                     v.zone == currentLeadZoneSelection->zone)
                 {
-                    editScreen->addSamplePlaybackPosition(v.sample, v.samplePos);
+                    for (int16_t s = 0; s < v.numSamples; ++s)
+                        editScreen->addSamplePlaybackPosition(v.sample[s], v.samplePos[s]);
                 }
             }
         }
