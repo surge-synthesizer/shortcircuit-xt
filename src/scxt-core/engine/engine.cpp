@@ -445,8 +445,20 @@ bool Engine::processAudio()
                 itm.part = v->zonePath.part;
                 itm.group = v->zonePath.group;
                 itm.zone = v->zonePath.zone;
-                itm.sample = v->sampleIndex;
-                itm.samplePos = v->GD[0].samplePos;
+                int16_t ns{0};
+                auto [firstIndex, lastIndex] = v->sampleIndexRange();
+                if (v->sampleIndex >= 0 && firstIndex >= 0)
+                {
+                    // a stack resized under the voice still only has the generators it began with
+                    ns = std::min({(int16_t)(lastIndex - firstIndex), v->numGeneratorsActive,
+                                   (int16_t)maxVariantsPerZone});
+                    for (int16_t g = 0; g < ns; ++g)
+                    {
+                        itm.sample[g] = (int16_t)(firstIndex + g);
+                        itm.samplePos[g] = v->GD[g].samplePos;
+                    }
+                }
+                itm.numSamples = ns;
                 itm.midiNote = v->originalMidiKey;
                 itm.midiChannel = v->channel;
                 itm.gated = v->isGated;

@@ -614,9 +614,14 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         struct VoiceDisplayStateItem
         {
             std::atomic<bool> active{false};
-            std::atomic<size_t> part, group, zone, sample;
+            std::atomic<size_t> part, group, zone;
 
-            std::atomic<int64_t> samplePos{}, midiNote{-1}, midiChannel{-1};
+            // one entry per sounding variant; a unison voice plays several at once
+            std::atomic<int16_t> numSamples{0};
+            std::array<std::atomic<int16_t>, maxVariantsPerZone> sample{};
+            std::array<std::atomic<int64_t>, maxVariantsPerZone> samplePos{};
+
+            std::atomic<int64_t> midiNote{-1}, midiChannel{-1};
             std::atomic<bool> gated{false};
         };
         std::atomic<int32_t> voiceCount;
