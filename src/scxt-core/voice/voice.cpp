@@ -314,11 +314,12 @@ void Voice::foldGeneratorIntoOutput(int gidx, int variantIndex, float *loutL, fl
     else
     {
         mech::accumulate_from_to<genBlock>(loutL, output[0]);
-        if (!monoGenerator[gidx] && !panOverridesMono)
+        // a pan has already written the right side, mono or not
+        if (!monoGenerator[gidx] || panOverridesMono)
         {
             mech::accumulate_from_to<genBlock>(loutR, output[1]);
         }
-        else if (!allGeneratorsMono || panOverridesMono)
+        else if (!allGeneratorsMono)
         {
             mech::accumulate_from_to<genBlock>(loutL, output[1]);
         }
