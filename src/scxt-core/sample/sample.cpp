@@ -237,6 +237,18 @@ bool Sample::loadFromSF2(const fs::path &p, sf2::File *f, int sampleIndex)
         sfsample->ReleaseSampleData();
         return true;
     }
+    else if (frameSize == 6 && sfsample->GetChannelCount() == 2 &&
+             (sfsample->SampleType == sf2::Sample::LEFT_SAMPLE ||
+              sfsample->SampleType == sf2::Sample::RIGHT_SAMPLE))
+    {
+        // libgig writes this side into its half of a 6 byte stereo frame
+        channels = 1;
+        auto buf = sfsample->LoadSampleData();
+        auto offset = (sfsample->SampleType == sf2::Sample::RIGHT_SAMPLE) ? 3 : 0;
+        load_data_i24(0, (uint8_t *)(buf.pStart) + offset, buf.Size / 6, frameSize);
+        sfsample->ReleaseSampleData();
+        return true;
+    }
 
     std::ostringstream oss;
     oss << "Unable to load sample from SF2. " << SCD(sfsample->GetFrameSize())
