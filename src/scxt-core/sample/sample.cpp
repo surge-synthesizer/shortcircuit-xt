@@ -25,6 +25,7 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <cstring>
 #include <sstream>
 #include "sst/basic-blocks/mechanics/endian-ops.h"
 #include "infrastructure/file_map_view.h"
@@ -38,6 +39,14 @@ namespace scxt::sample
 
 // Fine in a cpp
 using namespace sst::basic_blocks::mechanics;
+
+// sample data sits wherever the file put it, so it may not be aligned
+template <typename T> static T readUnalignedSampleValue(const void *p)
+{
+    T r;
+    memcpy(&r, p, sizeof(T));
+    return r;
+}
 
 Sample::~Sample()
 {
@@ -492,7 +501,8 @@ bool Sample::load_data_i16(int channel, void *data, unsigned int samplesize, uns
 
     for (int i = 0; i < samplesize; i++)
     {
-        sampledata[i] = endian_read_int16LE(*(short *)((char *)data + i * stride));
+        sampledata[i] =
+            endian_read_int16LE(readUnalignedSampleValue<short>((char *)data + i * stride));
     }
     return true;
 }
@@ -504,7 +514,8 @@ bool Sample::load_data_i16BE(int channel, void *data, unsigned int samplesize, u
 
     for (int i = 0; i < samplesize; i++)
     {
-        sampledata[i] = endian_read_int16BE(*(short *)((char *)data + i * stride));
+        sampledata[i] =
+            endian_read_int16BE(readUnalignedSampleValue<short>((char *)data + i * stride));
     }
     return true;
 }
@@ -515,7 +526,7 @@ bool Sample::load_data_i32(int channel, void *data, unsigned int samplesize, uns
 
     for (int i = 0; i < samplesize; i++)
     {
-        int x = endian_read_int32LE(*(int *)((char *)data + i * stride));
+        int x = endian_read_int32LE(readUnalignedSampleValue<int>((char *)data + i * stride));
         sampledata[i] = (4.6566128730772E-10f) * (float)x;
     }
     return true;
@@ -528,7 +539,7 @@ bool Sample::load_data_i32BE(int channel, void *data, unsigned int samplesize, u
 
     for (int i = 0; i < samplesize; i++)
     {
-        int x = endian_read_int32BE(*(int *)((char *)data + i * stride));
+        int x = endian_read_int32BE(readUnalignedSampleValue<int>((char *)data + i * stride));
         sampledata[i] = (4.6566128730772E-10f) * (float)x;
     }
     return true;
@@ -573,7 +584,7 @@ bool Sample::load_data_f32(int channel, void *data, unsigned int samplesize, uns
 
     for (int i = 0; i < samplesize; i++)
     {
-        sampledata[i] = (*(float *)((char *)data + i * stride));
+        sampledata[i] = readUnalignedSampleValue<float>((char *)data + i * stride);
     }
     return true;
 }
@@ -585,7 +596,7 @@ bool Sample::load_data_f64(int channel, void *data, unsigned int samplesize, uns
 
     for (int i = 0; i < samplesize; i++)
     {
-        sampledata[i] = (float)(*(double *)((char *)data + i * stride));
+        sampledata[i] = (float)(readUnalignedSampleValue<double>((char *)data + i * stride));
     }
     return true;
 }

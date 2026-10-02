@@ -140,6 +140,8 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     }
     int nsamples = sst::basic_blocks::mechanics::swap_endian_32(cc.numSampleFrames);
     int bitdepth = sst::basic_blocks::mechanics::swap_endian_16(cc.sampleSize);
+    // depths like 12 bit are stored left-justified in the next whole byte
+    int bytesPerSample = (bitdepth + 7) / 8;
 
     // load sample data
     mf.SeekI(wr);
@@ -168,7 +170,7 @@ bool Sample::parse_aiff(void *data, size_t filesize)
     // that declares more frames than the chunk holds makes the load_data_*
     // helpers read past the mapped buffer. Clamp to what the SSND data can
     // actually supply before SetMeta allocates and the loaders fill it.
-    unsigned int bytesPerFrame = (unsigned int)channels * (bitdepth / 8);
+    unsigned int bytesPerFrame = (unsigned int)channels * bytesPerSample;
     if (bytesPerFrame > 0)
     {
         size_t maxFrames = audioBytes / bytesPerFrame;
@@ -187,7 +189,7 @@ bool Sample::parse_aiff(void *data, size_t filesize)
         return false;
     }
 
-    if (bitdepth == 32)
+    if (bytesPerSample == 4)
     {
         if (channels == 2)
         {
@@ -197,7 +199,7 @@ bool Sample::parse_aiff(void *data, size_t filesize)
         else
             load_data_i32BE(0, loaddata, nsamples, 4);
     }
-    else if (bitdepth == 24)
+    else if (bytesPerSample == 3)
     {
         if (channels == 2)
         {
@@ -207,7 +209,7 @@ bool Sample::parse_aiff(void *data, size_t filesize)
         else
             load_data_i24BE(0, loaddata, nsamples, 3);
     }
-    else if (bitdepth == 16)
+    else if (bytesPerSample == 2)
     {
         if (channels == 2)
         {
@@ -217,7 +219,7 @@ bool Sample::parse_aiff(void *data, size_t filesize)
         else
             load_data_i16BE(0, loaddata, nsamples, 2);
     }
-    else if (bitdepth == 8)
+    else if (bytesPerSample == 1)
     {
         if (channels == 2)
         {
