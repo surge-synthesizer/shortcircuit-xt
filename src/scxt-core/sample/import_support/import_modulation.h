@@ -121,6 +121,7 @@ struct ImportedModRoute
 {
     ImportedSource source;
     std::optional<ImportedSource> via{}; // optional secondary source (multiplied)
+    std::optional<modulation::ModulationCurves::CurveIdentifier> curve{}; // applied to source * via
     ImportedTarget target;
     float depth{0.f};
     bool active{true};

@@ -530,3 +530,61 @@ TEST_CASE("Only shape and trigger mode resend display data on an int16 mod stora
     REQUIRE(!scxt::modulation::modStorageInt16EditRestructuresPanel(
         offsetOf(ms.stepLfoStorage.repeat)));
 }
+
+TEST_CASE("Curve 01 remappers", "[modulation]")
+{
+    using MC = scxt::modulation::ModulationCurves;
+    MC::initializeCurves();
+
+    for (auto id : {'r01e', 'r01E', 'r01l', 'r01L'})
+    {
+        INFO("curve " << id);
+        auto f = MC::getCurveOperator(id);
+        REQUIRE(f);
+        REQUIRE(f(0.f) == Approx(0.f).margin(1e-6));
+        REQUIRE(f(1.f) == Approx(1.f).margin(1e-6));
+        REQUIRE(f(-0.3f) == Approx(-f(0.3f)));
+        REQUIRE(f(4.f) == Approx(1.f).margin(1e-6));
+        REQUIRE(f(-4.f) == Approx(-1.f).margin(1e-6));
+    }
+
+    auto se = MC::getCurveOperator('r01e'), fe = MC::getCurveOperator('r01E');
+    auto sl = MC::getCurveOperator('r01l'), fl = MC::getCurveOperator('r01L');
+
+    // early curves sit above the diagonal, late below, and fast bends further than slow
+    REQUIRE(fe(0.5f) > se(0.5f));
+    REQUIRE(se(0.5f) > 0.5f);
+    REQUIRE(sl(0.5f) < 0.5f);
+    REQUIRE(fl(0.5f) < sl(0.5f));
+
+    // fast late rise is the SF2 concave curve, -5/12 log10(1-x), away from the very top
+    for (auto x : {0.1f, 0.25f, 0.5f, 0.75f, 0.9f})
+        REQUIRE(fl(x) == Approx(-(5.f / 12.f) * std::log10(1.f - x)).margin(0.01));
+
+    for (auto id : {'f01e', 'f01E', 'f01l', 'f01L'})
+    {
+        INFO("curve " << id);
+        auto f = MC::getCurveOperator(id);
+        REQUIRE(f);
+        REQUIRE(f(0.f) == Approx(1.f).margin(1e-6));
+        REQUIRE(f(1.f) == Approx(0.f).margin(1e-6));
+        REQUIRE(f(-0.3f) == Approx(f(0.3f)));
+        REQUIRE(f(4.f) == Approx(0.f).margin(1e-6));
+        REQUIRE(f(-4.f) == Approx(0.f).margin(1e-6));
+    }
+
+    // each fall is its rise mirrored, so early falls drop below the diagonal
+    auto sef = MC::getCurveOperator('f01e'), fef = MC::getCurveOperator('f01E');
+    auto slf = MC::getCurveOperator('f01l'), flf = MC::getCurveOperator('f01L');
+    for (auto x : {0.1f, 0.5f, 0.9f})
+    {
+        REQUIRE(sef(x) == Approx(sl(1.f - x)));
+        REQUIRE(fef(x) == Approx(fl(1.f - x)));
+        REQUIRE(slf(x) == Approx(se(1.f - x)));
+        REQUIRE(flf(x) == Approx(fe(1.f - x)));
+    }
+    REQUIRE(fef(0.5f) < sef(0.5f));
+    REQUIRE(sef(0.5f) < 0.5f);
+    REQUIRE(slf(0.5f) > 0.5f);
+    REQUIRE(flf(0.5f) > slf(0.5f));
+}

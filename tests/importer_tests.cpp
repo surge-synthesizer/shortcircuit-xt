@@ -183,6 +183,151 @@ TEST_CASE("Import SF2 intersects preset and instrument ranges", "[importer]")
     CHECK(zones[2]->mapping.rootKey == 84);
 }
 
+// sf2_fields.sf2 has one instrument with a global zone and three zones:
+//   lo  (key 0-59):   exclusive class 1, loop-until-release, scale tuning 50,
+//                     start offset 100, vibrato LFO at 5Hz delayed 0.5s,
+//                     mod env sustain 50%, keynum-to-decay, velocity -> cutoff,
+//                     and the default pitch bend modulator
+//   hi  (key 60-127): exclusive class 1, mod LFO to volume, overrides the
+//                     global CC1 -> vibrato modulator
+//   all (key 0-127):  no exclusive class, the spec's default velocity curve given explicitly
+// The global zone carries CC1 -> vibrato; the preset zone carries CC11 -> attenuation.
+TEST_CASE("Import SF2 generators and modulators", "[importer]")
+{
+    auto p = fixturePath("sf2_fields.sf2");
+    INFO("fixture=" << p.string());
+    REQUIRE(fs::exists(p));
+
+    ImporterFixture f;
+    f.loadSample(p);
+
+    using MEnd = scxt::voice::modulation::MatrixEndpoints;
+    using MidiS = MEnd::Sources::MIDISources;
+    using KeyS = MEnd::Sources::KeyAndPitchSources;
+    using CCs = decltype(MEnd::Sources::midiCCSources);
+    using EGT = MEnd::EGTarget;
+    using MT = MEnd::MappingTarget;
+
+    auto routesFrom = [](scxt::engine::Zone *z, auto src) {
+        std::vector<const scxt::voice::modulation::Matrix::RoutingTable::Routing *> res;
+        for (const auto &row : z->routingTable.routes)
+            if (row.source.has_value() && *row.source == src)
+                res.push_back(&row);
+        return res;
+    };
+
+    auto &part = f.part0();
+    REQUIRE(part.getGroups().size() == 3);
+
+    scxt::engine::Zone *lo{nullptr}, *hi{nullptr}, *all{nullptr};
+    for (auto &g : part.getGroups())
+    {
+        for (auto &z : g->getZones())
+        {
+            auto &kr = z->mapping.keyboardRange;
+            if (kr.keyStart == 0 && kr.keyEnd == 59)
+                lo = z.get();
+            else if (kr.keyStart == 60)
+                hi = z.get();
+            else
+                all = z.get();
+        }
+    }
+    REQUIRE(lo);
+    REQUIRE(hi);
+    REQUIRE(all);
+
+    // a file's own velocity to attenuation replaces the default velocity response
+    CHECK(lo->parentGroup->outputInfo.velocitySensitivity == Approx(0.75f));
+    CHECK(hi->parentGroup->outputInfo.velocitySensitivity == Approx(0.75f));
+    CHECK(all->parentGroup->outputInfo.velocitySensitivity == Approx(0.f));
+
+    // reversed concave velocity is the fast early fall, 96dB at velocity 0
+    auto allVel = routesFrom(all, MidiS::velocityA);
+    REQUIRE(allVel.size() == 1);
+    CHECK(*allVel[0]->target == MT::ampA);
+    CHECK(allVel[0]->curve == scxt::modulation::ModulationCurves::CurveIdentifier{'f01E'});
+    CHECK(allVel[0]->depth == Approx(-96.f / 72.f));
+
+    // each exclusive-class zone has its own group so they can choke each other
+    CHECK(lo->parentGroup != hi->parentGroup);
+    CHECK(lo->parentGroup->outputInfo.exclusiveGroup > 0);
+    CHECK(lo->parentGroup->outputInfo.exclusiveGroup == hi->parentGroup->outputInfo.exclusiveGroup);
+    CHECK(all->parentGroup->outputInfo.exclusiveGroup == 0);
+    CHECK(part.configuration.numExclusiveGroups == 1);
+
+    auto &lov = lo->variantData.variants[0];
+    CHECK(lo->mapping.tracking == Approx(0.5f));
+    CHECK(lov.loopActive);
+    CHECK(lov.loopMode == scxt::engine::Zone::LoopMode::LOOP_WHILE_GATED);
+    CHECK(hi->variantData.variants[0].loopMode == scxt::engine::Zone::LoopMode::LOOP_DURING_VOICE);
+    CHECK(lov.startSample == 100);
+    CHECK(lo->egStorage[1].s == Approx(0.5f));
+
+    auto &vib = lo->modulatorStorage[0];
+    CHECK(vib.modulatorShape == scxt::modulation::ModulatorStorage::LFO_TRI);
+    CHECK(vib.rate == Approx(std::log2(5.f)).margin(0.01f));
+    CHECK(vib.curveLfoStorage.useenv);
+
+    // v2p -50 cents and the inherited CC1 -> vibrato at 100 cents
+    auto loVib = routesFrom(lo, MEnd::Sources::lfoSource(0));
+    REQUIRE(loVib.size() == 2);
+    bool sawDirect{false}, sawWheel{false};
+    for (auto *r : loVib)
+    {
+        CHECK(*r->target == MT::pitchOffsetA);
+        if (r->sourceVia.has_value())
+        {
+            sawWheel = true;
+            CHECK(*r->sourceVia == MidiS::modWheelA);
+            CHECK(r->depth == Approx(1.f / 192.f));
+        }
+        else
+        {
+            sawDirect = true;
+            CHECK(r->depth == Approx(-0.5f / 192.f));
+        }
+    }
+    CHECK(sawDirect);
+    CHECK(sawWheel);
+
+    // velocity, max to min, lowers the cutoff by up to two octaves
+    auto loVel = routesFrom(lo, MidiS::velocityA);
+    REQUIRE(loVel.size() == 1);
+    CHECK(loVel[0]->target->whichProcessorFPTarget(0) == 0);
+    CHECK(loVel[0]->curve == scxt::modulation::ModulationCurves::CurveIdentifier{'1-x '});
+    CHECK(loVel[0]->depth == Approx(-24.f / 130.f));
+
+    // positive keynum-to-decay shortens the decay going up the keyboard
+    auto loKey = routesFrom(lo, KeyS::keyTrackA);
+    REQUIRE(loKey.size() == 1);
+    CHECK(*loKey[0]->target == EGT::decayA(0));
+    CHECK(loKey[0]->depth < 0.f);
+
+    // scxt bends natively so the default pitch bend modulator is dropped
+    CHECK(routesFrom(lo, MidiS::pbpm1A).empty());
+
+    // the preset-level CC11 -> attenuation reaches every zone
+    for (auto *z : {lo, hi, all})
+    {
+        auto cc11 = routesFrom(z, CCs::ccSourceA(11));
+        REQUIRE(cc11.size() == 1);
+        CHECK(*cc11[0]->target == MT::ampA);
+        CHECK(cc11[0]->depth == Approx(-10.f / 72.f));
+    }
+
+    // hi replaces the global CC1 -> vibrato with its own rather than adding one
+    auto hiVib = routesFrom(hi, MEnd::Sources::lfoSource(0));
+    REQUIRE(hiVib.size() == 1);
+    CHECK(*hiVib[0]->sourceVia == MidiS::modWheelA);
+    CHECK(hiVib[0]->depth == Approx(2.f / 192.f));
+
+    auto hiModLfo = routesFrom(hi, MEnd::Sources::lfoSource(1));
+    REQUIRE(hiModLfo.size() == 1);
+    CHECK(*hiModLfo[0]->target == MT::ampA);
+    CHECK(hiModLfo[0]->depth == Approx(6.f / 72.f));
+}
+
 TEST_CASE("Import AKAI fixture", "[importer]")
 {
     auto p = fixturePath("akai_s6k/POWER SECT S.AKP");

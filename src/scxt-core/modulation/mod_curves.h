@@ -28,6 +28,7 @@
 #ifndef SCXT_SRC_SCXT_CORE_MODULATION_MOD_CURVES_H
 #define SCXT_SRC_SCXT_CORE_MODULATION_MOD_CURVES_H
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <thread>
@@ -74,6 +75,7 @@ struct ModulationCurves
         add('x3  ', "", "x^3", [](auto x) { return x * x * x; });
         add('unip', "", "(x+1)/2", [](auto x) { return (x + 1.f) / 2.f; });
         add('bip ', "", "2x - 1", [](auto x) { return x * 2.f - 1.f; });
+        add('1-x ', "", "1 - x", [](auto x) { return 1.f - x; });
         add('absx', "Rectifiers", "|x|", [](auto x) { return std::fabs(x); });
         add('hwpo', "Rectifiers", "max(x,0)", [](auto x) { return std::max(x, 0.f); });
         add('hwne', "Rectifiers", "min(x,0)", [](auto x) { return std::min(x, 0.f); });
@@ -129,6 +131,41 @@ struct ModulationCurves
 
         add('d.1 ', "Scale", "x / 10", [](auto x) { return x * 0.1; });
         add('d.01', "Scale", "x / 100", [](auto x) { return x * 0.01; });
+
+        add('r01e', "Curve 01 remappers", "slow early rise",
+            [](auto x) { return remap01(x, remapSlowBend, true); });
+        add('r01E', "Curve 01 remappers", "fast early rise",
+            [](auto x) { return remap01(x, remapFastBend, true); });
+        add('r01l', "Curve 01 remappers", "slow late rise",
+            [](auto x) { return remap01(x, remapSlowBend, false); });
+        add('r01L', "Curve 01 remappers", "fast late rise",
+            [](auto x) { return remap01(x, remapFastBend, false); });
+        add('f01e', "Curve 01 remappers", "slow early fall",
+            [](auto x) { return fall01(x, remapSlowBend, true); });
+        add('f01E', "Curve 01 remappers", "fast early fall",
+            [](auto x) { return fall01(x, remapFastBend, true); });
+        add('f01l', "Curve 01 remappers", "slow late fall",
+            [](auto x) { return fall01(x, remapSlowBend, false); });
+        add('f01L', "Curve 01 remappers", "fast late fall",
+            [](auto x) { return fall01(x, remapFastBend, false); });
+    }
+
+    // 10^-6/5 and 10^-12/5; fast late rise is the SF2 concave curve
+    static constexpr float remapSlowBend{0.0630957344f}, remapFastBend{0.0039810717f};
+
+    // log bend through (0,0) and (1,1), odd symmetric and saturating outside +/-1
+    static float remap01(float x, float eps, bool early)
+    {
+        auto ax = std::min(std::fabs(x), 1.f);
+        auto u = early ? 1.f - ax : ax;
+        auto y = std::log(1.f - (1.f - eps) * u) / std::log(eps);
+        return std::copysign(early ? 1.f - y : y, x);
+    }
+
+    // the rise mirrored, so (0,1) to (1,0); even in x and 0 outside +/-1
+    static float fall01(float x, float eps, bool early)
+    {
+        return remap01(1.f - std::min(std::fabs(x), 1.f), eps, !early);
     }
 
     static std::function<float(float)> getCurveOperator(CurveIdentifier id)

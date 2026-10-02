@@ -144,6 +144,7 @@ int addImportedModRoute(engine::Zone &zone, ImporterContext &ctx, const Imported
         else
             ctx.software_error("addImportedModRoute", "could not resolve via");
     }
+    row.curve = r.curve;
 
     TG tgt{};
     switch (r.target.kind)
