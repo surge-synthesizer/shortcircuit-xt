@@ -730,6 +730,8 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
              SC_TO({
                  auto &zmd = to;
                  findOrSet(v, "rootKey", 60, zmd.rootKey);
+                 // saved patches may hold an out of range root key
+                 zmd.rootKey = std::clamp(zmd.rootKey, (int16_t)0, (int16_t)127);
                  findIf(v, {"keyR", "keyboardRange"}, zmd.keyboardRange);
                  findIf(v, {"velR", "velocityRange"}, zmd.velocityRange);
                  findIf(v, "pbDown", zmd.pbDown);

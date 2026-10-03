@@ -796,8 +796,8 @@ void Zone::applyChange(ChangeDimension dim, int deltaX, int deltaY, Zone::ZoneMa
 
         if (iDim & MOVE_ROOTKEY)
         {
-            // This line moves root key when moving.
-            md.rootKey += deltaX;
+            // root key can sit outside the key range, so the range check doesn't bound it
+            md.rootKey = std::clamp((int16_t)(md.rootKey + deltaX), (int16_t)0, (int16_t)127);
         }
     }
     else
