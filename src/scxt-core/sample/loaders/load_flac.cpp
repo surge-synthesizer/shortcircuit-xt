@@ -75,45 +75,32 @@ template <class T> class SampleFLACDecoderBase : public T
             return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         const unsigned n = (unsigned)std::min<int64_t>(frame->header.blocksize, avail);
 
-        if (bitDepth == 16 && sample->bitDepth == Sample::BD_I16)
+        if (bitDepth >= 4 && bitDepth <= 16 && sample->bitDepth == Sample::BD_I16)
         {
+            const int32_t scale = 1 << (16 - bitDepth);
             for (int c = 0; c < sample->channels; ++c)
             {
                 auto sdata = sample->GetSamplePtrI16(c);
                 for (unsigned i = 0; i < n; i++)
                 {
-                    sdata[i + streamPos] = (FLAC__int16)buffer[c][i];
+                    sdata[i + streamPos] = (int16_t)(buffer[c][i] * scale);
                 }
             }
             streamPos += n;
             return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         }
-        else if (bitDepth == 24 && sample->bitDepth == Sample::BD_F32)
+        else if (bitDepth > 16 && bitDepth <= 32 && sample->bitDepth == Sample::BD_F32)
         {
+            const double scale = 1.0 / (double)(1LL << (bitDepth - 1));
             for (int c = 0; c < sample->channels; ++c)
             {
                 auto sdata = sample->GetSamplePtrF32(c);
                 for (unsigned i = 0; i < n; i++)
                 {
-                    sdata[i + streamPos] = buffer[c][i] * 1.f / (1 << 24);
+                    sdata[i + streamPos] = (float)(buffer[c][i] * scale);
                 }
             }
             streamPos += n;
-
-            return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
-        }
-        else if (bitDepth == 32 && sample->bitDepth == Sample::BD_F32)
-        {
-            for (int c = 0; c < sample->channels; ++c)
-            {
-                auto sdata = sample->GetSamplePtrF32(c);
-                for (unsigned i = 0; i < n; i++)
-                {
-                    sdata[i + streamPos] = (double)(buffer[c][i] * 1.0) / (1LL << 32);
-                }
-            }
-            streamPos += n;
-
             return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
         }
 
@@ -156,14 +143,14 @@ template <class T> class SampleFLACDecoderBase : public T
                 // instead of writing through a null GetSamplePtr.
                 SCLOG_IF(warnings, "Unsupported FLAC channel count " << channels);
             }
-            else if (bps == 16)
+            else if (bps >= 4 && bps <= 16)
             {
                 for (unsigned c = 0; c < channels; ++c)
                     sample->allocateI16(c, total_samples);
                 isValid = true;
-                bitDepth = 16;
+                bitDepth = bps;
             }
-            else if (bps == 24 || bps == 32)
+            else if (bps > 16 && bps <= 32)
             {
                 for (unsigned c = 0; c < channels; ++c)
                     sample->allocateF32(c, total_samples);

@@ -93,6 +93,13 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         mf.Read(&SubFormat, sizeof(loaders::GUID));
     }
 
+    bool isPCM = wh.wFormatTag == WAVE_FORMAT_PCM ||
+                 (wh.wFormatTag == WAVE_FORMAT_EXTENSIBLE && SubFormat == KSDATAFORMAT_SUBTYPE_PCM);
+    // PCM depths like 12 bit are stored left-justified in the next whole byte
+    int containerBits = (uint16_t)wh.wBitsPerSample;
+    if (isPCM)
+        containerBits = ((containerBits + 7) / 8) * 8;
+
     mf.SeekI(wr);
     if (!mf.riff_descend('data', &datasize))
     {
@@ -110,7 +117,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
     // 256MB (a few minutes of hi-res stereo).
     unsigned int WaveDataSamples =
         (unsigned int)((uint64_t)8 * WaveDataSize /
-                       ((uint64_t)(uint16_t)wh.wBitsPerSample * (uint16_t)wh.nChannels));
+                       ((uint64_t)containerBits * (uint16_t)wh.nChannels));
 
     /* get pointer to the sampledata */
 
@@ -127,10 +134,9 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         return false;
     }
 
-    if (wh.wFormatTag == WAVE_FORMAT_PCM ||
-        (wh.wFormatTag == WAVE_FORMAT_EXTENSIBLE && SubFormat == KSDATAFORMAT_SUBTYPE_PCM))
+    if (isPCM)
     {
-        if (wh.wBitsPerSample == 8)
+        if (containerBits == 8)
         {
             if (channels == 2)
             {
@@ -140,7 +146,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             else
                 load_data_ui8(0, loaddata, WaveDataSamples, 1);
         }
-        else if (wh.wBitsPerSample == 16)
+        else if (containerBits == 16)
         {
             if (channels == 2)
             {
@@ -150,7 +156,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             else
                 load_data_i16(0, loaddata, WaveDataSamples, 2);
         }
-        else if (wh.wBitsPerSample == 24)
+        else if (containerBits == 24)
         {
             if (channels == 2)
             {
@@ -160,7 +166,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
             else
                 load_data_i24(0, loaddata, WaveDataSamples, 3);
         }
-        else if (wh.wBitsPerSample == 32)
+        else if (containerBits == 32)
         {
             if (channels == 2)
             {
@@ -173,7 +179,7 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
         else
         {
             ADD_ERROR_MESSAGE("Failed to load: " << SCD(wh.wBitsPerSample)
-                                                 << " must be 8, 16, 24 or 32 for PCM");
+                                                 << " must be at most 32 for PCM");
             return false;
         }
     }
