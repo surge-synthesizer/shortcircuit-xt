@@ -449,18 +449,16 @@ void GroupSettingsCard::showGlideRateModeMenu()
                   w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideRateMode);
               });
     p.addSeparator();
-    auto addGlideFrom = [&p, this](const std::string &label, engine::Group::GlideFrom gf) {
-        p.addItem(label, true, info.glideFrom == gf,
-                  [w = juce::Component::SafePointer(this), gf]() {
-                      if (!w)
-                          return;
-                      w->info.glideFrom = gf;
-                      w->rebuildFromInfo();
-                      w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideFrom);
-                  });
-    };
-    addGlideFrom("Glide from Gated Voice", engine::Group::GLIDE_FROM_GATED);
-    addGlideFrom("Glide from Sounding Voice", engine::Group::GLIDE_FROM_SOUNDING);
+    auto fingered = info.glideFrom == engine::Group::GLIDE_FROM_GATED;
+    p.addItem("Fingered Portamento", true, fingered,
+              [w = juce::Component::SafePointer(this), fingered]() {
+                  if (!w)
+                      return;
+                  w->info.glideFrom = fingered ? engine::Group::GLIDE_FROM_SOUNDING
+                                               : engine::Group::GLIDE_FROM_GATED;
+                  w->rebuildFromInfo();
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideFrom);
+              });
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
