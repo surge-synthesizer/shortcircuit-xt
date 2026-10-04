@@ -571,3 +571,73 @@ TEST_CASE("SCL/KBM - a part transpose survives a legato move", "[tuning][legato]
     CHECK((int)v->originalMidiKey == 66 + transpose);
     CHECK(v->pitchFloat == Approx(polyPitch).margin(1e-3));
 }
+
+// GH #1971
+TEST_CASE("Skip tuning for part - the part sounds 12-TET under a scale", "[tuning]")
+{
+    RetunedGroup tuned{scxt::engine::Group::PlayMode::POLY, stretchedScale()};
+    RetunedGroup skipped{scxt::engine::Group::PlayMode::POLY, stretchedScale()};
+    skipped.eng->getPatch()->getPart(0)->configuration.force12TET = true;
+
+    for (auto k : {58, 61, 66, 70})
+    {
+        REQUIRE(tuned.pitchFor(k) == Approx(sixEdoPitch(k)).margin(1e-3));
+        tuned.noteOff(k);
+
+        skipped.noteOn(k);
+        auto *v = skipped.soleVoice();
+        REQUIRE(v != nullptr);
+        CHECK((int)v->key == k);
+        CHECK(v->pitchFloat == Approx(k).margin(1e-3));
+        skipped.noteOff(k);
+    }
+}
+
+TEST_CASE("Skip tuning for part - a legato move stays 12-TET", "[tuning][legato]")
+{
+    RetunedGroup legato{scxt::engine::Group::PlayMode::LEGATO, stretchedScale()};
+    legato.eng->getPatch()->getPart(0)->configuration.force12TET = true;
+
+    REQUIRE(legato.pitchFor(61) == Approx(61).margin(1e-3));
+    CHECK(legato.pitchFor(66) == Approx(66).margin(1e-3));
+}
+
+TEST_CASE("Skip tuning for part - other parts keep the engine tuning", "[tuning]")
+{
+    RetunedGroup tuned{scxt::engine::Group::PlayMode::POLY, stretchedScale()};
+    tuned.eng->getPatch()->getPart(1)->configuration.force12TET = true;
+
+    REQUIRE(tuned.pitchFor(66) == Approx(sixEdoPitch(66)).margin(1e-3));
+}
+
+TEST_CASE("Skip tuning for part - survives a stream round trip", "[tuning]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    eng->getPatch()->getPart(2)->configuration.force12TET = true;
+
+    auto saved = scxt::json::streamEngineState(*eng);
+
+    std::unique_ptr<scxt::engine::Engine> reloaded(makeEngine());
+    {
+        auto bg = reloaded->getMessageController()->threadingChecker.bypassChecksInScope();
+        scxt::json::unstreamEngineState(*reloaded, saved);
+    }
+    REQUIRE(reloaded->getPatch()->getPart(2)->configuration.force12TET);
+    REQUIRE(!reloaded->getPatch()->getPart(0)->configuration.force12TET);
+}
+
+TEST_CASE("Skip tuning for part - retuner ignores the scale when forced", "[tuning]")
+{
+    scxt::tuning::MidikeyRetuner retuner;
+    RetuneTable table;
+    std::string err;
+    REQUIRE(scxt::tuning::buildRetuneTable(stretchedScale(), "", table, err));
+    retuner.setSCLKBMTable(table);
+    retuner.setTuningMode(scxt::tuning::MidikeyRetuner::SCL_KBM);
+
+    REQUIRE(retuner.remapKeyTo(0, 66) == 72);
+    REQUIRE(retuner.remapKeyTo(0, 66, true) == 66);
+    REQUIRE(retuner.offsetKeyBy(0, 66, true) == Approx(0.f));
+    REQUIRE(retuner.getRepetitionInterval() == 6);
+    REQUIRE(retuner.getRepetitionInterval(true) == 12);
+}

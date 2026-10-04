@@ -688,7 +688,8 @@ int Part::getChannelBasedTransposition(int16_t channel) const
     {
         shift = channel;
     }
-    auto ri = parentPatch->parentEngine->midikeyRetuner.getRepetitionInterval();
+    auto ri =
+        parentPatch->parentEngine->midikeyRetuner.getRepetitionInterval(configuration.force12TET);
     return shift * ri;
 }
 

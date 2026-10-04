@@ -117,6 +117,9 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
         float pan{0.f};
         int32_t transpose{0};
         float tuning{0.f};
+
+        // ignore the engine tuning (MTS-ESP, SCL/KBM) for this part
+        bool force12TET{false};
     } configuration;
 
     struct PartNames
