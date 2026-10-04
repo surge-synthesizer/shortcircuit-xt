@@ -148,12 +148,15 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         FROM_START,
         FROM_END
     } dragFrom[2]; // key and velocity
-    bool tooltipActive{false};
 
     std::vector<juce::Rectangle<float>> velocityHotZones, keyboardHotZones, bothHotZones,
         lastSelectedZone;
 
     juce::Point<float> firstMousePos{0.f, 0.f}, lastMousePos{0.f, 0.f};
+
+    // zones under the marquee, oldest touch first
+    std::vector<selection::SelectionManager::ZoneAddress> marqueeTouchOrder;
+    void updateMarqueeTouches(const juce::Rectangle<float> &rz);
 
     void showZoneMenu(const selection::SelectionManager::ZoneAddress &za);
     void showMappingNonZoneMenu(const juce::Point<int> &);
@@ -176,7 +179,6 @@ struct ZoneLayoutDisplay : juce::Component, HasEditor
         resetLeadZoneBounds();
         repaint();
     }
-    void updateTooltipContents(bool andShow, const juce::Point<int> &pos);
     void updateCacheFromDisplay();
 
     juce::Rectangle<float> drawZone(juce::Graphics &g, const engine::Part::zoneMappingItem_t &z,

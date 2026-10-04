@@ -115,10 +115,17 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
                         return v <= w->mappingView.keyboardRange.keyEnd;
                     });
 
-    auto addDeltas = [this](auto &to, auto &wid, auto dir) {
+    auto isKeyDim = [](auto dr) {
+        return dr == engine::Zone::ChangeDimension::KEY_RANGE_START ||
+               dr == engine::Zone::ChangeDimension::KEY_RANGE_END ||
+               dr == engine::Zone::ChangeDimension::KEY_FADE_START ||
+               dr == engine::Zone::ChangeDimension::KEY_FADE_END ||
+               dr == engine::Zone::ChangeDimension::MOVE_ROOTKEY;
+    };
+    auto addDeltas = [this, isKeyDim](auto &to, auto &wid, auto dir) {
         auto og = to->onGuiValueChanged;
         to->onGuiValueChanged = [dr = dir, w = juce::Component::SafePointer(wid.get()), og,
-                                 this](const auto &a) {
+                                 isKeyDim, this](const auto &a) {
             auto isDrag = true;
             auto isCtrl = false;
             if (w)
@@ -130,20 +137,13 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
             {
                 int d = a.value - a.prevValue;
                 int dx{0}, dy{0};
-                if (dr == engine::Zone::ChangeDimension::KEY_RANGE_START ||
-                    dr == engine::Zone::ChangeDimension::KEY_RANGE_END ||
-                    dr == engine::Zone::ChangeDimension::KEY_FADE_START ||
-                    dr == engine::Zone::ChangeDimension::KEY_FADE_END)
+                if (isKeyDim(dr))
                     dx = d;
                 else
                     dy = d;
                 auto res = applyDeltaToSelectedZones(dr, dx, dy, true);
 
-                if ((dr == engine::Zone::ChangeDimension::KEY_RANGE_START ||
-                     dr == engine::Zone::ChangeDimension::KEY_RANGE_END ||
-                     dr == engine::Zone::ChangeDimension::KEY_FADE_START ||
-                     dr == engine::Zone::ChangeDimension::KEY_FADE_END) &&
-                    (res == KEYRANGE_CHANGED))
+                if (isKeyDim(dr) && (res == KEYRANGE_CHANGED))
                     d = dx;
                 else if (res == VELOCITY_CHANGED)
                     d = dy;
@@ -159,10 +159,7 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
             {
                 int v = a.value;
                 int vx{0}, vy{0};
-                if (dr == engine::Zone::ChangeDimension::KEY_RANGE_START ||
-                    dr == engine::Zone::ChangeDimension::KEY_RANGE_END ||
-                    dr == engine::Zone::ChangeDimension::KEY_FADE_START ||
-                    dr == engine::Zone::ChangeDimension::KEY_FADE_END)
+                if (isKeyDim(dr))
                     vx = v;
                 else
                     vy = v;
@@ -180,6 +177,8 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
             sendToSerialization(cmsg::RequestZoneMapping({editor->selectedPart}));
         };
     };
+    addDeltas(intAttachments.RootKey, discreteTextEds.RootKey,
+              engine::Zone::ChangeDimension::MOVE_ROOTKEY);
     addDeltas(intAttachments.KeyStart, discreteTextEds.KeyStart,
               engine::Zone::ChangeDimension::KEY_RANGE_START);
 
@@ -375,7 +374,7 @@ void MappingDisplay::resized()
     glyphs.Level->setBounds(sp(135, 170, 16, 16));
     textEds.Level->setBounds(sp(153, 170, 48, 16));
 
-    labels.Tracking->setBounds(sp(30, 194, 83, 16));
+    labels.Tracking->setBounds(sp(30, 194, 53, 16));
     textEds.Tracking->setBounds(sp(83, 194, 40, 16));
     glyphs.Pan->setBounds(sp(135, 194, 16, 16));
     textEds.Pan->setBounds(sp(153, 194, 48, 16));
@@ -434,6 +433,14 @@ void MappingDisplay::showHamburgerMenu()
               [w = juce::Component::SafePointer(this), key, allow]() {
                   if (w)
                       w->editor->defaultsProvider.updateUserDefaultValue(key, !allow);
+              });
+
+    auto rkKey = infrastructure::DefaultKeys::moveRootKeyWithZone;
+    auto moveRK = (bool)editor->defaultsProvider.getUserDefaultValue(rkKey, true);
+    p.addItem("Move Root Key with Zone", true, moveRK,
+              [w = juce::Component::SafePointer(this), rkKey, moveRK]() {
+                  if (w)
+                      w->editor->defaultsProvider.updateUserDefaultValue(rkKey, !moveRK);
               });
 
     // the selected groups, else the lead zone's group
@@ -1090,7 +1097,7 @@ void MappingDisplay::adjustDeltasToMakeSureTheyWillFit(engine::Zone::ChangeDimen
     // but this true up helps us make sure fast mouse movements near
     // the edge get clamped appropriately
     auto iDim = (int)dim;
-    auto isMove = dim == engine::Zone::MOVE_CTR;
+    auto isMove = (iDim & engine::Zone::MOVE_CTR_NO_ROOTKEY) != 0;
     if (kr.keyStart + deltaX < 0 &&
         (isMove || (dim & engine::Zone::ChangeDimension::KEY_RANGE_START)))
         deltaX = -kr.keyStart;

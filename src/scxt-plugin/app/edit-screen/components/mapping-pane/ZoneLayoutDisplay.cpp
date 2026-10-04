@@ -133,7 +133,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
 
     if (!keyboardHotZones.empty() && keyboardHotZones[0].contains(e.position))
     {
-        updateTooltipContents(true, e.position.toInt());
         lastMousePos = e.position;
         mouseState = DRAG_KEY;
         dragFrom[0] = FROM_START;
@@ -141,7 +140,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     }
     if (!keyboardHotZones.empty() && keyboardHotZones[1].contains(e.position))
     {
-        updateTooltipContents(true, e.position.toInt());
         lastMousePos = e.position;
         mouseState = DRAG_KEY;
         dragFrom[0] = FROM_END;
@@ -150,7 +148,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
 
     if (!velocityHotZones.empty() && velocityHotZones[0].contains(e.position))
     {
-        updateTooltipContents(true, e.position.toInt());
         lastMousePos = e.position;
         mouseState = DRAG_VELOCITY;
         dragFrom[1] = FROM_END;
@@ -158,7 +155,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
     }
     if (!velocityHotZones.empty() && velocityHotZones[1].contains(e.position))
     {
-        updateTooltipContents(true, e.position.toInt());
         lastMousePos = e.position;
         mouseState = DRAG_VELOCITY;
         dragFrom[1] = FROM_START;
@@ -177,8 +173,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
                 dragFrom[0] = (idx == 1 || idx == 2) ? FROM_END : FROM_START;
                 dragFrom[1] = (idx < 2) ? FROM_END : FROM_START;
                 mouseState = DRAG_KEY_AND_VEL;
-                updateTooltipContents(true, e.position.toInt());
-
                 return;
             }
         }
@@ -190,8 +184,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
         {
             lastMousePos = e.position;
             mouseState = DRAG_SELECTED_ZONE;
-            updateTooltipContents(true, e.position.toInt());
-
             return;
         }
     }
@@ -249,7 +241,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
                 display->editor->doSelectionAction(nextZone, true, false, true);
                 lastMousePos = e.position;
                 mouseState = DRAG_SELECTED_ZONE;
-                updateTooltipContents(true, e.position.toInt());
             }
             else
             {
@@ -258,7 +249,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
                 display->editor->doSelectionAction(nextZone, true, true, true);
                 lastMousePos = e.position;
                 mouseState = DRAG_SELECTED_ZONE;
-                updateTooltipContents(true, e.position.toInt());
             }
         }
         else
@@ -268,7 +258,6 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
                 nextZone, true, !(e.mods.isCommandDown() || e.mods.isAltDown()), true);
             lastMousePos = e.position;
             mouseState = DRAG_SELECTED_ZONE;
-            updateTooltipContents(true, e.position.toInt());
         }
     }
     else
@@ -276,11 +265,11 @@ void ZoneLayoutDisplay::mouseDown(const juce::MouseEvent &e)
         if (e.mods.isCommandDown())
         {
             mouseState = CREATE_EMPTY_ZONE;
-            updateTooltipContents(true, e.position.toInt());
         }
         else
             mouseState = MULTI_SELECT;
         firstMousePos = e.position.toFloat();
+        marqueeTouchOrder.clear();
     }
 }
 
@@ -573,8 +562,12 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
         {
             return;
         }
-        auto res = display->applyDeltaToSelectedZones(engine::Zone::ChangeDimension::MOVE_CTR,
-                                                      deltaX, deltaY);
+        auto moveRK = (bool)editor->defaultsProvider.getUserDefaultValue(
+            infrastructure::DefaultKeys::moveRootKeyWithZone, true);
+        auto res = display->applyDeltaToSelectedZones(
+            moveRK ? engine::Zone::ChangeDimension::MOVE_CTR
+                   : engine::Zone::ChangeDimension::MOVE_CTR_NO_ROOTKEY,
+            deltaX, deltaY);
         if (res & MappingDisplay::KEYRANGE_CHANGED)
             lastMousePos.x = e.position.x;
         if (res & MappingDisplay::VELOCITY_CHANGED)
@@ -651,23 +644,31 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
     if (mouseState == MULTI_SELECT || mouseState == CREATE_EMPTY_ZONE)
     {
         lastMousePos = e.position.toFloat();
+        if (mouseState == MULTI_SELECT)
+            updateMarqueeTouches(juce::Rectangle<float>(firstMousePos, e.position));
         repaint();
     }
+}
 
-    if (tooltipActive)
+void ZoneLayoutDisplay::updateMarqueeTouches(const juce::Rectangle<float> &rz)
+{
+    for (const auto &z : display->summary)
     {
-        updateTooltipContents(false, e.position.toInt());
+        if (!editor->isAnyZoneFromGroupSelected(z.address.group))
+            continue;
+
+        auto pos = std::find(marqueeTouchOrder.begin(), marqueeTouchOrder.end(), z.address);
+        auto inside = rz.intersects(rectangleForZone(z));
+        if (inside && pos == marqueeTouchOrder.end())
+            marqueeTouchOrder.push_back(z.address);
+        else if (!inside && pos != marqueeTouchOrder.end())
+            marqueeTouchOrder.erase(pos);
     }
 }
 
 void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
 {
     setMouseCursor(juce::MouseCursor::NormalCursor);
-    if (tooltipActive)
-    {
-        editor->hideTooltip();
-        tooltipActive = false;
-    }
 
     if (isEditorInGroupMode() && !zoneEditsAllowedInGroupMode())
     {
@@ -681,35 +682,17 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
     {
         std::vector<selection::SelectionManager::SelectActionContents> actions;
 
-        auto rz = juce::Rectangle<float>(firstMousePos, e.position);
-        bool selectedLead{false};
-        if (display->editor->currentLeadZoneSelection.has_value())
-        {
-            const auto &sel = *(display->editor->currentLeadZoneSelection);
-            for (const auto &z : display->summary)
-            {
-                if (!(z.address == sel))
-                    continue;
-                if (rz.intersects(rectangleForZone(z)))
-                {
-                    selectedLead = true;
-                }
-            }
-        }
-        bool firstAsLead = !selectedLead && !e.mods.isShiftDown();
-        bool first = true;
-        for (const auto &z : display->summary)
-        {
-            if (!editor->isAnyZoneFromGroupSelected(z.address.group))
-                continue;
+        updateMarqueeTouches(juce::Rectangle<float>(firstMousePos, e.position));
 
-            if (rz.intersects(rectangleForZone(z)))
-            {
-                actions.push_back(display->editor->makeSelectActionContents(
-                    z.address, true, first && firstAsLead, first && firstAsLead));
-                first = false;
-            }
+        // the zone the marquee reached last leads, so it goes last and flagged
+        auto distinct = !e.mods.isShiftDown();
+        for (const auto &[idx, za] : sst::cpputils::enumerate(marqueeTouchOrder))
+        {
+            auto isLead = idx == marqueeTouchOrder.size() - 1;
+            actions.push_back(
+                display->editor->makeSelectActionContents(za, true, distinct && idx == 0, isLead));
         }
+        marqueeTouchOrder.clear();
         if (actions.empty())
         {
             display->editor->doSelectionAction(
@@ -1241,40 +1224,6 @@ void ZoneLayoutDisplay::labelZoneRectangle(juce::Graphics &g, const juce::Rectan
         g.setColour(col);
         ga.draw(g);
     }
-}
-
-void ZoneLayoutDisplay::updateTooltipContents(bool andShow, const juce::Point<int> &pos)
-{
-    if (!cacheLastZone.has_value())
-        return;
-
-    if (andShow)
-    {
-        juce::Timer::callAfterDelay(100, [pos, w = juce::Component::SafePointer(this)]() {
-            if (!w)
-                return;
-            if (w->tooltipActive)
-                w->editor->showTooltip(*w, pos);
-        });
-    }
-    else
-    {
-        editor->repositionTooltip(*this, pos);
-    }
-    tooltipActive = true;
-
-    sst::jucegui::components::ToolTip::Row velRow, keyRow;
-
-    // TODO: Format these as midi notes not note numbers
-    keyRow.leftAlignText = std::to_string(cacheLastZone->kr.keyStart);
-    keyRow.rightAlignText = std::to_string(cacheLastZone->kr.keyEnd);
-    keyRow.centerAlignText = "Key";
-
-    velRow.leftAlignText = std::to_string(cacheLastZone->vr.velStart);
-    velRow.rightAlignText = std::to_string(cacheLastZone->vr.velEnd);
-    velRow.centerAlignText = "Vel";
-
-    editor->setTooltipContents(cacheLastZone->name, {keyRow, velRow});
 }
 
 void ZoneLayoutDisplay::mappingWasReset()

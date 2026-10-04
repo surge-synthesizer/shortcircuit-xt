@@ -138,7 +138,22 @@ inline void configureUpdater(A &att, const typename A::payload_t &p, app::HasEdi
 {
     att.onGuiValueChanged = makeUpdater<M, A, ABase>(att, p, e, std::forward<Args>(args)...);
     configureBeginEdit<M>(att, e, std::forward<Args>(args)...);
-    e->wireErrorReporter(att);
+}
+
+// out of range numbers clamp to the range, anything else is refused
+inline std::optional<float> valueFromStringClamped(const datamodel::pmd &d, const std::string &s)
+{
+    std::string em;
+    if (auto r = d.valueFromString(s, em))
+        return r;
+
+    auto wide = d;
+    wide.minVal = std::numeric_limits<float>::lowest();
+    wide.maxVal = std::numeric_limits<float>::max();
+    auto r = wide.valueFromString(s, em);
+    if (!r.has_value() || !std::isfinite(*r))
+        return std::nullopt;
+    return std::clamp(*r, d.minVal, d.maxVal);
 }
 
 template <typename A, typename F> inline void addGuiStepBeforeSend(A &att, F preStep)
@@ -171,8 +186,6 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     std::function<bool(const PayloadDataAttachment &at)> isTemposynced{nullptr};
     // when set, widget begin-edit sends the tagged undo snapshot message
     std::function<void()> sendBeginEdit{nullptr};
-    // reports a user-visible error (title, message); set by configureUpdater
-    std::function<void(const std::string &, const std::string &)> onError{nullptr};
 
     PayloadDataAttachment(const datamodel::pmd &cd,
                           std::function<void(const PayloadDataAttachment &at)> oGVC, ValueType &v)
@@ -281,7 +294,8 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     }
 
     std::function<std::optional<float>(const std::string &)> stringToValue{nullptr};
-    void setValueAsString(const std::string &s) override
+    void setValueAsString(const std::string &s) override { trySetValueAsString(s); }
+    bool trySetValueAsString(const std::string &s) override
     {
         if (description.supportsStringConversion)
         {
@@ -291,24 +305,14 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
                 if (f.has_value())
                 {
                     setValueFromGUI(*f);
-                    return;
+                    return true;
                 }
             }
-            std::string em;
-            auto res = description.valueFromString(s, em);
-            if (res.has_value())
-            {
-                setValueFromGUI(*res);
-                return;
-            }
-            else
-            {
-                if (onError)
-                    onError(label + ": Invalid Value", em);
-                else
-                    SCLOG_IF(debug, em);
-                return;
-            }
+            auto res = valueFromStringClamped(description, s);
+            if (!res.has_value())
+                return false;
+            setValueFromGUI(*res);
+            return true;
         }
         if (stringToValue)
         {
@@ -316,10 +320,11 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
             if (f.has_value())
             {
                 setValueFromGUI(*f);
-                return;
+                return true;
             }
         }
         Continuous::setValueAsString(s);
+        return true;
     }
     void setValueFromModel(const float &f) override
     {
@@ -377,6 +382,7 @@ template <typename Under> struct DiscreteFromFloatAdapterAttachment : sst::juceg
     std::string getValueAsStringFor(int i) const override { return value.getValueAsStringFor(i); }
     std::string getValueAsString() const override { return value.getValueAsString(); }
     void setValueAsString(const std::string &s) override { value.setValueAsString(s); }
+    bool trySetValueAsString(const std::string &s) override { return value.trySetValueAsString(s); }
     int getMin() const override { return (int)std::round(value.getMin()); }
     int getMax() const override { return (int)std::round(value.getMax()); }
 
@@ -405,8 +411,6 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     ValueType prevValue;
     std::string label;
     std::function<void(const onGui_t &at)> onGuiValueChanged;
-    // reports a user-visible error (title, message); set by configureUpdater
-    std::function<void(const std::string &, const std::string &)> onError{nullptr};
     // when set, widget begin-edit sends the tagged undo snapshot message
     std::function<void()> sendBeginEdit{nullptr};
 
@@ -497,25 +501,16 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
     }
 
     std::function<std::optional<float>(const std::string &)> stringToValue{nullptr};
-    void setValueAsString(const std::string &s) override
+    void setValueAsString(const std::string &s) override { trySetValueAsString(s); }
+    bool trySetValueAsString(const std::string &s) override
     {
         if (description.supportsStringConversion)
         {
-            std::string em;
-            auto res = description.valueFromString(s, em);
-            if (res.has_value())
-            {
-                setValueFromGUI((int)std::round(*res));
-                return;
-            }
-            else
-            {
-                if (onError)
-                    onError(label + ": Invalid Value", em);
-                else
-                    SCLOG_IF(debug, em);
-                return;
-            }
+            auto res = valueFromStringClamped(description, s);
+            if (!res.has_value())
+                return false;
+            setValueFromGUI((int)std::round(*res));
+            return true;
         }
         if (stringToValue)
         {
@@ -523,10 +518,11 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
             if (f.has_value())
             {
                 setValueFromGUI((int)std::round(*f));
-                return;
+                return true;
             }
         }
         sst::jucegui::data::Discrete::setValueAsString(s);
+        return true;
     }
 
     void andThenOnGui(std::function<void(const DiscretePayloadDataAttachment &)> f)

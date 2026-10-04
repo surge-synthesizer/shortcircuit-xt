@@ -61,12 +61,6 @@ struct HasEditor
     template <typename W, typename A> void setupIntWidget(W *widget, const A &attachment);
 
     template <typename P, typename A> void addSubscription(const P &, A &);
-
-    // shows a user-visible error overlay; non-template shim over SCXTEditor::displayError
-    void reportError(const std::string &title, const std::string &message) const;
-
-    // wires an attachment's onError (if it has one) to reportError
-    template <typename A> void wireErrorReporter(A &att);
 };
 } // namespace scxt::ui::app
 #endif // SHORTCIRCUIT_HASEDITOR_H

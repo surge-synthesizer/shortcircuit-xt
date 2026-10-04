@@ -330,5 +330,127 @@ TEST_CASE("A key range edit still refuses a gesture the selection cannot take", 
     }
 }
 
+TEST_CASE("A root key delta shifts every selected zone", "[mapping]")
+{
+    ThreeZones t;
+
+    // roots are 50, 51, 52
+    t.f.send(
+        cmsg::ApplyZoneDelta({false, false, 0, (int)Zone::ChangeDimension::MOVE_ROOTKEY, 5, 0}));
+
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(t.zone(z).mapping.rootKey == 55 + z);
+    }
+    // and nothing else moves with it
+    REQUIRE(t.zone(0).mapping.keyboardRange.keyStart == 48);
+    REQUIRE(t.zone(2).mapping.keyboardRange.keyEnd == 83);
+}
+
+TEST_CASE("A root key delta clamps per zone at the keyboard edge", "[mapping]")
+{
+    ThreeZones t;
+
+    t.f.send(
+        cmsg::ApplyZoneDelta({false, false, 0, (int)Zone::ChangeDimension::MOVE_ROOTKEY, 76, 0}));
+
+    REQUIRE(t.zone(0).mapping.rootKey == 126);
+    REQUIRE(t.zone(1).mapping.rootKey == 127);
+    REQUIRE(t.zone(2).mapping.rootKey == 127);
+}
+
+TEST_CASE("An absolute root key sets every selected zone", "[mapping]")
+{
+    ThreeZones t;
+
+    t.f.send(
+        cmsg::ApplyZoneDelta({true, false, 0, (int)Zone::ChangeDimension::MOVE_ROOTKEY, 40, 0}));
+    for (int z = 0; z < 3; ++z)
+        REQUIRE(t.zone(z).mapping.rootKey == 40);
+
+    // out of range is refused outright
+    t.f.send(
+        cmsg::ApplyZoneDelta({true, false, 0, (int)Zone::ChangeDimension::MOVE_ROOTKEY, 140, 0}));
+    for (int z = 0; z < 3; ++z)
+        REQUIRE(t.zone(z).mapping.rootKey == 40);
+}
+
+TEST_CASE("A root key delta is one undo entry", "[mapping][undo]")
+{
+    ThreeZones t;
+    auto depthBefore = t.f.engine().undoManager.undoStackSize();
+
+    t.f.send(
+        cmsg::ApplyZoneDelta({false, false, 0, (int)Zone::ChangeDimension::MOVE_ROOTKEY, -3, 0}));
+    REQUIRE(t.f.engine().undoManager.undoStackSize() == depthBefore + 1);
+
+    t.f.sendUndo();
+    for (int z = 0; z < 3; ++z)
+        REQUIRE(t.zone(z).mapping.rootKey == 50 + z);
+}
+
+TEST_CASE("Moving a zone can leave the root key behind", "[mapping]")
+{
+    ThreeZones t;
+
+    t.f.send(cmsg::ApplyZoneDelta(
+        {false, false, 0, (int)Zone::ChangeDimension::MOVE_CTR_NO_ROOTKEY, 4, 0}));
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(t.zone(z).mapping.keyboardRange.keyStart == 52 + 12 * z);
+        REQUIRE(t.zone(z).mapping.rootKey == 50 + z);
+    }
+
+    t.f.send(cmsg::ApplyZoneDelta({false, false, 0, (int)Zone::ChangeDimension::MOVE_CTR, 4, 0}));
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(t.zone(z).mapping.keyboardRange.keyStart == 56 + 12 * z);
+        REQUIRE(t.zone(z).mapping.rootKey == 54 + z);
+    }
+}
+
+TEST_CASE("A move without the root key still stops at the keyboard edge", "[mapping]")
+{
+    ThreeZones t;
+
+    // zone 2 ends at 83, so +60 would run it off the top
+    t.f.send(cmsg::ApplyZoneDelta(
+        {false, false, 0, (int)Zone::ChangeDimension::MOVE_CTR_NO_ROOTKEY, 60, 0}));
+    for (int z = 0; z < 3; ++z)
+        REQUIRE(t.zone(z).mapping.keyboardRange.keyStart == 48 + 12 * z);
+}
+
+TEST_CASE("Keytrack reads as a one place percentage", "[mapping]")
+{
+    ZMD m;
+    const auto &pmd = scxt::datamodel::describeValue(m, m.tracking);
+
+    REQUIRE(pmd.valueToString(1.f, {}).value_or("") == "100.0 %");
+    REQUIRE(pmd.valueToString(-0.5f, {}).value_or("") == "-50.0 %");
+
+    std::string em;
+    REQUIRE(pmd.valueFromString("75", em).value_or(-99.f) == Approx(0.75f));
+}
+
+TEST_CASE("A root key type-in refuses garbage", "[mapping]")
+{
+    ZMD m;
+    const auto &pmd = scxt::datamodel::describeValue(m, m.rootKey);
+    std::string em;
+
+    auto c4 = pmd.valueFromString("C4", em);
+    REQUIRE(c4.has_value());
+    REQUIRE(pmd.valueFromString("60", em).has_value());
+
+    for (auto s : {"F#%2", "abc", "Bogus", "%", "C#x"})
+    {
+        INFO(s);
+        REQUIRE(!pmd.valueFromString(s, em).has_value());
+    }
+}
+
 // keep the file unity-safe: this must not leak into a batched neighbour
 #undef MAP_OFF
