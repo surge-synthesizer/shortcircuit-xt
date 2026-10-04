@@ -110,21 +110,21 @@ int addImportedModRoute(engine::Zone &zone, ImporterContext &ctx, const Imported
         case ImportedSourceKind::MidiCC:
             if (is.index < 0 || is.index > 127)
                 return std::nullopt;
-            return CCs::ccSourceA((uint32_t)is.index);
+            return CCs::ccSId((uint32_t)is.index);
         case ImportedSourceKind::Velocity:
-            return MidiS::velocityA;
+            return MidiS::velocitySId;
         case ImportedSourceKind::ReleaseVelocity:
-            return MidiS::releaseVelocityA;
+            return MidiS::releaseVelocitySId;
         case ImportedSourceKind::ChannelAT:
-            return MidiS::chanATA;
+            return MidiS::chanATSId;
         case ImportedSourceKind::PolyAT:
-            return MidiS::polyATA;
+            return MidiS::polyATSId;
         case ImportedSourceKind::ModWheel:
-            return MidiS::modWheelA;
+            return MidiS::modWheelSId;
         case ImportedSourceKind::PitchBend:
-            return MidiS::pbpm1A;
+            return MidiS::pbpm1SId;
         case ImportedSourceKind::KeyTrack:
-            return KeyS::keyTrackA;
+            return KeyS::keyTrackSId;
         }
         return std::nullopt;
     };
@@ -150,7 +150,7 @@ int addImportedModRoute(engine::Zone &zone, ImporterContext &ctx, const Imported
     switch (r.target.kind)
     {
     case ImportedTargetKind::Pitch:
-        tgt = MEnd::MappingTarget::pitchOffsetA;
+        tgt = MEnd::MappingTarget::pitchOffsetTId;
         break;
     case ImportedTargetKind::FilterParam:
         tgt = MEnd::ProcessorTarget::floatParam(r.target.procSlot, r.target.paramIdx);
@@ -162,31 +162,31 @@ int addImportedModRoute(engine::Zone &zone, ImporterContext &ctx, const Imported
         switch ((EGWhich)r.target.paramIdx)
         {
         case EGWhich::Delay:
-            tgt = EGT::delayA(slot);
+            tgt = EGT::delayTId(slot);
             break;
         case EGWhich::Attack:
-            tgt = EGT::attackA(slot);
+            tgt = EGT::attackTId(slot);
             break;
         case EGWhich::Hold:
-            tgt = EGT::holdA(slot);
+            tgt = EGT::holdTId(slot);
             break;
         case EGWhich::Decay:
-            tgt = EGT::decayA(slot);
+            tgt = EGT::decayTId(slot);
             break;
         case EGWhich::Sustain:
-            tgt = EGT::sustainA(slot);
+            tgt = EGT::sustainTId(slot);
             break;
         case EGWhich::Release:
-            tgt = EGT::releaseA(slot);
+            tgt = EGT::releaseTId(slot);
             break;
         }
         break;
     }
     case ImportedTargetKind::ZonePan:
-        tgt = MEnd::MappingTarget::panA;
+        tgt = MEnd::MappingTarget::panTId;
         break;
     case ImportedTargetKind::ZoneAmplitude:
-        tgt = MEnd::MappingTarget::ampA;
+        tgt = MEnd::MappingTarget::ampTId;
         break;
     }
     row.target = tgt;

@@ -46,4 +46,28 @@ void ExplicitMenuOrder::separator()
     if (engine)
         engine->requestMenuSeparator();
 }
+
+SourcePolarity polarityOf(const sourcePolarityVector_t &pv, const SourceIdentifier &s)
+{
+    for (const auto &[si, p] : pv)
+        if (si == s)
+            return (SourcePolarity)p;
+    return SourcePolarity::UNIPOLAR;
+}
+
+SourcePolarity routePolarity(SourcePolarity source, std::optional<SourcePolarity> via,
+                             std::optional<ModulationCurves::CurveIdentifier> curve,
+                             bool multiplicative)
+{
+    // the multiplicative path takes |offset|
+    if (multiplicative)
+        return SourcePolarity::UNIPOLAR;
+
+    auto res = source;
+    if (via.has_value())
+        res = productPolarity(res, *via);
+    if (curve.has_value())
+        res = ModulationCurves::curvePolarity(*curve, res);
+    return res;
+}
 } // namespace scxt::modulation::shared

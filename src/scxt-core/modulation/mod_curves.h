@@ -40,6 +40,7 @@
 #include <utility>
 #include <unordered_map>
 #include "utils.h"
+#include "source_polarity.h"
 
 namespace scxt::modulation
 {
@@ -51,6 +52,7 @@ struct ModulationCurves
     static std::vector<CurveIdentifier> allCurves;
     static std::unordered_map<CurveIdentifier, std::pair<std::string, std::string>> curveNames;
     static std::unordered_map<CurveIdentifier, std::function<float(float)>> curveImpls;
+    static std::unordered_map<CurveIdentifier, CurvePolarity> curvePolarities;
 
     static inline void initializeCurves()
     {
@@ -60,38 +62,55 @@ struct ModulationCurves
         if (!allCurves.empty())
             return;
 
-        auto add = [](uint32_t tag, const std::string &cat, const std::string &nm,
-                      std::function<float(float)> fn) {
+        auto addPolar = [](uint32_t tag, const std::string &cat, const std::string &nm,
+                           CurvePolarity pol, std::function<float(float)> fn) {
             auto ci = CurveIdentifier{tag};
             assert(curveNames.find(ci) == curveNames.end());
             allCurves.push_back(ci);
             curveNames.insert_or_assign(ci, std::make_pair(cat, nm));
             curveImpls.insert_or_assign(ci, fn);
+            curvePolarities.insert_or_assign(ci, pol);
         };
+        // a polarity preserving curve
+        auto add = [addPolar](uint32_t tag, const std::string &cat, const std::string &nm,
+                              std::function<float(float)> fn) { addPolar(tag, cat, nm, {}, fn); };
+
+        using SP = SourcePolarity;
+        constexpr auto unipolar = CurvePolarity::always(SP::UNIPOLAR);
+        constexpr auto bipolar = CurvePolarity::always(SP::BIPOLAR);
+
         // change anything you want *except* the first argument
         // which is the streaming id. the menu is created with empty
         // cat first then the others in order
-        add('x2  ', "", "x^2", [](auto x) { return x * x; });
+        addPolar('x2  ', "", "x^2", unipolar, [](auto x) { return x * x; });
         add('x3  ', "", "x^3", [](auto x) { return x * x * x; });
-        add('unip', "", "(x+1)/2", [](auto x) { return (x + 1.f) / 2.f; });
-        add('bip ', "", "2x - 1", [](auto x) { return x * 2.f - 1.f; });
-        add('1-x ', "", "1 - x", [](auto x) { return 1.f - x; });
-        add('absx', "Rectifiers", "|x|", [](auto x) { return std::fabs(x); });
-        add('hwpo', "Rectifiers", "max(x,0)", [](auto x) { return std::max(x, 0.f); });
-        add('hwne', "Rectifiers", "min(x,0)", [](auto x) { return std::min(x, 0.f); });
-        add('uwpo', "Rectifiers", "max(x,1/2)", [](auto x) { return std::max(x, 0.5f); });
+        addPolar('unip', "", "(x+1)/2", unipolar, [](auto x) { return (x + 1.f) / 2.f; });
+        addPolar('bip ', "", "2x - 1", {.fromUnipolar = SP::BIPOLAR},
+                 [](auto x) { return x * 2.f - 1.f; });
+        addPolar('1-x ', "", "1 - x", unipolar, [](auto x) { return 1.f - x; });
+        addPolar('absx', "Rectifiers", "|x|", unipolar, [](auto x) { return std::fabs(x); });
+        addPolar('hwpo', "Rectifiers", "max(x,0)", unipolar,
+                 [](auto x) { return std::max(x, 0.f); });
+        addPolar('hwne', "Rectifiers", "min(x,0)", {.fromBipolar = SP::NEGATIVE},
+                 [](auto x) { return std::min(x, 0.f); });
+        addPolar('uwpo', "Rectifiers", "max(x,1/2)", unipolar,
+                 [](auto x) { return std::max(x, 0.5f); });
         add('uwne', "Rectifiers", "min(x,1/2)", [](auto x) { return std::min(x, 0.5f); });
 
-        add('cmp0', "Comparators", "x > 0", [](auto x) { return x > 0.f ? 1.f : 0.f; });
-        add('cmn0', "Comparators", "x < 0", [](auto x) { return x < 0.f ? 1.f : 0.f; });
-        add('cmph', "Comparators", "x > 1/2", [](auto x) { return x > 0.5f ? 1.f : 0.f; });
-        add('cmnh', "Comparators", "x < 1/2", [](auto x) { return x < 0.5f ? 1.f : 0.f; });
+        addPolar('cmp0', "Comparators", "x > 0", unipolar,
+                 [](auto x) { return x > 0.f ? 1.f : 0.f; });
+        addPolar('cmn0', "Comparators", "x < 0", unipolar,
+                 [](auto x) { return x < 0.f ? 1.f : 0.f; });
+        addPolar('cmph', "Comparators", "x > 1/2", unipolar,
+                 [](auto x) { return x > 0.5f ? 1.f : 0.f; });
+        addPolar('cmnh', "Comparators", "x < 1/2", unipolar,
+                 [](auto x) { return x < 0.5f ? 1.f : 0.f; });
 
-        add('sinx', "Waveforms", std::string("sin(2") + u8"\U000003C0" + "x)", // thats pi
-            [](auto x) { return std::sin(2.0 * M_PI * x); });
-        add('cosx', "Waveforms", std::string("cos(2") + u8"\U000003C0" + "x)", // thats pi
-            [](auto x) { return std::cos(2.0 * M_PI * x); });
-        add('trix', "Waveforms", std::string("tri(x)"), [](auto x) -> float {
+        addPolar('sinx', "Waveforms", std::string("sin(2") + u8"\U000003C0" + "x)", // thats pi
+                 bipolar, [](auto x) { return std::sin(2.0 * M_PI * x); });
+        addPolar('cosx', "Waveforms", std::string("cos(2") + u8"\U000003C0" + "x)", // thats pi
+                 bipolar, [](auto x) { return std::cos(2.0 * M_PI * x); });
+        addPolar('trix', "Waveforms", std::string("tri(x)"), bipolar, [](auto x) -> float {
             auto res = 0.f;
             if (x < 0)
                 x += 1;
@@ -112,7 +131,7 @@ struct ModulationCurves
             }
             return res;
         });
-        add('trip', "Waveforms", "tri(x+1/4)", [](auto x) -> float {
+        addPolar('trip', "Waveforms", "tri(x+1/4)", bipolar, [](auto x) -> float {
             auto res = 0.f;
             if (x < 0)
                 x += 1;
@@ -140,14 +159,14 @@ struct ModulationCurves
             [](auto x) { return remap01(x, remapSlowBend, false); });
         add('r01L', "Curve 01 remappers", "fast late rise",
             [](auto x) { return remap01(x, remapFastBend, false); });
-        add('f01e', "Curve 01 remappers", "slow early fall",
-            [](auto x) { return fall01(x, remapSlowBend, true); });
-        add('f01E', "Curve 01 remappers", "fast early fall",
-            [](auto x) { return fall01(x, remapFastBend, true); });
-        add('f01l', "Curve 01 remappers", "slow late fall",
-            [](auto x) { return fall01(x, remapSlowBend, false); });
-        add('f01L', "Curve 01 remappers", "fast late fall",
-            [](auto x) { return fall01(x, remapFastBend, false); });
+        addPolar('f01e', "Curve 01 remappers", "slow early fall", unipolar,
+                 [](auto x) { return fall01(x, remapSlowBend, true); });
+        addPolar('f01E', "Curve 01 remappers", "fast early fall", unipolar,
+                 [](auto x) { return fall01(x, remapFastBend, true); });
+        addPolar('f01l', "Curve 01 remappers", "slow late fall", unipolar,
+                 [](auto x) { return fall01(x, remapSlowBend, false); });
+        addPolar('f01L', "Curve 01 remappers", "fast late fall", unipolar,
+                 [](auto x) { return fall01(x, remapFastBend, false); });
     }
 
     // 10^-6/5 and 10^-12/5; fast late rise is the SF2 concave curve
@@ -166,6 +185,15 @@ struct ModulationCurves
     static float fall01(float x, float eps, bool early)
     {
         return remap01(1.f - std::min(std::fabs(x), 1.f), eps, !early);
+    }
+
+    // an unknown curve leaves the polarity alone
+    static SourcePolarity curvePolarity(CurveIdentifier id, SourcePolarity in)
+    {
+        auto ptr = curvePolarities.find(id);
+        if (ptr == curvePolarities.end())
+            return in;
+        return ptr->second.apply(in);
     }
 
     static std::function<float(float)> getCurveOperator(CurveIdentifier id)

@@ -40,6 +40,7 @@
 #include "sst/basic-blocks/params/ParamMetadata.h"
 #include "configuration.h"
 #include "utils.h"
+#include "modulation/source_polarity.h"
 
 namespace scxt::engine
 {
@@ -75,6 +76,11 @@ struct Macro
     std::string name{};
 
     bool isBipolar() const { return mode == BIPOLAR; }
+    modulation::SourcePolarity polarity() const
+    {
+        return isBipolar() ? modulation::SourcePolarity::BIPOLAR
+                           : modulation::SourcePolarity::UNIPOLAR;
+    }
     bool isToggle() const { return mode == TOGGLE; }
     bool isStepped() const { return mode != TOGGLE && steps >= minSteps; }
 

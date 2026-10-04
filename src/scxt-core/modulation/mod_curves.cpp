@@ -34,4 +34,6 @@ std::unordered_map<ModulationCurves::CurveIdentifier, std::pair<std::string, std
     ModulationCurves::curveNames;
 std::unordered_map<ModulationCurves::CurveIdentifier, std::function<float(float)>>
     ModulationCurves::curveImpls;
+std::unordered_map<ModulationCurves::CurveIdentifier, CurvePolarity>
+    ModulationCurves::curvePolarities;
 } // namespace scxt::modulation

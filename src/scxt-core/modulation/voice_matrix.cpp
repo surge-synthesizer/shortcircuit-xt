@@ -58,8 +58,8 @@ void Matrix::warmup(engine::Engine *e)
     // menu), so the registry loop above misses them. Warm them explicitly so the attack-time bind
     // reuses nodes. Keep in sync with the unregistered binds in Sources::*::bind.
     using KaP = MatrixEndpoints::Sources::KeyAndPitchSources;
-    bindSourceValue(KaP::midiKeyTrackA, warmupSink);
-    bindSourceValue(KaP::midiKeyA, warmupSink);
+    bindSourceValue(KaP::midiKeyTrackSId, warmupSink);
+    bindSourceValue(KaP::midiKeySId, warmupSink);
 }
 
 void MatrixEndpoints::bindTargetBaseValues(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -362,7 +362,43 @@ voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z)
         cr.emplace_back(c, identifierDisplayName_t{n->second.first, n->second.second});
     }
 
-    return voiceMatrixMetadata_t{true, sr, tg, cr};
+    shmo::sourcePolarityVector_t pv;
+    for (const auto &[s, fns] : sr)
+    {
+        auto p = sourcePolarity(z, s);
+        if (p != scxt::modulation::SourcePolarity::UNIPOLAR)
+            pv.emplace_back(s, (int32_t)p);
+    }
+
+    return voiceMatrixMetadata_t{true, sr, tg, cr, pv};
+}
+
+scxt::modulation::SourcePolarity sourcePolarity(const engine::Zone &z,
+                                                const MatrixConfig::SourceIdentifier &s)
+{
+    using P = scxt::modulation::SourcePolarity;
+    using S = MatrixEndpoints::Sources;
+
+    if (auto i = S::lfoSources_t::slotOf(s))
+        return z.modulatorStorage[*i].polarity();
+    if (auto i = S::glfoSources_t::slotOf(s))
+        return z.parentGroup ? z.parentGroup->modulatorStorage[*i].polarity() : P::UNIPOLAR;
+    if (auto i = S::rngSources_t::slotOf(s))
+        return z.miscSourceStorage.randoms[*i].polarity();
+    if (auto i = S::MacroSources::slotOf(s))
+        return z.parentGroup && z.parentGroup->parentPart
+                   ? z.parentGroup->parentPart->macros[*i].polarity()
+                   : P::UNIPOLAR;
+
+    for (const auto &b :
+         {S::MIDISources::pbpm1SId, S::KeyAndPitchSources::keyTrackSId,
+          S::KeyAndPitchSources::pitchTrackSId, S::KeyAndPitchSources::midiKeyTrackSId,
+          S::MPESources::mpeBendSId, S::NoteExpressionSources::tuningSId,
+          S::VoiceSources::alternateBipolarSId, S::VoiceSources::alternateRotationSId})
+        if (s == b)
+            return P::BIPOLAR;
+
+    return P::UNIPOLAR;
 }
 
 MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
@@ -547,7 +583,7 @@ MatrixEndpoints::LFOTarget::LFOTarget(engine::Engine *e, uint32_t p)
 
 MatrixEndpoints::Sources::Sources(engine::Engine *e)
     : lfoSources(e), glfoSources(e, "Group", "GLFO"), midiCCSources(e), midiSources(e),
-      noteExpressions(e), egSources{{eg1A, eg2A, eg3A, eg4A, eg5A}}, transportSources(e),
+      noteExpressions(e), egSources{{eg1SId, eg2SId, eg3SId, eg4SId, eg5SId}}, transportSources(e),
       rngSources(e), envFollowerSources(e), macroSources(e), mpeSources(e), voiceSources(e),
       keyAndPitchSources(e)
 {
@@ -573,7 +609,7 @@ MatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
 {
     for (auto i = 0U; i < macrosPerPart; ++i)
     {
-        macros[i] = SR{'zmac', 'mcro', i};
+        macros[i] = macroSId(i);
         registerVoiceModSource(
             e, macros[i], [](auto &a, auto &b) { return "Macro"; },
             [i](auto &zone, auto &s) { return zone.parentGroup->parentPart->macros[i].name; });

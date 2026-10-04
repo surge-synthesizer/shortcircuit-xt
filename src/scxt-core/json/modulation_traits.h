@@ -304,15 +304,15 @@ inline void unstreamPriorSamplePitchRoute(scxt::voice::modulation::Matrix::Routi
 
     static constexpr float priorTuneWidth{192.f};
     const float width{2 * st::pitchShiftRange};
-    if (*r.target == st::pitchShiftA)
+    if (*r.target == st::pitchShiftTId)
     {
         r.depth = std::clamp(r.depth * priorTuneWidth / width, -1.f, 1.f);
     }
-    else if (*r.target == mt::legacyPlaybackRatioA)
+    else if (*r.target == mt::legacyPlaybackRatioTId)
     {
         // rate was 1 + 2 * depth at a full source; match that and mirror negative depths
         auto semis = 12.f * std::log2(1.f + 2.f * std::fabs(r.depth));
-        r.target = st::pitchShiftA;
+        r.target = st::pitchShiftTId;
         r.depth = std::clamp(std::copysign(semis, r.depth) / width, -1.f, 1.f);
     }
 }

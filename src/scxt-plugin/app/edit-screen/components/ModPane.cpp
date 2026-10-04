@@ -457,6 +457,16 @@ struct ModRow : juce::Component, HasEditor, KeyCommandTarget, juce::DragAndDropT
         repaint();
     }
 
+    scxt::modulation::SourcePolarity sourcePolarity() const
+    {
+        const auto &row = parent->routingTable.routes[index];
+        return scxt::modulation::shared::routePolarity(
+            std::get<4>(parent->matrixMetadata), row,
+            allowsMultiplicative &&
+                row.applicationMode ==
+                    sst::basic_blocks::mod_matrix::ApplicationMode::MULTIPLICATIVE);
+    }
+
     void updateTooltip(const attachment_t &at)
     {
         // TODO: This should be in modulation units of the target not in percentage depth
@@ -489,16 +499,17 @@ struct ModRow : juce::Component, HasEditor, KeyCommandTarget, juce::DragAndDropT
         auto ep = *epo;
         datamodel::pmd &md = ep.targetMetadata;
 
-        bool isSourceBipolar{false}; // fixme - we shoudl determine this one day
+        using SP = scxt::modulation::SourcePolarity;
+        auto polarity = sourcePolarity();
+        auto isSourceBipolar = polarity == SP::BIPOLAR;
         auto v =
             md.modulationNaturalToString(ep.targetBaseValue, at.value * (md.maxVal - md.minVal),
-                                         isSourceBipolar, ep.targetFeatureState);
+                                         polarity != SP::UNIPOLAR, ep.targetFeatureState);
 
         auto rDepth = jcmp::ToolTip::Row();
         auto rDelta = jcmp::ToolTip::Row();
-        rDelta.drawLRArrow = true;
-        if (isSourceBipolar)
-            rDelta.drawRLArrow = true;
+        rDelta.drawLRArrow = polarity != SP::NEGATIVE;
+        rDelta.drawRLArrow = polarity != SP::UNIPOLAR;
 
         if (v.has_value())
         {
@@ -508,6 +519,12 @@ struct ModRow : juce::Component, HasEditor, KeyCommandTarget, juce::DragAndDropT
                 rDelta.leftAlignText = v->valDown;
                 rDelta.centerAlignText = v->baseValue;
                 rDelta.rightAlignText = v->valUp;
+            }
+            else if (polarity == SP::NEGATIVE)
+            {
+                rDelta.rowLeadingGlyph = jcmp::GlyphPainter::GlyphType::LEFT_RIGHT;
+                rDelta.leftAlignText = v->valDown;
+                rDelta.rightAlignText = v->baseValue;
             }
             else
             {
@@ -1115,6 +1132,22 @@ struct ModRow : juce::Component, HasEditor, KeyCommandTarget, juce::DragAndDropT
             g.setColour(juce::Colours::white.withAlpha(0.15f));
             g.fillAll();
         }
+    }
+
+    // a bipolar route throws the target both ways, so ghost the mirror of the depth bar
+    void paintOverChildren(juce::Graphics &g) override
+    {
+        if (!depth->isVisible() || sourcePolarity() != scxt::modulation::SourcePolarity::BIPOLAR)
+            return;
+
+        // matches the HSliderFilled gutter geometry
+        auto gutter = depth->getBounds().toFloat().reduced(0, depth->verticalReduction).reduced(2);
+        auto mirror = gutter.getX() + (1.f - depthRescaler->getValue01()) * gutter.getWidth();
+        auto l = std::min(mirror, gutter.getCentreX());
+        auto r = std::max(mirror, gutter.getCentreX());
+        g.setColour(depth->getColour(jcmp::HSliderFilled::Styles::value)
+                        .withAlpha(depth->isEnabled() ? 0.35f : 0.15f));
+        g.fillRect(gutter.withLeft(l).withRight(r));
     }
 
     void mouseDown(const juce::MouseEvent &e) override
