@@ -164,6 +164,27 @@ TEST_CASE("Group settings menus span the selection", "[group-settings]")
         }
     }
 
+    SECTION("glide from reaches every selected group and undoes")
+    {
+        using grp_t = scxt::engine::Group;
+        ThreeGroups f;
+        f.send(cmsg::UpdateGroupOutputInt32TValue(
+            {OI_OFF(glideFrom), (int32_t)grp_t::GLIDE_FROM_SOUNDING}));
+
+        for (int g = 0; g < 3; ++g)
+        {
+            INFO("group " << g);
+            REQUIRE(f.info(g).glideFrom == grp_t::GLIDE_FROM_SOUNDING);
+        }
+
+        f.sendUndo();
+        for (int g = 0; g < 3; ++g)
+        {
+            INFO("group " << g);
+            REQUIRE(f.info(g).glideFrom == grp_t::GLIDE_FROM_GATED);
+        }
+    }
+
     SECTION("a poly limit reaches every selected group and undoes")
     {
         ThreeGroups f;

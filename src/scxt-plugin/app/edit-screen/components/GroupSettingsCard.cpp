@@ -448,6 +448,17 @@ void GroupSettingsCard::showGlideRateModeMenu()
                   w->rebuildFromInfo();
                   w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideRateMode);
               });
+    p.addSeparator();
+    auto fingered = info.glideFrom == engine::Group::GLIDE_FROM_GATED;
+    p.addItem("Fingered Portamento", true, fingered,
+              [w = juce::Component::SafePointer(this), fingered]() {
+                  if (!w)
+                      return;
+                  w->info.glideFrom = fingered ? engine::Group::GLIDE_FROM_SOUNDING
+                                               : engine::Group::GLIDE_FROM_GATED;
+                  w->rebuildFromInfo();
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideFrom);
+              });
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 

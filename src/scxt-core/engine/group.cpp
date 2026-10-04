@@ -1052,6 +1052,28 @@ Group::GlideRateMode Group::fromStringGlideRateMode(const std::string &s)
     return p->second;
 }
 
+std::string Group::toStringGlideFrom(const GlideFrom &m)
+{
+    switch (m)
+    {
+    case GLIDE_FROM_GATED:
+        return "g";
+    case GLIDE_FROM_SOUNDING:
+        return "s";
+    }
+    return "g";
+}
+
+Group::GlideFrom Group::fromStringGlideFrom(const std::string &s)
+{
+    static auto inverse = makeEnumInverse<Group::GlideFrom, Group::toStringGlideFrom>(
+        Group::GlideFrom::GLIDE_FROM_GATED, Group::GlideFrom::GLIDE_FROM_SOUNDING);
+    auto p = inverse.find(s);
+    if (p == inverse.end())
+        return GLIDE_FROM_GATED;
+    return p->second;
+}
+
 std::string Group::toStringPlayMode(const PlayMode &m)
 {
     switch (m)

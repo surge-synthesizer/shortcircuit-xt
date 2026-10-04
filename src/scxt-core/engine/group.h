@@ -82,6 +82,14 @@ struct Group : MoveableOnly<Group>,
     };
     DECLARE_ENUM_STRING(GlideRateMode);
 
+    // where a mono or legato glide starts when the prior voice has been released
+    enum GlideFrom : int32_t
+    {
+        GLIDE_FROM_GATED = 0, // a released voice doesn't glide; the new note starts on pitch
+        GLIDE_FROM_SOUNDING
+    };
+    DECLARE_ENUM_STRING(GlideFrom);
+
     enum PlayMode : int32_t
     {
         POLY = 0,
@@ -127,6 +135,7 @@ struct Group : MoveableOnly<Group>,
 
         float glideTime{0.f}; // portamento glide time as 0..1 param for 25-second exp scale
         GlideRateMode glideRateMode{CONSTANT_TIME};
+        GlideFrom glideFrom{GLIDE_FROM_GATED};
 
         PlayMode playMode{POLY};
         NotePriority notePriority{LATEST};

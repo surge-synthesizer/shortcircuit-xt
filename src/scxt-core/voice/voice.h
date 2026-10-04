@@ -123,9 +123,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         auto glideTime = zone->parentGroup->outputInfo.glideTime;
         if (glideTime <= 0.f)
         {
-            inGlide = false;
-            glideSemitones = 0.f;
-            glideProgress = 0.f;
+            cancelGlide();
             return;
         }
         // If already gliding, start from the current sounding pitch, not the target key
@@ -139,14 +137,19 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     // outgoing voice's sounding pitch and glides up to its own target from there.
     void startGlideFrom(float pitch)
     {
-        inGlide = false;
-        glideSemitones = 0.f;
-        glideProgress = 0.f;
+        cancelGlide();
         if (zone->parentGroup->outputInfo.glideTime <= 0.f)
             return;
 
         glideSemitones = pitch - calculateVoicePitch();
         inGlide = true;
+    }
+
+    void cancelGlide()
+    {
+        inGlide = false;
+        glideSemitones = 0.f;
+        glideProgress = 0.f;
     }
 
     // Advance glide state and return the pitch offset to apply

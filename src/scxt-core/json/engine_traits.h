@@ -521,6 +521,8 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
 
 STREAM_ENUM(engine::Group::GlideRateMode, engine::Group::toStringGlideRateMode,
             engine::Group::fromStringGlideRateMode);
+STREAM_ENUM(engine::Group::GlideFrom, engine::Group::toStringGlideFrom,
+            engine::Group::fromStringGlideFrom);
 STREAM_ENUM(engine::Group::PlayMode, engine::Group::toStringPlayMode,
             engine::Group::fromStringPlayMode);
 STREAM_ENUM(engine::Group::NotePriority, engine::Group::toStringNotePriority,
@@ -549,6 +551,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"pbd", t.pbDown},
                       {"glt", t.glideTime},
                       {"grm", t.glideRateMode},
+                      {"glf", t.glideFrom},
                       {"pm", t.playMode},
                       {"np", t.notePriority},
                       {"excg", t.exclusiveGroup}};
@@ -583,6 +586,12 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
 
                  findOrSet(v, "glt", 0.f, result.glideTime);
                  findIf(v, "grm", result.glideRateMode);
+                 // sessions from before the choice always glided from the sounding voice
+                 findOrSet(v, "glf",
+                           SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'10'04)
+                               ? engine::Group::GlideFrom::GLIDE_FROM_SOUNDING
+                               : engine::Group::GlideFrom::GLIDE_FROM_GATED,
+                           result.glideFrom);
                  findOrSet(v, "pm", engine::Group::PlayMode::POLY, result.playMode);
                  findOrSet(v, "np", engine::Group::NotePriority::LATEST, result.notePriority);
                  findOrSet(v, "excg", 0, result.exclusiveGroup);
