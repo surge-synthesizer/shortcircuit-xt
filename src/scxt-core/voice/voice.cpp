@@ -229,8 +229,8 @@ void Voice::voiceStarted()
         // only the AEG needs oversampling since EG2 3 4 is only used at endpoint
     }
 
-    retuningForKeyAtAttack =
-        zone->getEngine()->midikeyRetuner.retuningForRemappedKey(channel, key, originalMidiKey);
+    retuningForKeyAtAttack = zone->getEngine()->midikeyRetuner.retuningForRemappedKey(
+        channel, key, originalMidiKey, zone->parentGroup->parentPart->configuration.force12TET);
     retuneContinuous =
         zone->getEngine()->runtimeConfig.tuningMode != engine::Engine::TuningMode::MTS_NOTE_ON;
 
@@ -1256,7 +1256,8 @@ float Voice::calculateVoicePitch()
 
         tuningSystemAdjustment =
             zone->getEngine()->midikeyRetuner.retuningForRemappedKeyWithInterpolation(
-                channel, key, originalMidiKey, pitchTuned);
+                channel, key, originalMidiKey, pitchTuned,
+                zone->parentGroup->parentPart->configuration.force12TET);
         pitchTuned += tuningSystemAdjustment;
         keyFloat = key + tuningSystemAdjustment;
         keyTrackPerOct = (key + tuningSystemAdjustment - zone->mapping.rootKey) / 12.0;

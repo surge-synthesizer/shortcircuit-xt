@@ -52,8 +52,10 @@ MidikeyRetuner::~MidikeyRetuner()
 }
 bool MidikeyRetuner::hasMTSSource() const { return mtsClient && MTS_HasMaster(mtsClient); }
 
-float MidikeyRetuner::offsetKeyBy(int channel, int key)
+float MidikeyRetuner::offsetKeyBy(int channel, int key, bool force12TET)
 {
+    if (force12TET)
+        return 0.f;
     switch (tuningMode)
     {
     case TWELVE_TET:
@@ -75,8 +77,10 @@ float MidikeyRetuner::offsetKeyBy(int channel, int key)
     return 0.f;
 }
 
-int MidikeyRetuner::getRepetitionInterval() const
+int MidikeyRetuner::getRepetitionInterval(bool force12TET) const
 {
+    if (force12TET)
+        return 12;
     switch (tuningMode)
     {
     case TWELVE_TET:
@@ -111,26 +115,28 @@ void MidikeyRetuner::clearSCLKBM()
     sclKbmValid = false;
 }
 
-int MidikeyRetuner::remapKeyTo(int channel, int key)
+int MidikeyRetuner::remapKeyTo(int channel, int key, bool force12TET)
 {
-    return (int)std::round(offsetKeyBy(channel, key) + key);
+    return (int)std::round(offsetKeyBy(channel, key, force12TET) + key);
 }
 
-float MidikeyRetuner::retuningForRemappedKey(int channel, int key, int preRemappedKey)
+float MidikeyRetuner::retuningForRemappedKey(int channel, int key, int preRemappedKey,
+                                             bool force12TET)
 {
-    auto r = offsetKeyBy(channel, preRemappedKey);
+    auto r = offsetKeyBy(channel, preRemappedKey, force12TET);
     return r - key + preRemappedKey;
 }
 
 float MidikeyRetuner::retuningForRemappedKeyWithInterpolation(int channel, int key,
-                                                              int preRemappedKey, float mods)
+                                                              int preRemappedKey, float mods,
+                                                              bool force12TET)
 {
     auto actualKeyPlusMods = preRemappedKey + mods;
     auto ik = (int)(actualKeyPlusMods);
     auto frac = actualKeyPlusMods - ik;
 
-    auto r1 = offsetKeyBy(channel, ik);
-    auto r2 = offsetKeyBy(channel, ik + 1);
+    auto r1 = offsetKeyBy(channel, ik, force12TET);
+    auto r2 = offsetKeyBy(channel, ik + 1, force12TET);
     auto r = r1 + frac * (r2 - r1);
 
     auto res = r - (int)(key + mods) + ik;

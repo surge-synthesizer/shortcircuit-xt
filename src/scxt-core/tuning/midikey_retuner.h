@@ -72,22 +72,23 @@ struct MidikeyRetuner
     // an MTS-ESP source comes and goes while we run, so this is a question, not a state
     bool hasMTSSource() const;
 
-    int getRepetitionInterval() const;
+    // force12TET lets a part opt out of the engine tuning
+    int getRepetitionInterval(bool force12TET = false) const;
 
     /*
      * Return the number of 12-tet smitones to retune by
      */
-    float offsetKeyBy(int channel, int key);
+    float offsetKeyBy(int channel, int key, bool force12TET = false);
 
     /*
      * We decompose offsetKeyBy into remapKeyTo and retuneRemappedKey
      * so we can find the appropriate key then retune it. This is just an
      * int part and frac part really.
      */
-    int remapKeyTo(int channel, int key);
-    float retuningForRemappedKey(int channel, int key, int preRemappedKey);
+    int remapKeyTo(int channel, int key, bool force12TET = false);
+    float retuningForRemappedKey(int channel, int key, int preRemappedKey, bool force12TET = false);
     float retuningForRemappedKeyWithInterpolation(int channel, int key, int preRemappedKey,
-                                                  float mods);
+                                                  float mods, bool force12TET = false);
 
   private:
     MTSClient *mtsClient{nullptr};

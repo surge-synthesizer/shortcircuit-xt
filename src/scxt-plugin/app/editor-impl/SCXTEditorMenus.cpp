@@ -320,6 +320,21 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
     p.addSectionHeader("Without MTS-ESP");
     p.addItem("Twelve-Tone Equal Temperament", true, st.first == TM::TWELVE_TET,
               modeItem(TM::TWELVE_TET));
+
+    juce::PopupMenu skipParts;
+    for (int i = 0; i < scxt::numParts; ++i)
+    {
+        skipParts.addItem("Part " + std::to_string(i + 1), true, partConfigurations[i].force12TET,
+                          [i, w = juce::Component::SafePointer(this)]() {
+                              if (!w)
+                                  return;
+                              auto &pc = w->partConfigurations[i];
+                              pc.force12TET = !pc.force12TET;
+                              w->sendToSerialization(cmsg::UpdatePartFullConfig({i, pc}));
+                          });
+    }
+    p.addSubMenu("Skip Tuning for Part", skipParts);
+
     // Available only once a scale has been loaded from the SCL/KBM submenu below
     p.addItem("SCL/KBM Scale", !sclText.empty(), st.first == TM::SCL_KBM, modeItem(TM::SCL_KBM));
 

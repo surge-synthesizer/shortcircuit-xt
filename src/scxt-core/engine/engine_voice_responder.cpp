@@ -366,7 +366,8 @@ void Engine::VoiceManagerResponder::retuneVoiceToKey(VMConfig::voice_t *v, uint1
 {
     const auto &part = *v->zone->parentGroup->parentPart;
     auto kt = part.configuration.transpose + part.getChannelBasedTransposition(channel);
-    auto remapped = engine.midikeyRetuner.remapKeyTo(channel, key) + kt;
+    auto remapped =
+        engine.midikeyRetuner.remapKeyTo(channel, key, part.configuration.force12TET) + kt;
 
     // glide runs in the remapped key space, the same one v->key lives in
     v->initiateGlide(remapped);

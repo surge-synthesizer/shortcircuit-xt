@@ -185,6 +185,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                 part->configuration.active && part->respondsToMIDIChannel(channel))
             {
                 auto prex = part->respondsToMIDIChannelExcludingGroupMask(channel);
+                // a 12-TET part maps on the key the keyboard sent, not the retuned one
+                auto pkey = part->configuration.force12TET ? midiKey : key;
                 auto kt =
                     part->configuration.transpose + part->getChannelBasedTransposition(channel);
 
@@ -201,7 +203,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                     part->groupTriggerInstrumentState.noteDice = rng.unif01();
 
                     part->advanceRoundRobinSets(
-                        *this, part->roundRobinSetsForNote(*this, channel, key, midiKey, velocity,
+                        *this, part->roundRobinSetsForNote(*this, channel, pkey, midiKey, velocity,
                                                            (int16_t)kt));
                 }
 
@@ -293,7 +295,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
                     {
-                        if (zone->mapping.keyboardRange.includes(key + kt) &&
+                        if (zone->mapping.keyboardRange.includes(pkey + kt) &&
                             zone->mapping.velocityRange.includes(velocity))
                         {
                             if (idx >= res.size())
@@ -304,8 +306,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                                                        << " for one note; dropping extras");
                                 return idx;
                             }
-                            res[idx] = {(size_t)pidx, (size_t)gidx,        (size_t)zidx,
-                                        channel,      (int16_t)(key + kt), noteId};
+                            res[idx] = {(size_t)pidx, (size_t)gidx,         (size_t)zidx,
+                                        channel,      (int16_t)(pkey + kt), noteId};
                             idx++;
                         }
                     }
