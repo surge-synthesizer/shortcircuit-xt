@@ -165,7 +165,24 @@ void ZoneLayoutKeyboard::mouseDrag(const juce::MouseEvent &e)
         auto r = rectangleForKey(i);
         if (r.contains(e.position))
         {
-            if (i == heldNote)
+            if (moveRootKey)
+            {
+                if (i != display->mappingView.rootKey)
+                {
+                    // relocating the root shouldn't sound the keys it passes over
+                    if (heldNote >= 0)
+                    {
+                        sendToSerialization(cmsg::NoteFromGUI({heldNote, 0.0f, false}));
+                        heldNote = -1;
+                    }
+                    int dx = i - display->mappingView.rootKey, zero{0};
+                    display->applyDeltaToSelectedZones(engine::Zone::ChangeDimension::MOVE_ROOTKEY,
+                                                       dx, zero);
+                    display->repaint();
+                    repaint();
+                }
+            }
+            else if (i == heldNote)
             {
                 // that's OK!
             }
@@ -174,13 +191,6 @@ void ZoneLayoutKeyboard::mouseDrag(const juce::MouseEvent &e)
                 if (heldNote >= 0)
                 {
                     sendToSerialization(cmsg::NoteFromGUI({heldNote, 0.0f, false}));
-                }
-                if (moveRootKey)
-                {
-                    int dx = i - display->mappingView.rootKey, zero{0};
-                    display->applyDeltaToSelectedZones(engine::Zone::ChangeDimension::MOVE_ROOTKEY,
-                                                       dx, zero);
-                    display->repaint();
                 }
                 heldNote = i;
                 auto vy = 1.0 - 1.0 * (e.position.y - r.getY()) / (r.getHeight());
@@ -198,13 +208,14 @@ void ZoneLayoutKeyboard::mouseUp(const juce::MouseEvent &e)
     if (moveRootKey)
     {
         display->mayBeAboutToMutate = false;
+        moveRootKey = false;
         sendToSerialization(cmsg::RequestZoneMapping({editor->selectedPart}));
+        repaint();
     }
     if (heldNote >= 0)
     {
         sendToSerialization(cmsg::NoteFromGUI({heldNote, 0.0f, false}));
         heldNote = -1;
-        moveRootKey = false;
         repaint();
         return;
     }
