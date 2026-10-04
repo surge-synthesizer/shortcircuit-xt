@@ -522,3 +522,22 @@ TEST_CASE("Old sessions glide from the sounding voice", "[glide]")
         }
     }
 }
+
+TEST_CASE("Fingered envelopes streams and defaults on", "[legato]")
+{
+    using grp_t = scxt::engine::Group;
+
+    grp_t::GroupOutputInfo in;
+    auto val = scxt::json::scxt_value(in);
+    val.get_object().erase("fge");
+
+    grp_t::GroupOutputInfo missing;
+    missing.fingeredEnvelopes = false;
+    testUnstream(tao::json::to_string(val), missing);
+    REQUIRE(missing.fingeredEnvelopes);
+
+    in.fingeredEnvelopes = false;
+    grp_t::GroupOutputInfo out;
+    testUnstream(testStream(in), out);
+    REQUIRE_FALSE(out.fingeredEnvelopes);
+}

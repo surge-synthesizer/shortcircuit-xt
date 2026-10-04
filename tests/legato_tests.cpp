@@ -368,3 +368,87 @@ TEST_CASE("A note landing on the reap block still sounds", "[legato]")
 
     CHECK(f.soundingVoices() == nZones);
 }
+
+namespace
+{
+using stage_t = scxt::voice::Voice::ahdsrenv_t::Stage;
+
+bool envelopesReleasing(const scxt::voice::Voice *v)
+{
+    return (int)v->aeg.stage >= (int)stage_t::s_release &&
+           (int)v->aegOS.stage >= (int)stage_t::s_release;
+}
+
+// play 60, let it go, then play 64 into the long zone's release tail
+scxt::voice::Voice *legatoIntoReleaseTail(LegatoFixture &f, bool fingeredEnvelopes)
+{
+    f.group->outputInfo.fingeredEnvelopes = fingeredEnvelopes;
+
+    f.noteOn(60);
+    f.runBlocks(80);
+    f.noteOff(60);
+    f.runBlocks(4);
+
+    auto *lv = f.voiceIn(f.longZone);
+    REQUIRE(lv != nullptr);
+    REQUIRE(lv->isSounding());
+    REQUIRE(envelopesReleasing(lv));
+
+    f.noteOn(64);
+    f.runBlocks(1);
+    REQUIRE(f.voiceIn(f.longZone) == lv);
+    REQUIRE((int)lv->key == 64);
+    REQUIRE(lv->isGated);
+    return lv;
+}
+} // namespace
+
+TEST_CASE("Fingered envelopes is the default", "[legato]")
+{
+    scxt::engine::Group::GroupOutputInfo oi;
+    CHECK(oi.fingeredEnvelopes);
+}
+
+TEST_CASE("Fingered envelopes re-attack a released voice moved by legato", "[legato]")
+{
+    LegatoFixture f{false, SLOW_RELEASE};
+    auto *lv = legatoIntoReleaseTail(f, true);
+    CHECK_FALSE(envelopesReleasing(lv));
+}
+
+TEST_CASE("Without fingered envelopes a released voice keeps releasing", "[legato]")
+{
+    LegatoFixture f{false, SLOW_RELEASE};
+    auto *lv = legatoIntoReleaseTail(f, false);
+    CHECK(envelopesReleasing(lv));
+
+    // a played-out zone has nothing sounding to carry on, so it still starts over
+    auto *sv = f.voiceIn(f.shortZone);
+    REQUIRE(sv != nullptr);
+    CHECK_FALSE(sv->isParked);
+    CHECK_FALSE(envelopesReleasing(sv));
+}
+
+TEST_CASE("Fingered envelopes leave a held-key legato move alone", "[legato]")
+{
+    for (auto fe : {true, false})
+    {
+        DYNAMIC_SECTION("Fingered envelopes " << fe)
+        {
+            LegatoFixture f{false, SLOW_RELEASE};
+            f.group->outputInfo.fingeredEnvelopes = fe;
+
+            f.noteOn(60);
+            f.runBlocks(80);
+            auto *lv = f.voiceIn(f.longZone);
+            REQUIRE(lv != nullptr);
+            auto stageBefore = (int)lv->aegOS.stage;
+            REQUIRE(stageBefore < (int)stage_t::s_release);
+
+            f.noteOn(64);
+            f.runBlocks(1);
+            CHECK(f.voiceIn(f.longZone) == lv);
+            CHECK((int)lv->aegOS.stage == stageBefore);
+        }
+    }
+}

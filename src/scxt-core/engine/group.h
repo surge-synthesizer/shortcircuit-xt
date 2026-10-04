@@ -136,6 +136,8 @@ struct Group : MoveableOnly<Group>,
         float glideTime{0.f}; // portamento glide time as 0..1 param for 25-second exp scale
         GlideRateMode glideRateMode{CONSTANT_TIME};
         GlideFrom glideFrom{GLIDE_FROM_GATED};
+        // legato only: a released voice re-attacks its envelopes when it moves
+        bool fingeredEnvelopes{true};
 
         PlayMode playMode{POLY};
         NotePriority notePriority{LATEST};

@@ -387,6 +387,28 @@ void GroupSettingsCard::showPolyModeMenu()
                   w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.playMode);
               });
 
+    p.addSeparator();
+    auto isPoly = info.playMode == engine::Group::PlayMode::POLY;
+    auto fingeredPorta = info.glideFrom == engine::Group::GLIDE_FROM_GATED;
+    p.addItem("Fingered Portamento", !isPoly, fingeredPorta,
+              [w = juce::Component::SafePointer(this), fingeredPorta]() {
+                  if (!w)
+                      return;
+                  w->info.glideFrom = fingeredPorta ? engine::Group::GLIDE_FROM_SOUNDING
+                                                    : engine::Group::GLIDE_FROM_GATED;
+                  w->rebuildFromInfo();
+                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideFrom);
+              });
+    auto fingeredEnv = info.fingeredEnvelopes;
+    p.addItem("Fingered Envelopes", info.playMode == engine::Group::PlayMode::LEGATO, fingeredEnv,
+              [w = juce::Component::SafePointer(this), fingeredEnv]() {
+                  if (!w)
+                      return;
+                  w->info.fingeredEnvelopes = !fingeredEnv;
+                  w->rebuildFromInfo();
+                  w->sendSingleToSerialization<boolMsg_t>(w->info, w->info.fingeredEnvelopes);
+              });
+
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
@@ -447,17 +469,6 @@ void GroupSettingsCard::showGlideRateModeMenu()
                   w->info.glideRateMode = engine::Group::CONSTANT_RATE;
                   w->rebuildFromInfo();
                   w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideRateMode);
-              });
-    p.addSeparator();
-    auto fingered = info.glideFrom == engine::Group::GLIDE_FROM_GATED;
-    p.addItem("Fingered Portamento", true, fingered,
-              [w = juce::Component::SafePointer(this), fingered]() {
-                  if (!w)
-                      return;
-                  w->info.glideFrom = fingered ? engine::Group::GLIDE_FROM_SOUNDING
-                                               : engine::Group::GLIDE_FROM_GATED;
-                  w->rebuildFromInfo();
-                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.glideFrom);
               });
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

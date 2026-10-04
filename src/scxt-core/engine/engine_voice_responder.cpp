@@ -399,14 +399,18 @@ void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, 
                      v->zone->parentGroup->outputInfo.glideFrom ==
                          engine::Group::GlideFrom::GLIDE_FROM_SOUNDING);
     v->setIsGated(true);
-    // aeg/aegOS are eg[0]/egOS[0], so this re-attacks the amp envelope too
-    for (auto &eg : v->eg)
+    // a parked voice has run out of sound, so it starts its envelopes over regardless
+    if (v->zone->parentGroup->outputInfo.fingeredEnvelopes || v->isParked)
     {
-        eg.attackFrom(eg.outBlock0);
-    }
-    for (auto &eg : v->egOS)
-    {
-        eg.attackFrom(eg.outBlock0);
+        // aeg/aegOS are eg[0]/egOS[0], so this re-attacks the amp envelope too
+        for (auto &eg : v->eg)
+        {
+            eg.attackFrom(eg.outBlock0);
+        }
+        for (auto &eg : v->egOS)
+        {
+            eg.attackFrom(eg.outBlock0);
+        }
     }
 
     if (v->isParked)

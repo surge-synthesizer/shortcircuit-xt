@@ -552,6 +552,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                       {"glt", t.glideTime},
                       {"grm", t.glideRateMode},
                       {"glf", t.glideFrom},
+                      {"fge", t.fingeredEnvelopes},
                       {"pm", t.playMode},
                       {"np", t.notePriority},
                       {"excg", t.exclusiveGroup}};
@@ -592,6 +593,7 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                                ? engine::Group::GlideFrom::GLIDE_FROM_SOUNDING
                                : engine::Group::GlideFrom::GLIDE_FROM_GATED,
                            result.glideFrom);
+                 findOrSet(v, "fge", true, result.fingeredEnvelopes);
                  findOrSet(v, "pm", engine::Group::PlayMode::POLY, result.playMode);
                  findOrSet(v, "np", engine::Group::NotePriority::LATEST, result.notePriority);
                  findOrSet(v, "excg", 0, result.exclusiveGroup);

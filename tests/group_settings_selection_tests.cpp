@@ -185,6 +185,25 @@ TEST_CASE("Group settings menus span the selection", "[group-settings]")
         }
     }
 
+    SECTION("fingered envelopes reaches every selected group and undoes")
+    {
+        ThreeGroups f;
+        f.send(cmsg::UpdateGroupOutputBoolValue({OI_OFF(fingeredEnvelopes), false}));
+
+        for (int g = 0; g < 3; ++g)
+        {
+            INFO("group " << g);
+            REQUIRE_FALSE(f.info(g).fingeredEnvelopes);
+        }
+
+        f.sendUndo();
+        for (int g = 0; g < 3; ++g)
+        {
+            INFO("group " << g);
+            REQUIRE(f.info(g).fingeredEnvelopes);
+        }
+    }
+
     SECTION("a poly limit reaches every selected group and undoes")
     {
         ThreeGroups f;
