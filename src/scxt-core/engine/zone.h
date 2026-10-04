@@ -370,10 +370,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
      * A mapping edit names its field by offset the same way a variant edit does. It crosses a
      * zone selection by default, so a scalar added above is shared without being listed here.
      *
-     * The exclusions are the key and velocity geometry, which has its own delta path and
-     * refuses a gesture no selected zone can take, and the zone's key center, which belongs
-     * to the sample the zone plays rather than to the edit. They are spans rather than
-     * offsets because an edit addresses a field *inside* the two range structs.
+     * The exclusions are the key and velocity geometry and the root key, which cross the
+     * selection on the ApplyZoneDelta path instead. They are spans rather than offsets
+     * because an edit addresses a field *inside* the two range structs.
      */
     static constexpr std::array<std::pair<size_t, size_t>, 3> mappingLeadOnlySpans{
         {{offsetof(ZoneMappingData, rootKey), sizeof(ZoneMappingData::rootKey)},
@@ -449,6 +448,7 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     {
         NO_CHANGE = 0,
         MOVE_CTR_NO_ROOTKEY = 1,
+        // alone, shifts just the root key
         MOVE_ROOTKEY = 1 << 1,
         MOVE_CTR = MOVE_CTR_NO_ROOTKEY | MOVE_ROOTKEY,
 
@@ -488,6 +488,12 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
     void applyAbsoluteBoundEdit(ChangeDimension dim, int deltaX, int deltaY)
     {
+        if (dim == MOVE_ROOTKEY)
+        {
+            if (canApplyAbsoluteBoundEdit(dim, deltaX, deltaY))
+                mapping.rootKey = (int16_t)deltaX;
+            return;
+        }
         applyAbsoluteBoundEdit(dim, deltaX, deltaY, mapping.keyboardRange, mapping.velocityRange);
     }
 
@@ -555,7 +561,7 @@ SC_DESCRIBE(
                            .asFloat()
                            .withRange(-2, 2)
                            .withName("Tracking")
-                           .withLinearScaleFormatting("x")
-                           .withDecimalPlaces(2)););
+                           .withLinearScaleFormatting("%", 100.f)
+                           .withDecimalPlaces(1)););
 
 #endif

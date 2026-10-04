@@ -710,7 +710,7 @@ bool Zone::canApplyChange(ChangeDimension dim, int deltaX, int deltaY, const Key
     if (dim == NO_CHANGE)
         return true;
 
-    if (dim == MOVE_CTR)
+    if (dim & MOVE_CTR_NO_ROOTKEY)
     {
         return kr.keyStart + deltaX >= 0 && kr.keyEnd + deltaX <= 127 &&
                vr.velStart + deltaY >= 0 && vr.velEnd + deltaY <= 127;
@@ -793,12 +793,6 @@ void Zone::applyChange(ChangeDimension dim, int deltaX, int deltaY, Zone::ZoneMa
         kr.keyEnd += deltaX;
         vr.velStart += deltaY;
         vr.velEnd += deltaY;
-
-        if (iDim & MOVE_ROOTKEY)
-        {
-            // root key can sit outside the key range, so the range check doesn't bound it
-            md.rootKey = std::clamp((int16_t)(md.rootKey + deltaX), (int16_t)0, (int16_t)127);
-        }
     }
     else
     {
@@ -840,6 +834,12 @@ void Zone::applyChange(ChangeDimension dim, int deltaX, int deltaY, Zone::ZoneMa
         }
     }
 
+    if (iDim & MOVE_ROOTKEY)
+    {
+        // root key can sit outside the key range, so the range check doesn't bound it
+        md.rootKey = std::clamp((int16_t)(md.rootKey + deltaX), (int16_t)0, (int16_t)127);
+    }
+
     if (hasFeature::geometryChangesAdjustFade)
     {
         // Constrain fades
@@ -872,6 +872,10 @@ bool Zone::canApplyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY,
     if (dim == NO_CHANGE)
         return true;
 
+    if (dim == MOVE_ROOTKEY)
+    {
+        return newX >= 0 && newX <= 127;
+    }
     if (dim == VEL_RANGE_START)
     {
         return newY >= 0 && newY < 127 && newY <= vr.velEnd - 1;

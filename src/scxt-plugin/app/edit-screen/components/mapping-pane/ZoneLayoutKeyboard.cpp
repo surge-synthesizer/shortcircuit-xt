@@ -150,6 +150,7 @@ void ZoneLayoutKeyboard::mouseDown(const juce::MouseEvent &e)
             if (heldNote == display->mappingView.rootKey)
             {
                 moveRootKey = true;
+                display->mayBeAboutToMutate = true;
             }
             repaint();
             return;
@@ -174,10 +175,12 @@ void ZoneLayoutKeyboard::mouseDrag(const juce::MouseEvent &e)
                 {
                     sendToSerialization(cmsg::NoteFromGUI({heldNote, 0.0f, false}));
                 }
-                if (moveRootKey == true)
+                if (moveRootKey)
                 {
-                    display->mappingView.rootKey = i;
-                    display->mappingChangedFromGUI();
+                    int dx = i - display->mappingView.rootKey, zero{0};
+                    display->applyDeltaToSelectedZones(engine::Zone::ChangeDimension::MOVE_ROOTKEY,
+                                                       dx, zero);
+                    display->repaint();
                 }
                 heldNote = i;
                 auto vy = 1.0 - 1.0 * (e.position.y - r.getY()) / (r.getHeight());
@@ -192,6 +195,11 @@ void ZoneLayoutKeyboard::mouseDrag(const juce::MouseEvent &e)
 
 void ZoneLayoutKeyboard::mouseUp(const juce::MouseEvent &e)
 {
+    if (moveRootKey)
+    {
+        display->mayBeAboutToMutate = false;
+        sendToSerialization(cmsg::RequestZoneMapping({editor->selectedPart}));
+    }
     if (heldNote >= 0)
     {
         sendToSerialization(cmsg::NoteFromGUI({heldNote, 0.0f, false}));
