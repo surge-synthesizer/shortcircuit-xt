@@ -2400,6 +2400,56 @@ TEST_CASE("A zone's loop crossfade curve reaches the voice", "[generator]")
     REQUIRE(voice->GD[0].loopCurve == Approx(0.375f));
 }
 
+TEST_CASE("Loop markers stop at the crossfade rather than shortening it", "[generator]")
+{
+    using scxt::dsp::clampMarkerToLoopFade;
+    using M = scxt::dsp::LoopFadeMarker;
+
+    // start 100, loop 1000..2000, fade 300
+    auto clamp = [](M m, int64_t pos) {
+        return clampMarkerToLoopFade(m, pos, 300, 100, 1000, 2000);
+    };
+
+    SECTION("sample start stops a fade before the loop start")
+    {
+        REQUIRE(clamp(M::SAMPLE_START, 50) == 50);
+        REQUIRE(clamp(M::SAMPLE_START, 900) == 700);
+    }
+    SECTION("loop start keeps a fade to either side")
+    {
+        REQUIRE(clamp(M::LOOP_START, 1200) == 1200);
+        REQUIRE(clamp(M::LOOP_START, 200) == 400);
+        REQUIRE(clamp(M::LOOP_START, 1900) == 1700);
+    }
+    SECTION("loop end keeps a fade of loop")
+    {
+        REQUIRE(clamp(M::LOOP_END, 2500) == 2500);
+        REQUIRE(clamp(M::LOOP_END, 1100) == 1300);
+    }
+    SECTION("no fade leaves the markers free")
+    {
+        REQUIRE(clampMarkerToLoopFade(M::SAMPLE_START, 1500, 0, 100, 1000, 2000) == 1500);
+        REQUIRE(clampMarkerToLoopFade(M::LOOP_END, 10, 0, 100, 1000, 2000) == 10);
+    }
+    SECTION("an over-long fade bounds by what fits now")
+    {
+        // 5000 clamps to the 900 before the loop start
+        REQUIRE(clampMarkerToLoopFade(M::SAMPLE_START, 500, 5000, 100, 1000, 2000) == 100);
+        // moving start down leaves more room, and that is allowed
+        REQUIRE(clampMarkerToLoopFade(M::SAMPLE_START, 0, 5000, 100, 1000, 2000) == 0);
+    }
+    SECTION("current markers always satisfy their own bound")
+    {
+        for (auto f : {0, 10, 300, 900, 1000, 5000})
+        {
+            INFO("fade " << f);
+            REQUIRE(clampMarkerToLoopFade(M::SAMPLE_START, 100, f, 100, 1000, 2000) == 100);
+            REQUIRE(clampMarkerToLoopFade(M::LOOP_START, 1000, f, 100, 1000, 2000) == 1000);
+            REQUIRE(clampMarkerToLoopFade(M::LOOP_END, 2000, f, 100, 1000, 2000) == 2000);
+        }
+    }
+}
+
 TEST_CASE("A single cycle keeps rising past seven octaves up", "[generator]")
 {
     static constexpr int cycle{2048};

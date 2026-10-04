@@ -175,6 +175,34 @@ inline int64_t clampLoopFade(int64_t loopFade, int64_t startSample, int64_t star
     return std::max((int64_t)0, f);
 }
 
+// markers stop at the fade rather than shortening it, as HALion does. bounding by the
+// clamped fade means the current markers always satisfy it
+enum struct LoopFadeMarker
+{
+    SAMPLE_START,
+    LOOP_START,
+    LOOP_END
+};
+
+inline int64_t clampMarkerToLoopFade(LoopFadeMarker which, int64_t pos, int64_t loopFade,
+                                     int64_t startSample, int64_t startLoop, int64_t endLoop)
+{
+    auto f = clampLoopFade(loopFade, startSample, startLoop, endLoop);
+    if (f <= 0)
+        return pos;
+
+    switch (which)
+    {
+    case LoopFadeMarker::SAMPLE_START:
+        return std::min(pos, startLoop - f);
+    case LoopFadeMarker::LOOP_START:
+        return std::max(std::min(pos, endLoop - f), startSample + f);
+    case LoopFadeMarker::LOOP_END:
+        return std::max(pos, startLoop + f);
+    }
+    return pos;
+}
+
 /*
  * Where a ping-pong crossfade's mirrored read sits.
  *
