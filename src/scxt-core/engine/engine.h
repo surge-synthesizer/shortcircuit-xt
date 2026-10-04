@@ -413,6 +413,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         {
             uint8_t key{60};
             float pitch{0.f};
+            bool gated{true};
         };
         using continuationData_t = ContinuationData;
     };
@@ -464,7 +465,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         void moveAndRetriggerVoice(typename VMConfig::voice_t *, uint16_t, uint16_t, uint16_t,
                                    float);
         // shared by both, and the only place a legato move touches the voice's keys
-        void retuneVoiceToKey(typename VMConfig::voice_t *, uint16_t channel, uint16_t key);
+        void retuneVoiceToKey(typename VMConfig::voice_t *, uint16_t channel, uint16_t key,
+                              bool glide);
 
         void setVoiceMIDIMPEChannelPitchBend(voice::Voice *v, uint16_t pb14bit);
         void setVoiceMIDIMPEChannelPressure(voice::Voice *v, int8_t val);

@@ -329,3 +329,97 @@ TEST_CASE("Mono glide on release moves every layered voice", "[glide]")
     for (auto *v : vs)
         CHECK(v->pitchFloat == Approx(60.f).margin(0.01f));
 }
+
+namespace
+{
+/*
+ * Play 60 and let it go, then play 72 while 60 is still in its release tail. That prior
+ * voice is sounding but not gated, which is where the glide-from setting decides.
+ */
+scxt::voice::Voice *playOverReleasedVoice(GlideFixture &f, scxt::engine::Group::PlayMode pm,
+                                          scxt::engine::Group::GlideFrom gf)
+{
+    f.setMonoWithGlide(SLOW_GLIDE);
+    f.group->outputInfo.playMode = pm;
+    f.group->outputInfo.glideFrom = gf;
+    f.group->resetPolyAndPlaymode(*f.eng);
+
+    f.noteOn(60);
+    f.runBlocks(20);
+    auto *prior = f.voiceForKey(60);
+    REQUIRE(prior != nullptr);
+    f.noteOff(60);
+    f.runBlocks(2);
+    REQUIRE(prior->isVoicePlaying);
+    REQUIRE_FALSE(prior->isGated);
+
+    f.noteOn(72);
+    f.runBlocks(1);
+    auto *v = f.voiceForKey(72);
+    REQUIRE(v != nullptr);
+    return v;
+}
+} // namespace
+
+TEST_CASE("Glide from gated is the default", "[glide]")
+{
+    scxt::engine::Group::GroupOutputInfo oi;
+    CHECK(oi.glideFrom == scxt::engine::Group::GLIDE_FROM_GATED);
+}
+
+TEST_CASE("Glide from gated starts a note over a released voice on pitch", "[glide]")
+{
+    using grp_t = scxt::engine::Group;
+    for (auto pm : {grp_t::PlayMode::MONO, grp_t::PlayMode::LEGATO})
+    {
+        DYNAMIC_SECTION("Play mode " << grp_t::toStringPlayMode(pm))
+        {
+            GlideFixture f{true};
+            auto *v = playOverReleasedVoice(f, pm, grp_t::GLIDE_FROM_GATED);
+            INFO("startPitch=" << v->pitchFloat);
+            CHECK(v->pitchFloat == Approx(72.f).margin(0.01f));
+            CHECK_FALSE(v->inGlide);
+        }
+    }
+}
+
+TEST_CASE("Glide from sounding glides from a released voice", "[glide]")
+{
+    using grp_t = scxt::engine::Group;
+    for (auto pm : {grp_t::PlayMode::MONO, grp_t::PlayMode::LEGATO})
+    {
+        DYNAMIC_SECTION("Play mode " << grp_t::toStringPlayMode(pm))
+        {
+            GlideFixture f{true};
+            auto *v = playOverReleasedVoice(f, pm, grp_t::GLIDE_FROM_SOUNDING);
+            INFO("startPitch=" << v->pitchFloat);
+            CHECK(v->inGlide);
+            CHECK(v->pitchFloat < 62.f);
+            CHECK(v->pitchFloat > 59.f);
+
+            f.runBlocks(300);
+            CHECK(v->pitchFloat == Approx(72.f).margin(0.01f));
+        }
+    }
+}
+
+TEST_CASE("Glide from gated still glides over a held note", "[glide]")
+{
+    using grp_t = scxt::engine::Group;
+    for (auto pm : {grp_t::PlayMode::MONO, grp_t::PlayMode::LEGATO})
+    {
+        DYNAMIC_SECTION("Play mode " << grp_t::toStringPlayMode(pm))
+        {
+            GlideFixture f{true};
+            f.setMonoWithGlide(SLOW_GLIDE);
+            f.group->outputInfo.playMode = pm;
+            f.group->resetPolyAndPlaymode(*f.eng);
+            REQUIRE(f.group->outputInfo.glideFrom == grp_t::GLIDE_FROM_GATED);
+
+            auto startPitch = pitchAfterMonoRetriggerTo72(f);
+            INFO("startPitch=" << startPitch);
+            CHECK(startPitch < 62.f);
+            CHECK(startPitch > 59.f);
+        }
+    }
+}

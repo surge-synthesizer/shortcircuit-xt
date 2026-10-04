@@ -480,3 +480,45 @@ TEST_CASE("Group trigger conjunctions are normalized out of older patches")
 // TODO: Add test for Part streaming
 // TODO: Add test for Patch streaming
 // TODO: Add test for Engine streaming and Sample Library
+
+TEST_CASE("Old sessions glide from the sounding voice", "[glide]")
+{
+    using grp_t = scxt::engine::Group;
+
+    grp_t::GroupOutputInfo fresh;
+    REQUIRE(fresh.glideFrom == grp_t::GLIDE_FROM_GATED);
+
+    // a stream from before the choice existed has no key for it
+    auto val = scxt::json::scxt_value(fresh);
+    val.get_object().erase("glf");
+    auto old = tao::json::to_string(val);
+
+    SECTION("An old session keeps gliding from the sounding voice")
+    {
+        scxt::engine::Engine::UnstreamGuard sg(0x2026'09'28);
+        grp_t::GroupOutputInfo o;
+        testUnstream(old, o);
+        REQUIRE(o.glideFrom == grp_t::GLIDE_FROM_SOUNDING);
+    }
+
+    SECTION("A current stream without the key takes the new default")
+    {
+        scxt::engine::Engine::UnstreamGuard sg(scxt::currentStreamingVersion);
+        grp_t::GroupOutputInfo o;
+        o.glideFrom = grp_t::GLIDE_FROM_SOUNDING;
+        testUnstream(old, o);
+        REQUIRE(o.glideFrom == grp_t::GLIDE_FROM_GATED);
+    }
+
+    SECTION("Both settings round trip")
+    {
+        scxt::engine::Engine::UnstreamGuard sg(0x2026'09'28);
+        for (auto gf : {grp_t::GLIDE_FROM_GATED, grp_t::GLIDE_FROM_SOUNDING})
+        {
+            grp_t::GroupOutputInfo in, out;
+            in.glideFrom = gf;
+            testUnstream(testStream(in), out);
+            REQUIRE(out.glideFrom == gf);
+        }
+    }
+}

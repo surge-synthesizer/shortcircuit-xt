@@ -95,8 +95,12 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
     // In mono mode the voice manager terminates the prior voice and hands us its sounding
     // pitch as continuation data. Every newly created voice needs it, sampled or not.
     auto glideFromPriorVoice = [&](voice::Voice *v, int idx) {
-        if (v && voiceInstructionBuffer[idx].fromPlayingVoice)
-            v->startGlideFrom(voiceInstructionBuffer[idx].continuationData.pitch);
+        if (!v || !voiceInstructionBuffer[idx].fromPlayingVoice)
+            return;
+        const auto &cd = voiceInstructionBuffer[idx].continuationData;
+        if (cd.gated || v->zone->parentGroup->outputInfo.glideFrom ==
+                            engine::Group::GlideFrom::GLIDE_FROM_SOUNDING)
+            v->startGlideFrom(cd.pitch);
     };
 
     // A release trigger's voices are let go by the very note-off which made them, so no
@@ -305,6 +309,7 @@ Engine::VoiceManagerResponder::getContinuationData(voice::Voice *v)
 {
     VMConfig::ContinuationData cd;
     cd.key = v->key;
+    cd.gated = v->isGated;
     if (v->isVoicePlaying)
     {
         cd.pitch = v->calculateVoicePitch();
@@ -362,7 +367,7 @@ void Engine::VoiceManagerResponder::setVoiceMIDIMPETimbre(voice::Voice *v, int8_
  * half semitone remapKeyTo rounds away. GH #2715.
  */
 void Engine::VoiceManagerResponder::retuneVoiceToKey(VMConfig::voice_t *v, uint16_t channel,
-                                                     uint16_t key)
+                                                     uint16_t key, bool glide)
 {
     const auto &part = *v->zone->parentGroup->parentPart;
     auto kt = part.configuration.transpose + part.getChannelBasedTransposition(channel);
@@ -370,7 +375,10 @@ void Engine::VoiceManagerResponder::retuneVoiceToKey(VMConfig::voice_t *v, uint1
         engine.midikeyRetuner.remapKeyTo(channel, key, part.configuration.force12TET) + kt;
 
     // glide runs in the remapped key space, the same one v->key lives in
-    v->initiateGlide(remapped);
+    if (glide)
+        v->initiateGlide(remapped);
+    else
+        v->cancelGlide();
     v->key = remapped;
     v->originalMidiKey = key + kt;
     v->keyChangedInLegatoModeTrigger = 1.f;
@@ -380,13 +388,16 @@ void Engine::VoiceManagerResponder::retuneVoiceToKey(VMConfig::voice_t *v, uint1
 void Engine::VoiceManagerResponder::moveVoice(VMConfig::voice_t *v, uint16_t port, uint16_t channel,
                                               uint16_t key, float vel)
 {
-    retuneVoiceToKey(v, channel, key);
+    retuneVoiceToKey(v, channel, key, true);
 }
 
 void Engine::VoiceManagerResponder::moveAndRetriggerVoice(VMConfig::voice_t *v, uint16_t port,
                                                           uint16_t channel, uint16_t key, float vel)
 {
-    retuneVoiceToKey(v, channel, key);
+    // the voice manager only retriggers a released voice
+    retuneVoiceToKey(v, channel, key,
+                     v->zone->parentGroup->outputInfo.glideFrom ==
+                         engine::Group::GlideFrom::GLIDE_FROM_SOUNDING);
     v->setIsGated(true);
     // aeg/aegOS are eg[0]/egOS[0], so this re-attacks the amp envelope too
     for (auto &eg : v->eg)
