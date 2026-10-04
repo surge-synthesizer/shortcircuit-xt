@@ -268,26 +268,24 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
 
     attachSamplePoint(startP, "StartS", variantView.variants[selectedVariation].startSample);
     sampleAttachments[startP]->precheckGuiAdjust = [this](auto f) {
-        return std::max(std::min(f, this->variantView.variants[this->selectedVariation].endSample),
-                        (int64_t)0);
+        return clampMarker(SnapPoint::Start, f);
     };
     addLabel(startP, "Start");
     attachSamplePoint(endP, "EndS", variantView.variants[selectedVariation].endSample);
     sampleAttachments[endP]->precheckGuiAdjust = [this](auto f) {
-        return std::max(f, this->variantView.variants[this->selectedVariation].startSample);
+        return clampMarker(SnapPoint::End, f);
     };
     addLabel(endP, "End");
     attachSamplePoint(startL, "StartL", variantView.variants[selectedVariation].startLoop);
     sampleAttachments[startL]->precheckGuiAdjust = [this](auto f) {
-        const auto &v = this->variantView.variants[this->selectedVariation];
-        return std::clamp(f, v.startSample, v.endLoop);
+        return clampMarker(SnapPoint::LoopStart, f);
     };
 
     editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[startL].get());
     addLabel(startL, "Start");
     attachSamplePoint(endL, "EndL", variantView.variants[selectedVariation].endLoop);
     sampleAttachments[endL]->precheckGuiAdjust = [this](auto f) {
-        return std::max(f, this->variantView.variants[this->selectedVariation].startLoop);
+        return clampMarker(SnapPoint::LoopEnd, f);
     };
     editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[endL].get());
     addLabel(endL, "End");
@@ -1283,22 +1281,46 @@ void VariantDisplay::snapToZeroCrossings(const std::vector<SnapPoint> &points)
         switch (pt)
         {
         case SnapPoint::Start:
-            snap(v.startSample, 0, v.endSample);
+            snap(v.startSample, 0, clampMarker(pt, v.endSample));
             break;
         case SnapPoint::End:
             snap(v.endSample, v.startSample, len);
             break;
         case SnapPoint::LoopStart:
-            snap(v.startLoop, 0, v.endLoop);
+            snap(v.startLoop, clampMarker(pt, 0), clampMarker(pt, v.endLoop));
             break;
         case SnapPoint::LoopEnd:
-            snap(v.endLoop, v.startLoop, len);
+            snap(v.endLoop, clampMarker(pt, v.startLoop), len);
             break;
         }
     }
     if (opened)
         endVariantGesture();
     repaint();
+}
+
+int64_t VariantDisplay::clampMarker(SnapPoint which, int64_t pos) const
+{
+    const auto &v = variantView.variants[selectedVariation];
+    using M = dsp::LoopFadeMarker;
+    auto fade = [&v](M m, int64_t p) {
+        if (!v.loopActive)
+            return p;
+        return dsp::clampMarkerToLoopFade(m, p, v.loopFade, v.startSample, v.startLoop, v.endLoop);
+    };
+
+    switch (which)
+    {
+    case SnapPoint::Start:
+        return std::max(fade(M::SAMPLE_START, std::min(pos, v.endSample)), (int64_t)0);
+    case SnapPoint::End:
+        return std::max(pos, v.startSample);
+    case SnapPoint::LoopStart:
+        return fade(M::LOOP_START, std::max(std::min(pos, v.endLoop), v.startSample));
+    case SnapPoint::LoopEnd:
+        return fade(M::LOOP_END, std::max(pos, v.startLoop));
+    }
+    return pos;
 }
 
 void VariantDisplay::showVariantTabMenu(int variantIdx, bool fromWaveform)

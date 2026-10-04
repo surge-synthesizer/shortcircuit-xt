@@ -74,11 +74,21 @@ void SampleWaveform::rebuildHotZones()
     startLoopHZ = juce::Rectangle<int>(rangeStartBox(ls), r.getY(), hotZoneSize, hotZoneSize);
     endLoopHZ = juce::Rectangle<int>(rangeEndBox(le), r.getY(), hotZoneSize, hotZoneSize);
 
-    // the fade sits at the end of the loop, not before its start, and so runs up to it
-    // - the far side of it when mirrored
-    auto fadeLen = (int)scxt::dsp::clampLoopFade(v.loopFade, v.startSample, v.startLoop, v.endLoop);
-    auto fade = xPixelForSampleDistance(fadeLen);
-    fadeLoopHz = juce::Rectangle<int>(isReversed() ? le : le - fade, r.getY(), fade, r.getHeight());
+    auto fadeLen = clampedLoopFade();
+    auto fadeBox = [r](int px) {
+        return juce::Rectangle<int>(px - hotZoneSize / 2, r.getCentreY() - hotZoneSize / 2,
+                                    hotZoneSize, hotZoneSize);
+    };
+    if (v.loopActive)
+    {
+        fadeStartLoopHZ = fadeBox(xPixelForSample(v.startLoop - fadeLen, false));
+        fadeEndLoopHZ = fadeBox(xPixelForSample(v.endLoop - fadeLen, false));
+    }
+    else
+    {
+        fadeStartLoopHZ = {};
+        fadeEndLoopHZ = {};
+    }
     repaint();
 
     slicePixelAndSamplePositions.clear();
@@ -364,15 +374,21 @@ void SampleWaveform::mouseDown(const juce::MouseEvent &e)
     }
 
     auto posi = e.position.roundToInt();
+    // alt on a loop marker drags its fade instead of moving it
+    auto alt = e.mods.isAltDown();
     if (startSampleHZ.contains(posi))
         mouseState = MouseState::HZ_DRAG_SAMPSTART;
     else if (endSampleHZ.contains(posi))
         mouseState = MouseState::HZ_DRAG_SAMPEND;
     // TODO loopActive check here
     else if (startLoopHZ.contains(posi))
-        mouseState = MouseState::HZ_DRAG_LOOPSTART;
+        mouseState = alt ? MouseState::HZ_DRAG_FADE_LOOPSTART : MouseState::HZ_DRAG_LOOPSTART;
     else if (endLoopHZ.contains(posi))
-        mouseState = MouseState::HZ_DRAG_LOOPEND;
+        mouseState = alt ? MouseState::HZ_DRAG_FADE_LOOPEND : MouseState::HZ_DRAG_LOOPEND;
+    else if (fadeEndLoopHZ.contains(posi))
+        mouseState = MouseState::HZ_DRAG_FADE_LOOPEND;
+    else if (fadeStartLoopHZ.contains(posi))
+        mouseState = MouseState::HZ_DRAG_FADE_LOOPSTART;
     else
         mouseState = MouseState::NONE;
 
@@ -381,12 +397,32 @@ void SampleWaveform::mouseDown(const juce::MouseEvent &e)
     // one undo entry for the whole drag, not one per mouse move
     if (mouseState != MouseState::NONE)
     {
-        if (auto *f = draggedPoint())
+        if (isFadeDrag())
+        {
+            // grab the fade's outer node, wherever on the marker the drag began
+            auto &v = display->variantView.variants[display->selectedVariation];
+            dragGrabOffsetPx = e.position.x - xPixelForSample(fadeAnchor() - clampedLoopFade());
+            fadeDragStartY = e.position.y;
+            fadeDragStartCurve = v.loopCurve;
+        }
+        else if (auto *f = draggedPoint())
+        {
             dragGrabOffsetPx = e.position.x - xPixelForSample(*f);
+        }
         display->beginVariantGesture();
     }
+}
 
-    // TODO cursor change and so on
+int64_t SampleWaveform::fadeAnchor()
+{
+    auto &v = display->variantView.variants[display->selectedVariation];
+    return mouseState == MouseState::HZ_DRAG_FADE_LOOPSTART ? v.startLoop : v.endLoop;
+}
+
+int64_t SampleWaveform::clampedLoopFade()
+{
+    auto &v = display->variantView.variants[display->selectedVariation];
+    return scxt::dsp::clampLoopFade(v.loopFade, v.startSample, v.startLoop, v.endLoop);
 }
 
 int64_t *SampleWaveform::draggedPoint()
@@ -402,6 +438,9 @@ int64_t *SampleWaveform::draggedPoint()
         return &v.startLoop;
     case MouseState::HZ_DRAG_LOOPEND:
         return &v.endLoop;
+    case MouseState::HZ_DRAG_FADE_LOOPSTART:
+    case MouseState::HZ_DRAG_FADE_LOOPEND:
+        return &v.loopFade;
     case MouseState::NONE:
         break;
     }
@@ -413,8 +452,31 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
     if (mouseState == MouseState::NONE)
         return;
 
+    auto &v = display->variantView.variants[display->selectedVariation];
     auto xpos = e.position.x - dragGrabOffsetPx;
     auto samplePos = sampleForXPixel(xpos);
+
+    if (isFadeDrag())
+    {
+        v.loopFade = scxt::dsp::clampLoopFade(fadeAnchor() - samplePos, v.startSample, v.startLoop,
+                                              v.endLoop);
+        display->onVariantFieldChanged(v.loopFade);
+
+        // a ping-pong turn ignores the curve, so leave it be
+        if (v.loopDirection == scxt::engine::Zone::LoopDirection::FORWARD_ONLY)
+        {
+            auto dy = (fadeDragStartY - e.position.y) / std::max(getInsetBounds().getHeight(), 1);
+            auto c = std::clamp(fadeDragStartCurve + dy * scxt::dsp::loopCurveMax, 0.f,
+                                scxt::dsp::loopCurveMax);
+            if (c != v.loopCurve)
+            {
+                v.loopCurve = c;
+                display->onVariantFieldChanged(v.loopCurve);
+            }
+        }
+        return;
+    }
+
     if (e.mods.isShiftDown())
     {
         samplePos = snapToZeroCrossingNear(samplePos, xpos);
@@ -432,23 +494,20 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
             }
         }
     }
+    using SP = VariantDisplay::SnapPoint;
     switch (mouseState)
     {
     case MouseState::HZ_DRAG_SAMPSTART:
-        display->variantView.variants[display->selectedVariation].startSample = std::min(
-            samplePos, display->variantView.variants[display->selectedVariation].endSample);
+        v.startSample = display->clampMarker(SP::Start, samplePos);
         break;
     case MouseState::HZ_DRAG_SAMPEND:
-        display->variantView.variants[display->selectedVariation].endSample = std::max(
-            samplePos, display->variantView.variants[display->selectedVariation].startSample);
+        v.endSample = display->clampMarker(SP::End, samplePos);
         break;
     case MouseState::HZ_DRAG_LOOPSTART:
-        display->variantView.variants[display->selectedVariation].startLoop =
-            std::min(samplePos, display->variantView.variants[display->selectedVariation].endLoop);
+        v.startLoop = display->clampMarker(SP::LoopStart, samplePos);
         break;
     case MouseState::HZ_DRAG_LOOPEND:
-        display->variantView.variants[display->selectedVariation].endLoop = std::max(
-            samplePos, display->variantView.variants[display->selectedVariation].startLoop);
+        v.endLoop = display->clampMarker(SP::LoopEnd, samplePos);
         break;
     default:
         break;
@@ -465,6 +524,9 @@ void SampleWaveform::mouseUp(const juce::MouseEvent &e)
     {
         if (auto *f = draggedPoint())
             display->onVariantFieldChanged(*f);
+        if (isFadeDrag())
+            display->onVariantFieldChanged(
+                display->variantView.variants[display->selectedVariation].loopCurve);
         display->endVariantGesture();
         mouseState = MouseState::NONE;
         return;
@@ -482,6 +544,11 @@ void SampleWaveform::mouseMove(const juce::MouseEvent &e)
         endLoopHZ.contains(posi))
     {
         setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
+        return;
+    }
+    if (fadeStartLoopHZ.contains(posi) || fadeEndLoopHZ.contains(posi))
+    {
+        setMouseCursor(juce::MouseCursor::UpDownLeftRightResizeCursor);
         return;
     }
 
@@ -840,6 +907,18 @@ void SampleWaveform::paint(juce::Graphics &g)
             auto tail = isReversed() ? bx.getX() : bx.getRight();
             g.drawLine(tail, bx.getY(), tip, bx.getCentreY());
             g.drawLine(tail, bx.getBottom(), tip, bx.getCentreY());
+        }
+
+        for (const auto &hz : {fadeStartLoopHZ, fadeEndLoopHZ})
+        {
+            if (hz.getRight() < 0 || hz.getX() > getWidth())
+                continue;
+            g.setColour(a2a);
+            g.fillRect(hz);
+            g.setColour(bg1);
+            auto bx = hz.reduced(3).toFloat();
+            g.drawLine(bx.getX(), bx.getY(), bx.getRight(), bx.getBottom());
+            g.drawLine(bx.getX(), bx.getBottom(), bx.getRight(), bx.getY());
         }
     }
 

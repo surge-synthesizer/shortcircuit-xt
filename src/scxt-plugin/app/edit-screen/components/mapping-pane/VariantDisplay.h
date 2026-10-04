@@ -275,6 +275,9 @@ struct VariantDisplay : juce::Component, HasEditor, KeyCommandTarget
     // move the selected variant's markers to their nearest zero crossings, as one undo entry
     void snapToZeroCrossings(const std::vector<SnapPoint> &points);
 
+    // the one bound on a marker, shared by the text fields and the waveform drags
+    int64_t clampMarker(SnapPoint which, int64_t pos) const;
+
     void showHamburgerMenu();
 
     // Header section
