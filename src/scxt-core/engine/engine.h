@@ -628,6 +628,18 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         std::array<VoiceDisplayStateItem, maxVoices> voiceDisplayItems;
         std::atomic<uint32_t> forceCount{0};
 
+        // groups outlive their voices while effects ring out, so they report separately
+        std::atomic<int64_t> soundingGroupsWriteCounter{0};
+        std::array<std::array<std::atomic<uint64_t>, maxSoundingDisplayGroupsPerPart / 64>,
+                   numParts>
+            soundingGroups{};
+        bool isGroupSounding(size_t part, size_t group) const
+        {
+            if (part >= numParts || group >= maxSoundingDisplayGroupsPerPart)
+                return false;
+            return soundingGroups[part][group / 64] & ((uint64_t)1 << (group % 64));
+        }
+
         struct TransportDisplayState
         {
             std::atomic<double> tempo;

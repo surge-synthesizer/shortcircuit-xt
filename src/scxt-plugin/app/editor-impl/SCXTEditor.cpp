@@ -301,6 +301,13 @@ void SCXTEditor::idle()
         }
     }
 
+    if (sharedUiMemoryState.soundingGroupsWriteCounter != lastSoundingGroupsWriteCounter)
+    {
+        lastSoundingGroupsWriteCounter = sharedUiMemoryState.soundingGroupsWriteCounter;
+        if (editScreen->isVisible())
+            editScreen->partSidebar->repaint();
+    }
+
     if (editScreen->isVisible() && editScreen->mappingPane->sampleDisplay->isVisible())
     {
         if (currentLeadZoneSelection.has_value())

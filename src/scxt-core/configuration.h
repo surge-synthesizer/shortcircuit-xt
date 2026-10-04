@@ -53,6 +53,9 @@ static constexpr uint16_t numPluginOutputs{numNonMainPluginOutputs + 1};
 
 static constexpr uint16_t maxVoices{512};
 
+// groups past this still work, the ui just can't show them sounding
+static constexpr size_t maxSoundingDisplayGroupsPerPart{1024};
+
 // some battles are not worth it
 static constexpr uint16_t BLOCK_SIZE{blockSize};
 static constexpr uint16_t BLOCK_SIZE_QUAD{blockSizeQuad};

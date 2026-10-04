@@ -165,3 +165,30 @@ TEST_CASE("A round robin voice shows its playhead on the variant it picked", "[v
         REQUIRE(itm.samplePos[0] >= 1000 * n);
     }
 }
+
+TEST_CASE("The sidebar sees which groups are sounding", "[display]")
+{
+    DisplayFixture f(Zone::FORWARD_RR, 1);
+    f.eng->getPatch()->getPart(0)->addGroup();
+    auto &ui = f.eng->sharedUIMemoryState;
+
+    f.eng->processAudio();
+    REQUIRE_FALSE(ui.isGroupSounding(0, 0));
+    auto counter = ui.soundingGroupsWriteCounter.load();
+
+    f.play(60);
+    REQUIRE(ui.isGroupSounding(0, 0));
+    REQUIRE_FALSE(ui.isGroupSounding(0, 1));
+    REQUIRE(ui.soundingGroupsWriteCounter > counter);
+
+    f.eng->processNoteOffEvent(0, 0, 60, -1, 0.f);
+    int blocks{0};
+    while (ui.isGroupSounding(0, 0) && blocks < 48000 * 10 / scxt::blockSize)
+    {
+        f.eng->processAudio();
+        blocks++;
+    }
+    REQUIRE_FALSE(ui.isGroupSounding(0, 0));
+    REQUIRE_FALSE(ui.isGroupSounding(scxt::numParts, 0));
+    REQUIRE_FALSE(ui.isGroupSounding(0, scxt::maxSoundingDisplayGroupsPerPart));
+}

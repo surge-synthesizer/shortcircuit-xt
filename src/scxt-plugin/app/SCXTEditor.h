@@ -389,6 +389,7 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
      * Items to deal with the shared memory reads
      */
     int64_t lastVoiceDisplayWriteCounter{-1};
+    int64_t lastSoundingGroupsWriteCounter{-1};
     float lastProcessMemoryInMegabytes{0};
 
     friend struct HasEditor;

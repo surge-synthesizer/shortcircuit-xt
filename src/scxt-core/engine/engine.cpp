@@ -410,6 +410,22 @@ bool Engine::processAudio()
             bl[idx++][c] = a.vuLevel[c];
     }
 
+    bool soundingGroupsChanged{false};
+    for (const auto &part : getPatch()->getParts())
+    {
+        auto &sg = sharedUIMemoryState.soundingGroups[part->partNumber];
+        for (size_t w = 0; w < sg.size(); ++w)
+        {
+            if (sg[w] != part->soundingGroups[w])
+            {
+                sg[w] = part->soundingGroups[w];
+                soundingGroupsChanged = true;
+            }
+        }
+    }
+    if (soundingGroupsChanged)
+        sharedUIMemoryState.soundingGroupsWriteCounter++;
+
     auto pav = (uint32_t)activeVoices;
 #if BUILD_IS_DEBUG
     if (pav != av)

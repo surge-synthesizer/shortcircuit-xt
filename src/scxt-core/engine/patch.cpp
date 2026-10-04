@@ -44,6 +44,10 @@ void Patch::process(Engine &e)
         {
             part->process(e);
         }
+        else
+        {
+            part->soundingGroups.fill(0);
+        }
     }
 
     for (auto &b : busses.partBusses)
