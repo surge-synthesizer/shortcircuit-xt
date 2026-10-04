@@ -69,11 +69,16 @@ void Part::process(Engine &e)
     if (pan != 0)
         pl::stereoEqualPower(0.5 * (pan + 1), pmat);
 
+    soundingGroups.fill(0);
+    size_t gi{0};
     for (const auto &g : groups)
     {
+        auto idx = gi++;
         if (g->isActive())
         {
             noGroups = false;
+            if (idx < maxSoundingDisplayGroupsPerPart)
+                soundingGroups[idx / 64] |= (uint64_t)1 << (idx % 64);
             g->process(e);
 
             auto bi = g->outputInfo.routeTo;

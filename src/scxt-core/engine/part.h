@@ -188,6 +188,8 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     size_t addGroup();
     size_t addGroup(std::unique_ptr<Group> &g);
     uint32_t activeGroups{0};
+    // one bit per group processed this block, for the ui
+    std::array<uint64_t, maxSoundingDisplayGroupsPerPart / 64> soundingGroups{};
     bool isActive();
     void addActiveGroup() { activeGroups++; }
     void removeActiveGroup()
