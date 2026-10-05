@@ -135,8 +135,11 @@ CLIENT_TO_SERIAL_CONSTRAINED(
                                                 undo::GroupModStorageSpec>(
         &engine::Zone::modulatorStorage, &engine::Group::modulatorStorage, payload, engine, cont,
         [payload](const engine::Engine &eng) {
-            if (std::get<2>(payload) ==
-                (ptrdiff_t)offsetof(modulation::ModulatorStorage, temposync))
+            // unipolar changes the source polarity the matrix tooltips read
+            auto off = std::get<2>(payload);
+            if (off == (ptrdiff_t)offsetof(modulation::ModulatorStorage, temposync) ||
+                off == (ptrdiff_t)offsetof(modulation::ModulatorStorage, curveLfoStorage) +
+                           (ptrdiff_t)offsetof(modulation::modulators::CurveLFOStorage, unipolar))
                 eng.getSelectionManager()->sendDisplayDataForLeadSelection(std::get<0>(payload));
         }));
 

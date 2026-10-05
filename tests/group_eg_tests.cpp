@@ -123,7 +123,7 @@ TEST_CASE("A zone mod row runs only the group EG it reads", "[modulation][groupe
         Fixture f;
         auto &z = f.zone();
         z.routingTable.routes[0].source = vm::sourcesForScanning().gegSources[i];
-        z.routingTable.routes[0].target = vm::MatrixEndpoints::MappingTarget::panA;
+        z.routingTable.routes[0].target = vm::MatrixEndpoints::MappingTarget::panTId;
         z.routingTable.routes[0].depth = 0.5f;
         z.onRoutingChanged();
 

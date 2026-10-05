@@ -139,10 +139,10 @@ TEST_CASE("Zone mod rows with unknown endpoints are cleared on unstream", "[modu
 {
     Fixture f;
     auto &z = f.zone();
-    fillWithUnknowns(z.routingTable, zoneMacro, vm::MatrixEndpoints::MappingTarget::panA);
+    fillWithUnknowns(z.routingTable, zoneMacro, vm::MatrixEndpoints::MappingTarget::panTId);
 
     REQUIRE_NOTHROW(z.setupOnUnstream(*f.eng));
-    requireUnknownsCleared(z.routingTable, zoneMacro, vm::MatrixEndpoints::MappingTarget::panA);
+    requireUnknownsCleared(z.routingTable, zoneMacro, vm::MatrixEndpoints::MappingTarget::panTId);
     REQUIRE_NOTHROW(f.playNote());
     REQUIRE_NOTHROW(f.describe(true));
 }
@@ -201,7 +201,7 @@ TEST_CASE("Describing a mod row with an unknown target does not throw", "[modula
 TEST_CASE("Engine state with unknown mod endpoints loads and plays", "[modulation][streaming]")
 {
     Fixture f;
-    fillWithUnknowns(f.zone().routingTable, zoneMacro, vm::MatrixEndpoints::MappingTarget::panA);
+    fillWithUnknowns(f.zone().routingTable, zoneMacro, vm::MatrixEndpoints::MappingTarget::panTId);
     fillWithUnknowns(f.group().routingTable, groupMacro, groupPan);
 
     std::string state;
@@ -217,7 +217,7 @@ TEST_CASE("Engine state with unknown mod endpoints loads and plays", "[modulatio
     }
 
     requireUnknownsCleared(reloaded.zone().routingTable, zoneMacro,
-                           vm::MatrixEndpoints::MappingTarget::panA);
+                           vm::MatrixEndpoints::MappingTarget::panTId);
     requireUnknownsCleared(reloaded.group().routingTable, groupMacro, groupPan);
     REQUIRE_NOTHROW(reloaded.playNote());
     REQUIRE_NOTHROW(reloaded.describe(true));

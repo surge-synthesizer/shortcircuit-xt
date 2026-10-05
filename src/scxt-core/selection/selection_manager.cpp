@@ -764,7 +764,7 @@ void SelectionManager::sendDisplayDataForNoZoneSelected()
     }
 
     serializationSendToClient(cms::s2c_update_zone_matrix_metadata,
-                              voice::modulation::voiceMatrixMetadata_t{false, {}, {}, {}},
+                              voice::modulation::voiceMatrixMetadata_t{false, {}, {}, {}, {}},
                               *(engine.getMessageController()));
 
     serializationSendToClient(cms::s2c_update_zone_output_info,
@@ -868,7 +868,7 @@ void SelectionManager::sendDisplayDataForNoGroupSelected()
     }
 
     serializationSendToClient(cms::s2c_update_group_matrix_metadata,
-                              modulation::groupMatrixMetadata_t{false, {}, {}, {}},
+                              modulation::groupMatrixMetadata_t{false, {}, {}, {}, {}},
                               *(engine.getMessageController()));
 
     serializationSendToClient(cms::s2c_update_group_output_info,

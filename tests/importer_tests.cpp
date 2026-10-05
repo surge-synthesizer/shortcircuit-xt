@@ -243,9 +243,9 @@ TEST_CASE("Import SF2 generators and modulators", "[importer]")
     CHECK(all->parentGroup->outputInfo.velocitySensitivity == Approx(0.f));
 
     // reversed concave velocity is the fast early fall, 96dB at velocity 0
-    auto allVel = routesFrom(all, MidiS::velocityA);
+    auto allVel = routesFrom(all, MidiS::velocitySId);
     REQUIRE(allVel.size() == 1);
-    CHECK(*allVel[0]->target == MT::ampA);
+    CHECK(*allVel[0]->target == MT::ampTId);
     CHECK(allVel[0]->curve == scxt::modulation::ModulationCurves::CurveIdentifier{'f01E'});
     CHECK(allVel[0]->depth == Approx(-96.f / 72.f));
 
@@ -275,11 +275,11 @@ TEST_CASE("Import SF2 generators and modulators", "[importer]")
     bool sawDirect{false}, sawWheel{false};
     for (auto *r : loVib)
     {
-        CHECK(*r->target == MT::pitchOffsetA);
+        CHECK(*r->target == MT::pitchOffsetTId);
         if (r->sourceVia.has_value())
         {
             sawWheel = true;
-            CHECK(*r->sourceVia == MidiS::modWheelA);
+            CHECK(*r->sourceVia == MidiS::modWheelSId);
             CHECK(r->depth == Approx(1.f / 192.f));
         }
         else
@@ -292,39 +292,39 @@ TEST_CASE("Import SF2 generators and modulators", "[importer]")
     CHECK(sawWheel);
 
     // velocity, max to min, lowers the cutoff by up to two octaves
-    auto loVel = routesFrom(lo, MidiS::velocityA);
+    auto loVel = routesFrom(lo, MidiS::velocitySId);
     REQUIRE(loVel.size() == 1);
     CHECK(loVel[0]->target->whichProcessorFPTarget(0) == 0);
     CHECK(loVel[0]->curve == scxt::modulation::ModulationCurves::CurveIdentifier{'1-x '});
     CHECK(loVel[0]->depth == Approx(-24.f / 130.f));
 
     // positive keynum-to-decay shortens the decay going up the keyboard
-    auto loKey = routesFrom(lo, KeyS::keyTrackA);
+    auto loKey = routesFrom(lo, KeyS::keyTrackSId);
     REQUIRE(loKey.size() == 1);
-    CHECK(*loKey[0]->target == EGT::decayA(0));
+    CHECK(*loKey[0]->target == EGT::decayTId(0));
     CHECK(loKey[0]->depth < 0.f);
 
     // scxt bends natively so the default pitch bend modulator is dropped
-    CHECK(routesFrom(lo, MidiS::pbpm1A).empty());
+    CHECK(routesFrom(lo, MidiS::pbpm1SId).empty());
 
     // the preset-level CC11 -> attenuation reaches every zone
     for (auto *z : {lo, hi, all})
     {
-        auto cc11 = routesFrom(z, CCs::ccSourceA(11));
+        auto cc11 = routesFrom(z, CCs::ccSId(11));
         REQUIRE(cc11.size() == 1);
-        CHECK(*cc11[0]->target == MT::ampA);
+        CHECK(*cc11[0]->target == MT::ampTId);
         CHECK(cc11[0]->depth == Approx(-10.f / 72.f));
     }
 
     // hi replaces the global CC1 -> vibrato with its own rather than adding one
     auto hiVib = routesFrom(hi, MEnd::Sources::lfoSource(0));
     REQUIRE(hiVib.size() == 1);
-    CHECK(*hiVib[0]->sourceVia == MidiS::modWheelA);
+    CHECK(*hiVib[0]->sourceVia == MidiS::modWheelSId);
     CHECK(hiVib[0]->depth == Approx(2.f / 192.f));
 
     auto hiModLfo = routesFrom(hi, MEnd::Sources::lfoSource(1));
     REQUIRE(hiModLfo.size() == 1);
-    CHECK(*hiModLfo[0]->target == MT::ampA);
+    CHECK(*hiModLfo[0]->target == MT::ampTId);
     CHECK(hiModLfo[0]->depth == Approx(6.f / 72.f));
 }
 
@@ -480,17 +480,17 @@ TEST_CASE("Import SFZ filter mod fixture", "[importer]")
         const bool isCutoff = (fp == 0);
         const bool isReso = (fp == 2);
 
-        if (isCutoff && s == MidiS::modWheelA)
+        if (isCutoff && s == MidiS::modWheelSId)
         {
             foundOncc1 = true;
             CHECK(row.depth == Approx(80.f / 130.f).margin(0.01f));
         }
-        if (isCutoff && s == MidiS::chanATA)
+        if (isCutoff && s == MidiS::chanATSId)
         {
             foundChanAft = true;
             CHECK(row.depth == Approx(-80.f / 130.f).margin(0.01f));
         }
-        if (isReso && s == CCs::ccSourceA(73))
+        if (isReso && s == CCs::ccSId(73))
         {
             foundReso73 = true;
             CHECK(row.depth == Approx(0.5f).margin(0.01f));

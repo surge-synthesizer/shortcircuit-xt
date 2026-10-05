@@ -177,7 +177,7 @@ void SCXTEditorReceiver::onGroupOrZoneProcessorDataAndMetadata(
 void SCXTEditorReceiver::onZoneVoiceMatrixMetadata(
     const scxt::voice::modulation::voiceMatrixMetadata_t &d)
 {
-    const auto &[active, sinf, tinf, cinf] = d;
+    const auto &active = std::get<0>(d);
     editor.editScreen->getZoneElements()->modPane->setActive(active);
     if (active)
     {
@@ -197,7 +197,7 @@ void SCXTEditorReceiver::onZoneVoiceMatrix(const scxt::voice::modulation::Matrix
 
 void SCXTEditorReceiver::onGroupMatrixMetadata(const scxt::modulation::groupMatrixMetadata_t &d)
 {
-    const auto &[active, sinf, dinf, cinf] = d;
+    const auto &active = std::get<0>(d);
 
     editor.editScreen->getGroupElements()->modPane->setActive(active);
     if (active)

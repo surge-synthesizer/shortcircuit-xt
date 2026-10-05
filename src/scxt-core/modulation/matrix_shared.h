@@ -29,9 +29,11 @@
 #define SCXT_SRC_SCXT_CORE_MODULATION_MATRIX_SHARED_H
 
 #include <cstdint>
+#include <optional>
 #include <utility>
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "mod_curves.h"
 
@@ -74,6 +76,27 @@ struct SourceIdentifier
         return gid == other.gid && tid == other.tid && index == other.index;
     }
 };
+
+// only non-unipolar sources are listed
+typedef std::vector<std::pair<SourceIdentifier, int32_t>> sourcePolarityVector_t;
+
+SourcePolarity polarityOf(const sourcePolarityVector_t &pv, const SourceIdentifier &s);
+
+// the polarity of curve(source * via) as the matrix applies it
+SourcePolarity routePolarity(SourcePolarity source, std::optional<SourcePolarity> via,
+                             std::optional<ModulationCurves::CurveIdentifier> curve,
+                             bool multiplicative);
+
+template <typename R>
+SourcePolarity routePolarity(const sourcePolarityVector_t &pv, const R &route, bool multiplicative)
+{
+    if (!route.source.has_value())
+        return SourcePolarity::UNIPOLAR;
+    std::optional<SourcePolarity> via;
+    if (route.sourceVia.has_value())
+        via = polarityOf(pv, *route.sourceVia);
+    return routePolarity(polarityOf(pv, *route.source), via, route.curve, multiplicative);
+}
 
 struct TargetIdentifier
 {
@@ -179,23 +202,23 @@ template <typename TG, uint32_t gn> struct EGTargetEndpointData
     // Exposed so external code (e.g. importers) can build identifiers without
     // duplicating the 4cc literals.
     static constexpr uint32_t gid = gn;
-    static constexpr TG delayA(uint32_t slot) { return TG{gn, 'dlay', slot}; }
-    static constexpr TG attackA(uint32_t slot) { return TG{gn, 'atck', slot}; }
-    static constexpr TG holdA(uint32_t slot) { return TG{gn, 'hld ', slot}; }
-    static constexpr TG decayA(uint32_t slot) { return TG{gn, 'dcay', slot}; }
-    static constexpr TG sustainA(uint32_t slot) { return TG{gn, 'sust', slot}; }
-    static constexpr TG releaseA(uint32_t slot) { return TG{gn, 'rels', slot}; }
-    static constexpr TG attackShapeA(uint32_t slot) { return TG{gn, 'atSH', slot}; }
-    static constexpr TG decayShapeA(uint32_t slot) { return TG{gn, 'dcSH', slot}; }
-    static constexpr TG releaseShapeA(uint32_t slot) { return TG{gn, 'rlSH', slot}; }
-    static constexpr TG retriggerA(uint32_t slot) { return TG{gn, 'rtrg', slot}; }
-    static constexpr TG rateMulA(uint32_t slot) { return TG{gn, 'erml', slot}; }
+    static constexpr TG delayTId(uint32_t slot) { return TG{gn, 'dlay', slot}; }
+    static constexpr TG attackTId(uint32_t slot) { return TG{gn, 'atck', slot}; }
+    static constexpr TG holdTId(uint32_t slot) { return TG{gn, 'hld ', slot}; }
+    static constexpr TG decayTId(uint32_t slot) { return TG{gn, 'dcay', slot}; }
+    static constexpr TG sustainTId(uint32_t slot) { return TG{gn, 'sust', slot}; }
+    static constexpr TG releaseTId(uint32_t slot) { return TG{gn, 'rels', slot}; }
+    static constexpr TG attackShapeTId(uint32_t slot) { return TG{gn, 'atSH', slot}; }
+    static constexpr TG decayShapeTId(uint32_t slot) { return TG{gn, 'dcSH', slot}; }
+    static constexpr TG releaseShapeTId(uint32_t slot) { return TG{gn, 'rlSH', slot}; }
+    static constexpr TG retriggerTId(uint32_t slot) { return TG{gn, 'rtrg', slot}; }
+    static constexpr TG rateMulTId(uint32_t slot) { return TG{gn, 'erml', slot}; }
 
     uint32_t index{0};
     EGTargetEndpointData(uint32_t p)
-        : index(p), dlyT(delayA(p)), aT(attackA(p)), hT(holdA(p)), dT(decayA(p)), sT(sustainA(p)),
-          rT(releaseA(p)), asT(attackShapeA(p)), dsT(decayShapeA(p)), rsT(releaseShapeA(p)),
-          retriggerT(retriggerA(p)), rateMulT(rateMulA(p))
+        : index(p), dlyT(delayTId(p)), aT(attackTId(p)), hT(holdTId(p)), dT(decayTId(p)),
+          sT(sustainTId(p)), rT(releaseTId(p)), asT(attackShapeTId(p)), dsT(decayShapeTId(p)),
+          rsT(releaseShapeTId(p)), retriggerT(retriggerTId(p)), rateMulT(rateMulTId(p))
     {
     }
 
@@ -459,6 +482,14 @@ inline void LFOTargetEndpointData<TG, gn>::baseBind(M &m, Z &z)
     bindEl(m, ms, env.rateMulT, ms.envLfoStorage.rateMul, env.rateMulP);
 }
 
+// where s sits in a run of count sources sharing first's gid and tid
+template <typename SR> std::optional<uint32_t> slotIn(const SR &first, uint32_t count, const SR &s)
+{
+    if (s.gid != first.gid || s.tid != first.tid || s.index >= count)
+        return std::nullopt;
+    return s.index;
+}
+
 template <typename SR, uint32_t gid,
           void (*registerSource)(scxt::engine::Engine *, const SR &, const std::string &,
                                  const std::string &)>
@@ -480,11 +511,17 @@ struct TransportSourceBase
 
 template <typename SR, uint32_t gid> struct RNGSourceBase
 {
+    static constexpr SR randomSId(uint32_t i) { return SR{gid, 'rnds', i}; }
+    static std::optional<uint32_t> slotOf(const SR &s)
+    {
+        return slotIn(randomSId(0), scxt::randomsPerGroupOrZone, s);
+    }
+
     RNGSourceBase(scxt::engine::Engine *e)
     {
         for (uint32_t i = 0; i < scxt::randomsPerGroupOrZone; ++i)
         {
-            randoms[i] = SR{gid, 'rnds', i};
+            randoms[i] = randomSId(i);
         }
     }
 
@@ -517,12 +554,15 @@ template <typename SR, uint32_t gid, size_t numLfo,
                                  const std::string &)>
 struct LFOSourceBase
 {
+    static constexpr SR lfoSId(uint32_t i) { return SR{gid, 'outp', i}; }
+    static std::optional<uint32_t> slotOf(const SR &s) { return slotIn(lfoSId(0), numLfo, s); }
+
     LFOSourceBase(scxt::engine::Engine *e, const std::string &cat = "LFO",
                   const std::string &lfon = "LFO")
     {
         for (uint32_t i = 0; i < numLfo; ++i)
         {
-            sources[i] = SR{gid, 'outp', i};
+            sources[i] = lfoSId(i);
             registerSource(e, sources[i], cat, lfon + " " + std::to_string(i + 1));
         }
     }
@@ -557,13 +597,13 @@ template <typename CF, typename SR, uint32_t gid,
 struct MIDICCBase
 {
     static constexpr int numMidiCC{128};
-    static constexpr SR ccSourceA(uint32_t n) { return SR{gid, 'm1cc', n}; }
+    static constexpr SR ccSId(uint32_t n) { return SR{gid, 'm1cc', n}; }
 
     MIDICCBase(scxt::engine::Engine *e)
     {
         for (uint32_t i = 0; i < numMidiCC; ++i)
         {
-            sources[i] = ccSourceA(i);
+            sources[i] = ccSId(i);
             registerSource(e, sources[i], "MIDI CCs", fmt::format("CC {:03}", i));
             // Default lag is a registration-time concern. Doing it here keeps it off the audio
             // thread

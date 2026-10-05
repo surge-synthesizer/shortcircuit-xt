@@ -37,6 +37,7 @@
 #include "utils.h"
 #include "configuration.h"
 #include "datamodel/metadata.h"
+#include "source_polarity.h"
 
 namespace scxt::modulation
 {
@@ -147,6 +148,22 @@ struct RandomStorage
         TERNARY
     } style{UNIFORM_01};
     DECLARE_ENUM_STRING(Style);
+
+    SourcePolarity polarity() const
+    {
+        switch (style)
+        {
+        case UNIFORM_BIPOLAR:
+        case NORMAL:
+        case TERNARY:
+            return SourcePolarity::BIPOLAR;
+        case BOOL_NEG:
+            return SourcePolarity::NEGATIVE;
+        default:
+            break;
+        }
+        return SourcePolarity::UNIPOLAR;
+    }
 };
 struct EnvFollowerStorage
 {
@@ -213,6 +230,15 @@ struct ModulatorStorage
     inline bool isMSEG() const { return modulatorShape == MSEG; }
     inline bool isEnv() const { return modulatorShape == LFO_ENV; }
     inline bool isCurve() const { return !isStep() && !isEnv() && !isMSEG(); }
+
+    SourcePolarity polarity() const
+    {
+        if (isStep())
+            return SourcePolarity::BIPOLAR;
+        if (isCurve())
+            return curveLfoStorage.unipolar ? SourcePolarity::UNIPOLAR : SourcePolarity::BIPOLAR;
+        return SourcePolarity::UNIPOLAR;
+    }
 
     bool modulatorConsistent{true};
 };

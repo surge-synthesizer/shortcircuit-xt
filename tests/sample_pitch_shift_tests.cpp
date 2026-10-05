@@ -160,19 +160,19 @@ TEST_CASE("Pitch shift moves the sample by semitones", "[modulation]")
 
     SECTION("An octave up")
     {
-        f.route(ST::pitchShiftA, 12.f / 96.f);
+        f.route(ST::pitchShiftTId, 12.f / 96.f);
         REQUIRE(f.ratioOnRootKey() == Approx(semitonesUp(base, 12)).epsilon(1e-5));
     }
 
     SECTION("A fifth down")
     {
-        f.route(ST::pitchShiftA, -7.f / 96.f);
+        f.route(ST::pitchShiftTId, -7.f / 96.f);
         REQUIRE(f.ratioOnRootKey() == Approx(semitonesUp(base, -7)).epsilon(1e-5));
     }
 
     SECTION("Full depth stops at four octaves")
     {
-        f.route(ST::pitchShiftA, 1.f);
+        f.route(ST::pitchShiftTId, 1.f);
         REQUIRE(f.ratioOnRootKey() == Approx(semitonesUp(base, 48)).epsilon(1e-5));
     }
 }
@@ -185,13 +185,13 @@ TEST_CASE("Fine pitch shift moves the sample by cents", "[modulation]")
 
     SECTION("Fifty cents up")
     {
-        f.route(ST::finePitchShiftA, 50.f / 200.f);
+        f.route(ST::finePitchShiftTId, 50.f / 200.f);
         REQUIRE(f.ratioOnRootKey() == Approx(semitonesUp(base, 0.5)).epsilon(1e-5));
     }
 
     SECTION("Full depth stops at a semitone")
     {
-        f.route(ST::finePitchShiftA, -1.f);
+        f.route(ST::finePitchShiftTId, -1.f);
         REQUIRE(f.ratioOnRootKey() == Approx(semitonesUp(base, -1)).epsilon(1e-5));
     }
 }
@@ -207,14 +207,14 @@ TEST_CASE("Pitch shift targets replace playback ratio in the menu", "[modulation
     {
         const auto &id = std::get<0>(t);
         const auto &dn = std::get<1>(t);
-        REQUIRE_FALSE(id == MT::legacyPlaybackRatioA);
-        if (id == ST::pitchShiftA)
+        REQUIRE_FALSE(id == MT::legacyPlaybackRatioTId);
+        if (id == ST::pitchShiftTId)
         {
             sawShift = true;
             REQUIRE(vm::displayPath(dn) == "Sample");
             REQUIRE(vm::displayName(dn) == "Pitch Shift");
         }
-        if (id == ST::finePitchShiftA)
+        if (id == ST::finePitchShiftTId)
         {
             sawFine = true;
             REQUIRE(vm::displayPath(dn) == "Sample");
@@ -230,14 +230,14 @@ TEST_CASE("Prior sample pitch routes unstream onto pitch shift", "[modulation][s
     SECTION("A current stream round trips untouched")
     {
         scxt::engine::Engine::UnstreamGuard sg(scxt::currentStreamingVersion);
-        auto r = roundTrip(routingTo(ST::pitchShiftA, 0.1f));
-        REQUIRE(*r.target == ST::pitchShiftA);
+        auto r = roundTrip(routingTo(ST::pitchShiftTId, 0.1f));
+        REQUIRE(*r.target == ST::pitchShiftTId);
         REQUIRE(r.depth == Approx(0.1f));
     }
 
     SECTION("An in process stream is not converted")
     {
-        auto r = roundTrip(routingTo(ST::pitchShiftA, 0.1f));
+        auto r = roundTrip(routingTo(ST::pitchShiftTId, 0.1f));
         REQUIRE(r.depth == Approx(0.1f));
     }
 
@@ -245,21 +245,21 @@ TEST_CASE("Prior sample pitch routes unstream onto pitch shift", "[modulation][s
 
     SECTION("Sample tune keeps its semitones")
     {
-        auto r = roundTrip(routingTo(ST::pitchShiftA, 12.f / 192.f));
-        REQUIRE(*r.target == ST::pitchShiftA);
+        auto r = roundTrip(routingTo(ST::pitchShiftTId, 12.f / 192.f));
+        REQUIRE(*r.target == ST::pitchShiftTId);
         REQUIRE(r.depth == Approx(12.f / 96.f));
     }
 
     SECTION("Sample tune past four octaves clamps")
     {
-        auto r = roundTrip(routingTo(ST::pitchShiftA, -0.75f));
+        auto r = roundTrip(routingTo(ST::pitchShiftTId, -0.75f));
         REQUIRE(r.depth == Approx(-1.f));
     }
 
     SECTION("A doubled playback ratio becomes an octave")
     {
-        auto r = roundTrip(routingTo(MT::legacyPlaybackRatioA, 0.5f));
-        REQUIRE(*r.target == ST::pitchShiftA);
+        auto r = roundTrip(routingTo(MT::legacyPlaybackRatioTId, 0.5f));
+        REQUIRE(*r.target == ST::pitchShiftTId);
         REQUIRE(r.depth == Approx(12.f / 96.f));
         REQUIRE(r.active);
         REQUIRE(*r.source == vm::sourcesForScanning().macroSources.macros[0]);
@@ -267,21 +267,21 @@ TEST_CASE("Prior sample pitch routes unstream onto pitch shift", "[modulation][s
 
     SECTION("Full playback ratio becomes a tripled rate")
     {
-        auto r = roundTrip(routingTo(MT::legacyPlaybackRatioA, 1.f));
+        auto r = roundTrip(routingTo(MT::legacyPlaybackRatioTId, 1.f));
         REQUIRE(r.depth == Approx(12.f * std::log2(3.f) / 96.f));
     }
 
     SECTION("Negative playback ratio pitches down")
     {
-        auto r = roundTrip(routingTo(MT::legacyPlaybackRatioA, -0.5f));
-        REQUIRE(*r.target == ST::pitchShiftA);
+        auto r = roundTrip(routingTo(MT::legacyPlaybackRatioTId, -0.5f));
+        REQUIRE(*r.target == ST::pitchShiftTId);
         REQUIRE(r.depth == Approx(-12.f / 96.f));
     }
 
     SECTION("Other targets are left alone")
     {
-        auto r = roundTrip(routingTo(MT::pitchOffsetA, 0.3f));
-        REQUIRE(*r.target == MT::pitchOffsetA);
+        auto r = roundTrip(routingTo(MT::pitchOffsetTId, 0.3f));
+        REQUIRE(*r.target == MT::pitchOffsetTId);
         REQUIRE(r.depth == Approx(0.3f));
     }
 }
@@ -295,7 +295,7 @@ TEST_CASE("A prior playback ratio route still plays an octave up", "[modulation]
     Routing converted;
     {
         scxt::engine::Engine::UnstreamGuard sg(priorVersion);
-        converted = roundTrip(routingTo(MT::legacyPlaybackRatioA, 0.5f));
+        converted = roundTrip(routingTo(MT::legacyPlaybackRatioTId, 0.5f));
     }
     f.zone->routingTable.routes[0] = converted;
     f.zone->onRoutingChanged();

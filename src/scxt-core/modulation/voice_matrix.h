@@ -174,12 +174,12 @@ struct MatrixEndpoints
     struct MappingTarget
     {
         // so we can reach them from external multisamples
-        static constexpr TG pitchOffsetA{'zmap', 'ptof', 0};
-        static constexpr TG panA{'zmap', 'pan ', 0};
-        static constexpr TG ampA{'zmap', 'ampl', 0};
+        static constexpr TG pitchOffsetTId{'zmap', 'ptof', 0};
+        static constexpr TG panTId{'zmap', 'pan ', 0};
+        static constexpr TG ampTId{'zmap', 'ampl', 0};
         // unregistered; kept so old routes to it can unstream onto pitch shift
-        static constexpr TG legacyPlaybackRatioA{'zmap', 'pbrt', 0};
-        MappingTarget(engine::Engine *e) : pitchOffsetT(pitchOffsetA), panT(panA), ampT(ampA)
+        static constexpr TG legacyPlaybackRatioTId{'zmap', 'pbrt', 0};
+        MappingTarget(engine::Engine *e) : pitchOffsetT(pitchOffsetTId), panT(panTId), ampT(ampTId)
         {
             if (e)
             {
@@ -238,13 +238,13 @@ struct MatrixEndpoints
     struct SampleTarget
     {
         // ids are streamed, so this one keeps the name it had as sample tune
-        static constexpr TG pitchShiftA{'samp', 'tune', 0};
-        static constexpr TG finePitchShiftA{'samp', 'fine', 0};
+        static constexpr TG pitchShiftTId{'samp', 'tune', 0};
+        static constexpr TG finePitchShiftTId{'samp', 'fine', 0};
         static constexpr float pitchShiftRange{48.f};      // semitones
         static constexpr float finePitchShiftRange{100.f}; // cents
         SampleTarget(engine::Engine *e)
             : startPosT('samp', 'spos', 0), playSampleT('samp', 'plsm', 0),
-              pitchShiftT(pitchShiftA), finePitchShiftT(finePitchShiftA)
+              pitchShiftT(pitchShiftTId), finePitchShiftT(finePitchShiftTId)
         {
             auto orderGuard = scxt::modulation::shared::ExplicitMenuOrder(e);
             registerVoiceModTarget(e, startPosT, "Sample", "Start Pos");
@@ -268,51 +268,56 @@ struct MatrixEndpoints
     {
         static_assert(scxt::egsPerZone == 5, "Clean up the egSources constructor if this fails");
         // so we can reach them from external multisamples
-        static constexpr SR eg1A{'zneg', 'aeg ', 0};
-        static constexpr SR eg2A{'zneg', 'eg2 ', 0};
-        static constexpr SR eg3A{'zneg', 'eg3 ', 0};
-        static constexpr SR eg4A{'zneg', 'eg4 ', 0};
-        static constexpr SR eg5A{'zneg', 'eg5 ', 0};
+        static constexpr SR eg1SId{'zneg', 'aeg ', 0};
+        static constexpr SR eg2SId{'zneg', 'eg2 ', 0};
+        static constexpr SR eg3SId{'zneg', 'eg3 ', 0};
+        static constexpr SR eg4SId{'zneg', 'eg4 ', 0};
+        static constexpr SR eg5SId{'zneg', 'eg5 ', 0};
         static constexpr SR egSource(int slot)
         {
             switch (slot)
             {
             case 0:
-                return eg1A;
+                return eg1SId;
             case 1:
-                return eg2A;
+                return eg2SId;
             case 2:
-                return eg3A;
+                return eg3SId;
             case 3:
-                return eg4A;
+                return eg4SId;
             case 4:
-                return eg5A;
+                return eg5SId;
             default:
                 return SR{};
             }
         }
-        static constexpr SR lfoSource(int slot) { return SR{'znlf', 'outp', (uint32_t)slot}; }
+        using lfoSources_t = scxt::modulation::shared::LFOSourceBase<SR, 'znlf', lfosPerZone,
+                                                                     registerVoiceModSource>;
+        using glfoSources_t = scxt::modulation::shared::LFOSourceBase<SR, 'zglf', lfosPerGroup,
+                                                                      registerVoiceModSource>;
+        using rngSources_t = scxt::modulation::shared::RNGSourceBase<SR, 'zrng'>;
+
+        static constexpr SR lfoSource(int slot) { return lfoSources_t::lfoSId((uint32_t)slot); }
         Sources(engine::Engine *e);
 
-        scxt::modulation::shared::LFOSourceBase<SR, 'znlf', lfosPerZone, registerVoiceModSource>
-            lfoSources;
-        scxt::modulation::shared::LFOSourceBase<SR, 'zglf', lfosPerGroup, registerVoiceModSource>
-            glfoSources;
+        lfoSources_t lfoSources;
+        glfoSources_t glfoSources;
         scxt::modulation::shared::MIDICCBase<MatrixConfig, SR, 'zncc', registerVoiceModSource>
             midiCCSources;
 
         struct KeyAndPitchSources
         {
-            static constexpr SR keyTrackA{'zmid', 'ktrk'};
-            static constexpr SR pitchTrackA{'zkap', 'ptrk'};
-            static constexpr SR keyA{'zkap', 'key '};
-            static constexpr SR pitchA{'zkap', 'pitc'};
-            static constexpr SR midiKeyTrackA{'zkap', 'mktk'};
-            static constexpr SR midiKeyA{'zkap', 'mkey'};
+            static constexpr SR keyTrackSId{'zmid', 'ktrk'};
+            static constexpr SR pitchTrackSId{'zkap', 'ptrk'};
+            static constexpr SR keySId{'zkap', 'key '};
+            static constexpr SR pitchSId{'zkap', 'pitc'};
+            static constexpr SR midiKeyTrackSId{'zkap', 'mktk'};
+            static constexpr SR midiKeySId{'zkap', 'mkey'};
 
             KeyAndPitchSources(engine::Engine *e)
-                : keyTrackSource(keyTrackA), pitchTrackSource(pitchTrackA), keySource(keyA),
-                  pitchSource(pitchA), midiKeyTrackSource(midiKeyTrackA), midiKeySource(midiKeyA)
+                : keyTrackSource(keyTrackSId), pitchTrackSource(pitchTrackSId), keySource(keySId),
+                  pitchSource(pitchSId), midiKeyTrackSource(midiKeyTrackSId),
+                  midiKeySource(midiKeySId)
             {
                 registerVoiceModSource(e, keyTrackSource, "KeyTracking", "KeyTrack");
                 registerVoiceModSource(e, pitchTrackSource, "KeyTracking", "KeyTrack+PB+Glide");
@@ -330,18 +335,18 @@ struct MatrixEndpoints
 
         struct MIDISources
         {
-            static constexpr SR modWheelA{'zmid', 'modw'};
-            static constexpr SR velocityA{'zmid', 'velo'};
-            static constexpr SR releaseVelocityA{'zmid', 'rvel'};
-            static constexpr SR chanATA{'zmid', 'chat'};
-            static constexpr SR polyATA{'zmid', 'plyt'};
-            static constexpr SR pbpm1A{'zmid', 'pb11'};
-            static constexpr SR keyChangedLegA{'zmid', 'kclg'};
+            static constexpr SR modWheelSId{'zmid', 'modw'};
+            static constexpr SR velocitySId{'zmid', 'velo'};
+            static constexpr SR releaseVelocitySId{'zmid', 'rvel'};
+            static constexpr SR chanATSId{'zmid', 'chat'};
+            static constexpr SR polyATSId{'zmid', 'plyt'};
+            static constexpr SR pbpm1SId{'zmid', 'pb11'};
+            static constexpr SR keyChangedLegSId{'zmid', 'kclg'};
 
             MIDISources(engine::Engine *e)
-                : modWheelSource(modWheelA), velocitySource(velocityA),
-                  releaseVelocitySource(releaseVelocityA), polyATSource(polyATA),
-                  chanATSource(chanATA), pbpm1Source(pbpm1A), keyChangedLeg(keyChangedLegA)
+                : modWheelSource(modWheelSId), velocitySource(velocitySId),
+                  releaseVelocitySource(releaseVelocitySId), polyATSource(polyATSId),
+                  chanATSource(chanATSId), pbpm1Source(pbpm1SId), keyChangedLeg(keyChangedLegSId)
             {
                 registerVoiceModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 MatrixConfig::setDefaultLagFor(modWheelSource, 25);
@@ -360,8 +365,12 @@ struct MatrixEndpoints
 
         struct MPESources
         {
+            static constexpr SR mpeBendSId{'zmpe', 'bend'};
+            static constexpr SR mpeTimbreSId{'zmpe', 'timb'};
+            static constexpr SR mpePressureSId{'zmpe', 'pres'};
+
             MPESources(engine::Engine *e)
-                : mpeBend{'zmpe', 'bend'}, mpeTimbre{'zmpe', 'timb'}, mpePressure{'zmpe', 'pres'}
+                : mpeBend(mpeBendSId), mpeTimbre(mpeTimbreSId), mpePressure(mpePressureSId)
             {
                 registerVoiceModSource(e, mpeBend, "MPE", "Voice Pitch Bend");
                 registerVoiceModSource(e, mpeTimbre, "MPE", "Timbre");
@@ -374,10 +383,17 @@ struct MatrixEndpoints
 
         struct NoteExpressionSources
         {
+            static constexpr SR volumeSId{'znte', 'volu'};
+            static constexpr SR panSId{'znte', 'pan '};
+            static constexpr SR tuningSId{'znte', 'tuni'};
+            static constexpr SR vibratoSId{'znte', 'vibr'};
+            static constexpr SR expressionSId{'znte', 'expr'};
+            static constexpr SR brightnessSId{'znte', 'brit'};
+            static constexpr SR pressureSId{'znte', 'pres'};
+
             NoteExpressionSources(engine::Engine *e)
-                : volume{'znte', 'volu'}, pan{'znte', 'pan '}, tuning{'znte', 'tuni'},
-                  vibrato{'znte', 'vibr'}, expression{'znte', 'expr'}, brightness{'znte', 'brit'},
-                  pressure{'znte', 'pres'}
+                : volume(volumeSId), pan(panSId), tuning(tuningSId), vibrato(vibratoSId),
+                  expression(expressionSId), brightness(brightnessSId), pressure(pressureSId)
             {
                 registerVoiceModSource(e, volume, "Note Expressions", "Volume");
                 registerVoiceModSource(e, pan, "Note Expressions", "Pan");
@@ -403,12 +419,24 @@ struct MatrixEndpoints
             // a nested category, so the three alternates get their own submenu under Voice
             static constexpr const char *alternates{"Voice/Alternates"};
 
+            static constexpr SR isGatedSId{'zvsr', 'gate'};
+            static constexpr SR isReleasedSId{'zvsr', 'reld'};
+            static constexpr SR alternateSId{'zvsr', 'altr'};
+            static constexpr SR alternateBipolarSId{'zvsr', 'altb'};
+            static constexpr SR alternateRotationSId{'zvsr', 'alt3'};
+            static constexpr SR variantCountSId{'zvsr', 'vcnt'};
+            static constexpr SR variantCountFractionSId{'zvsr', 'vcfr'};
+            static constexpr SR loopPercentageSId{'zvsr', 'lppc'};
+            static constexpr SR loopCountSId{'zvsr', 'lpct'};
+            static constexpr SR isLoopingSId{'zvsr', 'islp'};
+            static constexpr SR samplePercentageSId{'zvsr', 'sppc'};
+
             VoiceSources(engine::Engine *e)
-                : isGated{'zvsr', 'gate'}, isReleased{'zvsr', 'reld'}, alternate{'zvsr', 'altr'},
-                  alternateBipolar{'zvsr', 'altb'}, alternateRotation{'zvsr', 'alt3'},
-                  variantCount{'zvsr', 'vcnt', 0}, variantCountFraction{'zvsr', 'vcfr', 0},
-                  loopPercentage{'zvsr', 'lppc', 0}, loopCount{'zvsr', 'lpct', 0},
-                  isLooping{'zvsr', 'islp', 0}, samplePercentage{'zvsr', 'sppc', 0}
+                : isGated(isGatedSId), isReleased(isReleasedSId), alternate(alternateSId),
+                  alternateBipolar(alternateBipolarSId), alternateRotation(alternateRotationSId),
+                  variantCount(variantCountSId), variantCountFraction(variantCountFractionSId),
+                  loopPercentage(loopPercentageSId), loopCount(loopCountSId),
+                  isLooping(isLoopingSId), samplePercentage(samplePercentageSId)
             {
                 registerVoiceModSource(e, isGated, "Voice", "Is Gated");
                 registerVoiceModSource(e, isReleased, "Voice", "Is Released");
@@ -435,12 +463,18 @@ struct MatrixEndpoints
 
         scxt::modulation::shared::TransportSourceBase<SR, 'ztsp', registerVoiceModSource>
             transportSources;
-        scxt::modulation::shared::RNGSourceBase<SR, 'zrng'> rngSources;
+        rngSources_t rngSources;
         scxt::modulation::shared::EnvFollowerSourceBase<SR, 'zef', registerVoiceModSource>
             envFollowerSources;
 
         struct MacroSources
         {
+            static constexpr SR macroSId(uint32_t i) { return SR{'zmac', 'mcro', i}; }
+            static std::optional<uint32_t> slotOf(const SR &s)
+            {
+                return scxt::modulation::shared::slotIn(macroSId(0), macrosPerPart, s);
+            }
+
             MacroSources(engine::Engine *e);
 
             SR macros[macrosPerPart];
@@ -554,10 +588,13 @@ typedef std::vector<namedSource_t> namedSourceVector_t;
 typedef std::pair<MatrixConfig::CurveIdentifier, identifierDisplayName_t> namedCurve_t;
 typedef std::vector<namedCurve_t> namedCurveVector_t;
 
-typedef std::tuple<bool, namedSourceVector_t, namedTargetVector_t, namedCurveVector_t>
+typedef std::tuple<bool, namedSourceVector_t, namedTargetVector_t, namedCurveVector_t,
+                   scxt::modulation::shared::sourcePolarityVector_t>
     voiceMatrixMetadata_t;
 
 voiceMatrixMetadata_t getVoiceMatrixMetadata(const engine::Zone &z);
+scxt::modulation::SourcePolarity sourcePolarity(const engine::Zone &z,
+                                                const MatrixConfig::SourceIdentifier &s);
 } // namespace scxt::voice::modulation
 
 #endif // __SCXT_VOICE_MATRIX_H

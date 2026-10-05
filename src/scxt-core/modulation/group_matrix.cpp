@@ -506,13 +506,43 @@ groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &g)
         cr.emplace_back(c, identifierDisplayName_t{n->second.first, n->second.second});
     }
 
-    return groupMatrixMetadata_t{true, sr, tg, cr};
+    shmo::sourcePolarityVector_t pv;
+    for (const auto &[s, fns] : sr)
+    {
+        auto p = sourcePolarity(g, s);
+        if (p != SourcePolarity::UNIPOLAR)
+            pv.emplace_back(s, (int32_t)p);
+    }
+
+    return groupMatrixMetadata_t{true, sr, tg, cr, pv};
 }
+
+SourcePolarity sourcePolarity(const engine::Group &g, const GroupMatrixConfig::SourceIdentifier &s)
+{
+    using S = GroupMatrixEndpoints::Sources;
+
+    if (auto i = S::lfoSources_t::slotOf(s))
+        return g.modulatorStorage[*i].polarity();
+    if (auto i = S::rngSources_t::slotOf(s))
+        return g.miscSourceStorage.randoms[*i].polarity();
+    if (auto i = S::MacroSources::slotOf(s))
+        return g.parentPart ? g.parentPart->macros[*i].polarity() : SourcePolarity::UNIPOLAR;
+
+    if (s == S::MIDISources::pbpm1SId)
+        return SourcePolarity::BIPOLAR;
+    // the keys are normalized around middle C
+    if (S::KeyAndPitchSources::isKeyAndPitchSource(s) &&
+        !(s == S::KeyAndPitchSources::voiceCountSId))
+        return SourcePolarity::BIPOLAR;
+
+    return SourcePolarity::UNIPOLAR;
+}
+
 GroupMatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
 {
     for (auto i = 0U; i < macrosPerPart; ++i)
     {
-        macros[i] = SR{'gmac', 'mcro', i};
+        macros[i] = macroSId(i);
         registerGroupModSource(
             e, macros[i], [](auto &a, auto &b) { return "Macro"; },
             [i](auto &grp, auto &s) { return grp.parentPart->macros[i].name; });
@@ -521,8 +551,8 @@ GroupMatrixEndpoints::Sources::MacroSources::MacroSources(engine::Engine *e)
 }
 
 GroupMatrixEndpoints::Sources::SubordinateVoiceSources::SubordinateVoiceSources(engine::Engine *e)
-    : anyVoiceGated{'gvoc', 'avgt', 0}, anyVoiceSounding{'gvoc', 'avsd', 0},
-      voiceCount{'gvoc', 'vcnt', 0}, gatedVoiceCount{'gvoc', 'vgct', 0}
+    : anyVoiceGated(anyVoiceGatedSId), anyVoiceSounding(anyVoiceSoundingSId),
+      voiceCount(voiceCountSId), gatedVoiceCount(gatedVoiceCountSId)
 {
     registerGroupModSource(
         e, anyVoiceGated, [](auto &, auto &) { return "Voices"; },

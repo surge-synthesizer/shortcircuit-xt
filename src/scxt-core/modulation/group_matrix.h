@@ -295,18 +295,32 @@ struct GroupMatrixEndpoints
     {
         Sources(engine::Engine *e);
 
-        scxt::modulation::shared::LFOSourceBase<SR, 'grlf', lfosPerGroup, registerGroupModSource>
-            lfoSources;
+        using lfoSources_t = scxt::modulation::shared::LFOSourceBase<SR, 'grlf', lfosPerGroup,
+                                                                     registerGroupModSource>;
+        using rngSources_t = scxt::modulation::shared::RNGSourceBase<SR, 'grng'>;
+
+        lfoSources_t lfoSources;
         scxt::modulation::shared::MIDICCBase<GroupMatrixConfig, SR, 'gncc', registerGroupModSource>
             midiCCSources;
 
         struct KeyAndPitchSources
         {
+            static constexpr SR lowPitchSId{'gkap', 'lpit'};
+            static constexpr SR highPitchSId{'gkap', 'hpit'};
+            static constexpr SR lastPitchSId{'gkap', 'apit'};
+            static constexpr SR lowKeySId{'gkap', 'lkey'};
+            static constexpr SR highKeySId{'gkap', 'hkey'};
+            static constexpr SR lastKeySId{'gkap', 'akey'};
+            static constexpr SR lowMidiKeySId{'gkap', 'lmky'};
+            static constexpr SR highMidiKeySId{'gkap', 'hmky'};
+            static constexpr SR lastMidiKeySId{'gkap', 'amky'};
+            static constexpr SR voiceCountSId{'gkap', 'vcnt'};
+
             KeyAndPitchSources(engine::Engine *e)
-                : lowPitch{'gkap', 'lpit'}, highPitch{'gkap', 'hpit'}, lastPitch{'gkap', 'apit'},
-                  lowKey{'gkap', 'lkey'}, highKey{'gkap', 'hkey'}, lastKey{'gkap', 'akey'},
-                  lowMidiKey{'gkap', 'lmky'}, highMidiKey{'gkap', 'hmky'},
-                  lastMidiKey{'gkap', 'amky'}, voiceCount{'gkap', 'vcnt'}
+                : lowPitch(lowPitchSId), highPitch(highPitchSId), lastPitch(lastPitchSId),
+                  lowKey(lowKeySId), highKey(highKeySId), lastKey(lastKeySId),
+                  lowMidiKey(lowMidiKeySId), highMidiKey(highMidiKeySId),
+                  lastMidiKey(lastMidiKeySId), voiceCount(voiceCountSId)
             {
                 registerGroupModSource(e, lowPitch, "KeyTracking", "Low Key+PB+Glide");
                 registerGroupModSource(e, highPitch, "KeyTracking", "High Key+PB+Glide");
@@ -324,14 +338,17 @@ struct GroupMatrixEndpoints
 
             void bind(GroupMatrix &m, engine::Group &g);
 
-            static bool isKeyAndPitchSource(const SR &sr) { return sr.gid == 'gkap'; }
+            static bool isKeyAndPitchSource(const SR &sr) { return sr.gid == lowPitchSId.gid; }
         } keyAndPitchSources;
 
         struct MIDISources
         {
+            static constexpr SR modWheelSId{'gmid', 'modw'};
+            static constexpr SR chanATSId{'gmid', 'chat'};
+            static constexpr SR pbpm1SId{'gmid', 'pb11'};
+
             MIDISources(engine::Engine *e)
-                : modWheelSource{'gmid', 'modw'}, chanATSource{'gmid', 'chat'},
-                  pbpm1Source{'gmid', 'pb11'}
+                : modWheelSource(modWheelSId), chanATSource(chanATSId), pbpm1Source(pbpm1SId)
             {
                 registerGroupModSource(e, modWheelSource, "MIDI", "Mod Wheel");
                 GroupMatrixConfig::setDefaultLagFor(modWheelSource, 25);
@@ -345,12 +362,18 @@ struct GroupMatrixEndpoints
         std::array<SR, egsPerGroup> egSource;
         scxt::modulation::shared::TransportSourceBase<SR, 'gtsp', registerGroupModSource>
             transportSources;
-        scxt::modulation::shared::RNGSourceBase<SR, 'grng'> rngSources;
+        rngSources_t rngSources;
         scxt::modulation::shared::EnvFollowerSourceBase<SR, 'gef', registerGroupModSource>
             envFollowerSources;
 
         struct MacroSources
         {
+            static constexpr SR macroSId(uint32_t i) { return SR{'gmac', 'mcro', i}; }
+            static std::optional<uint32_t> slotOf(const SR &s)
+            {
+                return shared::slotIn(macroSId(0), macrosPerPart, s);
+            }
+
             MacroSources(engine::Engine *e);
 
             SR macros[macrosPerPart];
@@ -358,6 +381,11 @@ struct GroupMatrixEndpoints
 
         struct SubordinateVoiceSources
         {
+            static constexpr SR anyVoiceGatedSId{'gvoc', 'avgt'};
+            static constexpr SR anyVoiceSoundingSId{'gvoc', 'avsd'};
+            static constexpr SR voiceCountSId{'gvoc', 'vcnt'};
+            static constexpr SR gatedVoiceCountSId{'gvoc', 'vgct'};
+
             SubordinateVoiceSources(engine::Engine *e);
 
             SR anyVoiceGated, anyVoiceSounding, voiceCount, gatedVoiceCount;
@@ -390,9 +418,11 @@ typedef std::vector<namedSource_t> namedSourceVector_t;
 typedef std::pair<GroupMatrixConfig::CurveIdentifier, identifierDisplayName_t> namedCurve_t;
 typedef std::vector<namedCurve_t> namedCurveVector_t;
 
-typedef std::tuple<bool, namedSourceVector_t, namedTargetVector_t, namedCurveVector_t>
+typedef std::tuple<bool, namedSourceVector_t, namedTargetVector_t, namedCurveVector_t,
+                   shared::sourcePolarityVector_t>
     groupMatrixMetadata_t;
 
 groupMatrixMetadata_t getGroupMatrixMetadata(const engine::Group &z);
+SourcePolarity sourcePolarity(const engine::Group &g, const GroupMatrixConfig::SourceIdentifier &s);
 } // namespace scxt::modulation
 #endif // SHORTCIRCUITXT_GROUP_MATRIX_H
