@@ -354,6 +354,120 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index, int s
     return samplePointers[index] != nullptr;
 }
 
+bool Zone::applyVariantRegionAction(SingleVariant &t, const SingleVariant &src,
+                                    VariantRegionAction a, int64_t len,
+                                    const SampleLoopMarkers &loop)
+{
+    using VA = VariantRegionAction;
+    using M = dsp::LoopFadeMarker;
+
+    auto regionOf = [](const SingleVariant &v) {
+        return std::make_tuple(v.startSample, v.endSample, v.startLoop, v.endLoop, v.loopFade,
+                               v.loopActive, v.loopMode, v.loopDirection, v.loopCountWhenCounted,
+                               v.loopCurve);
+    };
+    const auto before = regionOf(t);
+
+    // markers stop at the fade, as a drag in the editor does
+    auto fitMarker = [&t](M m, int64_t pos) {
+        if (!t.loopActive)
+            return pos;
+        return dsp::clampMarkerToLoopFade(m, pos, t.loopFade, t.startSample, t.startLoop,
+                                          t.endLoop);
+    };
+
+    auto setLoop = [&t, len](int64_t s, int64_t e, int64_t fade) {
+        clampVariantRegionToLength(s, e, len);
+        t.startLoop = s;
+        t.endLoop = e;
+        t.loopFade = dsp::clampLoopFade(fade, t.startSample, s, e);
+    };
+
+    switch (a)
+    {
+    case VA::RESTORE_LOOP_FROM_SAMPLE:
+        if (!loop.present)
+            return false;
+        t.loopActive = true;
+        setLoop(loop.start, loop.end, t.loopFade);
+        break;
+    case VA::COPY_LOOP:
+        t.loopActive = src.loopActive;
+        t.loopMode = src.loopMode;
+        t.loopDirection = src.loopDirection;
+        t.loopCountWhenCounted = src.loopCountWhenCounted;
+        t.loopCurve = src.loopCurve;
+        setLoop(src.startLoop, src.endLoop, src.loopFade);
+        break;
+    case VA::COPY_SAMPLE_START:
+    {
+        auto hi = std::max((int64_t)0, std::min(t.endSample, len) - minimumVariantRegionInSamples);
+        auto pos = std::clamp(src.startSample, (int64_t)0, hi);
+        t.startSample = std::max((int64_t)0, fitMarker(M::SAMPLE_START, pos));
+    }
+    break;
+    case VA::COPY_SAMPLE_END:
+    {
+        auto lo =
+            std::min(std::max(t.startSample, (int64_t)0) + minimumVariantRegionInSamples, len);
+        t.endSample = std::clamp(src.endSample, lo, len);
+    }
+    break;
+    case VA::NUDGE_LOOP_START_DOWN:
+    case VA::NUDGE_LOOP_START_UP:
+    {
+        if (!t.loopActive)
+            return false;
+        auto pos = t.startLoop + (a == VA::NUDGE_LOOP_START_UP ? 1 : -1);
+        pos = std::max(std::min(pos, t.endLoop), t.startSample);
+        t.startLoop = fitMarker(M::LOOP_START, pos);
+    }
+    break;
+    case VA::NUDGE_LOOP_END_DOWN:
+    case VA::NUDGE_LOOP_END_UP:
+    {
+        if (!t.loopActive)
+            return false;
+        auto pos = t.endLoop + (a == VA::NUDGE_LOOP_END_UP ? 1 : -1);
+        pos = std::min(std::max(pos, t.startLoop), len);
+        t.endLoop = fitMarker(M::LOOP_END, pos);
+    }
+    break;
+    case VA::NUM_ACTIONS:
+        return false;
+    }
+    return regionOf(t) != before;
+}
+
+bool Zone::applyVariantRegionAction(const SingleVariant &src, VariantRegionAction a,
+                                    size_t variantIndex, bool editAll)
+{
+    if (variantIndex >= maxVariantsPerZone)
+        return false;
+
+    auto applyTo = [&](size_t i) {
+        auto &t = variantData.variants[i];
+        const auto &smp = samplePointers[i];
+        if (!t.active || !smp)
+            return false;
+        const auto &m = smp->meta;
+        SampleLoopMarkers loop{m.loop_present, (int64_t)m.loop_start, (int64_t)m.loop_end};
+        return applyVariantRegionAction(t, src, a, (int64_t)smp->getSampleLength(), loop);
+    };
+
+    bool changed{false};
+    if (editAll)
+    {
+        for (auto i = 0U; i < maxVariantsPerZone; ++i)
+            changed = applyTo(i) || changed;
+    }
+    else
+    {
+        changed = applyTo(variantIndex);
+    }
+    return changed;
+}
+
 std::string Zone::toStringVariantPlaybackMode(const Zone::VariantPlaybackMode &p)
 {
     switch (p)

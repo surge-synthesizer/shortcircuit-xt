@@ -102,6 +102,7 @@ enum ClientToSerializationMessagesIds
 
     c2s_normalize_variant_amplitude,
     c2s_clear_variant_amplitude_normalization,
+    c2s_apply_variant_region_action,
 
     c2s_delete_variant,
     c2s_copy_variant,

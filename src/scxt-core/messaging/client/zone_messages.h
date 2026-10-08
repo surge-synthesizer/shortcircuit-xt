@@ -304,6 +304,52 @@ CLIENT_TO_SERIAL(ClearVariantAmplitudeNormalization, c2s_clear_variant_amplitude
                  clearVariantAmplitudeNormalizationPayload_t,
                  doClearVariantAmplitudeNormalization(payload, engine, cont));
 
+/*
+ * A sample pane menu action on the frame-valued fields, from variant N of the lead zone onto
+ * variant N of every selected zone, or every variant of them with edit-all.
+ */
+using applyVariantRegionActionPayload_t =
+    std::tuple<int32_t, size_t, bool>; // VariantRegionAction, variant, edit-all
+inline void doApplyVariantRegionAction(const applyVariantRegionActionPayload_t &payload,
+                                       engine::Engine &engine, MessageController &cont)
+{
+    using VA = engine::Zone::VariantRegionAction;
+    const auto &[act, idx, editAll] = payload;
+    if (act < 0 || act >= (int32_t)VA::NUM_ACTIONS || idx >= maxVariantsPerZone)
+        return;
+
+    auto sel = engine.getSelectionManager()->currentlySelectedZones();
+    auto lead = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sel.empty() || !lead.has_value())
+        return;
+
+    undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
+    cont.scheduleAudioThreadCallback(
+        [zs = sel, lz = *lead, pl = payload](auto &eng) {
+            const auto &[a, i, ea] = pl;
+            auto src = eng.getPatch()
+                           ->getPart(lz.part)
+                           ->getGroup(lz.group)
+                           ->getZone(lz.zone)
+                           ->variantData.variants[i];
+            for (const auto &za : zs)
+            {
+                auto &zn = eng.getPatch()->getPart(za.part)->getGroup(za.group)->getZone(za.zone);
+                if (zn->applyVariantRegionAction(src, (VA)a, i, ea))
+                    zn->refreshVoiceGeneratorBounds();
+            }
+        },
+        [lz = *lead](auto &e) {
+            const auto &zp = e.getPatch()->getPart(lz.part)->getGroup(lz.group)->getZone(lz.zone);
+            serializationSendToClient(s2c_respond_zone_samples,
+                                      SampleSelectedZoneView::s2c_payload_t{true, zp->variantData},
+                                      *(e.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(ApplyVariantRegionAction, c2s_apply_variant_region_action,
+                 applyVariantRegionActionPayload_t,
+                 doApplyVariantRegionAction(payload, engine, cont));
+
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneVariantsInt16TValue, c2s_update_zone_variants_int16_t,
                              detail::diffMsg_t<int16_t>, engine::Zone::Variants,
                              detail::updateZoneMemberValue<undo::ZoneVariantsSpec>(

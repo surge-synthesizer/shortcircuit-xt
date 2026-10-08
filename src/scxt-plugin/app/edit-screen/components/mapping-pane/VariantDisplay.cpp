@@ -921,10 +921,41 @@ void VariantDisplay::onSamplePointChangedFromGUI(ptrdiff_t off, size_t sz)
 
 void VariantDisplay::showHamburgerMenu()
 {
+    using VA = engine::Zone::VariantRegionAction;
+
+    auto hasZone = editor->currentLeadZoneSelection.has_value() &&
+                   editor->currentLeadZoneSelection->zone >= 0 &&
+                   variantView.variants[selectedVariation].active;
+
     juce::PopupMenu p;
     p.addSectionHeader("Sample");
     p.addSeparator();
-    p.addItem("Coming Soon", false, false, []() {});
+
+    auto add = [&p, hasZone, w = juce::Component::SafePointer(this)](const std::string &name,
+                                                                     VA a) {
+        p.addItem(name, hasZone, false, [w, a]() {
+            if (!w)
+                return;
+            w->sendToSerialization(
+                cmsg::ApplyVariantRegionAction({(int32_t)a, w->selectedVariation, w->editAll}));
+        });
+    };
+
+    auto target = editAll
+                      ? std::string("All Variants of Selected Zones")
+                      : "Variant " + std::to_string(selectedVariation + 1) + " of Selected Zones";
+    p.addSectionHeader(target);
+    add("Restore Loops from Samples", VA::RESTORE_LOOP_FROM_SAMPLE);
+    p.addSeparator();
+    add("Copy Current Loop Settings", VA::COPY_LOOP);
+    add("Copy Current Sample Start", VA::COPY_SAMPLE_START);
+    add("Copy Current Sample End", VA::COPY_SAMPLE_END);
+    p.addSeparator();
+    add("Adjust Loop Starts -1", VA::NUDGE_LOOP_START_DOWN);
+    add("Adjust Loop Starts +1", VA::NUDGE_LOOP_START_UP);
+    add("Adjust Loop Ends -1", VA::NUDGE_LOOP_END_DOWN);
+    add("Adjust Loop Ends +1", VA::NUDGE_LOOP_END_UP);
+
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }
 
