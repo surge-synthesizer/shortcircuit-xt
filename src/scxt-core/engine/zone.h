@@ -163,8 +163,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
      * without being listed anywhere.
      *
      * The exceptions are listed instead, and they are the short list: absolute frame
-     * positions, which mean different things on samples of different lengths and get their
-     * own copy-endpoints-and-fade-zones gesture later, plus identity and the level derived
+     * positions, which mean different things on samples of different lengths and have their
+     * own copy gestures in applyVariantRegionAction, plus identity and the level derived
      * from a sample's own peak. A field added here is shared by default, so a new *position*
      * does need adding to this list.
      */
@@ -252,8 +252,8 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
      * Force a variant's [s,e] frame region to be valid on a sample of len frames: an endpoint
      * carried over from a longer sample can land past its end or above its own other endpoint.
      * If the result is inverted or too short, slide the start back from the end to leave a
-     * usable window. Not used by edit-all, which leaves frame positions alone - this is here
-     * for the copy-endpoints-and-fade-zones gesture described above.
+     * usable window. Not used by edit-all, which leaves frame positions alone - this is for
+     * the copy gestures in applyVariantRegionAction.
      */
     static void clampVariantRegionToLength(int64_t &s, int64_t &e, int64_t len)
     {
@@ -266,6 +266,51 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
                 e = std::min(len, s + minimumVariantRegionInSamples);
         }
     }
+
+    /*
+     * The explicit menu gestures for the frame-valued fields edit-all leaves alone. Copies
+     * take the source variant's value and fit it to each target's own sample.
+     */
+    enum struct VariantRegionAction : int32_t
+    {
+        RESTORE_LOOP_FROM_SAMPLE,
+        COPY_LOOP,
+        COPY_SAMPLE_START,
+        COPY_SAMPLE_END,
+        NUDGE_LOOP_START_DOWN,
+        NUDGE_LOOP_START_UP,
+        NUDGE_LOOP_END_DOWN,
+        NUDGE_LOOP_END_UP,
+        NUM_ACTIONS
+    };
+
+    struct SampleLoopMarkers
+    {
+        bool present{false};
+        int64_t start{0}, end{0};
+    };
+
+    // returns whether t changed. len is t's sample length, loop is what t's sample file says
+    static bool applyVariantRegionAction(SingleVariant &t, const SingleVariant &src,
+                                         VariantRegionAction a, int64_t len,
+                                         const SampleLoopMarkers &loop);
+
+    // lands on variant variantIndex, or every variant with editAll; returns whether any changed
+    bool applyVariantRegionAction(const SingleVariant &src, VariantRegionAction a,
+                                  size_t variantIndex, bool editAll);
+
+    // a typed +N/-N on a frame field moves each zone's own marker, held where a drag would stop
+    enum struct VariantMarker : int32_t
+    {
+        SAMPLE_START,
+        SAMPLE_END,
+        LOOP_START,
+        LOOP_END,
+        LOOP_FADE,
+        NUM_MARKERS
+    };
+    static bool shiftVariantMarker(SingleVariant &t, VariantMarker m, int64_t delta, int64_t len);
+    bool shiftVariantMarker(VariantMarker m, int64_t delta, size_t variantIndex, bool editAll);
 
     std::array<std::shared_ptr<sample::Sample>, maxVariantsPerZone> samplePointers;
     int8_t sampleIndex{-1};

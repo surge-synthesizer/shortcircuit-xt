@@ -92,7 +92,6 @@ enum ClientToSerializationMessagesIds
     c2s_update_audiomod_storage_for_groups_or_zones,
     c2s_update_audiomod_storage_element_for_groups_or_zones,
 
-    c2s_update_lead_zone_mapping,
     c2s_update_zone_mapping_float,
     c2s_update_zone_mapping_int16_t,
     c2s_update_variant_field,
@@ -102,6 +101,8 @@ enum ClientToSerializationMessagesIds
 
     c2s_normalize_variant_amplitude,
     c2s_clear_variant_amplitude_normalization,
+    c2s_apply_variant_region_action,
+    c2s_shift_variant_marker,
 
     c2s_delete_variant,
     c2s_copy_variant,

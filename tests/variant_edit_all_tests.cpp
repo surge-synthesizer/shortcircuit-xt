@@ -724,6 +724,301 @@ TEST_CASE("An edit across a selection is one undo entry", "[variants][undo]")
     REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore);
 }
 
+namespace
+{
+using VA = Zone::VariantRegionAction;
+
+Zone::SingleVariant regionVariant(int64_t ss, int64_t es, int64_t sl, int64_t el, int64_t fade,
+                                  bool loop)
+{
+    Zone::SingleVariant v;
+    v.active = true;
+    v.startSample = ss;
+    v.endSample = es;
+    v.startLoop = sl;
+    v.endLoop = el;
+    v.loopFade = fade;
+    v.loopActive = loop;
+    return v;
+}
+} // namespace
+
+TEST_CASE("Region actions fit the source onto the target's sample", "[variants]")
+{
+    const Zone::SampleLoopMarkers noLoop{};
+
+    SECTION("copy start lands as is when it fits")
+    {
+        auto t = regionVariant(0, 10000, 0, 10000, 0, false);
+        auto src = regionVariant(1234, 50000, 0, 0, 0, false);
+        REQUIRE(Zone::applyVariantRegionAction(t, src, VA::COPY_SAMPLE_START, 10000, noLoop));
+        REQUIRE(t.startSample == 1234);
+        REQUIRE(t.endSample == 10000);
+    }
+
+    SECTION("copy start past the target's end backs off from that end")
+    {
+        auto t = regionVariant(0, 8000, 0, 8000, 0, false);
+        auto src = regionVariant(9000, 50000, 0, 0, 0, false);
+        Zone::applyVariantRegionAction(t, src, VA::COPY_SAMPLE_START, 10000, noLoop);
+        REQUIRE(t.startSample == 8000 - minimumVariantRegionInSamples);
+        REQUIRE(t.endSample == 8000);
+    }
+
+    SECTION("copy start stops at the target's loop fade")
+    {
+        auto t = regionVariant(0, 10000, 2000, 9000, 500, true);
+        auto src = regionVariant(1800, 50000, 0, 0, 0, false);
+        Zone::applyVariantRegionAction(t, src, VA::COPY_SAMPLE_START, 10000, noLoop);
+        REQUIRE(t.startSample == 1500);
+        REQUIRE(t.loopFade == 500);
+    }
+
+    SECTION("copy end truncates at a shorter sample and leaves the start alone")
+    {
+        auto t = regionVariant(300, 8000, 0, 8000, 0, false);
+        auto src = regionVariant(0, 50000, 0, 0, 0, false);
+        Zone::applyVariantRegionAction(t, src, VA::COPY_SAMPLE_END, 10000, noLoop);
+        REQUIRE(t.startSample == 300);
+        REQUIRE(t.endSample == 10000);
+
+        src.endSample = 100;
+        Zone::applyVariantRegionAction(t, src, VA::COPY_SAMPLE_END, 10000, noLoop);
+        REQUIRE(t.startSample == 300);
+        REQUIRE(t.endSample == 300 + minimumVariantRegionInSamples);
+    }
+
+    SECTION("copy loop brings the whole loop and clamps the region and fade")
+    {
+        auto t = regionVariant(0, 10000, 100, 200, 0, false);
+        auto src = regionVariant(0, 50000, 9000, 40000, 4000, true);
+        src.loopMode = Zone::LoopMode::LOOP_WHILE_GATED;
+        src.loopDirection = Zone::LoopDirection::ALTERNATE_DIRECTIONS;
+        src.loopCurve = 0.25f;
+        Zone::applyVariantRegionAction(t, src, VA::COPY_LOOP, 10000, noLoop);
+        REQUIRE(t.loopActive);
+        REQUIRE(t.loopMode == Zone::LoopMode::LOOP_WHILE_GATED);
+        REQUIRE(t.loopDirection == Zone::LoopDirection::ALTERNATE_DIRECTIONS);
+        REQUIRE(t.loopCurve == Approx(0.25f));
+        REQUIRE(t.startLoop == 9000);
+        REQUIRE(t.endLoop == 10000);
+        // a 1000 frame loop cannot hold a 4000 frame fade
+        REQUIRE(t.loopFade == 1000);
+        // and the sample region is the target's own
+        REQUIRE(t.startSample == 0);
+        REQUIRE(t.endSample == 10000);
+    }
+
+    SECTION("restore takes the file's loop and turns the loop on")
+    {
+        auto t = regionVariant(0, 10000, 100, 200, 0, false);
+        Zone::SampleLoopMarkers fileLoop{true, 3000, 7000};
+        REQUIRE(
+            Zone::applyVariantRegionAction(t, t, VA::RESTORE_LOOP_FROM_SAMPLE, 10000, fileLoop));
+        REQUIRE(t.loopActive);
+        REQUIRE(t.startLoop == 3000);
+        REQUIRE(t.endLoop == 7000);
+    }
+
+    SECTION("restore leaves a sample with no loop metadata alone")
+    {
+        auto t = regionVariant(0, 10000, 100, 200, 0, true);
+        const auto before = t;
+        REQUIRE(!Zone::applyVariantRegionAction(t, t, VA::RESTORE_LOOP_FROM_SAMPLE, 10000, noLoop));
+        REQUIRE(t.startLoop == before.startLoop);
+        REQUIRE(t.endLoop == before.endLoop);
+    }
+
+    SECTION("nudges move one frame and stop at the bounds")
+    {
+        auto t = regionVariant(0, 10000, 1000, 9999, 0, true);
+        Zone::applyVariantRegionAction(t, t, VA::NUDGE_LOOP_START_UP, 10000, noLoop);
+        REQUIRE(t.startLoop == 1001);
+        Zone::applyVariantRegionAction(t, t, VA::NUDGE_LOOP_START_DOWN, 10000, noLoop);
+        Zone::applyVariantRegionAction(t, t, VA::NUDGE_LOOP_START_DOWN, 10000, noLoop);
+        REQUIRE(t.startLoop == 999);
+
+        Zone::applyVariantRegionAction(t, t, VA::NUDGE_LOOP_END_UP, 10000, noLoop);
+        REQUIRE(t.endLoop == 10000);
+        REQUIRE(!Zone::applyVariantRegionAction(t, t, VA::NUDGE_LOOP_END_UP, 10000, noLoop));
+        REQUIRE(t.endLoop == 10000);
+        Zone::applyVariantRegionAction(t, t, VA::NUDGE_LOOP_END_DOWN, 10000, noLoop);
+        REQUIRE(t.endLoop == 9999);
+
+        auto atStart = regionVariant(500, 10000, 500, 9000, 0, true);
+        REQUIRE(!Zone::applyVariantRegionAction(atStart, atStart, VA::NUDGE_LOOP_START_DOWN, 10000,
+                                                noLoop));
+        REQUIRE(atStart.startLoop == 500);
+    }
+
+    SECTION("nudges skip a variant which is not looping")
+    {
+        auto t = regionVariant(0, 10000, 1000, 9000, 0, false);
+        REQUIRE(!Zone::applyVariantRegionAction(t, t, VA::NUDGE_LOOP_START_UP, 10000, noLoop));
+        REQUIRE(!Zone::applyVariantRegionAction(t, t, VA::NUDGE_LOOP_END_DOWN, 10000, noLoop));
+        REQUIRE(t.startLoop == 1000);
+        REQUIRE(t.endLoop == 9000);
+    }
+}
+
+TEST_CASE("Copying the loop reaches variant N of the selection", "[variants]")
+{
+    UnevenSelection u;
+
+    auto &leadVar = u.zone(UnevenSelection::lead).variantData.variants[2];
+    auto len = leadVar.endSample;
+    REQUIRE(len > 1000);
+    leadVar.loopActive = true;
+    leadVar.startLoop = 200;
+    leadVar.endLoop = 900;
+    leadVar.loopFade = 50;
+
+    auto loopOf = [](const Zone::SingleVariant &v) {
+        return std::make_tuple(v.loopActive, v.startLoop, v.endLoop, v.loopFade);
+    };
+    auto target = loopOf(u.zone(0).variantData.variants[2]);
+    REQUIRE(target != loopOf(leadVar));
+    // other variants, and the zone with no variant 3
+    auto bystanders = std::make_tuple(loopOf(u.zone(0).variantData.variants[1]),
+                                      loopOf(u.zone(1).variantData.variants[0]),
+                                      loopOf(u.zone(1).variantData.variants[1]));
+    auto depthBefore = u.f.engine().undoManager.undoStackSize();
+
+    u.f.send(cmsg::ApplyVariantRegionAction({(int32_t)VA::COPY_LOOP, 2, false}));
+
+    const auto &got = u.zone(0).variantData.variants[2];
+    REQUIRE(got.loopActive);
+    REQUIRE(got.startLoop == 200);
+    REQUIRE(got.endLoop == 900);
+    REQUIRE(got.loopFade == 50);
+
+    REQUIRE(bystanders == std::make_tuple(loopOf(u.zone(0).variantData.variants[1]),
+                                          loopOf(u.zone(1).variantData.variants[0]),
+                                          loopOf(u.zone(1).variantData.variants[1])));
+
+    REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore + 1);
+    u.f.sendUndo();
+    REQUIRE(loopOf(u.zone(0).variantData.variants[2]) == target);
+}
+
+TEST_CASE("Copying the start with edit all reaches every variant", "[variants]")
+{
+    UnevenSelection u;
+
+    u.zone(UnevenSelection::lead).variantData.variants[2].startSample = 321;
+    u.f.send(cmsg::ApplyVariantRegionAction({(int32_t)VA::COPY_SAMPLE_START, 2, true}));
+
+    for (int z = 0; z < 3; ++z)
+        for (int v = 0; v < UnevenSelection::variantCount[z]; ++v)
+        {
+            INFO("zone " << z << " variant " << v);
+            REQUIRE(u.zone(z).variantData.variants[v].startSample == 321);
+        }
+}
+
+TEST_CASE("A region action with a bad action is ignored", "[variants]")
+{
+    UnevenSelection u;
+    auto depthBefore = u.f.engine().undoManager.undoStackSize();
+    u.f.send(cmsg::ApplyVariantRegionAction({(int32_t)VA::NUM_ACTIONS, 0, true}));
+    u.f.send(cmsg::ApplyVariantRegionAction({-1, 0, true}));
+    u.f.send(cmsg::ApplyVariantRegionAction({0, maxVariantsPerZone, true}));
+    REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore);
+}
+
+TEST_CASE("A marker shift holds where a drag would stop", "[variants]")
+{
+    using VM = Zone::VariantMarker;
+
+    SECTION("sample start stops at zero and short of the end")
+    {
+        auto t = regionVariant(100, 1000, 0, 1000, 0, false);
+        REQUIRE(Zone::shiftVariantMarker(t, VM::SAMPLE_START, -500, 10000));
+        REQUIRE(t.startSample == 0);
+        Zone::shiftVariantMarker(t, VM::SAMPLE_START, 5000, 10000);
+        REQUIRE(t.startSample == 1000 - minimumVariantRegionInSamples);
+    }
+
+    SECTION("sample end stops at the sample length and short of the start")
+    {
+        auto t = regionVariant(100, 9000, 0, 9000, 0, false);
+        Zone::shiftVariantMarker(t, VM::SAMPLE_END, 5000, 10000);
+        REQUIRE(t.endSample == 10000);
+        Zone::shiftVariantMarker(t, VM::SAMPLE_END, -50000, 10000);
+        REQUIRE(t.endSample == 100 + minimumVariantRegionInSamples);
+    }
+
+    SECTION("loop markers skip a variant which is not looping")
+    {
+        auto t = regionVariant(0, 10000, 1000, 9000, 100, false);
+        REQUIRE(!Zone::shiftVariantMarker(t, VM::LOOP_START, 10, 10000));
+        REQUIRE(!Zone::shiftVariantMarker(t, VM::LOOP_END, 10, 10000));
+        REQUIRE(!Zone::shiftVariantMarker(t, VM::LOOP_FADE, 10, 10000));
+        REQUIRE(t.startLoop == 1000);
+        REQUIRE(t.endLoop == 9000);
+        REQUIRE(t.loopFade == 100);
+    }
+
+    SECTION("loop start stops at the fade, and the fade at the loop")
+    {
+        auto t = regionVariant(0, 10000, 1000, 9000, 500, true);
+        Zone::shiftVariantMarker(t, VM::LOOP_START, -900, 10000);
+        REQUIRE(t.startLoop == 500);
+        Zone::shiftVariantMarker(t, VM::LOOP_FADE, 5000, 10000);
+        REQUIRE(t.loopFade == 500);
+    }
+}
+
+TEST_CASE("A typed shift moves each selected zone's own marker", "[variants]")
+{
+    UnevenSelection u;
+    using VM = Zone::VariantMarker;
+
+    for (int z = 0; z < 3; ++z)
+    {
+        u.zone(z).variantData.variants[0].startSample = 100 * (z + 1);
+        for (int v = 1; v < UnevenSelection::variantCount[z]; ++v)
+            u.zone(z).variantData.variants[v].startSample = 7;
+    }
+    auto depthBefore = u.f.engine().undoManager.undoStackSize();
+
+    u.f.send(cmsg::ShiftVariantMarker({(int32_t)VM::SAMPLE_START, 50, 0, false}));
+
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(u.zone(z).variantData.variants[0].startSample == 100 * (z + 1) + 50);
+        REQUIRE(u.zone(z).variantData.variants[1].startSample == 7);
+    }
+    REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore + 1);
+
+    u.f.sendUndo();
+    for (int z = 0; z < 3; ++z)
+        REQUIRE(u.zone(z).variantData.variants[0].startSample == 100 * (z + 1));
+
+    // with edit all it is every variant of every selected zone
+    u.f.send(cmsg::ShiftVariantMarker({(int32_t)VM::SAMPLE_START, 3, 0, true}));
+    for (int z = 0; z < 3; ++z)
+        for (int v = 0; v < UnevenSelection::variantCount[z]; ++v)
+        {
+            INFO("zone " << z << " variant " << v);
+            auto expect = (v == 0 ? 100 * (z + 1) : 7) + 3;
+            REQUIRE(u.zone(z).variantData.variants[v].startSample == expect);
+        }
+}
+
+TEST_CASE("A marker shift with a bad marker is ignored", "[variants]")
+{
+    UnevenSelection u;
+    using VM = Zone::VariantMarker;
+    auto depthBefore = u.f.engine().undoManager.undoStackSize();
+    u.f.send(cmsg::ShiftVariantMarker({(int32_t)VM::NUM_MARKERS, 5, 0, true}));
+    u.f.send(cmsg::ShiftVariantMarker({-1, 5, 0, true}));
+    u.f.send(cmsg::ShiftVariantMarker({0, 5, maxVariantsPerZone, true}));
+    u.f.send(cmsg::ShiftVariantMarker({0, 0, 0, true}));
+    REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore);
+}
+
 // keep the file unity-safe: these must not leak into a batched neighbour
 #undef VAR_FIELD
 #undef VAR_FIELD_OFF

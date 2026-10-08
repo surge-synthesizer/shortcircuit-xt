@@ -44,37 +44,6 @@ typedef std::tuple<bool, engine::Zone::ZoneMappingData> mappingSelectedZoneViewR
 SERIAL_TO_CLIENT(MappingSelectedZoneView, s2c_respond_zone_mapping,
                  mappingSelectedZoneViewResposne_t, onMappingUpdated);
 
-/*
- * For now we are keeping this 'bulk' message around since the drag-a-field
- * ui actually uses it (rather than figure out which edge is changed) but we
- * also have per-field updates for the UI elements below and associated
- * bound metadata
- */
-inline void doUpdateLeadZoneMapping(const engine::Zone::ZoneMappingData &payload,
-                                    engine::Engine &engine, MessageController &cont)
-{
-    // TODO Selected Zone State
-    const auto &mapping = payload;
-    auto sz = engine.getSelectionManager()->currentLeadZone(engine);
-    if (sz.has_value())
-    {
-        undo::pushPayloadUndo<undo::ZoneMappingSpec>(engine);
-        cont.scheduleAudioThreadCallback(
-            [zs = *sz, mapv = mapping](auto &eng) {
-                auto [p, g, z] = zs;
-                eng.getPatch()->getPart(p)->getGroup(g)->getZone(z)->mapping = mapv;
-            },
-            [p = sz->part](const auto &eng) {
-                serializationSendToClient(
-                    messaging::client::s2c_send_selected_group_zone_mapping_summary,
-                    eng.getPatch()->getPart(p)->getZoneMappingSummary(),
-                    *(eng.getMessageController()));
-            });
-    }
-}
-CLIENT_TO_SERIAL(UpdateLeadZoneMapping, c2s_update_lead_zone_mapping, engine::Zone::ZoneMappingData,
-                 doUpdateLeadZoneMapping(payload, engine, cont));
-
 typedef std::tuple<bool, bool, int, int, int, int>
     applyZoneDeltaPayload_t; // absolute, lead-only, part, dim, dx, dy
 inline void doApplyZoneDelta(const applyZoneDeltaPayload_t &payload, engine::Engine &engine,
@@ -303,6 +272,89 @@ doClearVariantAmplitudeNormalization(const clearVariantAmplitudeNormalizationPay
 CLIENT_TO_SERIAL(ClearVariantAmplitudeNormalization, c2s_clear_variant_amplitude_normalization,
                  clearVariantAmplitudeNormalizationPayload_t,
                  doClearVariantAmplitudeNormalization(payload, engine, cont));
+
+/*
+ * A sample pane menu action on the frame-valued fields, from variant N of the lead zone onto
+ * variant N of every selected zone, or every variant of them with edit-all.
+ */
+using applyVariantRegionActionPayload_t =
+    std::tuple<int32_t, size_t, bool>; // VariantRegionAction, variant, edit-all
+inline void doApplyVariantRegionAction(const applyVariantRegionActionPayload_t &payload,
+                                       engine::Engine &engine, MessageController &cont)
+{
+    using VA = engine::Zone::VariantRegionAction;
+    const auto &[act, idx, editAll] = payload;
+    if (act < 0 || act >= (int32_t)VA::NUM_ACTIONS || idx >= maxVariantsPerZone)
+        return;
+
+    auto sel = engine.getSelectionManager()->currentlySelectedZones();
+    auto lead = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sel.empty() || !lead.has_value())
+        return;
+
+    undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
+    cont.scheduleAudioThreadCallback(
+        [zs = sel, lz = *lead, pl = payload](auto &eng) {
+            const auto &[a, i, ea] = pl;
+            auto src = eng.getPatch()
+                           ->getPart(lz.part)
+                           ->getGroup(lz.group)
+                           ->getZone(lz.zone)
+                           ->variantData.variants[i];
+            for (const auto &za : zs)
+            {
+                auto &zn = eng.getPatch()->getPart(za.part)->getGroup(za.group)->getZone(za.zone);
+                if (zn->applyVariantRegionAction(src, (VA)a, i, ea))
+                    zn->refreshVoiceGeneratorBounds();
+            }
+        },
+        [lz = *lead](auto &e) {
+            const auto &zp = e.getPatch()->getPart(lz.part)->getGroup(lz.group)->getZone(lz.zone);
+            serializationSendToClient(s2c_respond_zone_samples,
+                                      SampleSelectedZoneView::s2c_payload_t{true, zp->variantData},
+                                      *(e.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(ApplyVariantRegionAction, c2s_apply_variant_region_action,
+                 applyVariantRegionActionPayload_t,
+                 doApplyVariantRegionAction(payload, engine, cont));
+
+// a typed +N/-N on a sample pane frame field, moving each selected zone's own marker
+using shiftVariantMarkerPayload_t =
+    std::tuple<int32_t, int64_t, size_t, bool>; // VariantMarker, delta, variant, edit-all
+inline void doShiftVariantMarker(const shiftVariantMarkerPayload_t &payload, engine::Engine &engine,
+                                 MessageController &cont)
+{
+    using VM = engine::Zone::VariantMarker;
+    const auto &[mk, delta, idx, editAll] = payload;
+    if (mk < 0 || mk >= (int32_t)VM::NUM_MARKERS || idx >= maxVariantsPerZone || delta == 0)
+        return;
+
+    auto sel = engine.getSelectionManager()->currentlySelectedZones();
+    auto lead = engine.getSelectionManager()->currentLeadZone(engine);
+    if (sel.empty() || !lead.has_value())
+        return;
+
+    undo::pushPayloadUndo<undo::ZoneVariantsSpec>(engine);
+    cont.scheduleAudioThreadCallback(
+        [zs = sel, pl = payload](auto &eng) {
+            const auto &[m, d, i, ea] = pl;
+            for (const auto &za : zs)
+            {
+                auto &zn = eng.getPatch()->getPart(za.part)->getGroup(za.group)->getZone(za.zone);
+                if (zn->shiftVariantMarker((VM)m, d, i, ea))
+                    zn->refreshVoiceGeneratorBounds();
+            }
+        },
+        [lz = *lead](auto &e) {
+            const auto &zp = e.getPatch()->getPart(lz.part)->getGroup(lz.group)->getZone(lz.zone);
+            serializationSendToClient(s2c_respond_zone_samples,
+                                      SampleSelectedZoneView::s2c_payload_t{true, zp->variantData},
+                                      *(e.getMessageController()));
+        });
+}
+CLIENT_TO_SERIAL(ShiftVariantMarker, c2s_shift_variant_marker, shiftVariantMarkerPayload_t,
+                 doShiftVariantMarker(payload, engine, cont));
 
 CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneVariantsInt16TValue, c2s_update_zone_variants_int16_t,
                              detail::diffMsg_t<int16_t>, engine::Zone::Variants,

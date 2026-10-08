@@ -44,6 +44,8 @@
 #include "unordered_map"
 #include "filesystem/import.h"
 #include <cassert>
+#include <limits>
+#include <optional>
 
 namespace scxt
 {
@@ -482,6 +484,26 @@ inline std::string humanReadableVersion(uint64_t v)
 }
 
 bool isValidUtf(const std::string &s);
+
+// a typed "+N" or "-N" asks for a change of N rather than the value N
+inline std::optional<int64_t> parseRelativeTypein(const std::string &s)
+{
+    auto b = s.find_first_not_of(" \t");
+    auto e = s.find_last_not_of(" \t");
+    if (b == std::string::npos || (s[b] != '+' && s[b] != '-') || e == b)
+        return std::nullopt;
+
+    int64_t res{0};
+    for (auto i = b + 1; i <= e; ++i)
+    {
+        if (!std::isdigit((unsigned char)s[i]))
+            return std::nullopt;
+        if (res > (std::numeric_limits<int64_t>::max() - 9) / 10)
+            return std::nullopt;
+        res = res * 10 + (s[i] - '0');
+    }
+    return s[b] == '-' ? -res : res;
+}
 
 } // namespace scxt
 
