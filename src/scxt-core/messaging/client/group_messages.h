@@ -88,7 +88,7 @@ struct groupTriggerDelta_t
                scxt::triggerConditionsPerGroup>
         arg{};
     std::array<bool, scxt::triggerConditionsPerGroup - 1> conjunction{};
-    bool voiceCreationMode{false};
+    bool voiceCreationMode{false}, releaseCountdown{false}, releaseOnePerKey{false};
 };
 
 inline groupTriggerDelta_t diffGroupTriggers(const engine::GroupTriggerConditions &was,
@@ -96,6 +96,8 @@ inline groupTriggerDelta_t diffGroupTriggers(const engine::GroupTriggerCondition
 {
     groupTriggerDelta_t d;
     d.voiceCreationMode = was.voiceCreationMode != now.voiceCreationMode;
+    d.releaseCountdown = was.releaseCountdownSeconds != now.releaseCountdownSeconds;
+    d.releaseOnePerKey = was.releaseOnePerKey != now.releaseOnePerKey;
     for (int i = 0; i < scxt::triggerConditionsPerGroup; ++i)
     {
         d.row[i] = was.storage[i].id != now.storage[i].id;
@@ -139,6 +141,10 @@ inline void applyGroupTriggerDelta(engine::GroupTriggerConditions &tc,
             tc.conjunctions[i] = p.conjunctions[i];
     if (d.voiceCreationMode)
         tc.voiceCreationMode = p.voiceCreationMode;
+    if (d.releaseCountdown)
+        tc.releaseCountdownSeconds = p.releaseCountdownSeconds;
+    if (d.releaseOnePerKey)
+        tc.releaseOnePerKey = p.releaseOnePerKey;
 }
 
 inline void doUpdateGroupTriggerConditions(const engine::GroupTriggerConditions &payload,

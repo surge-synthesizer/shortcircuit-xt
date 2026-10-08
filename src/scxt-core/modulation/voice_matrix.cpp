@@ -199,6 +199,7 @@ void MatrixEndpoints::Sources::bind(scxt::voice::modulation::Matrix &m, engine::
     m.bindSourceValue(voiceSources.isLooping, v.inLoopF);
     m.bindSourceValue(voiceSources.samplePercentage, v.currentSamplePercentageF);
     m.bindSourceValue(voiceSources.loopPercentage, v.currentLoopPercentageF);
+    m.bindSourceValue(voiceSources.releaseCountdown, v.releaseCountdownF);
 
     for (int i = 0; i < scxt::phasorsPerGroupOrZone; ++i)
     {

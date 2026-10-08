@@ -499,6 +499,10 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  addUnlessDefault<val_t>(v, "vcm", scxt::engine::VoiceCreationMode::ON_NOTE_ON,
                                          from.voiceCreationMode);
                  addUnlessDefault<val_t>(v, "sc", true, from.structureConsistent);
+                 addUnlessDefault<val_t>(
+                     v, "rcs", scxt::engine::GroupTriggerConditions::defaultReleaseCountdownSeconds,
+                     from.releaseCountdownSeconds);
+                 addUnlessDefault<val_t>(v, "opk", false, from.releaseOnePerKey);
              }),
              SC_TO({
                  findIf(v, "st", to.storage);
@@ -517,6 +521,10 @@ SC_STREAMDEF(scxt::engine::GroupTriggerConditions, SC_FROM({
                  findOrSet(v, "vcm", scxt::engine::VoiceCreationMode::ON_NOTE_ON,
                            to.voiceCreationMode);
                  findOrSet(v, "sc", true, to.structureConsistent);
+                 findOrSet(v, "rcs",
+                           scxt::engine::GroupTriggerConditions::defaultReleaseCountdownSeconds,
+                           to.releaseCountdownSeconds);
+                 findOrSet(v, "opk", false, to.releaseOnePerKey);
              }));
 
 STREAM_ENUM(engine::Group::GlideRateMode, engine::Group::toStringGlideRateMode,

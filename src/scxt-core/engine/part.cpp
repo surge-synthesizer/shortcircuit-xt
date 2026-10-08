@@ -427,7 +427,8 @@ roundRobinMask_t Part::roundRobinSetsForNote(const Engine &e, int16_t channel, i
     for (const auto &g : groups)
     {
         const auto &tc = g->triggerConditions;
-        if (!tc.inRoundRobin())
+        // a pedal group's set moves on the pedal, not on notes
+        if (!tc.inRoundRobin() || tc.createsVoicesOnPedalUp())
             continue;
 
         auto kind = roundRobinKindIndex(tc.roundRobinKind);

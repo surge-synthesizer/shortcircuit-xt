@@ -143,9 +143,69 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
      * press rather than being handed a voice it never saw start.
      */
     HeldNotes heldNotes;
-    bool inReleaseTriggerPass{false};
+    // which groups the voice manager's current note on is asking for voices from
+    VoiceCreationMode voiceCreationPass{VoiceCreationMode::ON_NOTE_ON};
+    bool inReleaseTriggerPass() const
+    {
+        return voiceCreationPass == VoiceCreationMode::ON_NOTE_OFF;
+    }
     void fireReleaseTriggers(int16_t port, int16_t channel, int16_t key, int32_t note_id);
     bool anyGroupCreatesVoicesOnRelease() const;
+
+    // advances once per audio block; press times are measured against it
+    uint64_t samplesProcessed{0};
+    double secondsSince(uint64_t sampleCount) const
+    {
+        return (double)(samplesProcessed - sampleCount) * sampleRateInv;
+    }
+    // how long the key (or pedal) behind the voices now being made was held
+    double ungatedPassHeldSeconds{0.0};
+    std::array<float, numParts> releasePassDice{};
+
+    struct SustainPedalState
+    {
+        bool down{false};
+        uint64_t downAt{0};
+    };
+    std::array<SustainPedalState, 16> sustainPedal{};
+    static constexpr int16_t pedalLiftThreshold{32};
+    void processSustainPedalEvent(int16_t port, int16_t channel, int16_t value);
+
+    // pedal voices get their own voice manager port, so letting them go can't release a held key
+    static constexpr int16_t pedalTriggerPort{0x7ff0};
+    void firePedalTriggers(int16_t channel, double heldSeconds);
+
+    // zones a pedal lift would sound; askRoundRobin is off while the lift is still advancing sets
+    template <typename F> void forEachPedalZone(int16_t channel, bool askRoundRobin, F &&f)
+    {
+        for (const auto &[pidx, part] : sst::cpputils::enumerate(*patch))
+        {
+            if (part->configuration.mute || part->configuration.muteDueToSolo ||
+                !part->configuration.active || !part->respondsToMIDIChannel(channel))
+                continue;
+
+            auto prex = part->respondsToMIDIChannelExcludingGroupMask(channel);
+            for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
+            {
+                const auto &tc = group->triggerConditions;
+                if (!tc.createsVoicesOnPedalUp() || group->mutedByLatch)
+                    continue;
+                if (hasFeature::hasGroupMIDIChannel &&
+                    !group->respondsToChannelOrUsesPartChannel(channel, prex))
+                    continue;
+
+                // no key is involved, so -1 keeps a keyswitch from reading one
+                auto plays = askRoundRobin
+                                 ? tc.groupShouldPlay(*this, *group, channel, -1)
+                                 : tc.groupShouldPlayIgnoringRoundRobin(*this, *group, channel, -1);
+                if (!plays)
+                    continue;
+
+                for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
+                    f(*part, *group, *zone, (size_t)pidx, (size_t)gidx, (size_t)zidx);
+            }
+        }
+    }
 
     struct pathToZone_t
     {
@@ -196,15 +256,24 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                  * settles it for both passes - a release group reads back the slot its own
                  * note-on chose rather than spending a second one on the way up.
                  */
-                if (!inReleaseTriggerPass)
+                if (!inReleaseTriggerPass())
                 {
                     // Same one-answer-per-note rule for the dice, and for the same reason: every
                     // group of a note must see the roll the press made, including on the way up
-                    part->groupTriggerInstrumentState.noteDice = rng.unif01();
+                    auto roll = rng.unif01();
+                    part->groupTriggerInstrumentState.noteDice = roll;
+                    // a pedal lift is no press, and its key may be one a real press holds
+                    if (voiceCreationPass == VoiceCreationMode::ON_NOTE_ON)
+                        heldNotes.setDice(channel, midiKey, noteId, pidx, roll);
 
                     part->advanceRoundRobinSets(
                         *this, part->roundRobinSetsForNote(*this, channel, pkey, midiKey, velocity,
                                                            (int16_t)kt));
+                }
+                else
+                {
+                    // other keys may have rolled since, so the part's dice is no longer ours
+                    part->groupTriggerInstrumentState.noteDice = releasePassDice[pidx];
                 }
 
                 for (const auto &[gidx, group] : sst::cpputils::enumerate(*part))
@@ -233,7 +302,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                              * press put it - but it is still a switch key, so it is consumed
                              * either way rather than sounding anybody.
                              */
-                            if (!inReleaseTriggerPass)
+                            if (!inReleaseTriggerPass())
                             {
                                 bool changed{false};
                                 // This second iteration is a wee bit annoying but
@@ -290,7 +359,7 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                      * passes need the same answer. Only voice creation splits: the press makes
                      * voices for note-on groups, the release for release groups.
                      */
-                    if (group->triggerConditions.createsVoicesOnRelease() != inReleaseTriggerPass)
+                    if (group->triggerConditions.voiceCreationMode != voiceCreationPass)
                         continue;
 
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
@@ -316,6 +385,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         }
         return idx;
     }
+
+    // the pedal pass's findZone: zones rooted on key, whatever their key and velocity ranges
+    size_t findPedalZones(int16_t channel, int16_t key, std::array<pathToZone_t, maxVoices> &res);
 
     void onPartConfigurationUpdated();
 

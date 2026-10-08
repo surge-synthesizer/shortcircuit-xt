@@ -35,6 +35,7 @@
 #include "sst/jucegui/components/MenuButton.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/components/DraggableTextEditableDiscreteValue.h"
+#include "sst/jucegui/components/Label.h"
 #include "sst/jucegui/component-adapters/DiscreteToReference.h"
 
 #include "app/SCXTEditor.h"
@@ -360,12 +361,16 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
         p.showMenuAsync(editor->defaultPopupMenuOptions());
     }
 
+    static constexpr int activeWidth{16}, typeWidth{72}, gap{2};
+    // the release row lines up on these
+    static constexpr int typeRight{activeWidth + gap + typeWidth};
+
     void resized() override
     {
         auto rb = getLocalBounds().withHeight(16);
-        auto tb = rb.withWidth(16);
+        auto tb = rb.withWidth(activeWidth);
         activeB->setBounds(tb);
-        tb = tb.translated(tb.getWidth() + 2, 0).withWidth(72);
+        tb = tb.translated(tb.getWidth() + gap, 0).withWidth(typeWidth);
         typeM->setBounds(tb);
         for (int i = 0; i < numArgs; ++i)
         {
@@ -403,43 +408,142 @@ struct GroupTriggersCard::ConditionRow : juce::Component, HasEditor
     std::unique_ptr<learnToggle_t> learnB;
 };
 /*
- * Just the toggle and its attachment. Nested and defined here for the same reason ConditionRow
- * is - it keeps the attachment types out of the header.
+ * The release toggle and, once it is on, the options which share its row. Nested and defined
+ * here for the same reason ConditionRow is - it keeps the attachment types out of the header.
  */
 struct GroupTriggersCard::ReleaseRow
 {
     using booleanAttachment_t =
         connectors::BooleanPayloadDataAttachment<scxt::engine::GroupTriggerConditions>;
+    using floatAttachment_t =
+        connectors::PayloadDataAttachment<scxt::engine::GroupTriggerConditions>;
 
     ReleaseRow(GroupTriggersCard *p) : parent(p)
     {
-        attachment = std::make_unique<booleanAttachment_t>(
+        using vcm_t = engine::VoiceCreationMode;
+
+        releaseA = std::make_unique<booleanAttachment_t>(
             "Release Trigger",
             [w = juce::Component::SafePointer(p)](const auto &a) {
                 if (!w)
                     return;
-                w->cond.voiceCreationMode = w->releaseTriggerOn
-                                                ? engine::VoiceCreationMode::ON_NOTE_OFF
-                                                : engine::VoiceCreationMode::ON_NOTE_ON;
+                w->cond.voiceCreationMode =
+                    w->releaseTriggerOn ? vcm_t::ON_NOTE_OFF : vcm_t::ON_NOTE_ON;
+                w->releaseRow->setupValuesFromData();
                 w->pushUpdate();
             },
             p->releaseTriggerOn);
+        releaseB = std::make_unique<jcmp::ToggleButton>();
+        releaseB->setLabel("RELEASE TRIGGER");
+        releaseB->setSource(releaseA.get());
+        p->addAndMakeVisible(*releaseB);
 
-        button = std::make_unique<jcmp::ToggleButton>();
-        button->setLabel("RELEASE TRIGGER");
-        button->setSource(attachment.get());
-        p->addAndMakeVisible(*button);
+        onePerKeyA = std::make_unique<booleanAttachment_t>(
+            "One Per Key",
+            [w = juce::Component::SafePointer(p)](const auto &a) {
+                if (w)
+                    w->pushUpdate();
+            },
+            p->cond.releaseOnePerKey);
+        onePerKeyB = std::make_unique<jcmp::ToggleButton>();
+        onePerKeyB->setLabel("ONE PER");
+        onePerKeyB->setSource(onePerKeyA.get());
+        p->addChildComponent(*onePerKeyB);
+
+        pedalA = std::make_unique<booleanAttachment_t>(
+            "On Pedal",
+            [w = juce::Component::SafePointer(p)](const auto &a) {
+                if (!w)
+                    return;
+                w->cond.voiceCreationMode =
+                    w->pedalTriggerOn ? vcm_t::ON_PEDAL_UP : vcm_t::ON_NOTE_OFF;
+                w->releaseRow->setupValuesFromData();
+                w->pushUpdate();
+            },
+            p->pedalTriggerOn);
+        pedalB = std::make_unique<jcmp::ToggleButton>();
+        pedalB->setLabel("ON PEDAL");
+        pedalB->setSource(pedalA.get());
+        p->addChildComponent(*pedalB);
+
+        auto md = datamodel::pmd()
+                      .asFloat()
+                      .withName("Release Countdown")
+                      .withRange(0, 30)
+                      .withLinearScaleFormatting("s")
+                      .withDecimalPlaces(2)
+                      .withDefault(engine::GroupTriggerConditions::defaultReleaseCountdownSeconds);
+        countdownA = std::make_unique<floatAttachment_t>(
+            md,
+            [w = juce::Component::SafePointer(p)](const auto &a) {
+                if (w)
+                    w->pushUpdate();
+            },
+            p->cond.releaseCountdownSeconds);
+        // one undo for the whole drag
+        countdownA->sendBeginEdit = [w = juce::Component::SafePointer(p)]() {
+            namespace cmsg = scxt::messaging::client;
+            if (w)
+                w->sendToSerialization(
+                    cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::group_triggers, false, -1}));
+        };
+        countdownM = std::make_unique<jcmp::DraggableTextEditableValue>();
+        countdownM->setSource(countdownA.get());
+        p->setupFloatWidget(countdownM.get(), countdownA);
+        p->addChildComponent(*countdownM);
     }
 
     void setupValuesFromData()
     {
-        parent->releaseTriggerOn = parent->cond.createsVoicesOnRelease();
-        button->repaint();
+        parent->releaseTriggerOn = parent->cond.createsUngatedVoices();
+        parent->pedalTriggerOn = parent->cond.createsVoicesOnPedalUp();
+
+        // the options only mean something once voices are made on release
+        auto showOptions = parent->releaseTriggerOn;
+        releaseB->setLabel(showOptions ? "RT" : "RELEASE TRIGGER");
+        onePerKeyB->setVisible(showOptions);
+        countdownM->setVisible(showOptions);
+        pedalB->setVisible(showOptions);
+        layout();
+
+        releaseB->repaint();
+        onePerKeyB->repaint();
+        countdownM->repaint();
+        pedalB->repaint();
+    }
+
+    void setBounds(const juce::Rectangle<int> &b, int componentHeight)
+    {
+        rowBounds = b.withHeight(componentHeight);
+        layout();
+    }
+
+    void layout()
+    {
+        using cr = ConditionRow;
+        auto r = rowBounds;
+        if (!parent->releaseTriggerOn)
+        {
+            releaseB->setBounds(r.withWidth(cr::typeRight));
+            return;
+        }
+
+        // RT and ONE PER over the active toggles and type menus, the rest past them
+        releaseB->setBounds(r.removeFromLeft(cr::activeWidth));
+        r.removeFromLeft(cr::gap);
+        onePerKeyB->setBounds(r.removeFromLeft(cr::typeWidth));
+        r.removeFromLeft(cr::gap);
+        countdownM->setBounds(r.removeFromLeft(30));
+        r.removeFromLeft(cr::gap);
+        pedalB->setBounds(r);
     }
 
     GroupTriggersCard *parent{nullptr};
-    std::unique_ptr<booleanAttachment_t> attachment;
-    std::unique_ptr<jcmp::ToggleButton> button;
+    juce::Rectangle<int> rowBounds;
+    std::unique_ptr<booleanAttachment_t> releaseA, onePerKeyA, pedalA;
+    std::unique_ptr<jcmp::ToggleButton> releaseB, onePerKeyB, pedalB;
+    std::unique_ptr<floatAttachment_t> countdownA;
+    std::unique_ptr<jcmp::DraggableTextEditableValue> countdownM;
 };
 
 GroupTriggersCard::GroupTriggersCard(SCXTEditor *e) : HasEditor(e)
@@ -477,7 +581,7 @@ void GroupTriggersCard::resized()
     int componentHeight = 16;
     auto b = getLocalBounds().withTrimmedTop(rowHeight - 4);
 
-    releaseRow->button->setBounds(b.withHeight(componentHeight));
+    releaseRow->setBounds(b, componentHeight);
 
     auto r = b.withTrimmedTop(releaseBlockHeight).withHeight(componentHeight);
     for (int i = 0; i < scxt::triggerConditionsPerGroup; ++i)

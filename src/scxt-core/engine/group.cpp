@@ -207,7 +207,7 @@ template <bool OS> void Group::processWithOS(scxt::engine::Engine &e)
     // Voices this group makes on release come up already let go, so its own EGs run as one
     // shots too - otherwise they would release under a gate that was never held. These are
     // all modulation EGs with no sample of their own, so one shot rather than sample gated.
-    auto egSub = triggerConditions.createsVoicesOnRelease()
+    auto egSub = triggerConditions.createsUngatedVoices()
                      ? scxt::modulation::shared::ReleaseGateSubstitution::ONE_SHOT
                      : scxt::modulation::shared::ReleaseGateSubstitution::NONE;
 
