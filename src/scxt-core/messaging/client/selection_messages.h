@@ -97,6 +97,7 @@ enum struct EditSubtree : int32_t
                     // multi-file drop loop) so the whole batch is one undo
                     // entry. No snapshot here; the first handler push is kept.
     part_config,    // index = part; snapshots the part configuration
+    group_triggers, // the selected groups' trigger conditions
 };
 
 // subtree, forZone, index
@@ -165,6 +166,9 @@ inline void doBeginEdit(const editGestureBegin_t &payload, engine::Engine &engin
         break;
     case EditSubtree::part_config:
         undo::pushPayloadUndoFor<undo::PartConfigSpec>(engine, {{(int16_t)idx, -1, -1}}, idx, B);
+        break;
+    case EditSubtree::group_triggers:
+        undo::pushPayloadUndo<undo::GroupTriggerConditionsSpec>(engine, -1, B);
         break;
     }
 }

@@ -97,13 +97,15 @@ std::string toStringVoiceCreationMode(const VoiceCreationMode &p)
         return "on";
     case VoiceCreationMode::ON_NOTE_OFF:
         return "off";
+    case VoiceCreationMode::ON_PEDAL_UP:
+        return "pedalup";
     }
     return "on";
 }
 VoiceCreationMode fromStringVoiceCreationMode(const std::string &s)
 {
     static auto inverse = makeEnumInverse<VoiceCreationMode, toStringVoiceCreationMode>(
-        VoiceCreationMode::ON_NOTE_ON, VoiceCreationMode::ON_NOTE_OFF);
+        VoiceCreationMode::ON_NOTE_ON, VoiceCreationMode::ON_PEDAL_UP);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return VoiceCreationMode::ON_NOTE_ON;

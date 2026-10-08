@@ -584,6 +584,38 @@ TEST_CASE("Group trigger condition type change undo/redo", "[undo]")
     REQUIRE(group->triggerConditions.storage[0].args[1] == 127);
 }
 
+TEST_CASE("Release countdown drag coalesces to one undo", "[undo]")
+{
+    UndoFixture f;
+    f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+
+    auto &group = f.engine().getPatch()->getPart(0)->getGroup(0);
+    auto cond = group->triggerConditions;
+    cond.voiceCreationMode = scxt::engine::VoiceCreationMode::ON_NOTE_OFF;
+    f.send(cmsg::UpdateGroupTriggerConditions(cond));
+    auto baseSize = f.undoManager().undoStackSize();
+
+    f.send(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::group_triggers, false, -1}));
+    REQUIRE(f.undoManager().undoStackSize() == baseSize + 1);
+
+    for (int i = 0; i < 20; ++i)
+    {
+        cond.releaseCountdownSeconds = 1.f + 0.1f * i;
+        f.send(cmsg::UpdateGroupTriggerConditions(cond));
+    }
+    f.send(cmsg::EndEdit(true));
+    REQUIRE(group->triggerConditions.releaseCountdownSeconds == Approx(2.9f));
+    REQUIRE(f.undoManager().undoStackSize() == baseSize + 1);
+
+    f.sendUndo();
+    REQUIRE(group->triggerConditions.releaseCountdownSeconds ==
+            Approx(scxt::engine::GroupTriggerConditions::defaultReleaseCountdownSeconds));
+    REQUIRE(group->triggerConditions.createsVoicesOnRelease());
+
+    f.sendRedo();
+    REQUIRE(group->triggerConditions.releaseCountdownSeconds == Approx(2.9f));
+}
+
 TEST_CASE("Mute solo group undo/redo", "[undo]")
 {
     UndoFixture f;

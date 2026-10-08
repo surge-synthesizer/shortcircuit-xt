@@ -430,13 +430,15 @@ struct MatrixEndpoints
             static constexpr SR loopCountSId{'zvsr', 'lpct'};
             static constexpr SR isLoopingSId{'zvsr', 'islp'};
             static constexpr SR samplePercentageSId{'zvsr', 'sppc'};
+            static constexpr SR releaseCountdownSId{'zvsr', 'rcnt'};
 
             VoiceSources(engine::Engine *e)
                 : isGated(isGatedSId), isReleased(isReleasedSId), alternate(alternateSId),
                   alternateBipolar(alternateBipolarSId), alternateRotation(alternateRotationSId),
                   variantCount(variantCountSId), variantCountFraction(variantCountFractionSId),
                   loopPercentage(loopPercentageSId), loopCount(loopCountSId),
-                  isLooping(isLoopingSId), samplePercentage(samplePercentageSId)
+                  isLooping(isLoopingSId), samplePercentage(samplePercentageSId),
+                  releaseCountdown(releaseCountdownSId)
             {
                 registerVoiceModSource(e, isGated, "Voice", "Is Gated");
                 registerVoiceModSource(e, isReleased, "Voice", "Is Released");
@@ -446,6 +448,7 @@ struct MatrixEndpoints
                 registerVoiceModSource(e, samplePercentage, "Voice", "Sample %");
                 registerVoiceModSource(e, loopPercentage, "Voice", "Loop %");
                 registerVoiceModSource(e, loopCount, "Voice", "Loop Count");
+                registerVoiceModSource(e, releaseCountdown, "Voice", "Release Countdown");
 
                 {
                     // narrowest to widest rather than alphabetical
@@ -459,6 +462,7 @@ struct MatrixEndpoints
             SR alternate, alternateBipolar, alternateRotation;
             SR variantCount, variantCountFraction;
             SR isLooping, loopPercentage, samplePercentage, loopCount;
+            SR releaseCountdown;
         } voiceSources;
 
         scxt::modulation::shared::TransportSourceBase<SR, 'ztsp', registerVoiceModSource>

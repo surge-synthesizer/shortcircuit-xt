@@ -141,6 +141,9 @@ Engine::Engine()
     for (auto &v : voices)
         v = nullptr;
 
+    // the note API won't allocate this lazily on the audio thread
+    voiceManager.guaranteePort(pedalTriggerPort);
+
     voiceInPlaceBuffer.reset(new uint8_t[sizeof(scxt::voice::Voice) * maxVoices]);
 
     setStereoOutputs(1);
@@ -365,6 +368,7 @@ bool Engine::processAudio()
 #endif
     messageController->engineProcessRuns++;
     messageController->isAudioRunning = true;
+    samplesProcessed += blockSize;
     auto av = (uint32_t)activeVoices;
 
     drainSerialToEngineQueue();
@@ -2170,6 +2174,87 @@ void Engine::processMIDI1Event(uint16_t idx, const uint8_t data[3])
         heldNotes.clear();
 
     sst::voicemanager::applyMidi1Message(voiceManager, idx, data);
+
+    // after the voice manager, so sustained notes are already let go when pedal voices start
+    if (msg == 0xb0 && data[1] == 64)
+        processSustainPedalEvent(idx, chan, data[2]);
+}
+
+void Engine::processSustainPedalEvent(int16_t port, int16_t channel, int16_t value)
+{
+    if (channel < 0 || channel >= (int16_t)sustainPedal.size())
+        return;
+
+    // the voice manager's threshold going down, and a lower one coming up, so a continuous
+    // pedal hovering at 64 lifts once
+    auto &sp = sustainPedal[channel];
+    auto down = sp.down ? value > pedalLiftThreshold : value > 64;
+    if (down == sp.down)
+        return;
+
+    sp.down = down;
+    if (down)
+        sp.downAt = samplesProcessed;
+    else
+        firePedalTriggers(channel, secondsSince(sp.downAt));
+}
+
+size_t Engine::findPedalZones(int16_t channel, int16_t key,
+                              std::array<pathToZone_t, maxVoices> &res)
+{
+    size_t idx{0};
+    forEachPedalZone(channel, true,
+                     [&](auto &, auto &, auto &zone, size_t pidx, size_t gidx, size_t zidx) {
+                         if (zone.mapping.rootKey != key || idx >= res.size())
+                             return;
+                         res[idx++] = {pidx, gidx, zidx, channel, key, -1};
+                     });
+    return idx;
+}
+
+void Engine::firePedalTriggers(int16_t channel, double heldSeconds)
+{
+    // a lift is one event, so each round robin set moves once however many zones answer it
+    std::array<roundRobinMask_t, numParts> rr{};
+    std::array<bool, numParts> anyRR{};
+    forEachPedalZone(channel, false, [&](auto &, auto &group, auto &, size_t pidx, size_t, size_t) {
+        const auto &tc = group.triggerConditions;
+        if (!tc.inRoundRobin())
+            return;
+        rr[pidx][roundRobinKindIndex(tc.roundRobinKind)] |= 1u << tc.roundRobinSet;
+        anyRR[pidx] = true;
+    });
+    for (size_t p = 0; p < numParts; ++p)
+        if (anyRR[p])
+            patch->getPart(p)->advanceRoundRobinSets(*this, rr[p]);
+
+    std::array<bool, 128> rootKeys{};
+    auto anyKey{false};
+    forEachPedalZone(channel, true, [&](auto &, auto &, auto &zone, size_t, size_t, size_t) {
+        auto rk = zone.mapping.rootKey;
+        if (rk >= 0 && rk < 128)
+        {
+            rootKeys[rk] = true;
+            anyKey = true;
+        }
+    });
+    if (!anyKey)
+        return;
+
+    voiceCreationPass = VoiceCreationMode::ON_PEDAL_UP;
+    ungatedPassHeldSeconds = heldSeconds;
+    for (int16_t k = 0; k < 128; ++k)
+    {
+        if (!rootKeys[k])
+            continue;
+
+        // the pedal port shares the per channel held key table, which a real press may own
+        auto wasHeld = voiceManager.heldMIDIKeyByChannel[channel][k];
+        voiceManager.processNoteOnEvent(pedalTriggerPort, channel, k, -1, 1.f, 0.f);
+        voiceManager.processNoteOffEvent(pedalTriggerPort, channel, k, -1, 0.f);
+        voiceManager.heldMIDIKeyByChannel[channel][k] = wasHeld;
+    }
+    voiceCreationPass = VoiceCreationMode::ON_NOTE_ON;
 }
 
 void Engine::processProgramChangeEvent(int16_t port, int16_t channel, int16_t program)
@@ -2197,7 +2282,7 @@ void Engine::processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int3
         return;
     }
 
-    heldNotes.noteOn(channel, key, note_id, (float)velocity);
+    heldNotes.noteOn(channel, key, note_id, (float)velocity, samplesProcessed);
     voiceManager.processNoteOnEvent(port, channel, key, note_id, velocity, retune);
 }
 
@@ -2229,16 +2314,18 @@ void Engine::fireReleaseTriggers(int16_t port, int16_t channel, int16_t key, int
      * The velocity is the one the note came in with: that is what the release voice plays at,
      * and what decides which of its zones the note lands in.
      */
-    auto velocity = heldNotes.releaseNote(channel, key, note_id);
-    if (velocity < 0.f)
+    auto press = heldNotes.releaseNote(channel, key, note_id);
+    if (!press.found())
         return;
 
     if (!anyGroupCreatesVoicesOnRelease())
         return;
 
-    inReleaseTriggerPass = true;
-    voiceManager.processNoteOnEvent(port, channel, key, note_id, velocity, 0.f);
-    inReleaseTriggerPass = false;
+    voiceCreationPass = VoiceCreationMode::ON_NOTE_OFF;
+    ungatedPassHeldSeconds = secondsSince(press.pressedAt);
+    releasePassDice = press.dice;
+    voiceManager.processNoteOnEvent(port, channel, key, note_id, press.velocity, 0.f);
+    voiceCreationPass = VoiceCreationMode::ON_NOTE_ON;
 }
 
 void Engine::onPartConfigurationUpdated()

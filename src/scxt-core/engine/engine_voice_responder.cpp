@@ -38,9 +38,17 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
                                                         << SCD(noteId) << SCD(velocity));
     assert(!transactionValid);
 
-    auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
-    auto nts = engine.findZone(channel, useKey, key, noteId,
-                               std::clamp((int)(velocity * 128), 0, 127), findZoneWorkingBuffer);
+    size_t nts{0};
+    if (engine.voiceCreationPass == VoiceCreationMode::ON_PEDAL_UP)
+    {
+        nts = engine.findPedalZones(channel, key, findZoneWorkingBuffer);
+    }
+    else
+    {
+        auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
+        nts = engine.findZone(channel, useKey, key, noteId,
+                              std::clamp((int)(velocity * 128), 0, 127), findZoneWorkingBuffer);
+    }
 
     auto voicesCreated{0};
     for (auto idx = 0; idx < nts; ++idx)
@@ -105,7 +113,16 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
 
     // A release trigger's voices are let go by the very note-off which made them, so no
     // envelope on them can wait on the gate - see Voice::createdByReleaseTrigger
-    auto byReleaseTrigger = engine.inReleaseTriggerPass;
+    auto byReleaseTrigger = engine.voiceCreationPass != VoiceCreationMode::ON_NOTE_ON;
+    auto byPedal = engine.voiceCreationPass == VoiceCreationMode::ON_PEDAL_UP;
+    auto heldSeconds = engine.ungatedPassHeldSeconds;
+    auto assignReleaseTrigger = [byReleaseTrigger, heldSeconds](voice::Voice *v) {
+        v->createdByReleaseTrigger = byReleaseTrigger;
+        v->releaseCountdownF =
+            byReleaseTrigger
+                ? v->zone->parentGroup->triggerConditions.releaseCountdownAfter(heldSeconds)
+                : 0.f;
+    };
 
     // the alternates step once per note on rather than once per voice, so zones layered on
     // one key all sound with the same value
@@ -143,7 +160,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 v->velocity = velocity;
                 v->originalMidiKey = key;
 
-                v->createdByReleaseTrigger = byReleaseTrigger;
+                assignReleaseTrigger(v);
                 assignAlternate(v);
                 v->attack();
                 glideFromPriorVoice(v, idx);
@@ -172,12 +189,16 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                 if (v)
                 {
                     v->velocity = velocity;
-                    v->velKeyFade = z->mapping.keyboardRange.fadeAmpltiudeAt(key);
-                    v->velKeyFade *= z->mapping.velocityRange.fadeAmpltiudeAt(
-                        (int16_t)std::clamp(velocity * 127.0, 0., 127.));
+                    // a pedal voice ignores the ranges, so their fades can't silence it
+                    if (!byPedal)
+                    {
+                        v->velKeyFade = z->mapping.keyboardRange.fadeAmpltiudeAt(key);
+                        v->velKeyFade *= z->mapping.velocityRange.fadeAmpltiudeAt(
+                            (int16_t)std::clamp(velocity * 127.0, 0., 127.));
+                    }
 
                     v->originalMidiKey = key;
-                    v->createdByReleaseTrigger = byReleaseTrigger;
+                    assignReleaseTrigger(v);
                     assignAlternate(v);
                     v->attack();
                     glideFromPriorVoice(v, idx);
@@ -189,6 +210,34 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             }
         }
     }
+    auto isNewThisNote = [&](const voice::Voice *ov) {
+        for (int k = 0; k < outIdx; ++k)
+            if (voiceInitWorkingBuffer[k].voice == ov)
+                return true;
+        return false;
+    };
+
+    for (int i = 0; i < outIdx; ++i)
+    {
+        auto *v = voiceInitWorkingBuffer[i].voice;
+        if (!v || !v->createdByReleaseTrigger)
+            continue;
+        const auto *g = v->zone->parentGroup;
+        if (!g->triggerConditions.releaseOnePerKey)
+            continue;
+        for (auto *ov : engine.voices)
+        {
+            if (!ov || !ov->isVoicePlaying || !ov->createdByReleaseTrigger)
+                continue;
+            if (ov->zone->parentGroup != g || ov->key != v->key || ov->channel != v->channel)
+                continue;
+            // layered zones of this same release all sound
+            if (isNewThisNote(ov))
+                continue;
+            ov->beginTerminationSequence();
+        }
+    }
+
     // Exclusive group choke — overlap-aware rules:
     //
     //   Pre-existing voices: only choked when their group has NO new voice in this

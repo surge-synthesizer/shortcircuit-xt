@@ -57,8 +57,18 @@ struct HeldNotes
         int16_t key{-1};
         int32_t noteId{-1};
         float velocity{0.f};
-        uint64_t order{0}; // press order, so the newest of several matches wins
+        uint64_t pressedAt{0}; // engine sample count
+        uint64_t order{0};     // press order, so the newest of several matches wins
         bool inUse{false};
+        std::array<float, numParts> dice{}; // each part's roll for this press
+    };
+
+    struct Released
+    {
+        float velocity{-1.f};
+        uint64_t pressedAt{0};
+        std::array<float, numParts> dice{};
+        bool found() const { return velocity >= 0.f; }
     };
 
     std::array<Entry, capacity> entries{};
@@ -70,13 +80,14 @@ struct HeldNotes
         nextOrder = 1;
     }
 
-    void noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity)
+    void noteOn(int16_t channel, int16_t key, int32_t noteId, float velocity,
+                uint64_t pressedAt = 0)
     {
         for (auto &e : entries)
         {
             if (e.inUse)
                 continue;
-            e = {channel, key, noteId, velocity, nextOrder++, true};
+            e = {channel, key, noteId, velocity, pressedAt, nextOrder++, true, {}};
             return;
         }
         SCLOG_IF(warnings, "HeldNotes full at " << capacity << " notes; release triggers for "
@@ -84,13 +95,13 @@ struct HeldNotes
     }
 
     /*
-     * Free every entry this note-off lets go of and hand back the velocity of the most recent
-     * of them. Returns -1 when the key was never pressed, which is how the caller knows there
-     * is no release trigger to fire.
+     * Free every entry this note-off lets go of and hand back the most recent of them. Nothing
+     * is found when the key was never pressed, which is how the caller knows there is no
+     * release trigger to fire.
      */
-    float releaseNote(int16_t channel, int16_t key, int32_t noteId)
+    Released releaseNote(int16_t channel, int16_t key, int32_t noteId)
     {
-        float res{-1.f};
+        Released res;
         uint64_t best{0};
         for (auto &e : entries)
         {
@@ -100,11 +111,22 @@ struct HeldNotes
             if (e.order >= best)
             {
                 best = e.order;
-                res = e.velocity;
+                res = {e.velocity, e.pressedAt, e.dice};
             }
             e = Entry();
         }
         return res;
+    }
+
+    // the press's dice, so its release can roll the same answer whatever pressed since
+    void setDice(int16_t channel, int16_t key, int32_t noteId, size_t part, float d)
+    {
+        Entry *newest{nullptr};
+        for (auto &e : entries)
+            if (e.inUse && matches(e, channel, key, noteId) && (!newest || e.order > newest->order))
+                newest = &e;
+        if (newest && part < numParts)
+            newest->dice[part] = d;
     }
 
     // Peek without consuming. Tests and asserts only; the engine always releases.

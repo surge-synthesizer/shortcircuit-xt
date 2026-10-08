@@ -386,11 +386,8 @@ template <bool OS> bool Voice::processWithOS()
      * here can wait on the gate. The AEG follows the sample; the modulation EGs, which have no
      * sample to follow, run their one shot shape.
      */
-    namespace mshared = scxt::modulation::shared;
-    auto aegSub = createdByReleaseTrigger ? mshared::ReleaseGateSubstitution::SAMPLE_GATED
-                                          : mshared::ReleaseGateSubstitution::NONE;
-    auto egSub = createdByReleaseTrigger ? mshared::ReleaseGateSubstitution::ONE_SHOT
-                                         : mshared::ReleaseGateSubstitution::NONE;
+    auto aegSub = aegGateSubstitution();
+    auto egSub = egGateSubstitution();
 
     bool envGate{isGated};
     if (sampleIndex >= 0)
@@ -1047,7 +1044,9 @@ void Voice::initializeGenerator()
      * loop that never ends would hold it open forever. A counted loop does end, so it still
      * runs; the open ended modes are ignored and the UI grays them out to say so.
      */
-    auto aegSampleGated = zone->egStorage[0].gateMode ==
+    // a release voice's gated AEG is sample gated too, so it needs the same treatment
+    auto aegSampleGated = scxt::modulation::shared::substitutedGateMode(zone->egStorage[0].gateMode,
+                                                                        aegGateSubstitution()) ==
                           scxt::modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
 
     int currGen{0};

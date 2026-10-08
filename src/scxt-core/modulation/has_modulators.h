@@ -60,6 +60,16 @@ enum struct ReleaseGateSubstitution
     SAMPLE_GATED
 };
 
+// the gate mode an envelope actually runs under once sub is applied
+inline modulation::modulators::AdsrStorage::GateMode
+substitutedGateMode(modulation::modulators::AdsrStorage::GateMode mode, ReleaseGateSubstitution sub)
+{
+    using gm_t = modulation::modulators::AdsrStorage::GateMode;
+    if (sub == ReleaseGateSubstitution::NONE || (mode != gm_t::GATED && mode != gm_t::SEMI_GATED))
+        return mode;
+    return sub == ReleaseGateSubstitution::SAMPLE_GATED ? gm_t::SAMPLE_GATED : gm_t::ONESHOT;
+}
+
 template <typename T, size_t egsPerObject> struct HasModulators
 {
     struct DoubleRate
@@ -401,17 +411,7 @@ template <typename T, size_t egsPerObject> struct HasModulators
                             ahdsrenv_t::Stage stage, bool samplePlaying = false,
                             ReleaseGateSubstitution sub = ReleaseGateSubstitution::NONE)
     {
-        using gm_t = modulation::modulators::AdsrStorage::GateMode;
-
-        auto mode = adsr.gateMode;
-        if (sub != ReleaseGateSubstitution::NONE &&
-            (mode == gm_t::GATED || mode == gm_t::SEMI_GATED))
-        {
-            mode =
-                (sub == ReleaseGateSubstitution::SAMPLE_GATED) ? gm_t::SAMPLE_GATED : gm_t::ONESHOT;
-        }
-
-        return evaluateGate(keyGate, mode, stage, samplePlaying);
+        return evaluateGate(keyGate, substitutedGateMode(adsr.gateMode, sub), stage, samplePlaying);
     }
 };
 } // namespace scxt::modulation::shared
