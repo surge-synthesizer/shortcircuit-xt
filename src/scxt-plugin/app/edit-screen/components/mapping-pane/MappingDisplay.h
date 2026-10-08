@@ -207,7 +207,6 @@ struct MappingDisplay : juce::Component,
 
     void resized() override;
 
-    void mappingChangedFromGUI();
     bool active{true};
     void setActive(bool b);
 

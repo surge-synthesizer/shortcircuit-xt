@@ -926,6 +926,99 @@ TEST_CASE("A region action with a bad action is ignored", "[variants]")
     REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore);
 }
 
+TEST_CASE("A marker shift holds where a drag would stop", "[variants]")
+{
+    using VM = Zone::VariantMarker;
+
+    SECTION("sample start stops at zero and short of the end")
+    {
+        auto t = regionVariant(100, 1000, 0, 1000, 0, false);
+        REQUIRE(Zone::shiftVariantMarker(t, VM::SAMPLE_START, -500, 10000));
+        REQUIRE(t.startSample == 0);
+        Zone::shiftVariantMarker(t, VM::SAMPLE_START, 5000, 10000);
+        REQUIRE(t.startSample == 1000 - minimumVariantRegionInSamples);
+    }
+
+    SECTION("sample end stops at the sample length and short of the start")
+    {
+        auto t = regionVariant(100, 9000, 0, 9000, 0, false);
+        Zone::shiftVariantMarker(t, VM::SAMPLE_END, 5000, 10000);
+        REQUIRE(t.endSample == 10000);
+        Zone::shiftVariantMarker(t, VM::SAMPLE_END, -50000, 10000);
+        REQUIRE(t.endSample == 100 + minimumVariantRegionInSamples);
+    }
+
+    SECTION("loop markers skip a variant which is not looping")
+    {
+        auto t = regionVariant(0, 10000, 1000, 9000, 100, false);
+        REQUIRE(!Zone::shiftVariantMarker(t, VM::LOOP_START, 10, 10000));
+        REQUIRE(!Zone::shiftVariantMarker(t, VM::LOOP_END, 10, 10000));
+        REQUIRE(!Zone::shiftVariantMarker(t, VM::LOOP_FADE, 10, 10000));
+        REQUIRE(t.startLoop == 1000);
+        REQUIRE(t.endLoop == 9000);
+        REQUIRE(t.loopFade == 100);
+    }
+
+    SECTION("loop start stops at the fade, and the fade at the loop")
+    {
+        auto t = regionVariant(0, 10000, 1000, 9000, 500, true);
+        Zone::shiftVariantMarker(t, VM::LOOP_START, -900, 10000);
+        REQUIRE(t.startLoop == 500);
+        Zone::shiftVariantMarker(t, VM::LOOP_FADE, 5000, 10000);
+        REQUIRE(t.loopFade == 500);
+    }
+}
+
+TEST_CASE("A typed shift moves each selected zone's own marker", "[variants]")
+{
+    UnevenSelection u;
+    using VM = Zone::VariantMarker;
+
+    for (int z = 0; z < 3; ++z)
+    {
+        u.zone(z).variantData.variants[0].startSample = 100 * (z + 1);
+        for (int v = 1; v < UnevenSelection::variantCount[z]; ++v)
+            u.zone(z).variantData.variants[v].startSample = 7;
+    }
+    auto depthBefore = u.f.engine().undoManager.undoStackSize();
+
+    u.f.send(cmsg::ShiftVariantMarker({(int32_t)VM::SAMPLE_START, 50, 0, false}));
+
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(u.zone(z).variantData.variants[0].startSample == 100 * (z + 1) + 50);
+        REQUIRE(u.zone(z).variantData.variants[1].startSample == 7);
+    }
+    REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore + 1);
+
+    u.f.sendUndo();
+    for (int z = 0; z < 3; ++z)
+        REQUIRE(u.zone(z).variantData.variants[0].startSample == 100 * (z + 1));
+
+    // with edit all it is every variant of every selected zone
+    u.f.send(cmsg::ShiftVariantMarker({(int32_t)VM::SAMPLE_START, 3, 0, true}));
+    for (int z = 0; z < 3; ++z)
+        for (int v = 0; v < UnevenSelection::variantCount[z]; ++v)
+        {
+            INFO("zone " << z << " variant " << v);
+            auto expect = (v == 0 ? 100 * (z + 1) : 7) + 3;
+            REQUIRE(u.zone(z).variantData.variants[v].startSample == expect);
+        }
+}
+
+TEST_CASE("A marker shift with a bad marker is ignored", "[variants]")
+{
+    UnevenSelection u;
+    using VM = Zone::VariantMarker;
+    auto depthBefore = u.f.engine().undoManager.undoStackSize();
+    u.f.send(cmsg::ShiftVariantMarker({(int32_t)VM::NUM_MARKERS, 5, 0, true}));
+    u.f.send(cmsg::ShiftVariantMarker({-1, 5, 0, true}));
+    u.f.send(cmsg::ShiftVariantMarker({0, 5, maxVariantsPerZone, true}));
+    u.f.send(cmsg::ShiftVariantMarker({0, 0, 0, true}));
+    REQUIRE(u.f.engine().undoManager.undoStackSize() == depthBefore);
+}
+
 // keep the file unity-safe: these must not leak into a batched neighbour
 #undef VAR_FIELD
 #undef VAR_FIELD_OFF

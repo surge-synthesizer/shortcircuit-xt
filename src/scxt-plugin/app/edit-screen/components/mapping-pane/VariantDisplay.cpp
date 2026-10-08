@@ -200,6 +200,20 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
     auto attachSamplePoint = [this](Ctrl c, const std::string &aLabel, auto &v) {
         auto at = std::make_unique<connectors::SamplePointDataAttachment>(
             v, [this](const auto &a) { onVariantFieldChanged(a.value); });
+
+        // a typed value stays on the lead; a typed +N/-N moves every selected zone's own marker
+        using VM = engine::Zone::VariantMarker;
+        auto marker = c == startP   ? VM::SAMPLE_START
+                      : c == endP   ? VM::SAMPLE_END
+                      : c == startL ? VM::LOOP_START
+                      : c == endL   ? VM::LOOP_END
+                                    : VM::LOOP_FADE;
+        at->onRelativeTypein = [w = juce::Component::SafePointer(this), marker](int64_t d) {
+            if (w)
+                w->sendToSerialization(cmsg::ShiftVariantMarker(
+                    {(int32_t)marker, d, w->selectedVariation, w->editAll}));
+        };
+
         auto sl = std::make_unique<jcmp::DraggableTextEditableDiscreteValue>();
         sl->setSource(at.get());
         bracketGesture(*sl);

@@ -299,6 +299,19 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
     bool applyVariantRegionAction(const SingleVariant &src, VariantRegionAction a,
                                   size_t variantIndex, bool editAll);
 
+    // a typed +N/-N on a frame field moves each zone's own marker, held where a drag would stop
+    enum struct VariantMarker : int32_t
+    {
+        SAMPLE_START,
+        SAMPLE_END,
+        LOOP_START,
+        LOOP_END,
+        LOOP_FADE,
+        NUM_MARKERS
+    };
+    static bool shiftVariantMarker(SingleVariant &t, VariantMarker m, int64_t delta, int64_t len);
+    bool shiftVariantMarker(VariantMarker m, int64_t delta, size_t variantIndex, bool editAll);
+
     std::array<std::shared_ptr<sample::Sample>, maxVariantsPerZone> samplePointers;
     int8_t sampleIndex{-1};
 

@@ -500,10 +500,40 @@ struct DiscretePayloadDataAttachment : sst::jucegui::data::Discrete
         return std::nullopt;
     }
 
+    // how the change in flight was typed, so a selection-wide edit can tell N from +N
+    enum struct Typein
+    {
+        NOT_TYPED,
+        TYPED_VALUE,
+        TYPED_SHIFT
+    };
+    Typein typein{Typein::NOT_TYPED};
+    bool acceptsRelativeTypein{false};
+
     std::function<std::optional<float>(const std::string &)> stringToValue{nullptr};
     void setValueAsString(const std::string &s) override { trySetValueAsString(s); }
     bool trySetValueAsString(const std::string &s) override
     {
+        struct TypeinGuard
+        {
+            Typein &t;
+            TypeinGuard(Typein &t, Typein v) : t(t) { t = v; }
+            ~TypeinGuard() { t = Typein::NOT_TYPED; }
+        };
+
+        if (acceptsRelativeTypein)
+        {
+            auto d = parseRelativeTypein(s);
+            if (d.has_value())
+            {
+                TypeinGuard g(typein, Typein::TYPED_SHIFT);
+                setValueFromGUI((int)std::clamp<int64_t>((int64_t)value + *d,
+                                                         std::numeric_limits<int>::min(),
+                                                         std::numeric_limits<int>::max()));
+                return true;
+            }
+        }
+        TypeinGuard g(typein, Typein::TYPED_VALUE);
         if (description.supportsStringConversion)
         {
             auto res = valueFromStringClamped(description, s);
@@ -667,6 +697,24 @@ struct SamplePointDataAttachment : sst::jucegui::data::Discrete
         return (int)std::min<int64_t>(sampleCount, std::numeric_limits<int>::max());
     }
     int getDefaultValue() const override { return 0; }
+
+    // when set, a typed +N/-N goes here rather than landing as a value
+    std::function<void(int64_t)> onRelativeTypein{nullptr};
+    void setValueAsString(const std::string &s) override { trySetValueAsString(s); }
+    bool trySetValueAsString(const std::string &s) override
+    {
+        if (onRelativeTypein)
+        {
+            auto d = parseRelativeTypein(s);
+            if (d.has_value())
+            {
+                onRelativeTypein(*d);
+                return true;
+            }
+        }
+        sst::jucegui::data::Discrete::setValueAsString(s);
+        return true;
+    }
 
     void jog(int dir) override
     {

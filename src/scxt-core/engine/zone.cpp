@@ -415,28 +415,109 @@ bool Zone::applyVariantRegionAction(SingleVariant &t, const SingleVariant &src,
     break;
     case VA::NUDGE_LOOP_START_DOWN:
     case VA::NUDGE_LOOP_START_UP:
-    {
-        if (!t.loopActive)
-            return false;
-        auto pos = t.startLoop + (a == VA::NUDGE_LOOP_START_UP ? 1 : -1);
-        pos = std::max(std::min(pos, t.endLoop), t.startSample);
-        t.startLoop = fitMarker(M::LOOP_START, pos);
-    }
-    break;
+        return shiftVariantMarker(t, VariantMarker::LOOP_START,
+                                  a == VA::NUDGE_LOOP_START_UP ? 1 : -1, len);
     case VA::NUDGE_LOOP_END_DOWN:
     case VA::NUDGE_LOOP_END_UP:
-    {
-        if (!t.loopActive)
-            return false;
-        auto pos = t.endLoop + (a == VA::NUDGE_LOOP_END_UP ? 1 : -1);
-        pos = std::min(std::max(pos, t.startLoop), len);
-        t.endLoop = fitMarker(M::LOOP_END, pos);
-    }
-    break;
+        return shiftVariantMarker(t, VariantMarker::LOOP_END, a == VA::NUDGE_LOOP_END_UP ? 1 : -1,
+                                  len);
     case VA::NUM_ACTIONS:
         return false;
     }
     return regionOf(t) != before;
+}
+
+bool Zone::shiftVariantMarker(SingleVariant &t, VariantMarker m, int64_t delta, int64_t len)
+{
+    using M = dsp::LoopFadeMarker;
+    auto isLoopMarker = m == VariantMarker::LOOP_START || m == VariantMarker::LOOP_END ||
+                        m == VariantMarker::LOOP_FADE;
+    if (delta == 0 || m >= VariantMarker::NUM_MARKERS || (isLoopMarker && !t.loopActive))
+        return false;
+
+    // markers stop at the fade, as a drag in the editor does
+    auto fitMarker = [&t](M mk, int64_t pos) {
+        if (!t.loopActive)
+            return pos;
+        return dsp::clampMarkerToLoopFade(mk, pos, t.loopFade, t.startSample, t.startLoop,
+                                          t.endLoop);
+    };
+
+    auto field = [&t, m]() -> int64_t & {
+        switch (m)
+        {
+        case VariantMarker::SAMPLE_START:
+            return t.startSample;
+        case VariantMarker::SAMPLE_END:
+            return t.endSample;
+        case VariantMarker::LOOP_START:
+            return t.startLoop;
+        case VariantMarker::LOOP_END:
+            return t.endLoop;
+        case VariantMarker::LOOP_FADE:
+        case VariantMarker::NUM_MARKERS:
+            break;
+        }
+        return t.loopFade;
+    };
+    auto &f = field();
+    const auto before = f;
+    auto pos = f + delta;
+
+    switch (m)
+    {
+    case VariantMarker::SAMPLE_START:
+    {
+        auto hi = std::max((int64_t)0, std::min(t.endSample, len) - minimumVariantRegionInSamples);
+        f = std::max((int64_t)0, fitMarker(M::SAMPLE_START, std::clamp(pos, (int64_t)0, hi)));
+    }
+    break;
+    case VariantMarker::SAMPLE_END:
+    {
+        auto lo =
+            std::min(std::max(t.startSample, (int64_t)0) + minimumVariantRegionInSamples, len);
+        f = std::clamp(pos, lo, len);
+    }
+    break;
+    case VariantMarker::LOOP_START:
+        f = fitMarker(M::LOOP_START, std::max(std::min(pos, t.endLoop), t.startSample));
+        break;
+    case VariantMarker::LOOP_END:
+        f = fitMarker(M::LOOP_END, std::min(std::max(pos, t.startLoop), len));
+        break;
+    case VariantMarker::LOOP_FADE:
+        f = dsp::clampLoopFade(pos, t.startSample, t.startLoop, t.endLoop);
+        break;
+    case VariantMarker::NUM_MARKERS:
+        return false;
+    }
+    return f != before;
+}
+
+bool Zone::shiftVariantMarker(VariantMarker m, int64_t delta, size_t variantIndex, bool editAll)
+{
+    if (variantIndex >= maxVariantsPerZone)
+        return false;
+
+    auto shiftOne = [&](size_t i) {
+        auto &t = variantData.variants[i];
+        const auto &smp = samplePointers[i];
+        if (!t.active || !smp)
+            return false;
+        return shiftVariantMarker(t, m, delta, (int64_t)smp->getSampleLength());
+    };
+
+    bool changed{false};
+    if (editAll)
+    {
+        for (auto i = 0U; i < maxVariantsPerZone; ++i)
+            changed = shiftOne(i) || changed;
+    }
+    else
+    {
+        changed = shiftOne(variantIndex);
+    }
+    return changed;
 }
 
 bool Zone::applyVariantRegionAction(const SingleVariant &src, VariantRegionAction a,

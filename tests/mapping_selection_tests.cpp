@@ -452,5 +452,45 @@ TEST_CASE("A root key type-in refuses garbage", "[mapping]")
     }
 }
 
+TEST_CASE("A typed +N or -N reads as a change, anything else as a value", "[mapping]")
+{
+    using scxt::parseRelativeTypein;
+    REQUIRE(parseRelativeTypein("+12").value_or(0) == 12);
+    REQUIRE(parseRelativeTypein("-3").value_or(0) == -3);
+    REQUIRE(parseRelativeTypein("  +4 ").value_or(0) == 4);
+    REQUIRE(parseRelativeTypein("+0").value_or(-1) == 0);
+
+    // note names carry their sign after a letter, so they are values
+    for (auto s : {"60", "C3", "C-1", "+", "-", "", "  ", "+3a", "3-", "+ 3", "+-3",
+                   "+99999999999999999999"})
+    {
+        INFO("'" << s << "'");
+        REQUIRE(!parseRelativeTypein(s).has_value());
+    }
+}
+
+TEST_CASE("An absolute key start lands on all or none of the selection", "[mapping]")
+{
+    ThreeZones t;
+
+    // ranges are 48-59, 60-71, 72-83: a start of 65 is past zone 0's end
+    t.f.send(
+        cmsg::ApplyZoneDelta({true, false, 0, (int)Zone::ChangeDimension::KEY_RANGE_START, 65, 0}));
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(t.zone(z).mapping.keyboardRange.keyStart == 48 + 12 * z);
+    }
+
+    t.f.send(
+        cmsg::ApplyZoneDelta({true, false, 0, (int)Zone::ChangeDimension::KEY_RANGE_START, 40, 0}));
+    for (int z = 0; z < 3; ++z)
+    {
+        INFO("zone " << z);
+        REQUIRE(t.zone(z).mapping.keyboardRange.keyStart == 40);
+        REQUIRE(t.zone(z).mapping.keyboardRange.keyEnd == 59 + 12 * z);
+    }
+}
+
 // keep the file unity-safe: this must not leak into a batched neighbour
 #undef MAP_OFF

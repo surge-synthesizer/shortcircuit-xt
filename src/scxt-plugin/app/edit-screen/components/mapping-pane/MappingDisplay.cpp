@@ -123,17 +123,12 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
                dr == engine::Zone::ChangeDimension::MOVE_ROOTKEY;
     };
     auto addDeltas = [this, isKeyDim](auto &to, auto &wid, auto dir) {
+        using typein_t = typename std::remove_reference_t<decltype(*to)>::Typein;
+        to->acceptsRelativeTypein = true;
         auto og = to->onGuiValueChanged;
-        to->onGuiValueChanged = [dr = dir, w = juce::Component::SafePointer(wid.get()), og,
-                                 isKeyDim, this](const auto &a) {
-            auto isDrag = true;
-            auto isCtrl = false;
-            if (w)
-            {
-                isDrag = w->isSetFromDrag();
-                isCtrl = juce::ModifierKeys::getCurrentModifiers().isCtrlDown();
-            }
-            if (isDrag || !isCtrl)
+        // a typed value lands on every selected zone; drags, jogs and typed +N/-N move each one
+        to->onGuiValueChanged = [dr = dir, og, isKeyDim, this](const auto &a) {
+            if (a.typein != typein_t::TYPED_VALUE)
             {
                 int d = a.value - a.prevValue;
                 int dx{0}, dy{0};
@@ -378,11 +373,6 @@ void MappingDisplay::resized()
     textEds.Tracking->setBounds(sp(83, 194, 40, 16));
     glyphs.Pan->setBounds(sp(135, 194, 16, 16));
     textEds.Pan->setBounds(sp(153, 194, 48, 16));
-}
-
-void MappingDisplay::mappingChangedFromGUI()
-{
-    sendToSerialization(cmsg::UpdateLeadZoneMapping(mappingView));
 }
 
 namespace
@@ -1122,10 +1112,16 @@ bool MappingDisplay::applyAbsoluteToSelectedZones(engine::Zone::ChangeDimension 
                            "didn't need it yet)");
     }
 
+    auto leadOnly = juce::ModifierKeys::getCurrentModifiers().isAltDown();
+    const auto &lead = editor->currentLeadZoneSelection;
+
+    // all or nothing: one zone which cannot take the value refuses it for the selection
     bool doApply = true;
     for (const auto &z : summary)
     {
-        if (editor->isSelected(z.address))
+        auto inScope =
+            leadOnly ? (lead.has_value() && z.address == *lead) : editor->isSelected(z.address);
+        if (inScope)
         {
             doApply =
                 doApply && engine::Zone::canApplyAbsoluteBoundEdit(dim, newX, newY, z.kr, z.vr);
@@ -1141,7 +1137,6 @@ bool MappingDisplay::applyAbsoluteToSelectedZones(engine::Zone::ChangeDimension 
         mayBeAboutToMutate = false;
     }
 
-    auto leadOnly = juce::ModifierKeys::getCurrentModifiers().isAltDown();
     sendToSerialization(
         cmsg::ApplyZoneDelta({true, leadOnly, editor->selectedPart, dim, newX, newY}));
     return true;

@@ -285,6 +285,29 @@ TEST_CASE("Group trigger edits span the selection", "[group-settings]")
             REQUIRE(f.cond(g).storage[1].args[0] == 9);
         }
     }
+
+    SECTION("an arg edit skips a group whose row is a different trigger")
+    {
+        ThreeGroups f;
+        auto c = f.leadCondCopy();
+        c.storage[0].id = GTID::PROGRAM_CHANGE;
+        c.storage[0].args[0] = 7;
+        f.send(cmsg::UpdateGroupTriggerConditions(c));
+
+        // a mixed selection: group 0's first row is pitch bend
+        f.cond(0).storage[0].id = GTID::PITCH_BEND;
+        f.cond(0).setupOnUnstream(f.part().groupTriggerInstrumentState);
+        auto pbArgs = f.cond(0).storage[0].args;
+
+        c = f.leadCondCopy();
+        c.storage[0].args[0] = 9;
+        f.send(cmsg::UpdateGroupTriggerConditions(c));
+
+        REQUIRE(f.cond(f.lead).storage[0].args[0] == 9);
+        REQUIRE(f.cond(2).storage[0].args[0] == 9);
+        REQUIRE(f.cond(0).storage[0].id == GTID::PITCH_BEND);
+        REQUIRE(f.cond(0).storage[0].args == pbArgs);
+    }
 }
 
 TEST_CASE("A mixed trigger selection is reported and can be flattened", "[group-settings]")

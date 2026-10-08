@@ -127,8 +127,9 @@ inline void applyGroupTriggerDelta(engine::GroupTriggerConditions &tc,
                 if (!(j == 1 && ordinalIsTheirs))
                     tc.storage[i].args[j] = p.storage[i].args[j];
         }
-        else
+        else if (tc.storage[i].id == p.storage[i].id)
         {
+            // an arg means something only on a row of the same trigger type
             for (int j = 0; j < engine::GroupTriggerStorage::numArgs; ++j)
                 if (d.arg[i][j] && !(j == 1 && ordinalIsTheirs))
                     tc.storage[i].args[j] = p.storage[i].args[j];
