@@ -472,21 +472,30 @@ template <typename T> inline void HasEditor::updateValueTooltip(const T &at)
 
 template <typename W, typename A> inline void HasEditor::setupFloatWidget(W *w, const A &a)
 {
+    // a type-in field already shows its value, so it gets no value popup
+    constexpr bool showsOwnValue = requires(W *x) { x->activateEditor(); };
+
     w->onBeginEdit = [this, &slRef = *w, &atRef = *a]() {
-        updateValueTooltip(atRef);
-        editor->showTooltip(slRef);
+        if constexpr (!showsOwnValue)
+        {
+            updateValueTooltip(atRef);
+            editor->showTooltip(slRef);
+        }
         editor->beginEditNotifyEngine(atRef);
     };
     w->onEndEdit = [this, &atRef = *a]() {
         editor->hideTooltip();
         editor->endEditNotifyEngine(atRef);
     };
-    w->onIdleHover = [this, &slRef = *w, &atRef = *a]() {
-        updateValueTooltip(atRef);
-        editor->showTooltip(slRef);
-    };
-    w->onIdleHoverEnd = [this]() { editor->hideTooltip(); };
-    w->onWheelEditOccurred = [this, &slRef = *w] { slRef.immediatelyInitiateIdleAction(1000); };
+    if constexpr (!showsOwnValue)
+    {
+        w->onIdleHover = [this, &slRef = *w, &atRef = *a]() {
+            updateValueTooltip(atRef);
+            editor->showTooltip(slRef);
+        };
+        w->onIdleHoverEnd = [this]() { editor->hideTooltip(); };
+        w->onWheelEditOccurred = [this, &slRef = *w] { slRef.immediatelyInitiateIdleAction(1000); };
+    }
     if constexpr (std::is_base_of_v<sst::jucegui::components::ContinuousParamEditor,
                                     std::remove_pointer_t<W>>)
     {
