@@ -223,8 +223,7 @@ bool hasMonolithBinaries(const std::unique_ptr<RIFF::File> &f)
     return lst != nullptr;
 }
 
-std::vector<fs::path> readMonolithBinaryIndex(const std::unique_ptr<RIFF::File> &f,
-                                              engine::Engine &e)
+static std::vector<fs::path> readMonolithPaths(RIFF::File *f)
 {
     auto lst = f->GetSubList(sampleChunk);
     if (lst == nullptr)
@@ -254,6 +253,12 @@ std::vector<fs::path> readMonolithBinaryIndex(const std::unique_ptr<RIFF::File> 
     }
 
     return res;
+}
+
+std::vector<fs::path> readMonolithBinaryIndex(const std::unique_ptr<RIFF::File> &f,
+                                              engine::Engine &)
+{
+    return readMonolithPaths(f.get());
 }
 
 std::tuple<fs::path, fs::path, std::string, std::string> setupForCollection(const fs::path &path)
@@ -1100,9 +1105,11 @@ static void unstreamMultiPayload(scxt::engine::Engine &engine, const std::string
     }
 }
 
+// with fromMultiPart set, partPath is the multi and the payload its whole engine state
 static void unstreamPartPayload(scxt::engine::Engine &engine, int part, const std::string &payload,
                                 const fs::path &partPath,
-                                const std::vector<fs::path> &monolithBinaryIndex)
+                                const std::vector<fs::path> &monolithBinaryIndex,
+                                int fromMultiPart = -1)
 {
     auto &smgr = *engine.getSampleManager();
     try
@@ -1113,7 +1120,10 @@ static void unstreamPartPayload(scxt::engine::Engine &engine, int part, const st
         smgr.setRelativeRoot(partPath.parent_path());
         smgr.setMonolithBinaryIndex(partPath, monolithBinaryIndex);
         engine.immediatelyTerminateAllVoices();
-        scxt::json::unstreamPartState(engine, part, payload, true);
+        if (fromMultiPart >= 0)
+            scxt::json::unstreamPartFromMultiState(engine, part, fromMultiPart, payload, true);
+        else
+            scxt::json::unstreamPartState(engine, part, payload, true);
         smgr.clearReparenting();
         smgr.purgeUnreferencedSamples();
         smgr.clearMonolithBinaryIndex();
@@ -1129,7 +1139,17 @@ static void unstreamPartPayload(scxt::engine::Engine &engine, int part, const st
         {
             sm->applySelectActions({part, 0, -1});
         }
-        recordLoadedPart(engine, part, partPath, !monolithBinaryIndex.empty());
+        if (fromMultiPart >= 0)
+        {
+            // it keeps the name it had in the multi, and has no part file of its own
+            sm->clearPartFile(part);
+            sm->sendPatchFilesToClient();
+            engine.sendPartNamesToClient(part);
+        }
+        else
+        {
+            recordLoadedPart(engine, part, partPath, !monolithBinaryIndex.empty());
+        }
     }
     catch (std::exception &err)
     {
@@ -1228,6 +1248,112 @@ bool loadPartInto(const fs::path &p, scxt::engine::Engine &engine, int part)
     }
 
     return true;
+}
+
+bool loadPartFromMultiInto(const fs::path &p, int fromPart, scxt::engine::Engine &engine, int part)
+{
+    std::string payload;
+    std::vector<fs::path> monolithBinaryIndex;
+
+    try
+    {
+        auto f = std::make_unique<RIFF::File>(p.u8string());
+        auto manifest = readSCManifest(f);
+        payload = readSCDataChunk(f);
+
+        if (hasMonolithBinaries(f))
+            monolithBinaryIndex = readMonolithBinaryIndex(f, engine);
+    }
+    catch (const RIFF::Exception &e)
+    {
+        SCLOG_IF(patchIO, "RIFF::Exception " << e.Message);
+        RAISE_ERROR_ENGINE(engine, "Unable to load Part", e.Message);
+        return false;
+    }
+    catch (const std::exception &e)
+    {
+        RAISE_ERROR_ENGINE(engine, "Unable to load Part", e.what());
+        return false;
+    }
+
+    auto &cont = engine.getMessageController();
+    if (cont->isAudioRunning)
+    {
+        cont->stopAudioThreadThenRunOnSerial([payload, multiPath = p, monolithBinaryIndex, part,
+                                              fromPart, &nonconste = engine](auto &e) {
+            unstreamPartPayload(nonconste, part, payload, multiPath, monolithBinaryIndex, fromPart);
+            // Always restart, else a failed load leaves audio permanently stopped.
+            e.getMessageController()->restartAudioThreadFromSerial();
+        });
+    }
+    else
+    {
+        // audio can start before the serialization thread notices
+        engine.stopEngineRequests++;
+        unstreamPartPayload(engine, part, payload, p, monolithBinaryIndex, fromPart);
+        engine.stopEngineRequests--;
+    }
+
+    return true;
+}
+
+std::vector<sample::compound::CompoundElement> getSCXTCompoundList(const fs::path &p)
+{
+    using CE = sample::compound::CompoundElement;
+    std::vector<CE> res;
+    auto isMulti = extensionMatches(p, ".scm");
+
+    auto element = [&p](CE::Type t, const std::string &nm, int preset, int region) {
+        CE e;
+        e.type = t;
+        e.name = nm;
+        e.sampleAddress = {sample::Sample::SCXT_FILE, p, "", preset, -1, region};
+        return e;
+    };
+
+    try
+    {
+        auto f = std::make_unique<RIFF::File>(p.u8string());
+        auto payload = readSCDataChunk(f);
+
+        if (isMulti)
+        {
+            engine::Patch patch;
+            json::unstreamMultiStructure(patch, payload, true);
+            res.push_back(element(CE::INSTRUMENT, "Full Multi", -1, -1));
+            for (int i = 0; i < (int)numParts; ++i)
+            {
+                const auto &pt = patch.getPart(i);
+                if (!pt->configuration.active)
+                    continue;
+                res.push_back(element(CE::INSTRUMENT,
+                                      "Part " + std::to_string(i + 1) + ": " + pt->names.name, i,
+                                      -1));
+            }
+        }
+        else
+        {
+            engine::Part pt(0);
+            json::unstreamPartStructure(pt, payload, true);
+            res.push_back(element(CE::INSTRUMENT, std::string("Part: ") + pt.names.name, -1, -1));
+        }
+
+        // the monolith writes its samples in the order of this list
+        auto paths = readMonolithPaths(f.get());
+        for (int i = 0; i < (int)paths.size(); ++i)
+            res.push_back(element(CE::SAMPLE, paths[i].filename().u8string(), -1, i));
+    }
+    catch (const RIFF::Exception &e)
+    {
+        res = {element(CE::ERROR_SENTINEL, "Unable to read file", -1, -1)};
+        res.back().emsg = e.Message;
+    }
+    catch (const std::exception &e)
+    {
+        res = {element(CE::ERROR_SENTINEL, "Unable to read file", -1, -1)};
+        res.back().emsg = e.what();
+    }
+    return res;
 }
 
 SCMonolithSampleReader::SCMonolithSampleReader(RIFF::File *f) : file(f)

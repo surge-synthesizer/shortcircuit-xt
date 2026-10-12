@@ -76,6 +76,13 @@ struct SampleDropSource
     // True if this source can be dropped onto a group to add a zone
     bool isDroppableOnGroup() const { return isSingleSample(); }
 
+    // the whole of an scm or scp, or one part of a multi, which a batch drop must not load
+    static bool isPatchElement(const sample::compound::CompoundElement &el)
+    {
+        return el.type == sample::compound::CompoundElement::INSTRUMENT &&
+               browser::Browser::isShortCircuitFormatFile(el.sampleAddress.path);
+    }
+
     // ---- Factory methods ----
 
     // Classify from a filesystem path
@@ -104,6 +111,28 @@ struct SampleDropSource
         if (!wsi || wsi->encompassesMultipleSampleInfos())
             return {};
 
+        // child rows also carry their parent file's dirent, so the element wins
+        if (wsi->getCompoundElement().has_value())
+        {
+            auto el = wsi->getCompoundElement().value();
+            SampleDropSource s;
+            s.element = el;
+            s.displayName = juce::String::fromUTF8(el.name.c_str());
+            s.kind = (el.type == sample::compound::CompoundElement::Type::INSTRUMENT)
+                         ? Kind::Instrument
+                         : Kind::Sample;
+
+            // the whole of an scm or scp, or one part of a multi, drops as that file would
+            const auto &sa = el.sampleAddress;
+            if (s.kind == Kind::Instrument && browser::Browser::isShortCircuitFormatFile(sa.path))
+            {
+                s.pathStr = sa.path.u8string();
+                s.kind = (extensionMatches(sa.path, ".scm") && sa.preset < 0) ? Kind::MultiFile
+                                                                              : Kind::PartFile;
+            }
+            return s;
+        }
+
         if (wsi->getDirEnt().has_value())
         {
             try
@@ -114,18 +143,6 @@ struct SampleDropSource
             {
                 return {};
             }
-        }
-
-        if (wsi->getCompoundElement().has_value())
-        {
-            auto el = wsi->getCompoundElement().value();
-            SampleDropSource s;
-            s.element = el;
-            s.displayName = juce::String::fromUTF8(el.name.c_str());
-            s.kind = (el.type == sample::compound::CompoundElement::Type::INSTRUMENT)
-                         ? Kind::Instrument
-                         : Kind::Sample;
-            return s;
         }
 
         return {};
@@ -146,7 +163,11 @@ struct SampleDropSource
             return;
 
         case Kind::PartFile:
-            editor->sendToSerialization(cmsg::LoadPartInto({pathStr, (int16_t)targetPart}));
+            if (element.has_value() && extensionMatches(element->sampleAddress.path, ".scm"))
+                editor->sendToSerialization(cmsg::LoadPartFromMultiInto(
+                    {pathStr, (int16_t)element->sampleAddress.preset, (int16_t)targetPart}));
+            else
+                editor->sendToSerialization(cmsg::LoadPartInto({pathStr, (int16_t)targetPart}));
             return;
 
         case Kind::Instrument:
@@ -242,7 +263,10 @@ inline void sendBatchDrop(browser_ui::WithSampleInfo *wsi, HasEditor *editor, in
     for (auto *e : wsi->getMultipleSampleInfos())
     {
         if (e->getCompoundElement().has_value())
-            compounds.push_back(*e->getCompoundElement());
+        {
+            if (!SampleDropSource::isPatchElement(*e->getCompoundElement()))
+                compounds.push_back(*e->getCompoundElement());
+        }
         else if (e->getDirEnt().has_value())
             samples.push_back(
                 {e->getDirEnt()->path().u8string(), 60, keyLo, keyHi, 0, 127, rangeInfoWins});

@@ -30,6 +30,7 @@
 
 #include "engine/patch.h"
 #include "engine/part.h"
+#include "sample/compound_file.h"
 
 namespace scxt::patch_io
 {
@@ -49,6 +50,12 @@ bool saveMulti(const fs::path &toFile, scxt::engine::Engine &, SaveStyles saveSt
 bool loadMulti(const fs::path &fromFile, scxt::engine::Engine &);
 bool savePart(const fs::path &toFile, scxt::engine::Engine &, int part, SaveStyles saveStyles);
 bool loadPartInto(const fs::path &fromFile, scxt::engine::Engine &, int part);
+// fromPart is the part's slot in the multi, 0 based
+bool loadPartFromMultiInto(const fs::path &multiFile, int fromPart, scxt::engine::Engine &,
+                           int part);
+
+// the browser's view of an scm or scp: the whole file, each active part, then any embedded samples
+std::vector<sample::compound::CompoundElement> getSCXTCompoundList(const fs::path &);
 
 static constexpr const char *emptyEngineResource{"InitSampler.dat"};
 bool initFromResourceBundle(scxt::engine::Engine &e, const std::string &file);

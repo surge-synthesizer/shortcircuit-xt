@@ -165,7 +165,9 @@ SC_STREAMDEF(sample::Sample::SampleFileAddress, SC_FROM({
 
 SC_STREAMDEF(scxt::sample::SampleManager,
              SC_FROM({ v = {{"sampleAddresses", from.getSampleAddressesAndIDs()}}; }), SC_TO({
-                 to.reset();
+                 // a part load adds to the samples the other parts already use
+                 if (!SC_STREAMING_FOR_PART)
+                     to.reset();
                  sample::SampleManager::sampleAddressesAndIds_t res;
                  findIf(v, "sampleAddresses", res);
                  to.restoreFromSampleAddressesAndIDs(res);

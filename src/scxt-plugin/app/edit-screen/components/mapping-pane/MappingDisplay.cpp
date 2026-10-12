@@ -606,8 +606,11 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
                     auto &loc = r[std::min(idx++, (int)r.size() - 1)];
 
                     if (e->getCompoundElement().has_value())
-                        compounds.push_back({*e->getCompoundElement(), loc.root, loc.keyLo,
-                                             loc.keyHi, loc.velLo, loc.velHi});
+                    {
+                        if (!shared::SampleDropSource::isPatchElement(*e->getCompoundElement()))
+                            compounds.push_back({*e->getCompoundElement(), loc.root, loc.keyLo,
+                                                 loc.keyHi, loc.velLo, loc.velHi});
+                    }
                     else if (e->getDirEnt().has_value())
                         samples.push_back({e->getDirEnt()->path().u8string(), loc.root, loc.keyLo,
                                            loc.keyHi, loc.velLo, loc.velHi, false});
@@ -628,6 +631,16 @@ void MappingDisplay::itemDropped(const juce::DragAndDropTarget::SourceDetails &d
             auto loc = r[0];
             assert(r.size() == 1);
             auto src = shared::SampleDropSource::fromBrowserItem(wsi);
+            if (src.isMultiFile())
+            {
+                // SCM onto the mapping pane is not allowed
+                return;
+            }
+            if (src.isPartFile())
+            {
+                src.dropOnPart(editor->selectedPart, false, this);
+                return;
+            }
             if (src.isInstrumentWhichCanReplace() && savedReplace)
             {
                 // snapshot + clear + import coalesce to one undo entry
