@@ -232,8 +232,11 @@ struct ConsoleUI
         clientPatchFiles = p;
     }
 
-    void
-    onOtherTabSelection(const scxt::selection::SelectionManager::otherTabSelection_t &p) ON_STUB;
+    scxt::selection::SelectionManager::otherTabSelection_t otherTabSelection;
+    void onOtherTabSelection(const scxt::selection::SelectionManager::otherTabSelection_t &p)
+    {
+        otherTabSelection = p;
+    }
 
     void onBusOrPartEffectFullData(const scxt::messaging::client::busEffectFullData_t &) ON_STUB;
     void onBusOrPartSendData(const scxt::messaging::client::busSendData_t &) ON_STUB;

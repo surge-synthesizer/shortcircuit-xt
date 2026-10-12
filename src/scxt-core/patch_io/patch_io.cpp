@@ -1000,9 +1000,10 @@ std::optional<std::pair<std::string, std::string>> retrieveSCManifestAndPayload(
 }
 
 /*
- * A multi carries the screen and tab it was saved on, but loading one shouldn't
- * move you: you were looking at something for a reason. The part you were on is
- * kept too, unless the multi you just loaded has nothing there.
+ * Loading a multi shouldn't move you: you were looking at something for a reason.
+ * Older multis carry the screens and tabs they were saved on, so the whole view is
+ * put back over them. The part you were on is kept too, unless the multi you just
+ * loaded has nothing there. Only a DAW session restore brings its own view.
  */
 struct ClientViewAcrossLoad
 {
@@ -1017,17 +1018,8 @@ struct ClientViewAcrossLoad
 
     void restore(scxt::engine::Engine &e) const
     {
-        // nothing was on screen to preserve, as at startup, so let the file decide
-        if (tabs.empty())
-            return;
-
         const auto &sm = e.getSelectionManager();
-        for (const auto &k : {"main_screen", "multi.pgz"})
-        {
-            auto p = tabs.find(k);
-            if (p != tabs.end())
-                sm->otherTabSelection[k] = p->second;
-        }
+        sm->otherTabSelection = tabs;
         sm->sendOtherTabsSelectionToClient();
 
         if (selectedPart != sm->selectedPart &&

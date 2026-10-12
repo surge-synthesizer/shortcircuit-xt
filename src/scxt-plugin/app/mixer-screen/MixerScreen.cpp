@@ -57,8 +57,8 @@ MixerScreen::MixerScreen(SCXTEditor *e) : HasEditor(e)
         partPanes[i] = std::move(pp);
     }
 
-    // Select the part 0 bus
-    selectBus(0);
+    // the engine may hold a saved bus, which the client refresh brings in
+    selectBus(0, false);
 
     adjustChannelStripSoloMute();
 }
@@ -107,7 +107,7 @@ void MixerScreen::onBusEffectFullData(
     busPane->channelStrips[bus]->effectsChanged();
 }
 
-void MixerScreen::selectBus(int index)
+void MixerScreen::selectBus(int index, bool updateState)
 {
     for (const auto &p : partPanes)
     {
@@ -121,7 +121,8 @@ void MixerScreen::selectBus(int index)
     }
     busPane->channelStrips[index]->setSelected(true);
     busPane->channelStrips[index]->setIsAccented(true);
-    editor->setTabSelection("mixer_screen", std::to_string(index));
+    if (updateState)
+        editor->setTabSelection("mixer_screen", std::to_string(index));
     repaint();
 }
 
@@ -161,7 +162,7 @@ void MixerScreen::onOtherTabSelection()
         auto v = std::atoi(bs.c_str());
         if (v >= 0 && v < busPane->channelStrips.size())
         {
-            selectBus(v);
+            selectBus(v, false);
         }
     }
 }
