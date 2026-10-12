@@ -674,3 +674,64 @@ TEST_CASE("SFZ region level rand still folds to variants and sets no dice", "[im
     CHECK_FALSE(diceOf(*groups[0]).has_value());
     CHECK(activeVariants(f.onlyZone()) == 4);
 }
+
+TEST_CASE("SFZ offset and end set the sample endpoints", "[importer][sfz]")
+{
+    auto p = buildSfz("offset_end", R"(
+<region>
+sample=a.wav
+offset=100 end=899
+)",
+                      {{"a.wav", 1000}});
+
+    Fixture f;
+    f.load(p);
+
+    auto &v = f.onlyZone().variantData.variants[0];
+    CHECK(v.startSample == 100);
+    CHECK(v.endSample == 900);
+}
+
+TEST_CASE("SFZ offset and end clamp to the sample", "[importer][sfz]")
+{
+    auto p = buildSfz("offset_end_clamp", R"(
+<region>
+sample=a.wav
+offset=5000 end=5000
+)",
+                      {{"a.wav", 1000}});
+
+    Fixture f;
+    f.load(p);
+
+    auto &v = f.onlyZone().variantData.variants[0];
+    CHECK(v.endSample == 1000);
+    CHECK(v.startSample == 999);
+}
+
+TEST_CASE("SFZ offset and end apply to round robin variants", "[importer][sfz]")
+{
+    auto p = buildSfz("offset_end_rr", R"(
+<group>
+lokey=60 hikey=60 pitch_keycenter=60
+
+<region>
+sample=a.wav
+seq_position=1
+
+<region>
+sample=b.wav
+seq_position=2
+offset=200 end=1499
+)",
+                      {{"a.wav", 1000}, {"b.wav", 2000}});
+
+    Fixture f;
+    f.load(p);
+
+    auto &z = f.onlyZone();
+    CHECK(z.variantData.variants[0].startSample == 0);
+    CHECK(z.variantData.variants[0].endSample == 1000);
+    CHECK(z.variantData.variants[1].startSample == 200);
+    CHECK(z.variantData.variants[1].endSample == 1500);
+}

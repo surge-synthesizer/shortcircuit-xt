@@ -336,6 +336,43 @@ import_support::LoopArgs zoneLoopParse(opCodeMap_t &opCodes, int &loadInfo)
     return args;
 }
 
+struct EndpointArgs
+{
+    std::optional<int64_t> offset;
+    // sfz end is the last frame played, inclusive
+    std::optional<int64_t> end;
+};
+
+EndpointArgs zoneEndpointParse(opCodeMap_t &opCodes)
+{
+    EndpointArgs args;
+    if (auto v = consumeOpcode(opCodes, "offset"); v.has_value())
+        args.offset = std::atoll(v->c_str());
+    if (auto v = consumeOpcode(opCodes, "end"); v.has_value())
+        args.end = std::atoll(v->c_str());
+    return args;
+}
+
+void applyZoneEndpoints(engine::Zone &zone, import_support::ImporterContext &ctx, int variantIdx,
+                        const EndpointArgs &a)
+{
+    auto &v = zone.variantData.variants[variantIdx];
+    auto len = v.endSample;
+    if (len <= 1)
+        return;
+
+    if (a.end && *a.end < 0)
+    {
+        ctx.unsupported("SFZ end=-1", "regions disabled by a negative end still play");
+    }
+    else if (a.end)
+    {
+        v.endSample = std::clamp(*a.end + 1, (int64_t)1, len);
+    }
+    if (a.offset)
+        v.startSample = std::clamp(*a.offset, (int64_t)0, v.endSample - 1);
+}
+
 void zoneEnvelope(std::unique_ptr<engine::Zone> &zn, import_support::ImporterContext &ctx,
                   opCodeMap_t &opCodes, int slot, const std::string &prefix)
 {
@@ -907,6 +944,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                                 "a region range inside a group that already has one");
             }
             auto loopArgs = zoneLoopParse(mergedOpcodes, loadInfo);
+            auto endpointArgs = zoneEndpointParse(mergedOpcodes);
             zoneEnvelope(zn, ctx, mergedOpcodes, 0, "ampeg");
             zoneEnvelope(zn, ctx, mergedOpcodes, 1, "fileg");
             // Virtual generator zones occupy proc slot 0 with the oscillator;
@@ -981,6 +1019,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 unusedZoneOpcodes.emplace(n, m.first);
             }
             int variantIndex{-1};
+            engine::Zone *variantZone{zn.get()};
             if (isVirtual)
             {
                 // installVirtualSample already attached the silent sample; just
@@ -1011,6 +1050,7 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                         z->mapping.velocityRange == zn->mapping.velocityRange)
                     {
                         variantIndex = idx;
+                        variantZone = z.get();
                         z->attachToSampleAtVariation(*e.getSampleManager(), sid, idx, loadInfo);
                         attached = true;
                         break;
@@ -1040,7 +1080,9 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                     loopArgs.startSamples = std::max((int64_t)0, ls);
                     loopArgs.endSamples = std::max({(int64_t)0, ls + 1, le});
                 }
-                import_support::importZoneLoop(*zn, ctx, variantIndex, loopArgs);
+                import_support::importZoneLoop(*variantZone, ctx, variantIndex, loopArgs);
+                if (!isVirtual)
+                    applyZoneEndpoints(*variantZone, ctx, variantIndex, endpointArgs);
             }
 
             if (roundRobinPosition <= 0)

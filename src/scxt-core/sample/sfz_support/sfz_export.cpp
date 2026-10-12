@@ -118,8 +118,8 @@ bool exportSFZ(const fs::path &toFile, engine::Engine &e, int partNumber)
             auto pt = cmf->second;
             auto rp = pt.lexically_relative(dir.parent_path());
             oss << "sample=" << rp.u8string() << "\n";
-            oss << "start=" << z->variantData.variants[0].startSample << " ";
-            oss << "end=" << z->variantData.variants[0].endSample << "\n";
+            oss << "offset=" << z->variantData.variants[0].startSample << " ";
+            oss << "end=" << z->variantData.variants[0].endSample - 1 << "\n";
 
             if (z->variantData.variants[0].loopActive)
             {
