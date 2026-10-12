@@ -107,7 +107,11 @@ struct Browser
     static bool isLoadableMultiSample(const fs::path &);
     static bool isShortCircuitFormatFile(const fs::path &);
 
-    static bool isExpandableInBrowser(const fs::path &p) { return isLoadableMultiSample(p); }
+    // an scm or scp always opens, since knowing whether it holds samples means reading it
+    static bool isExpandableInBrowser(const fs::path &p)
+    {
+        return isLoadableMultiSample(p) || isShortCircuitFormatFile(p);
+    }
     static std::vector<sample::compound::CompoundElement> expandForBrowser(const fs::path &p);
 
     /*

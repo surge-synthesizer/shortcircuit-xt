@@ -215,6 +215,9 @@ void addUnlessDefault(V &v, const std::string &key, const R &defVal, const R &va
 #define SC_STREAMING_FOR_PART                                                                      \
     (engine::Engine::streamReason == engine::Engine::StreamReason::FOR_PART)
 
+#define SC_STREAMING_FOR_STRUCTURE                                                                 \
+    (engine::Engine::streamReason == engine::Engine::StreamReason::STRUCTURE_ONLY)
+
 #define SC_STREAMING_FOR_DAW_OR_MULTI (SC_STREAMING_FOR_DAW || SC_STREAMING_FOR_MULTI)
 
 inline fs::path unstreamPathFromString(const std::string &s)

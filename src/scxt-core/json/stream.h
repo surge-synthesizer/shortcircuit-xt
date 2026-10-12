@@ -39,6 +39,13 @@ std::string streamEngineState(const engine::Engine &e, bool pretty = false);
 void unstreamEngineState(engine::Engine &e, const std::string &jsonData, bool msgPack = false);
 void unstreamPartState(engine::Engine &e, int part, const std::string &jsonData,
                        bool msgPack = false, bool setStreamGuard = true);
+// one part of a multi's engine state into a part; the caller purges the samples it didn't use
+void unstreamPartFromMultiState(engine::Engine &e, int part, int fromPart,
+                                const std::string &jsonData, bool msgPack = false);
+
+// settings and names only, no groups or samples, so no engine is needed
+void unstreamMultiStructure(engine::Patch &p, const std::string &jsonData, bool msgPack = false);
+void unstreamPartStructure(engine::Part &p, const std::string &jsonData, bool msgPack = false);
 } // namespace scxt::json
 
 #endif // SHORTCIRCUIT_STREAM_H

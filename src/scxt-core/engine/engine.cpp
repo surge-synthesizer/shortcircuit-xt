@@ -828,6 +828,24 @@ void Engine::loadCompoundElementIntoSelectedPartAndGroup(const sample::compound:
 {
     if (p.type == sample::compound::CompoundElement::INSTRUMENT)
     {
+        if (extensionMatches(p.sampleAddress.path, ".scm") && p.sampleAddress.preset < 0)
+        {
+            undo::pushUndo<undo::EngineStateRestoreItem>(*this);
+            patch_io::loadMulti(p.sampleAddress.path, *this);
+            return;
+        }
+        if (extensionMatches(p.sampleAddress.path, ".scm") ||
+            extensionMatches(p.sampleAddress.path, ".scp"))
+        {
+            auto part = getSelectionManager()->selectedPart;
+            undo::pushPartStreamUndo(*this, part, "Load Part");
+            if (extensionMatches(p.sampleAddress.path, ".scm"))
+                patch_io::loadPartFromMultiInto(p.sampleAddress.path, p.sampleAddress.preset, *this,
+                                                part);
+            else
+                patch_io::loadPartInto(p.sampleAddress.path, *this, part);
+            return;
+        }
         if (extensionMatches(p.sampleAddress.path, ".sf2"))
         {
             // TODO ok this refresh and restart is a bit unsatisfactory

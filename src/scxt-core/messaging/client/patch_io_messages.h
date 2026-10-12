@@ -107,5 +107,17 @@ inline void doLoadPartInto(const loadPartIntoPayload_t &payload, engine::Engine 
 }
 CLIENT_TO_SERIAL(LoadPartInto, c2s_load_part_into, loadPartIntoPayload_t,
                  doLoadPartInto(payload, engine, cont));
+
+// multi path, part in the multi, part to load into
+using loadPartFromMultiIntoPayload_t = std::tuple<std::string, int16_t, int16_t>;
+inline void doLoadPartFromMultiInto(const loadPartFromMultiIntoPayload_t &payload,
+                                    engine::Engine &engine, MessageController &cont)
+{
+    const auto &[path, fromPart, part] = payload;
+    undo::pushPartStreamUndo(engine, part, "Load Part");
+    patch_io::loadPartFromMultiInto(fs::path(fs::u8path(path)), fromPart, engine, part);
+}
+CLIENT_TO_SERIAL(LoadPartFromMultiInto, c2s_load_part_from_multi_into,
+                 loadPartFromMultiIntoPayload_t, doLoadPartFromMultiInto(payload, engine, cont));
 } // namespace scxt::messaging::client
 #endif // SHORTCIRCUITXT_PATCH_IO_MESSAGES_H

@@ -750,7 +750,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         IN_PROCESS,
         FOR_MULTI,
         FOR_PART,
-        FOR_DAW
+        FOR_DAW,
+        // unstream only a patch's or part's own settings and names, with no engine behind it
+        STRUCTURE_ONLY
     };
     static thread_local StreamReason streamReason;
     static thread_local uint64_t fullEngineUnstreamStreamingVersion;

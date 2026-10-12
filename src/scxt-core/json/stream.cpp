@@ -71,23 +71,28 @@ std::string streamEngineState(const engine::Engine &e, bool pretty)
     return streamValue(json::scxt_value(e), pretty);
 }
 
+static scxt_value parsePayload(const std::string &data, bool msgPack)
+{
+    tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
+    if (msgPack)
+        tao::json::msgpack::events::from_string(consumer, data);
+    else
+        tao::json::events::from_string(consumer, data);
+    return std::move(consumer.value);
+}
+
+// the version an engine state was written with, as the engine's own unstream reads it
+static uint64_t engineStreamingVersion(const scxt_value &v)
+{
+    uint64_t sv{0};
+    findIf(v, "streamingVersion", sv);
+    return sv;
+}
+
 void unstreamEngineState(engine::Engine &e, const std::string &data, bool msgPack)
 {
     e.clearAll(false);
-    if (msgPack)
-    {
-        tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
-        tao::json::msgpack::events::from_string(consumer, data);
-        auto jv = std::move(consumer.value);
-        jv.to(e);
-    }
-    else
-    {
-        tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
-        tao::json::events::from_string(consumer, data);
-        auto jv = std::move(consumer.value);
-        jv.to(e);
-    }
+    parsePayload(data, msgPack).to(e);
     e.getSampleManager()->purgeUnreferencedSamples();
     e.sendFullRefreshToClient();
 }
@@ -103,22 +108,45 @@ void unstreamPartState(engine::Engine &e, int part, const std::string &data, boo
             SCLOG_IF(streaming, "Activating stream guard for part unstream");
             sg = std::make_unique<engine::Engine::StreamGuard>(engine::Engine::FOR_PART);
         }
-        if (msgPack)
-        {
-            tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
-            tao::json::msgpack::events::from_string(consumer, data);
-            auto jv = std::move(consumer.value);
-            jv.to(*(e.getPatch()->getPart(part)));
-        }
-        else
-        {
-            tao::json::events::transformer<tao::json::events::to_basic_value<scxt_traits>> consumer;
-            tao::json::events::from_string(consumer, data);
-            auto jv = std::move(consumer.value);
-            jv.to(*(e.getPatch()->getPart(part)));
-        }
+        parsePayload(data, msgPack).to(*(e.getPatch()->getPart(part)));
     }
 
     e.sendFullRefreshToClient();
+}
+
+void unstreamPartFromMultiState(engine::Engine &e, int part, int fromPart, const std::string &data,
+                                bool msgPack)
+{
+    auto v = parsePayload(data, msgPack);
+    const auto &parts = v.at("patch").at("parts").get_array();
+    if (fromPart < 0 || fromPart >= (int)parts.size())
+        throw std::runtime_error("The multi has no part " + std::to_string(fromPart + 1));
+
+    engine::Engine::UnstreamGuard ug(engineStreamingVersion(v));
+    auto sg = engine::Engine::StreamGuard(engine::Engine::FOR_PART);
+
+    // samples before the part, as the engine unstream orders them, so its zones find them
+    findIf(v, "sampleManager", *(e.getSampleManager()));
+
+    auto &pt = e.getPatch()->getPart(part);
+    pt->clearGroups();
+    parts[fromPart].to(*pt);
+    e.onPartConfigurationUpdated();
+
+    e.sendFullRefreshToClient();
+}
+
+void unstreamMultiStructure(engine::Patch &p, const std::string &data, bool msgPack)
+{
+    auto v = parsePayload(data, msgPack);
+    engine::Engine::UnstreamGuard ug(engineStreamingVersion(v));
+    auto sg = engine::Engine::StreamGuard(engine::Engine::STRUCTURE_ONLY);
+    v.at("patch").to(p);
+}
+
+void unstreamPartStructure(engine::Part &p, const std::string &data, bool msgPack)
+{
+    auto sg = engine::Engine::StreamGuard(engine::Engine::STRUCTURE_ONLY);
+    parsePayload(data, msgPack).to(p);
 }
 } // namespace scxt::json

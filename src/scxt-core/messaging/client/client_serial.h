@@ -73,6 +73,7 @@ enum ClientToSerializationMessagesIds
     c2s_load_multi,
     c2s_rename_multi,
     c2s_load_part_into,
+    c2s_load_part_from_multi_into,
 
     c2s_apply_select_actions,
     c2s_select_part,

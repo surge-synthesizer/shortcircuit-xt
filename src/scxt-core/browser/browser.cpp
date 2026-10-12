@@ -32,6 +32,7 @@
 #include "browser_db.h"
 #include "utils.h"
 #include "sample/compound_file.h"
+#include "patch_io/patch_io.h"
 
 #include "browser_db_impl.h"
 
@@ -201,6 +202,10 @@ std::vector<sample::compound::CompoundElement> Browser::expandForBrowser(const f
     if (extensionMatches(p, ".multisample"))
     {
         return sample::compound::getMultisampleCompoundList(p);
+    }
+    if (isShortCircuitFormatFile(p))
+    {
+        return patch_io::getSCXTCompoundList(p);
     }
     return {};
 }

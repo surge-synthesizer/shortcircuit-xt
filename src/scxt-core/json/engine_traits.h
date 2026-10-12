@@ -234,7 +234,8 @@ SC_STREAMDEF(scxt::engine::Patch,
                      idx++;
                  }
 
-                 findIf(v, "busses", patch.busses);
+                 if (!SC_STREAMING_FOR_STRUCTURE)
+                     findIf(v, "busses", patch.busses);
              }))
 
 SC_STREAMDEF(scxt::engine::Engine::PGZStructureBundle,
@@ -390,15 +391,18 @@ SC_STREAMDEF(
             findIf(v, "streamingVersion", partStreamingVersion);
             SCLOG_IF(streaming, "Unstreaming part state. Stream version : "
                                     << scxt::humanReadableVersion(partStreamingVersion));
-            warnIfStreamedByNewerVersion(*to.parentPatch->parentEngine->getMessageController(),
-                                         partStreamingVersion);
+            if (!SC_STREAMING_FOR_STRUCTURE)
+            {
+                warnIfStreamedByNewerVersion(*to.parentPatch->parentEngine->getMessageController(),
+                                             partStreamingVersion);
 
-            scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
-            findIf(v, "samplesUsedByPart", samples);
-            to.parentPatch->parentEngine->getSampleManager()->restoreFromSampleAddressesAndIDs(
-                samples);
+                scxt::sample::SampleManager::sampleAddressesAndIds_t samples;
+                findIf(v, "samplesUsedByPart", samples);
+                to.parentPatch->parentEngine->getSampleManager()->restoreFromSampleAddressesAndIDs(
+                    samples);
 
-            to.parentPatch->parentEngine->onPartConfigurationUpdated();
+                to.parentPatch->parentEngine->onPartConfigurationUpdated();
+            }
             sg = std::make_unique<engine::Engine::UnstreamGuard>(partStreamingVersion);
         }
 
@@ -424,6 +428,11 @@ SC_STREAMDEF(
 
         part.partEffectStorage = {};
         findIf(v, "partEffectStorage", part.partEffectStorage);
+
+        // groups need an engine to live in, and bring samples with them
+        if (SC_STREAMING_FOR_STRUCTURE)
+            return;
+
         auto vzones = v.at("groups").get_array();
         for (const auto vz : vzones)
         {
