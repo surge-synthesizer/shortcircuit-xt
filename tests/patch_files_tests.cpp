@@ -255,14 +255,16 @@ TEST_CASE("A multi load leaves the screen where it was", "[patchfiles]")
         activate(src, 1);
         src.send(cmsg::SelectPart(1), 20);
         src.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}), 20);
+        src.send(cmsg::UpdateOtherTabSelection({"multi.zone.lfo", "2"}), 20);
         src.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}), 20);
     }
 
-    SECTION("The screen, tab and part you were on all survive")
+    SECTION("The screen, tabs and part you were on all survive")
     {
         FilesFixture f("view_same_part");
         f.send(cmsg::UpdateOtherTabSelection({"main_screen", "play"}), 20);
         f.send(cmsg::UpdateOtherTabSelection({"multi.pgz", "group"}), 20);
+        f.send(cmsg::UpdateOtherTabSelection({"multi.zone.lfo", "1"}), 20);
         activate(f, 1);
         f.send(cmsg::SelectPart(1), 20);
 
@@ -271,7 +273,17 @@ TEST_CASE("A multi load leaves the screen where it was", "[patchfiles]")
         const auto &sm = f.engine().getSelectionManager();
         REQUIRE(sm->otherTabSelection["main_screen"] == "play");
         REQUIRE(sm->otherTabSelection["multi.pgz"] == "group");
+        REQUIRE(sm->otherTabSelection["multi.zone.lfo"] == "1");
         REQUIRE(sm->selectedPart == 1);
+        REQUIRE(f.th.editor->otherTabSelection["multi.zone.lfo"] == "1");
+    }
+
+    SECTION("A fresh view stays fresh")
+    {
+        FilesFixture f("view_fresh");
+        f.send(cmsg::LoadMulti(tmp.u8string()), 30);
+
+        REQUIRE(f.engine().getSelectionManager()->otherTabSelection.empty());
     }
 
     SECTION("A part the loaded multi doesn't have falls back")
@@ -362,4 +374,40 @@ TEST_CASE("Patch files survive a DAW state round trip", "[patchfiles]")
     REQUIRE(g.th.editor->clientPatchFiles.multiName == "Session Kit");
     REQUIRE(g.th.editor->clientPatchFiles.multi.path == tmp);
     REQUIRE(g.th.editor->clientPatchFiles.parts[0].path == part);
+}
+
+TEST_CASE("Only a DAW session carries the view", "[patchfiles]")
+{
+    FilesFixture f("view_streams");
+    f.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}), 20);
+
+    auto streamFor = [&f](scxt::engine::Engine::StreamReason r) {
+        auto sg = scxt::engine::Engine::StreamGuard(r);
+        return scxt::json::streamEngineState(f.engine());
+    };
+
+    REQUIRE(streamFor(scxt::engine::Engine::FOR_MULTI).find("\"tabs\"") == std::string::npos);
+
+    FilesFixture g("view_streams_restore");
+    g.send(cmsg::UpdateOtherTabSelection({"main_screen", "play"}), 20);
+    g.send(cmsg::UnstreamEngineState(streamFor(scxt::engine::Engine::FOR_DAW)), 30);
+
+    REQUIRE(g.engine().getSelectionManager()->otherTabSelection["main_screen"] == "mixer");
+    REQUIRE(g.th.editor->otherTabSelection["main_screen"] == "mixer");
+}
+
+TEST_CASE("A part load leaves the view where it was", "[patchfiles]")
+{
+    FilesFixture f("view_part");
+    auto tmp = f.dir / "Bass.scp";
+    f.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}), 20);
+
+    f.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}), 20);
+    f.send(cmsg::UpdateOtherTabSelection({"multi.pgz", "part"}), 20);
+    f.send(cmsg::LoadPartInto({tmp.u8string(), (int16_t)0}), 20);
+
+    const auto &sm = f.engine().getSelectionManager();
+    REQUIRE(sm->otherTabSelection["main_screen"] == "mixer");
+    REQUIRE(sm->otherTabSelection["multi.pgz"] == "part");
+    REQUIRE(sm->selectedPart == 0);
 }

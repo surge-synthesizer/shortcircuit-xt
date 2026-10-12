@@ -112,10 +112,10 @@ SC_STREAMDEF(selection::SelectionManager::PerPartState, SC_FROM({
 SC_STREAMDEF(
     selection::SelectionManager, SC_FROM({
         auto &e = from;
-        v = {{"state", e.state},
-             {"tabs", e.otherTabSelection},
-             {"selectedPart", e.selectedPart},
-             {"files", e.getPatchFiles()}};
+        v = {{"state", e.state}, {"selectedPart", e.selectedPart}, {"files", e.getPatchFiles()}};
+        // tabs are view state, which a session restores but a multi file shouldn't impose
+        if (!SC_STREAMING_FOR_MULTI)
+            addToObject<val_t>(v, "tabs", e.otherTabSelection);
     }),
     SC_TO({
         auto &z = to;

@@ -59,7 +59,7 @@ struct MixerScreen : juce::Component, HasEditor
     void visibilityChanged() override;
     void resized() override;
 
-    void selectBus(int index);
+    void selectBus(int index, bool updateState = true);
 
     void onBusEffectFullData(
         int bus, int slot,
