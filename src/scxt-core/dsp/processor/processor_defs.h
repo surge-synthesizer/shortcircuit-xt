@@ -154,6 +154,13 @@ using fastSVFImpl_os =
     sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
                                                 sst::filtersplusplus::FilterModel::CytomicSVF>;
 
+using fastSVF24Impl =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
+                                                sst::filtersplusplus::FilterModel::CytomicCascade>;
+using fastSVF24Impl_os =
+    sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<2>,
+                                                sst::filtersplusplus::FilterModel::CytomicCascade>;
+
 using vemberImpl =
     sst::voice_effects::filter::FiltersPlusPlus<SCXTVFXConfig<1>,
                                                 sst::filtersplusplus::FilterModel::VemberClassic>;
@@ -229,6 +236,8 @@ using combImpl_os =
 
 DEFINE_PROC(CytomicSVF, detail::fastSVFImpl, detail::fastSVFImpl_os, proct_CytomicSVF, "Fast SVF",
             "Filters");
+DEFINE_PROC(CytomicSVFCascade, detail::fastSVF24Impl, detail::fastSVF24Impl_os,
+            proct_CytomicSVFCascade, "Fast SVF (24db)", "Filters");
 DEFINE_PROC(VemberClassicFilter, procimpl::detail::vemberImpl, procimpl::detail::vemberImpl_os,
             proct_VemberClassic, "Vember Classic", "Filters");
 DEFINE_PROC(K35Filter, procimpl::detail::k35Impl, procimpl::detail::k35Impl_os, proct_K35, "K35",
