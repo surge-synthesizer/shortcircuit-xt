@@ -38,6 +38,7 @@ add_executable(scxt-test
 		importer_tests.cpp
 		multisample_import_tests.cpp
 		sfz_rand_import_tests.cpp
+		sfz_opcode_import_tests.cpp
 		missing_sample_save_tests.cpp
 		patch_files_tests.cpp
 		patch_browser_tests.cpp

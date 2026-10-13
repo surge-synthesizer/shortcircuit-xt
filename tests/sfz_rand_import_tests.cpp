@@ -25,135 +25,18 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
-#include "catch2/catch2.hpp"
-
-#include <cstdint>
-#include <filesystem>
-#include <fstream>
-#include <string>
-#include <vector>
-
-#include "console_harness.h"
-#include "engine/engine.h"
-#include "engine/part.h"
-#include "engine/zone.h"
+#include "sfz_test_support.h"
 
 /*
  * SFZ lorand/hirand: a note-on draws one uniform number and only the regions
  * whose range covers it sound. Libraries use it as a round robin, so a stack of
  * same-geometry regions imports as one zone of randomly played variants.
- *
- * Fixtures are synthesized - an .sfz is text plus WAVs, so a case costs a few
- * lines and the sample lengths double as variant identity.
  */
 
-namespace cmsg = scxt::messaging::client;
-namespace fs = std::filesystem;
+using namespace scxt::sfztest;
 
 namespace
 {
-
-void putU16(std::vector<uint8_t> &b, uint16_t v)
-{
-    b.push_back(v & 0xFF);
-    b.push_back((v >> 8) & 0xFF);
-}
-void putU32(std::vector<uint8_t> &b, uint32_t v)
-{
-    b.push_back(v & 0xFF);
-    b.push_back((v >> 8) & 0xFF);
-    b.push_back((v >> 16) & 0xFF);
-    b.push_back((v >> 24) & 0xFF);
-}
-void putTag(std::vector<uint8_t> &b, const char *t) { b.insert(b.end(), t, t + 4); }
-
-// Mono 16-bit PCM at 48k, nframes long.
-void writeWav(const fs::path &p, uint32_t nframes)
-{
-    std::vector<uint8_t> body;
-    putTag(body, "WAVE");
-
-    putTag(body, "fmt ");
-    putU32(body, 16);
-    putU16(body, 1); // PCM
-    putU16(body, 1); // mono
-    putU32(body, 48000);
-    putU32(body, 48000 * 2);
-    putU16(body, 2);
-    putU16(body, 16);
-
-    putTag(body, "data");
-    uint32_t dataBytes = nframes * 2;
-    putU32(body, dataBytes);
-    for (uint32_t i = 0; i < dataBytes; ++i)
-        body.push_back((uint8_t)(i & 0xFF));
-    if (dataBytes & 1)
-        body.push_back(0);
-
-    std::vector<uint8_t> riff;
-    putTag(riff, "RIFF");
-    putU32(riff, (uint32_t)body.size());
-    riff.insert(riff.end(), body.begin(), body.end());
-
-    std::ofstream os(p, std::ios::binary);
-    os.write((const char *)riff.data(), riff.size());
-}
-
-struct WavSpec
-{
-    std::string name;
-    uint32_t frames;
-};
-
-fs::path buildSfz(const std::string &stem, const std::string &sfz, const std::vector<WavSpec> &wavs)
-{
-    auto dir = fs::temp_directory_path() / "scxt-sfz-rand-tests" / stem;
-    fs::remove_all(dir);
-    fs::create_directories(dir);
-    for (const auto &w : wavs)
-        writeWav(dir / w.name, w.frames);
-
-    auto p = dir / (stem + ".sfz");
-    std::ofstream os(p, std::ios::binary);
-    os << sfz;
-    return p;
-}
-
-struct Fixture
-{
-    scxt::clients::console_ui::ConsoleHarness th;
-
-    Fixture()
-    {
-        th.start();
-        th.stepUI();
-    }
-
-    scxt::engine::Part &part0() { return *th.engine->getPatch()->getPart(0); }
-
-    void load(const fs::path &p)
-    {
-        th.sendToSerialization(cmsg::AddSample(p.u8string()));
-        th.stepUI(50);
-    }
-
-    scxt::engine::Zone &onlyZone()
-    {
-        auto &groups = part0().getGroups();
-        REQUIRE(groups.size() == 1);
-        REQUIRE(groups[0]->getZones().size() == 1);
-        return *groups[0]->getZones()[0];
-    }
-};
-
-int activeVariants(const scxt::engine::Zone &z)
-{
-    int n{0};
-    for (const auto &v : z.variantData.variants)
-        if (v.active)
-            ++n;
-    return n;
-}
 
 // Four equal buckets tiling [0,1), the shape every library that uses these
 // opcodes writes.
