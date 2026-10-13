@@ -67,6 +67,7 @@ enum ProcessorType
 {
     proct_none = 0,
     proct_CytomicSVF,
+    proct_CytomicSVFCascade,
     proct_StaticPhaser,
     proct_SurgeBiquads,
     proct_VemberClassic,

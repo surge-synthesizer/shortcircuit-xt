@@ -558,6 +558,7 @@ void ProcessorPane::setupJsonTypeMap()
     a(dsp::processor::proct_tripole, "filters/tripole.json");
     a(dsp::processor::proct_snhfilter, "filters/sample-and-hold.json");
     a(dsp::processor::proct_CytomicSVF, "filters/fast-svf.json");
+    a(dsp::processor::proct_CytomicSVFCascade, "filters/fast-svf-24.json");
     a(dsp::processor::proct_StaticPhaser, "filters/static-phaser.json");
     a(dsp::processor::proct_utilfilt, "filters/utility-filter.json");
 

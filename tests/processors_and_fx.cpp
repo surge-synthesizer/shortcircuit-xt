@@ -25,6 +25,8 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <cmath>
+
 #include "catch2/catch2.hpp"
 #include "dsp/processor/processor.h"
 #include "engine/memory_pool.h"
@@ -154,5 +156,98 @@ TEST_CASE("Dump Processor Silence Lengths")
                 pdsp::unspawnProcessor(p);
             }
         }
+    }
+}
+namespace
+{
+// rms of the last half of a run so filter startup does not count
+double fast24RMS(int passband, int drive, int mode, float res, double freq)
+{
+    namespace pdsp = scxt::dsp::processor;
+    static constexpr double sr{48000.0};
+
+    scxt::engine::Engine e;
+    scxt::engine::MemoryPool mp;
+    pdsp::ProcessorStorage ps;
+    ps.type = pdsp::proct_CytomicSVFCascade;
+
+    alignas(16) uint8_t memory[pdsp::processorMemoryBufferSize];
+    float pfp[pdsp::maxProcessorFloatParams]{};
+    int ifp[pdsp::maxProcessorIntParams]{};
+
+    auto p =
+        pdsp::spawnProcessorInPlace(pdsp::proct_CytomicSVFCascade, &e, &mp, memory,
+                                    pdsp::processorMemoryBufferSize, ps, pfp, ifp, false, false);
+    REQUIRE(p);
+    p->setSampleRate(sr);
+    p->init_params();
+    pfp[2] = res;
+    ifp[1] = passband;
+    ifp[3] = drive;
+    ifp[4] = mode;
+    p->init();
+
+    alignas(16) float inL[scxt::blockSize], inR[scxt::blockSize];
+    alignas(16) float outL[scxt::blockSize], outR[scxt::blockSize];
+    static constexpr int blocks{4096};
+    double phase{0}, sum{0};
+    int n{0};
+    bool finite{true};
+    for (int b = 0; b < blocks; ++b)
+    {
+        for (int i = 0; i < scxt::blockSize; ++i)
+        {
+            inL[i] = inR[i] = 0.5f * std::sin(phase);
+            phase += 2.0 * M_PI * freq / sr;
+        }
+        p->process_stereo(inL, inR, outL, outR, 0.f);
+        for (int i = 0; i < scxt::blockSize; ++i)
+        {
+            finite = finite && std::isfinite(outL[i]) && std::isfinite(outR[i]);
+            if (b >= blocks / 2)
+            {
+                sum += outL[i] * outL[i];
+                n++;
+            }
+        }
+    }
+    pdsp::unspawnProcessor(p);
+    REQUIRE(finite);
+    return std::sqrt(sum / n);
+}
+} // namespace
+
+TEST_CASE("Fast SVF (24db) Modes")
+{
+    // passband order is LP, HP, BP, Notch, Peak, Allpass
+    SECTION("Every passband, drive and mode runs finite")
+    {
+        for (int pb = 0; pb < 6; ++pb)
+            for (int dr = 0; dr < 2; ++dr)
+                for (int md = 0; md < 2; ++md)
+                {
+                    INFO("passband=" << pb << " drive=" << dr << " mode=" << md);
+                    fast24RMS(pb, dr, md, 0.7f, 220.0);
+                }
+    }
+
+    SECTION("Compensated holds lowpass passband level")
+    {
+        for (int dr = 0; dr < 2; ++dr)
+        {
+            // driven self-oscillates above 0.8
+            auto res = dr ? 0.6f : 0.9f;
+            auto standard = fast24RMS(0, dr, 0, res, 55.0);
+            auto compensated = fast24RMS(0, dr, 1, res, 55.0);
+            INFO("drive=" << dr << " standard=" << standard << " compensated=" << compensated);
+            REQUIRE(compensated > standard * 1.5);
+        }
+    }
+
+    SECTION("Compensated is ignored off lowpass")
+    {
+        auto standard = fast24RMS(1, 0, 0, 0.9f, 1760.0);
+        auto compensated = fast24RMS(1, 0, 1, 0.9f, 1760.0);
+        REQUIRE(compensated == Approx(standard).margin(1e-6));
     }
 }
