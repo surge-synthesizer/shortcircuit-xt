@@ -57,6 +57,7 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
         auto &z = engine.zoneByPath(path);
 
         voiceCreationWorkingBuffer[voicesCreated] = {path, -1};
+        // piano groups need their own polyphony group to carry the repeated key mode
         if (z->parentGroup->outputInfo.hasIndependentPolyLimit ||
             z->parentGroup->outputInfo.playMode != Group::PlayMode::POLY)
         {

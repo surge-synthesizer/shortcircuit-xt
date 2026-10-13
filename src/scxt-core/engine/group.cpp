@@ -962,7 +962,12 @@ void Group::resetPolyAndPlaymode(engine::Engine &e)
     auto pgrp = (uint64_t)this;
     e.voiceManager.guaranteeGroup(pgrp);
 
-    if (outputInfo.playMode == Group::PlayMode::POLY)
+    e.voiceManager.setRepeatedKeyMode(pgrp,
+                                      outputInfo.playMode == Group::PlayMode::PIANO
+                                          ? Engine::voiceManager_t::RepeatedKeyMode::MONO_PER_KEY
+                                          : Engine::voiceManager_t::RepeatedKeyMode::MULTI_VOICE);
+
+    if (isPolyphonic(outputInfo.playMode))
     {
         SCLOG_IF(voiceResponder, "Setting up poly group " << pgrp);
 
@@ -1084,6 +1089,8 @@ std::string Group::toStringPlayMode(const PlayMode &m)
         return "m";
     case LEGATO:
         return "l";
+    case PIANO:
+        return "pn";
     }
     return "p";
 }
@@ -1091,7 +1098,7 @@ std::string Group::toStringPlayMode(const PlayMode &m)
 Group::PlayMode Group::fromStringPlayMode(const std::string &s)
 {
     static auto inverse = makeEnumInverse<Group::PlayMode, Group::toStringPlayMode>(
-        Group::PlayMode::POLY, Group::PlayMode::LEGATO);
+        Group::PlayMode::POLY, Group::PlayMode::PIANO);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return POLY;
