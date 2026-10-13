@@ -34,6 +34,33 @@ namespace scxt::ui::app::edit_screen
 {
 namespace jcmp = sst::jucegui::components;
 
+namespace
+{
+using playMode_t = engine::Group::PlayMode;
+
+// every play mode name the ui shows lives here
+struct PlayModeNames
+{
+    const char *menu;
+    const char *button;
+};
+PlayModeNames playModeNames(playMode_t pm)
+{
+    switch (pm)
+    {
+    case playMode_t::POLY:
+        return {"Poly", "POLY"};
+    case playMode_t::PIANO:
+        return {"Piano", "PIANO"};
+    case playMode_t::MONO:
+        return {"Mono", "MONO"};
+    case playMode_t::LEGATO:
+        return {"Legato", "LEG"};
+    }
+    return {"Poly", "POLY"};
+}
+} // namespace
+
 GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     : HasEditor(e), info(e->editorDataCache.groupOutputInfo)
 {
@@ -78,7 +105,7 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     addAndMakeVisible(*polyMenu);
 
     polyModeMenu = std::make_unique<jcmp::TextPushButton>();
-    polyModeMenu->setLabel("POLY");
+    polyModeMenu->setLabel(playModeNames(playMode_t::POLY).button);
     polyModeMenu->setOnCallback([w = juce::Component::SafePointer(this)]() {
         if (w)
             w->showPolyModeMenu();
@@ -240,26 +267,18 @@ void GroupSettingsCard::resized()
 
 void GroupSettingsCard::rebuildFromInfo()
 {
-    if (info.playMode != engine::Group::PlayMode::POLY)
+    polyModeMenu->setLabel(playModeNames(info.playMode).button);
+
+    bool isMono = !engine::Group::isPolyphonic(info.playMode);
+    if (isMono)
     {
         polyMenu->setEnabled(false);
         prioMenu->setEnabled(true);
-
-        if (info.playMode == engine::Group::PlayMode::LEGATO)
-        {
-            polyModeMenu->setLabel("LEG");
-        }
-        else
-        {
-            polyModeMenu->setLabel("MONO");
-        }
     }
     else
     {
         polyMenu->setEnabled(true);
         prioMenu->setEnabled(false);
-
-        polyModeMenu->setLabel("POLY");
 
         if (info.hasIndependentPolyLimit)
         {
@@ -288,7 +307,6 @@ void GroupSettingsCard::rebuildFromInfo()
     else
         exclusiveGroupMenu->setLabel(std::to_string(info.exclusiveGroup));
 
-    bool isMono = (info.playMode != engine::Group::PlayMode::POLY);
     glideDrag->setEnabled(isMono);
     glideMenu->setEnabled(isMono);
     glideMenu->setLabel(info.glideRateMode == engine::Group::CONSTANT_RATE ? "RATE" : "TIME");
@@ -359,33 +377,18 @@ void GroupSettingsCard::showPolyModeMenu()
     p.addSectionHeader("Play Mode");
     p.addSeparator();
 
-    p.addItem("Poly", true, info.playMode == engine::Group::PlayMode::POLY,
-              [w = juce::Component::SafePointer(this)]() {
-                  if (!w)
-                      return;
-                  w->info.playMode = engine::Group::PlayMode::POLY;
+    for (auto pm : {playMode_t::POLY, playMode_t::PIANO, playMode_t::MONO, playMode_t::LEGATO})
+    {
+        p.addItem(playModeNames(pm).menu, true, info.playMode == pm,
+                  [w = juce::Component::SafePointer(this), pm]() {
+                      if (!w)
+                          return;
+                      w->info.playMode = pm;
 
-                  w->rebuildFromInfo();
-                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.playMode);
-              });
-    p.addItem("Mono", true, info.playMode == engine::Group::PlayMode::MONO,
-              [w = juce::Component::SafePointer(this)]() {
-                  if (!w)
-                      return;
-                  w->info.playMode = engine::Group::PlayMode::MONO;
-
-                  w->rebuildFromInfo();
-                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.playMode);
-              });
-    p.addItem("Legato", true, info.playMode == engine::Group::PlayMode::LEGATO,
-              [w = juce::Component::SafePointer(this)]() {
-                  if (!w)
-                      return;
-                  w->info.playMode = engine::Group::PlayMode::LEGATO;
-
-                  w->rebuildFromInfo();
-                  w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.playMode);
-              });
+                      w->rebuildFromInfo();
+                      w->sendSingleToSerialization<int32Msg_t>(w->info, w->info.playMode);
+                  });
+    }
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
 }

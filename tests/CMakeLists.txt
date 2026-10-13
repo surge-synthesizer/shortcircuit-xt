@@ -30,6 +30,7 @@ add_executable(scxt-test
 		release_trigger_tests.cpp
 		glide_tests.cpp
 		legato_tests.cpp
+		piano_mode_tests.cpp
 		sample_gated_tests.cpp
 		undo_tests.cpp
 		startup_patch_tests.cpp

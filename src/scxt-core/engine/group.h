@@ -94,9 +94,11 @@ struct Group : MoveableOnly<Group>,
     {
         POLY = 0,
         MONO,
-        LEGATO
+        LEGATO,
+        PIANO // poly, but a restruck key ends that key's voices in the group and starts fresh
     };
     DECLARE_ENUM_STRING(PlayMode);
+    static bool isPolyphonic(PlayMode pm) { return pm == POLY || pm == PIANO; }
 
     enum NotePriority : int32_t
     {
