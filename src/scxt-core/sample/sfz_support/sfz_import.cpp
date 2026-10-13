@@ -105,8 +105,15 @@ void zoneGeometry(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes, int &
 
     if (auto v = consumeOpcode(opCodes, "pitch_keycenter"); v.has_value())
     {
-        mp.rootKey = parseMidiNote(*v, octaveOffset);
-        loadInfo = loadInfo & ~engine::Zone::MAPPING;
+        if (*v == "sample")
+        {
+            loadInfo = (loadInfo & ~engine::Zone::MAPPING) | engine::Zone::ROOTKEY_ONLY;
+        }
+        else
+        {
+            mp.rootKey = parseMidiNote(*v, octaveOffset);
+            loadInfo = loadInfo & ~engine::Zone::MAPPING;
+        }
     }
 
     // SFZ pitch_keytrack: cents/key, default 100 (full natural keytrack).
@@ -115,28 +122,21 @@ void zoneGeometry(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes, int &
     if (auto v = consumeOpcode(opCodes, "pitch_keytrack"); v.has_value())
         mp.tracking = (float)std::atof(v->c_str()) / 100.f;
 
-    if (auto v = consumeOpcode(opCodes, "lokey"); v.has_value())
+    // both ends before checking, so key=60 lokey=62 hikey=70 isn't judged against key's hikey
+    auto lk = consumeOpcode(opCodes, "lokey");
+    auto hk = consumeOpcode(opCodes, "hikey");
+    if (lk.has_value())
+        mp.keyboardRange.keyStart = parseMidiNote(*lk, octaveOffset);
+    if (hk.has_value())
+        mp.keyboardRange.keyEnd = parseMidiNote(*hk, octaveOffset);
+    if (lk.has_value() || hk.has_value())
     {
-        mp.keyboardRange.keyStart = parseMidiNote(*v, octaveOffset);
+        loadInfo = loadInfo & ~engine::Zone::MAPPING;
         if (mp.keyboardRange.keyStart > mp.keyboardRange.keyEnd)
         {
-            onError("SFZ Keyrange Error", "SFZ Keyrange Autofix for../ : lokey > hikey (" + *v +
-                                              " > " + std::to_string(mp.keyboardRange.keyEnd) +
-                                              ")");
-            std::swap(mp.keyboardRange.keyStart, mp.keyboardRange.keyEnd);
-        }
-        loadInfo = loadInfo & ~engine::Zone::MAPPING;
-    }
-
-    if (auto v = consumeOpcode(opCodes, "hikey"); v.has_value())
-    {
-        mp.keyboardRange.keyEnd = parseMidiNote(*v, octaveOffset);
-        loadInfo = loadInfo & ~engine::Zone::MAPPING;
-        if (mp.keyboardRange.keyEnd < mp.keyboardRange.keyStart)
-        {
-            onError("SFZ Keyrange Error", "SFZ Keyrange Autofix for : hikey < lokey (" + *v +
-                                              " < " + std::to_string(mp.keyboardRange.keyStart) +
-                                              ")");
+            onError("SFZ Keyrange Error", "SFZ Keyrange Autofix for : lokey > hikey (" +
+                                              std::to_string(mp.keyboardRange.keyStart) + " > " +
+                                              std::to_string(mp.keyboardRange.keyEnd) + ")");
             std::swap(mp.keyboardRange.keyStart, mp.keyboardRange.keyEnd);
         }
     }
@@ -213,15 +213,22 @@ void zonePlayback(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes)
         mp.amplitude = std::atof(v->c_str()); // decibels
     }
 
-    if (auto v = consumeOpcode(opCodes, "tune"); v.has_value())
+    if (auto v = consumeOpcode(opCodes, "pan"); v.has_value())
     {
-        mp.pitchOffset = import_support::centsToSemitones((float)std::atof(v->c_str()));
+        mp.pan = std::clamp((float)std::atof(v->c_str()) / 100.f, -1.f, 1.f);
     }
 
+    // tune and transpose stack; pitch is the sfz2 spelling of tune
+    float cents{0.f};
+    if (auto v = consumeOpcode(opCodes, "pitch"); v.has_value())
+        cents = (float)std::atof(v->c_str());
+    if (auto v = consumeOpcode(opCodes, "tune"); v.has_value())
+        cents = (float)std::atof(v->c_str());
+    int semis{0};
     if (auto v = consumeOpcode(opCodes, "transpose"); v.has_value())
-    {
-        mp.pitchOffset = std::atoi(v->c_str());
-    }
+        semis = std::atoi(v->c_str());
+
+    mp.pitchOffset = semis + import_support::centsToSemitones(cents);
 }
 
 // SFZ lorand/hirand: every note-on draws one uniform value and a region sounds
@@ -251,14 +258,32 @@ std::optional<float> zoneRandSlice(opCodeMap_t &opCodes)
     return std::max(0.f, hi - lo);
 }
 
+bool addTriggerCondition(engine::Group &group, engine::GroupTriggerInstrumentState &gis,
+                         engine::GroupTriggerID id, float a0, float a1)
+{
+    auto &tc = group.triggerConditions;
+    for (int i = 0; i < triggerConditionsPerGroup; ++i)
+    {
+        if (tc.storage[i].id != engine::GroupTriggerID::NONE)
+            continue;
+
+        tc.storage[i].id = id;
+        tc.storage[i].args[0] = a0;
+        tc.storage[i].args[1] = a1;
+        tc.active[i] = true;
+        tc.setupOnUnstream(gis);
+        return true;
+    }
+    return false;
+}
+
 /*
  * The same opcodes on a <group> header mean something else: they gate the whole group, whose
  * regions are usually a velocity split rather than alternatives to each other. So they become a
  * dice condition on the group, and are consumed from the group opcodes so the regions below
- * don't inherit them and fold themselves into a variant stack. Returns whether one was set.
+ * don't inherit them and fold themselves into a variant stack.
  */
-bool groupRandToDice(engine::Group &group, engine::GroupTriggerInstrumentState &gis,
-                     SFZParser::opCodes_t &groupOpcodes)
+std::optional<std::pair<float, float>> extractGroupDice(SFZParser::opCodes_t &groupOpcodes)
 {
     float lo{0.f}, hi{1.f};
     bool any{false};
@@ -278,62 +303,90 @@ bool groupRandToDice(engine::Group &group, engine::GroupTriggerInstrumentState &
 
     // The whole range gates nothing, and zoneRandSlice ignores it too, so leave it to be consumed
     if (!any || (lo <= 0.f && hi >= 1.f))
-        return false;
+        return std::nullopt;
 
     groupOpcodes.erase(
         std::remove_if(groupOpcodes.begin(), groupOpcodes.end(),
                        [](const auto &oc) { return oc.name == "lorand" || oc.name == "hirand"; }),
         groupOpcodes.end());
 
-    auto &tc = group.triggerConditions;
-    for (int i = 0; i < triggerConditionsPerGroup; ++i)
-    {
-        if (tc.storage[i].id != engine::GroupTriggerID::NONE)
-            continue;
-
-        tc.storage[i].id = engine::GroupTriggerID::DICE;
-        tc.storage[i].args[0] = lo;
-        tc.storage[i].args[1] = hi;
-        tc.active[i] = true;
-        tc.setupOnUnstream(gis);
-        return true;
-    }
-    return false;
+    return std::make_pair(lo, hi);
 }
+
+// sfz2 spells each loop opcode two ways; the underscored name wins when both appear
+std::optional<std::string> consumeEither(opCodeMap_t &opCodes, const std::string &key,
+                                         const std::string &alias)
+{
+    auto a = consumeOpcode(opCodes, alias);
+    auto k = consumeOpcode(opCodes, key);
+    return k.has_value() ? k : a;
+}
+
+struct LoopParse
+{
+    import_support::LoopArgs args;
+    bool oneShot{false};
+};
 
 // Parse SFZ loop_* opcodes into LoopArgs. Side-effect: masks engine::Zone::LOOP
 // out of loadInfo if explicit bounds were given (so the later attach call won't
 // overwrite them from sample meta).
-import_support::LoopArgs zoneLoopParse(opCodeMap_t &opCodes, int &loadInfo)
+LoopParse zoneLoopParse(opCodeMap_t &opCodes, import_support::ImporterContext &ctx, int &loadInfo)
 {
-    import_support::LoopArgs args;
+    LoopParse res;
+    auto &args = res.args;
 
-    if (auto v = consumeOpcode(opCodes, "loop_start"); v.has_value())
+    if (auto v = consumeEither(opCodes, "loop_start", "loopstart"); v.has_value())
     {
         args.startSamples = std::atol(v->c_str());
         loadInfo = loadInfo & ~engine::Zone::LOOP;
     }
 
-    if (auto v = consumeOpcode(opCodes, "loop_end"); v.has_value())
+    if (auto v = consumeEither(opCodes, "loop_end", "loopend"); v.has_value())
     {
         args.endSamples = std::atol(v->c_str());
         loadInfo = loadInfo & ~engine::Zone::LOOP;
     }
 
-    if (auto v = consumeOpcode(opCodes, "loop_mode"); v.has_value())
+    if (auto v = consumeEither(opCodes, "loop_mode", "loopmode"); v.has_value())
     {
         if (*v == "loop_continuous")
         {
             args.active = true;
             args.mode = engine::Zone::LOOP_DURING_VOICE;
         }
+        else if (*v == "loop_sustain")
+        {
+            args.active = true;
+            args.mode = engine::Zone::LOOP_WHILE_GATED;
+        }
+        else if (*v == "no_loop")
+        {
+            // overrides a loop the sample file itself carries
+            args.active = false;
+        }
+        else if (*v == "one_shot")
+        {
+            args.active = false;
+            res.oneShot = true;
+        }
         else
         {
-            SCLOG_IF(sampleCompoundParsers, "SFZ Unsupported loop_mode : " << *v);
+            ctx.unsupported("SFZ loop_mode", *v);
         }
     }
 
-    return args;
+    if (auto v = consumeOpcode(opCodes, "loop_type"); v.has_value())
+    {
+        if (*v == "forward")
+            args.direction = engine::Zone::FORWARD_ONLY;
+        else if (*v == "alternate")
+            args.direction = engine::Zone::ALTERNATE_DIRECTIONS;
+        else
+            ctx.unsupported("SFZ loop_type", *v);
+    }
+
+    return res;
 }
 
 struct EndpointArgs
@@ -341,15 +394,23 @@ struct EndpointArgs
     std::optional<int64_t> offset;
     // sfz end is the last frame played, inclusive
     std::optional<int64_t> end;
+    bool reverse{false};
 };
 
-EndpointArgs zoneEndpointParse(opCodeMap_t &opCodes)
+EndpointArgs zoneEndpointParse(opCodeMap_t &opCodes, import_support::ImporterContext &ctx)
 {
     EndpointArgs args;
     if (auto v = consumeOpcode(opCodes, "offset"); v.has_value())
         args.offset = std::atoll(v->c_str());
     if (auto v = consumeOpcode(opCodes, "end"); v.has_value())
         args.end = std::atoll(v->c_str());
+    if (auto v = consumeOpcode(opCodes, "direction"); v.has_value())
+    {
+        if (*v == "reverse")
+            args.reverse = true;
+        else if (*v != "forward")
+            ctx.unsupported("SFZ direction", *v);
+    }
     return args;
 }
 
@@ -357,6 +418,7 @@ void applyZoneEndpoints(engine::Zone &zone, import_support::ImporterContext &ctx
                         const EndpointArgs &a)
 {
     auto &v = zone.variantData.variants[variantIdx];
+    v.playReverse = a.reverse;
     auto len = v.endSample;
     if (len <= 1)
         return;
@@ -727,6 +789,123 @@ struct RandStack
     }
 };
 
+// the value an opcode has for a region, innermost header first
+std::optional<std::string>
+inheritedOpcode(const std::initializer_list<const SFZParser::opCodes_t *> &outerToInner,
+                const std::string &name)
+{
+    std::optional<std::string> res;
+    for (const auto *l : outerToInner)
+        for (const auto &oc : *l)
+            if (oc.name == name)
+                res = oc.value;
+    return res;
+}
+
+// scxt chokes are mutual, so each connected set of sfz group/off_by numbers is one exclusive id
+struct ChokeClasses
+{
+    std::map<int, int> parent;
+    std::map<int, int32_t> idByRoot;
+    bool oneWay{false}, offByDefaultGroup{false};
+
+    int find(int g)
+    {
+        while (parent[g] != g)
+            g = parent[g] = parent[parent[g]];
+        return g;
+    }
+
+    void unite(int a, int b)
+    {
+        parent.try_emplace(a, a);
+        parent.try_emplace(b, b);
+        parent[find(a)] = find(b);
+    }
+
+    void scan(const SFZParser::document_t &doc)
+    {
+        SFZParser::opCodes_t glob, mast, grp;
+        for (const auto &[h, list] : doc)
+        {
+            switch (h.type)
+            {
+            case SFZParser::Header::global:
+                glob = list;
+                mast.clear();
+                grp.clear();
+                break;
+            case SFZParser::Header::master:
+                mast = list;
+                grp.clear();
+                break;
+            case SFZParser::Header::group:
+                grp = list;
+                break;
+            case SFZParser::Header::region:
+            {
+                auto g = inheritedOpcode({&glob, &mast, &grp, &list}, "group");
+                auto o = inheritedOpcode({&glob, &mast, &grp, &list}, "off_by");
+                if (!o)
+                    break;
+                auto gi = g ? std::atoi(g->c_str()) : 0;
+                auto oi = std::atoi(o->c_str());
+                if (gi == 0)
+                {
+                    offByDefaultGroup = true;
+                    break;
+                }
+                if (oi == 0)
+                    break;
+                if (gi != oi)
+                    oneWay = true;
+                unite(gi, oi);
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    }
+
+    void assignIds(int32_t &lastId)
+    {
+        for (auto &[g, p] : parent)
+        {
+            auto [it, isNew] = idByRoot.try_emplace(find(g), 0);
+            if (isNew)
+                it->second = ++lastId;
+        }
+    }
+
+    int32_t idFor(int g)
+    {
+        if (g == 0 || parent.find(g) == parent.end())
+            return 0;
+        return idByRoot[find(g)];
+    }
+};
+
+// what sfz sets per region but scxt per group; regions differing on it get sibling groups
+struct GroupRoute
+{
+    int header{0};
+    engine::VoiceCreationMode creation{engine::VoiceCreationMode::ON_NOTE_ON};
+    engine::GroupTriggerID keySwitchKind{engine::GroupTriggerID::NONE};
+    int keySwitchKey{-1};
+    int32_t choke{0};
+    // scxt never chokes within a group, so choked regions also split by key
+    int chokeKeyStart{-1}, chokeKeyEnd{-1};
+    int roundRobinSet{-1}, roundRobinOrdinal{0};
+
+    auto tie() const
+    {
+        return std::tie(header, creation, keySwitchKind, keySwitchKey, choke, chokeKeyStart,
+                        chokeKeyEnd, roundRobinSet, roundRobinOrdinal);
+    }
+    bool operator<(const GroupRoute &o) const { return tie() < o.tie(); }
+};
+
 bool importSFZ(const fs::path &f, engine::Engine &e)
 {
     int octaveOffset{0};
@@ -739,12 +918,52 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
     auto rootDir = f.parent_path();
     auto sampleDir = rootDir;
 
-    int groupId = -1;
     int regionCount{0};
-    // SFZ opcode inheritance runs global -> group -> region, innermost wins
+    // SFZ opcode inheritance runs global -> master -> group -> region, innermost wins
     SFZParser::opCodes_t currentGlobalOpcodes;
+    SFZParser::opCodes_t currentMasterOpcodes;
     SFZParser::opCodes_t currentGroupOpcodes;
-    bool currentGroupHasDice{false};
+
+    // each header starts a fresh set of scxt groups for the regions under it
+    int headerIdx{0};
+    std::optional<std::pair<float, float>> headerDice;
+    std::map<GroupRoute, int> groupForRoute;
+    std::map<int, int> roundRobinSetForLength;
+    bool anyKeySwitch{false};
+    std::optional<int> defaultKeySwitch;
+
+    ChokeClasses chokes;
+    chokes.scan(doc);
+    chokes.assignIds(ctx.getPart().configuration.numExclusiveGroups);
+    if (chokes.oneWay)
+        ctx.unsupported("SFZ off_by", "one way chokes import as mutual");
+    if (chokes.offByDefaultGroup)
+        ctx.unsupported("SFZ off_by", "regions outside a choke group can't be choked");
+
+    auto groupFor = [&](const GroupRoute &rt, const std::string &label) {
+        if (auto it = groupForRoute.find(rt); it != groupForRoute.end())
+            return it->second;
+
+        auto gid = ctx.addGroup(label);
+        auto &g = *ctx.getPart().getGroup(gid);
+        auto &gis = ctx.getPart().groupTriggerInstrumentState;
+        auto add = [&](engine::GroupTriggerID id, float a0, float a1) {
+            if (!addTriggerCondition(g, gis, id, a0, a1))
+                ctx.unsupported("SFZ group triggers", "more conditions than a group holds");
+        };
+        if (headerDice)
+            add(engine::GroupTriggerID::DICE, headerDice->first, headerDice->second);
+        if (rt.keySwitchKind != engine::GroupTriggerID::NONE)
+            add(rt.keySwitchKind, (float)rt.keySwitchKey, 0.f);
+        if (rt.roundRobinSet >= 0)
+            add(engine::GroupTriggerID::ROUND_ROBIN_CYCLE, (float)rt.roundRobinSet,
+                (float)rt.roundRobinOrdinal);
+        g.triggerConditions.voiceCreationMode = rt.creation;
+        g.outputInfo.exclusiveGroup = rt.choke;
+
+        groupForRoute.emplace(rt, gid);
+        return gid;
+    };
     // Captures (opcode -> first observed value) across all regions; flushed
     // to ctx.recordUnusedItem at the end of the import.
     std::map<std::string, std::string> unusedZoneOpcodes;
@@ -764,63 +983,40 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             // A new <global> starts a fresh hierarchy, so any group opcodes
             // still in flight from the previous one stop applying.
             currentGlobalOpcodes = list;
+            currentMasterOpcodes.clear();
             currentGroupOpcodes.clear();
-            currentGroupHasDice = false;
+            headerIdx++;
+            headerDice.reset();
+        }
+        break;
+        case SFZParser::Header::master:
+        {
+            currentMasterOpcodes = list;
+            currentGroupOpcodes.clear();
+            headerIdx++;
+            headerDice.reset();
         }
         break;
         case SFZParser::Header::group:
         {
-            groupId = ctx.addGroup();
             currentGroupOpcodes = list;
-            auto &group = ctx.getPart().getGroup(groupId);
-            currentGroupHasDice = groupRandToDice(*group, ctx.getPart().groupTriggerInstrumentState,
-                                                  currentGroupOpcodes);
-            for (auto &oc : list)
-            {
-                if (oc.name == "group_label" || oc.name == "name")
-                {
-                    group->name = oc.value;
-                }
-                else
-                {
-                    // We take a second shot at this below
-                }
-            }
+            headerIdx++;
+            headerDice = extractGroupDice(currentGroupOpcodes);
         }
         break;
         case SFZParser::Header::region:
         {
             regionCount++;
-            if (groupId < 0)
-                groupId = ctx.addGroup();
-            auto &group = ctx.getPart().getGroup(groupId);
 
             // Find the sample. Default to `*silence` so regions without a
             // `sample=` opcode (e.g. SFZ files that author only effects, or
             // stray empty `<region>` headers) come through as silent generator
             // zones rather than a sample-load failure.
-            std::string sampleFileString = "*silence";
-            for (auto &oc : currentGlobalOpcodes)
-            {
-                if (oc.name == "sample")
-                {
-                    sampleFileString = oc.value;
-                }
-            }
-            for (auto &oc : currentGroupOpcodes)
-            {
-                if (oc.name == "sample")
-                {
-                    sampleFileString = oc.value;
-                }
-            }
-            for (auto &oc : list)
-            {
-                if (oc.name == "sample")
-                {
-                    sampleFileString = oc.value;
-                }
-            }
+            std::string sampleFileString =
+                inheritedOpcode(
+                    {&currentGlobalOpcodes, &currentMasterOpcodes, &currentGroupOpcodes, &list},
+                    "sample")
+                    .value_or("*silence");
 
             if (!scxt::isValidUtf(sampleFileString))
             {
@@ -862,19 +1058,6 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 sid = *lsid;
             }
 
-            // OK so do we have a sequence position > 1
-            int roundRobinPosition{-1};
-            for (auto &oc : list)
-            {
-                if (oc.name == "seq_position")
-                {
-                    auto pos = std::atoi(oc.value.c_str());
-                    if (pos > 1)
-                    {
-                        roundRobinPosition = pos;
-                    };
-                }
-            }
             auto zn =
                 isVirtual ? std::make_unique<engine::Zone>() : std::make_unique<engine::Zone>(sid);
             zn->engine = &e; // required by setProcessorType in zoneFilter / virtual
@@ -900,24 +1083,104 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
             auto loadInfo = engine::Zone::LOOP | engine::Zone::ENDPOINTS | engine::Zone::MAPPING;
 
             opCodeMap_t mergedOpcodes;
-            for (const auto &oc : currentGlobalOpcodes)
-                mergedOpcodes[oc.name] = {oc.value, false};
-            for (const auto &oc : currentGroupOpcodes)
-                mergedOpcodes[oc.name] = {oc.value, false};
-            for (const auto &oc : list)
-                mergedOpcodes[oc.name] = {oc.value, false};
+            for (const auto *l : std::initializer_list<const SFZParser::opCodes_t *>{
+                     &currentGlobalOpcodes, &currentMasterOpcodes, &currentGroupOpcodes, &list})
+                for (const auto &oc : *l)
+                    mergedOpcodes[oc.name] = {oc.value, false};
 
             // Already used
             consumeOpcode(mergedOpcodes, "sample");
-            consumeOpcode(mergedOpcodes, "seq_position");
+            auto seqPosition = consumeOpcode(mergedOpcodes, "seq_position");
+            auto seqLength = consumeOpcode(mergedOpcodes, "seq_length");
 
-            // Group-level opcodes that may appear in either the <group>
-            // header or a <region> (merged here). Apply to the parent group;
-            // consuming dedups against the unused-opcodes histogram.
+            // zoneGeometry only uses the callback for non-fatal auto-fixes
+            // (key/velocity range swaps); route them through ctx.warn so they
+            // don't drown headless scanners in pseudo-errors.
+            auto onAutofix = [&ctx](const std::string &title, const std::string &msg) {
+                ctx.warn(title, msg);
+            };
+            zoneGeometry(zn, mergedOpcodes, loadInfo, onAutofix, octaveOffset);
+
+            GroupRoute route;
+            route.header = headerIdx;
+
+            if (auto v = consumeOpcode(mergedOpcodes, "trigger"); v.has_value())
+            {
+                if (*v == "release" || *v == "release_key")
+                    route.creation = engine::VoiceCreationMode::ON_NOTE_OFF;
+                else if (*v != "attack")
+                    ctx.unsupported("SFZ trigger", *v);
+            }
+
+            auto swLast = consumeOpcode(mergedOpcodes, "sw_last");
+            auto swDown = consumeOpcode(mergedOpcodes, "sw_down");
+            if (swLast || swDown)
+            {
+                route.keySwitchKind = swLast ? engine::GroupTriggerID::KEYSWITCH_LATCH
+                                             : engine::GroupTriggerID::KEYSWITCH_MOMENTARY;
+                route.keySwitchKey = parseMidiNote(swLast ? *swLast : *swDown, octaveOffset);
+                anyKeySwitch = true;
+            }
+            for (auto op : {"sw_up", "sw_previous", "sw_lolast", "sw_hilast"})
+                if (consumeOpcode(mergedOpcodes, op))
+                    ctx.unsupported("SFZ keyswitch", op);
+            // the switch keys' own range; scxt keyswitch keys never sound anyway
+            consumeOpcode(mergedOpcodes, "sw_lokey");
+            consumeOpcode(mergedOpcodes, "sw_hikey");
+            if (auto v = consumeOpcode(mergedOpcodes, "sw_default"); v && !defaultKeySwitch)
+                defaultKeySwitch = parseMidiNote(*v, octaveOffset);
+            auto swLabel = consumeOpcode(mergedOpcodes, "sw_label");
+
+            consumeOpcode(mergedOpcodes, "off_by");
+            if (auto v = consumeOpcode(mergedOpcodes, "group"); v.has_value())
+            {
+                route.choke = chokes.idFor(std::atoi(v->c_str()));
+                if (route.choke)
+                {
+                    route.chokeKeyStart = zn->mapping.keyboardRange.keyStart;
+                    route.chokeKeyEnd = zn->mapping.keyboardRange.keyEnd;
+                }
+            }
+
+            // a header-level position cycles whole groups; one on the region folds into variants
+            int roundRobinPosition{-1};
+            auto regionHasSeq = std::any_of(
+                list.begin(), list.end(), [](const auto &oc) { return oc.name == "seq_position"; });
+            if (seqPosition && regionHasSeq)
+            {
+                auto pos = std::atoi(seqPosition->c_str());
+                if (pos > 1)
+                    roundRobinPosition = pos;
+            }
+            else if (seqPosition)
+            {
+                auto len = seqLength ? std::atoi(seqLength->c_str()) : 0;
+                auto [it, isNew] =
+                    roundRobinSetForLength.try_emplace(len, (int)roundRobinSetForLength.size());
+                if (it->second >= scxt::maxRoundRobinSets)
+                {
+                    ctx.unsupported("SFZ seq_length",
+                                    "more distinct lengths than round robin sets");
+                    it->second = scxt::maxRoundRobinSets - 1;
+                }
+                route.roundRobinSet = it->second;
+                route.roundRobinOrdinal =
+                    std::clamp(std::atoi(seqPosition->c_str()), 1, (int)scxt::maxRoundRobinOrdinal);
+            }
+
+            std::string label;
             if (auto v = consumeOpcode(mergedOpcodes, "group_label"); v.has_value())
-                group->name = *v;
+                label = *v;
             if (auto v = consumeOpcode(mergedOpcodes, "name"); v.has_value())
-                group->name = *v;
+                label = *v;
+            if (label.empty() && swLabel)
+                label = *swLabel;
+            if (!label.empty() && route.creation == engine::VoiceCreationMode::ON_NOTE_OFF)
+                label += " Release";
+
+            auto groupId = groupFor(route, label);
+            auto &group = ctx.getPart().getGroup(groupId);
+
             if (auto v = consumeOpcode(mergedOpcodes, "amp_veltrack"); v.has_value())
             {
                 // SCXT velocity sensitivity is a group-level scalar; SFZ
@@ -927,26 +1190,23 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
                 group->outputInfo.velocitySensitivity = vt * vt;
             }
 
-            // zoneGeometry only uses the callback for non-fatal auto-fixes
-            // (key/velocity range swaps); route them through ctx.warn so they
-            // don't drown headless scanners in pseudo-errors.
-            auto onAutofix = [&ctx](const std::string &title, const std::string &msg) {
-                ctx.warn(title, msg);
-            };
-            zoneGeometry(zn, mergedOpcodes, loadInfo, onAutofix, octaveOffset);
             zonePlayback(zn, mergedOpcodes);
             auto randSlice = zoneRandSlice(mergedOpcodes);
-            if (randSlice && currentGroupHasDice)
+            if (randSlice && headerDice)
             {
                 // SFZ would have the region's range replace the group's; we end up with both,
                 // which narrows rather than overrides
                 ctx.unsupported("SFZ lorand/hirand nesting",
                                 "a region range inside a group that already has one");
             }
-            auto loopArgs = zoneLoopParse(mergedOpcodes, loadInfo);
-            auto endpointArgs = zoneEndpointParse(mergedOpcodes);
+            auto loopParse = zoneLoopParse(mergedOpcodes, ctx, loadInfo);
+            auto &loopArgs = loopParse.args;
+            auto endpointArgs = zoneEndpointParse(mergedOpcodes, ctx);
             zoneEnvelope(zn, ctx, mergedOpcodes, 0, "ampeg");
             zoneEnvelope(zn, ctx, mergedOpcodes, 1, "fileg");
+            if (loopParse.oneShot)
+                zn->egStorage[0].gateMode =
+                    modulation::modulators::AdsrStorage::GateMode::SAMPLE_GATED;
             // Virtual generator zones occupy proc slot 0 with the oscillator;
             // route the filter to slot 1 so both can live in the same chain.
             int filterSlot = isVirtual ? 1 : 0;
@@ -1161,6 +1421,13 @@ bool importSFZ(const fs::path &f, engine::Engine &e)
 
         for (auto &z : folded)
             ctx.addZoneToGroup(gid, std::move(z));
+    }
+
+    if (anyKeySwitch)
+    {
+        if (defaultKeySwitch)
+            ctx.getPart().configuration.defaultKeySwitchKey = (int16_t)*defaultKeySwitch;
+        ctx.getPart().guaranteeKeyswitchLatchCoherence(e);
     }
 
     for (auto &[k, v] : unusedZoneOpcodes)
