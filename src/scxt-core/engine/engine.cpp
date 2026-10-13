@@ -1394,6 +1394,9 @@ void selectAddresses(const Engine &e, const std::vector<ZoneAddress> &addrs)
     bool first{true};
     for (const auto &a : addrs)
     {
+        // an undo can land between the structure edit and this completion
+        if (a.zone >= 0 ? !e.isValidZoneAddress(a) : !e.isValidGroupAddress(a))
+            continue;
         e.getSelectionManager()->applySelectActions(
             selection::SelectionManager::SelectActionContents(a, true, first, first));
         first = false;
