@@ -473,6 +473,36 @@ TEST_CASE("Copy, Paste, Duplicate And Delete Several Groups At Once")
     REQUIRE(part->getGroup(4)->name == name1 + " (copy)");
 }
 
+TEST_CASE("Selecting A Group That No Longer Exists Is Ignored")
+{
+    namespace mst = multi_structure_test;
+    scxt::clients::console_ui::ConsoleHarness th;
+    th.start();
+    th.stepUI();
+
+    th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    th.stepUI();
+
+    auto &part = th.engine->getPatch()->getPart(0);
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 2; }));
+
+    // what a duplicate's completion sends when an undo has already removed the copy
+    for (auto forZone : {false, true})
+    {
+        auto sa = scxt::selection::SelectionManager::SelectActionContents(ZoneAddress{0, 5, -1});
+        sa.forZone = forZone;
+        th.sendToSerialization(cmsg::ApplySelectActions({sa}));
+        th.stepUI();
+    }
+
+    th.sendToSerialization(cmsg::CreateGroup(0));
+    REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 3; }));
+    auto lg = th.engine->getSelectionManager()->currentLeadGroup(*th.engine);
+    if (lg.has_value())
+        REQUIRE(lg->group < 3);
+}
+
 TEST_CASE("Pasting Zones With No Group Named Lands Them Somewhere Sensible")
 {
     // the mapping pane's empty-area Paste sends the lead group, which is -1 when there is none

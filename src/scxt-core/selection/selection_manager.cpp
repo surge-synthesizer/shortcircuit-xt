@@ -163,6 +163,10 @@ SelectionManager::transformSelectionActions(const std::vector<SelectActionConten
         {
             leadZoneForReSelect = lz->zone;
         }
+        // a stale group (an undo got there first) is dropped by applySelectActions
+        if (!sing.addr().isInWithPartials(engine))
+            return inEls;
+
         auto z = sing;
         const auto &g = engine.getPatch()->getPart(z.part)->getGroup(z.group);
 
