@@ -44,6 +44,7 @@ jobs:
             clapValidate: false
 
           - name: "ubuntu Standalone gcc13"
+            buildType: Release
             os: ubuntu-latest
             target: scxt_clapfirst_standalone
             cmakeConfig: -GNinja -DCMAKE_CXX_COMPILER=g++-13 -DCMAKE_C_COMPILER=gcc-13
@@ -88,6 +89,7 @@ jobs:
 
 
           - name: "mac unity"
+            buildType: Release
             os: macos-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
@@ -96,6 +98,7 @@ jobs:
             clapValidate: true
 
           - name: "ubuntu unity"
+            buildType: Release
             os: ubuntu-latest
             target: shortcircuit-products
             cmakeConfig: -GNinja -DCMAKE_UNITY_BUILD=TRUE
@@ -117,8 +120,8 @@ jobs:
 
       - name: Build pull request version
         run: |
-          cmake -S . -B ./build ${{ matrix.cmakeConfig }} -DCMAKE_BUILD_TYPE=Debug 
-          cmake --build ./build --config Debug --target ${{ matrix.target }} --parallel 4
+          cmake -S . -B ./build ${{ matrix.cmakeConfig }} -DCMAKE_BUILD_TYPE=${{ matrix.buildType || 'Debug' }}
+          cmake --build ./build --config ${{ matrix.buildType || 'Debug' }} --target ${{ matrix.target }} --parallel 4
 
       - name: Run Clap Validator
         if: ${{ matrix.clapValidate }}
@@ -129,7 +132,7 @@ jobs:
       - name: Run Tests
         if: ${{ matrix.runTests }}
         run: |
-          cmake --build build --config Debug --target scxt-test --parallel 4
+          cmake --build build --config ${{ matrix.buildType || 'Debug' }} --target scxt-test --parallel 4
           ./${{ matrix.testPath }}/scxt-test
 
 
