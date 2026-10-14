@@ -63,18 +63,19 @@ struct ConsoleHarness : scxt::MoveableOnly<ConsoleHarness>
         auto token = ++syncsSent;
         sendToSerialization(scxt::messaging::client::HarnessSync(token));
         auto giveUp = std::chrono::steady_clock::now() + timeout;
-        while (editor->lastHarnessSync < token)
+        while (true)
         {
+            engine->getMessageController()->wakeSerialization();
+            editor->stepUI();
+            if (editor->lastHarnessSync >= token)
+                return true;
             if (std::chrono::steady_clock::now() > giveUp)
             {
                 SCLOG_IF(warnings, "Harness sync " << token << " timed out");
                 return false;
             }
-            engine->getMessageController()->wakeSerialization();
-            editor->stepUI();
             std::this_thread::sleep_for(std::chrono::microseconds(200));
         }
-        return true;
     }
 
   private:

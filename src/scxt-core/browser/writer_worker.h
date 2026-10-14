@@ -580,6 +580,9 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
     // returns once every enqueued item has been handled; for tests
     void waitUntilIdle()
     {
+        // no worker thread to wait on before openForWrite
+        if (!haveOpenedForWriteOnce)
+            return;
         std::unique_lock<std::mutex> lk(qLock);
         waitingCV.wait(lk, [this]() { return waiting.load() && pathQ.empty(); });
     }
