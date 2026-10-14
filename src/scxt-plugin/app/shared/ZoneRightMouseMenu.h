@@ -282,6 +282,8 @@ void populateZoneMenu(SendingComp *that, juce::PopupMenu &p, const std::optional
     batch.addSeparator();
     addBatch("Remove Key Crossfades", engine::Engine::REMOVE_KEY_CROSSFADES);
     addBatch("Remove Velocity Crossfades", engine::Engine::REMOVE_VELOCITY_CROSSFADES);
+    batch.addSeparator();
+    addBatch("Fix Overlaps", engine::Engine::FIX_OVERLAPS);
     p.addSubMenu("Batch Functions", batch, any);
 }
 

@@ -665,6 +665,13 @@ void SCXTEditorReceiver::onLearnedNote(int16_t key)
         editor.editScreen->partSidebar->noteLearned(key);
 }
 
+void SCXTEditorReceiver::onMappingHeaderState(
+    const scxt::messaging::client::mappingHeaderState_t &s)
+{
+    if (editor.editScreen && editor.editScreen->mappingPane)
+        editor.editScreen->mappingPane->setMappingHeaderState(s.first, s.second);
+}
+
 void SCXTEditorReceiver::onPartKeySwitchDisplay(
     const scxt::messaging::client::partKeySwitchPayload_t &p)
 {

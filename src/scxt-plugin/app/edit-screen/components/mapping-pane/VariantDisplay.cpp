@@ -762,63 +762,26 @@ void VariantDisplay::rebuild()
     repaint();
 }
 
-void VariantDisplay::selectNextFile(bool selectForward)
+void VariantDisplay::selectNextFile(bool selectForward, int variant)
 {
-    auto samp{editor->sampleManager.getSample(variantView.variants[selectedVariation].sampleID)};
-    if (!samp)
+    if (variant < 0)
+        variant = selectedVariation;
+    if (variant >= (int)variantView.variants.size())
         return;
 
-    std::vector<std::string> v; // todo maybe reserve space for the vector
-
-    try
-    {
-        auto samp_path = samp->getPath();
-        if (samp_path.empty())
-            return;
-
-        auto parent_path{samp_path.parent_path()};
-        if (parent_path.empty())
-            return;
-
-        for (const auto &entry : fs::directory_iterator(parent_path))
-        {
-            if (entry.is_regular_file() &&
-                scxt::browser::Browser::isLoadableSingleSample(entry.path()))
-            {
-                v.push_back(entry.path().u8string());
-            }
-        }
-    }
-    catch (const fs::filesystem_error &err)
-    {
-        editor->displayError("Variant Load Filesystem Error", err.what());
-        return;
-    }
-
-    // todo sort alphabetically
-    std::sort(v.begin(), v.end());
-
-    auto it{std::find(v.begin(), v.end(), samp->getPath().string())};
-    auto index{std::distance(v.begin(), it)};
-    if (selectForward)
-    {
-        index++;
-        index %= v.size();
-    }
-    else
-    {
-        index--;
-        if (index < 0)
-        {
-            index += v.size();
-        }
-    }
-
-    auto f{v[index]};
-    namespace cmsg = scxt::messaging::client;
+    auto samp{editor->sampleManager.getSample(variantView.variants[variant].sampleID)};
     auto za{editor->currentLeadZoneSelection};
-    auto sampleID{selectedVariation};
-    sendToSerialization(cmsg::AddSampleInZone({f, za->part, za->group, za->zone, sampleID}));
+    if (!samp || samp->getPath().empty() || !za.has_value())
+        return;
+
+    auto files = scxt::browser::Browser::singleSamplesIn(samp->getPath().parent_path());
+    auto f = scxt::browser::Browser::stepPatchFile(files, samp->getPath(), selectForward ? 1 : -1);
+    if (!f.has_value())
+        return;
+
+    namespace cmsg = scxt::messaging::client;
+    sendToSerialization(
+        cmsg::AddSampleInZone({f->u8string(), za->part, za->group, za->zone, variant}));
 }
 
 void VariantDisplay::MyTabbedComponent::currentTabChanged(int newCurrentTabIndex,
