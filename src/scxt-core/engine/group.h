@@ -131,7 +131,8 @@ struct Group : MoveableOnly<Group>,
         bool hasIndependentPolyLimit{false};
         int32_t polyLimit{0};
 
-        int16_t pbUp{2}, pbDown{2};
+        // signed semitones at full bend each way, as on the zone
+        float pbUp{2.f}, pbDown{-2.f};
 
         int16_t midiChannel{-1}; // -1 means "Follow Part"
 
@@ -462,14 +463,11 @@ SC_DESCRIBE(
     SC_FIELD(tuning,
              pmd().asFloat().withRange(-24, 24).withSemitoneFormatting().withDefault(0.f).withName(
                  "Tuning"));
-    SC_FIELD(pan, pmd().asPan().withName("Pan")); SC_FIELD(
-        pbUp,
-        pmd().asInt().withName("Pitch Bend Up").withRange(0, 48).withLinearScaleFormatting("keys"));
-    SC_FIELD(pbDown, pmd()
-                         .asInt()
-                         .withName("Pitch Bend Down")
-                         .withRange(0, 48)
-                         .withLinearScaleFormatting("keys"));
+    SC_FIELD(pan, pmd().asPan().withName("Pan"));
+    SC_FIELD(pbUp, pmd().asSemitoneRange(-48, 48).withDecimalPlaces(2).withDefault(2).withName(
+                       "Pitch Bend Up"));
+    SC_FIELD(pbDown, pmd().asSemitoneRange(-48, 48).withDecimalPlaces(2).withDefault(-2).withName(
+                         "Pitch Bend Down"));
     SC_FIELD(procRouting, pmd().asInt().withRange(0, 6).withUnorderedMapFormatting({
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_linear, "S1"},
                               {scxt::engine::Zone::ProcRoutingPath::procRoute_ser2, "S2"},

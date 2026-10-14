@@ -150,8 +150,8 @@ TEST_CASE("A non-float edit lands at once even while sounding", "[uilag]")
 
     // only floats are lagged; an int16 has nothing to ramp through
     det::pokeZoneMemberValue<int16_t>(f.zone, f.zone->mapping,
-                                      offsetof(Zone::ZoneMappingData, pbUp), (int16_t)9);
-    REQUIRE(f.zone->mapping.pbUp == 9);
+                                      offsetof(Zone::ZoneMappingData, rootKey), (int16_t)62);
+    REQUIRE(f.zone->mapping.rootKey == 62);
 }
 
 TEST_CASE("A second edit mid-ramp retargets rather than stalling", "[uilag]")

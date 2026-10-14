@@ -104,6 +104,8 @@ struct MappingDisplay : juce::Component,
         int16Attachment_t;
     typedef connectors::PayloadDataAttachment<engine::Zone::ZoneMappingData, float>
         floatAttachment_t;
+    typedef connectors::BooleanPayloadDataAttachment<engine::Zone::ZoneMappingData>
+        boolAttachment_t;
 
     std::unique_ptr<sst::jucegui::components::ZoomContainer> zoneLayoutViewport;
 
@@ -169,7 +171,7 @@ struct MappingDisplay : juce::Component,
     };
 
     // Same membership as MapEls; used for the integer-backed controls, which are
-    // sparse here (only the key/velocity/pitch-bend slots are populated).
+    // sparse here (only the key and velocity slots are populated).
     template <typename T> struct MapDiscreteEls
     {
         T RootKey, KeyStart, KeyEnd, FadeStart, FadeEnd, VelStart, VelEnd, VelFadeStart, VelFadeEnd,
@@ -178,12 +180,18 @@ struct MappingDisplay : juce::Component,
 
     MapDiscreteEls<std::unique_ptr<int16Attachment_t>> intAttachments;
     MapEls<std::unique_ptr<floatAttachment_t>> floatAttachments;
-    // continuous (float) text editors; sparse — only Level/Pan/Pitch/Tracking/VelocitySens
+    // continuous (float) text editors; sparse — Level/Pan/Pitch/Tracking/VelocitySens/PB
     MapEls<std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue>> textEds;
-    // discrete (integer) text editors; sparse — the key/velocity/pitch-bend slots
+    // discrete (integer) text editors; sparse — the key and velocity slots
     MapDiscreteEls<std::unique_ptr<sst::jucegui::components::DraggableTextEditableDiscreteValue>>
         discreteTextEds;
     MapEls<std::unique_ptr<sst::jucegui::components::Label>> labels;
+
+    static constexpr float pitchBendPixelsPerSemitone{8.f};
+    std::unique_ptr<boolAttachment_t> pbUseGroupAttachment;
+    void updatePitchBendEnablement();
+    void showPitchBendMenu();
+    void mouseDown(const juce::MouseEvent &e) override;
     MapEls<std::unique_ptr<sst::jucegui::components::GlyphPainter>> glyphs;
 
     enum RuleIdx

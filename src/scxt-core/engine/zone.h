@@ -401,7 +401,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
         KeyboardRange keyboardRange;
         VelocityRange velocityRange;
 
-        int16_t pbDown{-1}, pbUp{-1};
+        // signed semitones at full bend each way, so a pbDown of -2 bends down a tone
+        float pbDown{-2.f}, pbUp{2.f};
+        bool pbUseGroup{true};
 
         float velocitySens{1.0};
         float amplitude{0.0};   // decibels
@@ -584,20 +586,11 @@ SC_DESCRIBE(
     SC_FIELD(velocityRange.fadeStart,
              pmd().asMIDIPitch().withUnit("").withName("Velocity Fade Start"));
     SC_FIELD(velocityRange.fadeEnd, pmd().asMIDIPitch().withUnit("").withName("Velocity Fade End"));
-    SC_FIELD(pbDown, pmd()
-                         .asInt()
-                         .withRange(-1, 48)
-                         .withLinearScaleFormatting("")
-                         .withDefault(-1)
-                         .withName("Pitch Bend Down")
-                         .withCustomMinDisplay("GRP"));
-    SC_FIELD(pbUp, pmd()
-                       .asInt()
-                       .withRange(-1, 48)
-                       .withLinearScaleFormatting("")
-                       .withDefault(-1)
-                       .withName("Pitch Bend Up")
-                       .withCustomMinDisplay("GRP"));
+    SC_FIELD(pbDown, pmd().asSemitoneRange(-48, 48).withDecimalPlaces(2).withDefault(-2).withName(
+                         "Pitch Bend Down"));
+    SC_FIELD(pbUp, pmd().asSemitoneRange(-48, 48).withDecimalPlaces(2).withDefault(2).withName(
+                       "Pitch Bend Up"));
+    SC_FIELD(pbUseGroup, pmd().asOnOffBool().withName("Pitch Bend Uses Group").withDefault(true));
 
     SC_FIELD(amplitude, pmd().asDecibelWithRange(-36, 36).withName("Amplitude").withDefault(0.f));
     SC_FIELD(pan, pmd().asPan().withName("Pan"));

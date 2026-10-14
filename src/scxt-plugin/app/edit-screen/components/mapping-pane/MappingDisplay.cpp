@@ -225,9 +225,36 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
 
     makeLabel(labels.VelFadeStart, "Vel XFade");
 
-    iAdd(mappingView.pbDown, intAttachments.PBDown, discreteTextEds.PBDown);
-    iAdd(mappingView.pbUp, intAttachments.PBUp, discreteTextEds.PBUp);
+    fAdd(mappingView.pbDown, floatAttachments.PBDown, textEds.PBDown);
+    fAdd(mappingView.pbUp, floatAttachments.PBUp, textEds.PBUp);
+    connectors::quantizeDragsUnlessShift(floatAttachments.PBDown, *textEds.PBDown,
+                                         pitchBendPixelsPerSemitone);
+    connectors::quantizeDragsUnlessShift(floatAttachments.PBUp, *textEds.PBUp,
+                                         pitchBendPixelsPerSemitone);
     makeLabel(labels.PBDown, "Pitch Bend");
+
+    using bfac =
+        connectors::BooleanSingleValueFactory<boolAttachment_t, cmsg::UpdateZoneMappingBoolValue>;
+    pbUseGroupAttachment = bfac::attachOnly(mappingView, mappingView.pbUseGroup, this);
+    connectors::addGuiStep(*pbUseGroupAttachment, [w = juce::Component::SafePointer(this)](auto &) {
+        if (w)
+            w->updatePitchBendEnablement();
+    });
+    for (auto *w : {textEds.PBDown.get(), textEds.PBUp.get()})
+    {
+        w->onPopupMenu = [md = juce::Component::SafePointer(this)](auto &) {
+            if (md)
+                md->showPitchBendMenu();
+        };
+    }
+    for (auto *a : {floatAttachments.PBDown.get(), floatAttachments.PBUp.get()})
+    {
+        a->displayOverride = [md = juce::Component::SafePointer(this)]() {
+            return (md && md->mappingView.pbUseGroup) ? std::optional<std::string>("GRP")
+                                                      : std::nullopt;
+        };
+    }
+    updatePitchBendEnablement();
 
     fAdd(mappingView.amplitude, floatAttachments.Level, textEds.Level);
     makeGlyph(glyphs.Level, sst::jucegui::components::GlyphPainter::VOLUME);
@@ -358,10 +385,11 @@ void MappingDisplay::resized()
     rules[VelVSepLo]->setBounds(spr(141, 88, 8, 8));
     rules[VelVSepHi]->setBounds(spr(181, 88, 8, 8));
 
-    labels.PBDown->setBounds(spl(0, 120, 129, 16));
-    discreteTextEds.PBDown->setBounds(sp(129, 120, 32, 16));
-    rules[PBHSep]->setBounds(spr(161, 120, 8, 16));
-    discreteTextEds.PBUp->setBounds(sp(169, 120, 32, 16));
+    // two decimals need the width of the float column below, not the integer ones above
+    labels.PBDown->setBounds(spl(0, 120, 97, 16));
+    textEds.PBDown->setBounds(sp(97, 120, 48, 16));
+    rules[PBHSep]->setBounds(spr(145, 120, 8, 16));
+    textEds.PBUp->setBounds(sp(153, 120, 48, 16));
 
     glyphs.Pitch->setBounds(sp(135, 146, 16, 16));
     textEds.Pitch->setBounds(sp(153, 146, 48, 16));
@@ -486,6 +514,46 @@ void MappingDisplay::setActive(bool b)
         enable(w.get());
         w->setSource(b ? a.get() : nullptr);
     });
+    updatePitchBendEnablement();
+}
+
+void MappingDisplay::showPitchBendMenu()
+{
+    if (!active || !pbUseGroupAttachment)
+        return;
+    auto p = juce::PopupMenu();
+    p.addSectionHeader("Pitch Bend");
+    p.addSeparator();
+    p.addItem("Use Group Ranges", true, mappingView.pbUseGroup,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (!w)
+                      return;
+                  auto &a = *w->pbUseGroupAttachment;
+                  a.setValueFromGUI(!a.getValue());
+              });
+    p.showMenuAsync(editor->defaultPopupMenuOptions());
+}
+
+void MappingDisplay::mouseDown(const juce::MouseEvent &e)
+{
+    // the label and the dimmed fields don't take clicks, so their right-click lands here
+    if (!e.mods.isPopupMenu())
+        return;
+    auto pbArea = labels.PBDown->getBounds().getUnion(textEds.PBUp->getBounds());
+    if (pbArea.contains(e.getPosition()))
+        showPitchBendMenu();
+}
+
+void MappingDisplay::updatePitchBendEnablement()
+{
+    // a zone on the group's range keeps its own values but they don't sound
+    auto own = active && !mappingView.pbUseGroup;
+    for (auto *w : {textEds.PBDown.get(), textEds.PBUp.get()})
+    {
+        w->setEnabled(own);
+        w->setInterceptsMouseClicks(own, own);
+        w->repaint();
+    }
 }
 
 void MappingDisplay::setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &d)

@@ -66,19 +66,17 @@ struct GroupSettingsCard : juce::Component, HasEditor
     std::unique_ptr<sst::jucegui::components::TickSeparatorLabel> rightVRule01, rightVRule12,
         glideRuleH;
     std::unique_ptr<sst::jucegui::components::DraggableTextEditableValue> glideDrag, volDrag,
-        panDrag, tuneDrag;
-    std::unique_ptr<sst::jucegui::components::DraggableTextEditableDiscreteValue> pbDnVal, pbUpVal;
+        panDrag, tuneDrag, pbDnVal, pbUpVal;
+    static constexpr float pitchBendPixelsPerSemitone{8.f};
 
     using floatMsg_t = scxt::messaging::client::UpdateGroupOutputFloatValue;
     using intMsg_t = scxt::messaging::client::UpdateGroupOutputInt16TValue;
     using int32Msg_t = scxt::messaging::client::UpdateGroupOutputInt32TValue;
     using boolMsg_t = scxt::messaging::client::UpdateGroupOutputBoolValue;
     typedef connectors::PayloadDataAttachment<engine::Group::GroupOutputInfo> attachment_t;
-    typedef connectors::DiscretePayloadDataAttachment<engine::Group::GroupOutputInfo, int16_t>
-        iattachment_t;
 
-    std::unique_ptr<attachment_t> volAttachment, panAttachment, tuneAttachment, glideAttachment;
-    std::unique_ptr<iattachment_t> pbDnA, pbUpA;
+    std::unique_ptr<attachment_t> volAttachment, panAttachment, tuneAttachment, glideAttachment,
+        pbDnA, pbUpA;
 
     engine::Group::GroupOutputInfo &info;
 

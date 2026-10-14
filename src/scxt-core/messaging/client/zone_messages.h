@@ -165,6 +165,11 @@ CLIENT_TO_SERIAL_CONSTRAINED(
                 eng.getPatch()->getPart(pt)->getZoneMappingSummary(),
                 *(eng.getMessageController()));
         }));
+CLIENT_TO_SERIAL_CONSTRAINED(UpdateZoneMappingBoolValue, c2s_update_zone_mapping_bool,
+                             detail::diffMsg_t<bool>, engine::Zone::ZoneMappingData,
+                             detail::updateZoneMemberValueGated<undo::ZoneMappingSpec>(
+                                 &engine::Zone::mapping, payload, engine, cont,
+                                 &engine::Zone::mappingFieldCrossesZones));
 
 typedef std::tuple<bool, engine::Zone::Variants> sampleSelectedZoneViewResposne_t;
 SERIAL_TO_CLIENT(SampleSelectedZoneView, s2c_respond_zone_samples, sampleSelectedZoneViewResposne_t,

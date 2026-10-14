@@ -65,7 +65,6 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     : HasEditor(e), info(e->editorDataCache.groupOutputInfo)
 {
     using fac = connectors::SingleValueFactory<attachment_t, floatMsg_t>;
-    using ifac = connectors::SingleValueFactory<iattachment_t, intMsg_t>;
 
     auto mkg = [this](auto gl) {
         auto res = std::make_unique<jcmp::GlyphPainter>(gl);
@@ -140,8 +139,10 @@ GroupSettingsCard::GroupSettingsCard(SCXTEditor *e)
     fac::attachAndAdd(info, info.tuning, this, tuneAttachment, tuneDrag);
     tuneDrag->setDragScaleFromMinMaxHeuristic();
 
-    ifac::attachAndAdd(info, info.pbDown, this, pbDnA, pbDnVal);
-    ifac::attachAndAdd(info, info.pbUp, this, pbUpA, pbUpVal);
+    fac::attachAndAdd(info, info.pbDown, this, pbDnA, pbDnVal);
+    fac::attachAndAdd(info, info.pbUp, this, pbUpA, pbUpVal);
+    connectors::quantizeDragsUnlessShift(pbDnA, *pbDnVal, pitchBendPixelsPerSemitone);
+    connectors::quantizeDragsUnlessShift(pbUpA, *pbUpVal, pitchBendPixelsPerSemitone);
     pbLabel = std::make_unique<jcmp::Label>();
     pbLabel->setText("PB");
     pbLabel->setJustification(juce::Justification::centredLeft);
@@ -227,11 +228,11 @@ void GroupSettingsCard::resized()
     exclusiveGroupGlyph->setBounds(b(89, 48, 16, 16));
     exclusiveGroupNotesGlyph->setBounds(b(118, 35, 12, 12));
 
-    // PB row (y=93) — label | dn value | rule | up value
+    // PB row (y=93) — label | dn value | rule | up value, wide enough for two decimals
     pbLabel->setBounds(b(0, 93, 20, 16));
-    pbDnVal->setBounds(b(22, 93, 32, 16));
-    pbRuleH->setBounds(b(55, 93, 6, 16));
-    pbUpVal->setBounds(b(62, 93, 32, 16));
+    pbDnVal->setBounds(b(22, 93, 38, 16));
+    pbRuleH->setBounds(b(61, 93, 6, 16));
+    pbUpVal->setBounds(b(68, 93, 38, 16));
 
     // Glide row (y=117) — glyph | mode button | rule | drag value
     glideGlpyh->setBounds(b(0, 117, 20, 16));
@@ -244,7 +245,7 @@ void GroupSettingsCard::resized()
     polyMenu->setBounds(b(134, 45, rbtnW, 16));
     prioGlyph->setBounds(b(116, 69, 16, 16));
     prioMenu->setBounds(b(134, 69, rbtnW, 16));
-    SRCLabel->setBounds(b(96, 93, 36, 16));
+    SRCLabel->setBounds(b(108, 93, 24, 16));
     srcMenu->setBounds(b(134, 93, rbtnW, 16));
     outputGlyph->setBounds(b(116, 117, 16, 16));
     outputMenu->setBounds(b(134, 117, rbtnW, 16));

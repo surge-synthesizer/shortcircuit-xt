@@ -1217,13 +1217,11 @@ float Voice::calculateVoicePitch()
     }
 
     auto pitchWheel = zone->parentGroup->parentPart->pitchBendValue;
-    auto pu = zone->mapping.pbUp;
-    auto pd = zone->mapping.pbDown;
-    if (pu < 0)
-        pu = zone->parentGroup->outputInfo.pbUp;
-    if (pd < 0)
-        pd = zone->parentGroup->outputInfo.pbDown;
-    pitchWheel *= pitchWheel > 0 ? pu : pd;
+    const auto &gi = zone->parentGroup->outputInfo;
+    auto pu = zone->mapping.pbUseGroup ? gi.pbUp : zone->mapping.pbUp;
+    auto pd = zone->mapping.pbUseGroup ? gi.pbDown : zone->mapping.pbDown;
+    // a full down-bend lands on pd, which is signed
+    pitchWheel *= pitchWheel > 0 ? pu : -pd;
 
     pitchUntuned += (key - zone->mapping.rootKey) * zone->mapping.tracking + zone->mapping.rootKey;
     pitchUntuned += *endpoints->mappingTarget.pitchOffsetP;

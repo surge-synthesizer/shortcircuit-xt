@@ -95,6 +95,7 @@ enum ClientToSerializationMessagesIds
 
     c2s_update_zone_mapping_float,
     c2s_update_zone_mapping_int16_t,
+    c2s_update_zone_mapping_bool,
     c2s_update_variant_field,
     c2s_update_zone_variants_int16_t,
     c2s_apply_all_zone_delta,
