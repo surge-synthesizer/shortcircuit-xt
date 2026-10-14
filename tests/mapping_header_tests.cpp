@@ -50,13 +50,13 @@ struct HeaderFixture
     HeaderFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
-    template <typename T> void send(const T &msg, size_t drain = 20)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drain);
+        th.sync();
     }
 
     auto &part() { return th.engine->getPatch()->getPart(0); }
@@ -72,22 +72,14 @@ struct HeaderFixture
     {
         th.sendToSerialization(cmsg::NoteFromGUI({key, vel, true}));
         th.sendToSerialization(cmsg::NoteFromGUI({key, 0.f, false}));
-        th.stepUI(5);
+        th.sync();
     }
 
     void startAction(mza a) { send(cmsg::InitiateMidiZoneAction((int)a)); }
 
     int clientAction() { return th.editor->mappingHeaderState.first; }
 
-    // learn finishes on the serialization thread after the audio thread hands it the notes
-    void waitForActionOff()
-    {
-        for (int i = 0; i < 200 && th.engine->midiZoneAction.load() != mza::NONE; ++i)
-            th.stepUI(1);
-        th.stepUI(20);
-    }
-
-    void undo() { send(cmsg::Undo(true), 40); }
+    void undo() { send(cmsg::Undo(true)); }
 };
 } // namespace
 
@@ -159,7 +151,6 @@ TEST_CASE("Learn key range sets the lead zone keys", "[mapping-header]")
     {
         f.play(36);
         f.play(48);
-        f.waitForActionOff();
         REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyStart == 36);
         REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyEnd == 48);
     }
@@ -167,7 +158,6 @@ TEST_CASE("Learn key range sets the lead zone keys", "[mapping-header]")
     {
         f.play(52);
         f.play(30);
-        f.waitForActionOff();
         REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyStart == 30);
         REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyEnd == 52);
     }
@@ -197,7 +187,6 @@ TEST_CASE("Learn key range lands on the transposed keys", "[mapping-header]")
     f.startAction(mza::SET_KEY_BOUNDS_START);
     f.play(36);
     f.play(48);
-    f.waitForActionOff();
     REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyStart == 48);
     REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyEnd == 60);
 }
@@ -215,7 +204,6 @@ TEST_CASE("Learn velocity range sets the lead zone velocities", "[mapping-header
     // velocity reads as v * 128, so these are 96 and 32
     f.play(60, 0.75f);
     f.play(61, 0.25f);
-    f.waitForActionOff();
 
     const auto &vr = f.zone(0, 0)->mapping.velocityRange;
     REQUIRE(vr.velStart == 32);
@@ -239,7 +227,6 @@ TEST_CASE("Turning a learn off lets the next note play", "[mapping-header]")
     REQUIRE(f.clientAction() == (int)mza::NONE);
     f.play(36);
     f.play(48);
-    f.th.stepUI(20);
     REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyStart == 40);
     REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyEnd == 50);
 }
@@ -258,36 +245,25 @@ TEST_CASE("MIDI select picks the zone a note lands in", "[mapping-header]")
     f.startAction(mza::SELECT);
     REQUIRE(f.clientAction() == (int)mza::SELECT);
 
-    auto waitForLead = [&f](int g, int z) {
-        for (int i = 0; i < 200 && !(f.sel().leadZone ==
-                                     scxt::selection::SelectionManager::ZoneAddress{0, g, z});
-             ++i)
-            f.th.stepUI(1);
-        return f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, g, z};
-    };
-
     f.play(45, 0.9f);
-    REQUIRE(waitForLead(0, 1));
+    REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 0, 1});
     REQUIRE(f.sel().selectedZones.size() == 1);
 
     f.play(45, 0.2f);
-    REQUIRE(waitForLead(0, 0));
+    REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 
     // a group with nothing selected isn't showing, so its zones aren't candidates
     f.play(85);
-    f.th.stepUI(20);
     REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 
     // a note no zone answers leaves the selection alone
     f.play(100);
-    f.th.stepUI(20);
     REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 
     // it stays on until turned off
     REQUIRE(f.th.engine->midiZoneAction.load() == mza::SELECT);
     f.startAction(mza::NONE);
     f.play(65);
-    f.th.stepUI(20);
     REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 }
 
@@ -302,14 +278,10 @@ TEST_CASE("MIDI select keeps the groups it started with", "[mapping-header]")
 
     f.startAction(mza::SELECT);
     f.play(65);
-    for (int i = 0; i < 200 && f.sel().leadZone.group != 1; ++i)
-        f.th.stepUI(1);
     REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 1, 0});
 
     // group 0 no longer has a selected zone, but it was showing when select went on
     f.play(45);
-    for (int i = 0; i < 200 && f.sel().leadZone.group != 0; ++i)
-        f.th.stepUI(1);
     REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 }
 
@@ -437,7 +409,7 @@ TEST_CASE("The header state reaches a fresh client", "[mapping-header]")
     f.send(cmsg::SetZoneSolo(true));
     f.th.editor->mappingHeaderState = {-1, false};
     // what a reopened editor sends
-    f.send(cmsg::RegisterClient(true), 40);
+    f.send(cmsg::RegisterClient(true));
     REQUIRE(f.th.editor->mappingHeaderState.first == (int)mza::SELECT);
     REQUIRE(f.th.editor->mappingHeaderState.second);
 }
