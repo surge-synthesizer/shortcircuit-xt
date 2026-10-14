@@ -813,8 +813,10 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
         addAndMakeVisible(*groupTriggers);
 
         settingsDivider = std::make_unique<jcmp::NamedPanelDivider>();
+        settingsDivider->setDrawGap(false);
         addAndMakeVisible(*settingsDivider);
         triggersDivider = std::make_unique<jcmp::NamedPanelDivider>();
+        triggersDivider->setDrawGap(false);
         addAndMakeVisible(*triggersDivider);
     }
     ~GroupSidebar() = default;
