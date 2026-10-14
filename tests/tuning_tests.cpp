@@ -363,6 +363,32 @@ TEST_CASE("SCL/KBM - SetSclKbm applies through the real message pipe", "[tuning]
     REQUIRE(th.engine->midikeyRetuner.remapKeyTo(0, 66) == 66);
 }
 
+TEST_CASE("Tuning awareness - pitch bend and MPE glides toggle independently", "[tuning]")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    REQUIRE(th.start());
+    REQUIRE(th.engine);
+
+    auto &rc = th.engine->runtimeConfig;
+    REQUIRE(rc.tuningAwarePitchBends);
+    REQUIRE(rc.tuningAwareMPEGlides);
+
+    th.sendToSerialization(scxt::messaging::client::SetPitchBendTuningAwareness(false));
+    th.stepUI(20);
+    REQUIRE(!rc.tuningAwarePitchBends);
+    REQUIRE(rc.tuningAwareMPEGlides);
+
+    th.sendToSerialization(scxt::messaging::client::SetMpeTuningAwareness(false));
+    th.stepUI(20);
+    REQUIRE(!rc.tuningAwarePitchBends);
+    REQUIRE(!rc.tuningAwareMPEGlides);
+
+    th.sendToSerialization(scxt::messaging::client::SetPitchBendTuningAwareness(true));
+    th.stepUI(20);
+    REQUIRE(rc.tuningAwarePitchBends);
+    REQUIRE(!rc.tuningAwareMPEGlides);
+}
+
 TEST_CASE("SCL/KBM - a mapping with no scale means 12-TET, not no tuning", "[tuning]")
 {
     // "Put A4 at 432" needs a KBM but no custom scale, so the scale gets filled in

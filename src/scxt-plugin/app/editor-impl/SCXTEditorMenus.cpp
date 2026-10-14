@@ -363,20 +363,21 @@ void SCXTEditor::addTuningMenu(juce::PopupMenu &p, bool addTitle)
     auto continuousTuning = st.first == TM::MTS_CONTINOUS || st.first == TM::SCL_KBM;
 
     p.addSeparator();
-    p.addItem("Tuning-Aware Pitch Bend", continuousTuning, tuningAwareMPE,
+    p.addItem("Tuning-Aware Pitch Bend", continuousTuning, tuningAwarePitchBends,
+              [w = juce::Component::SafePointer(this)]() {
+                  if (w)
+                  {
+                      w->tuningAwarePitchBends = !w->tuningAwarePitchBends;
+                      w->sendToSerialization(
+                          cmsg::SetPitchBendTuningAwareness(w->tuningAwarePitchBends));
+                  }
+              });
+    p.addItem("Tuning-Aware MPE/Note Expression glides", continuousTuning, tuningAwareMPE,
               [w = juce::Component::SafePointer(this)]() {
                   if (w)
                   {
                       w->tuningAwareMPE = !w->tuningAwareMPE;
                       w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwareMPE));
-                  }
-              });
-    p.addItem("Tuning-Aware MPE/Note Expression glides", continuousTuning, tuningAwarePitchBends,
-              [w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                  {
-                      w->tuningAwarePitchBends = !w->tuningAwarePitchBends;
-                      w->sendToSerialization(cmsg::SetMpeTuningAwareness(w->tuningAwarePitchBends));
                   }
               });
 }
