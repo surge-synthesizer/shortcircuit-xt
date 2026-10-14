@@ -52,7 +52,7 @@ struct MuteSoloFixture
     explicit MuteSoloFixture(int groups)
     {
         th.start();
-        th.stepUI();
+        th.sync();
         for (int i = 0; i < groups; ++i)
             send(cmsg::CreateGroup(0));
         REQUIRE((int)part().getGroups().size() == groups);
@@ -67,7 +67,7 @@ struct MuteSoloFixture
     template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI();
+        th.sync();
     }
 
     void mute(int g, bool v, cmsg::MuteOrSoloGesture gs)

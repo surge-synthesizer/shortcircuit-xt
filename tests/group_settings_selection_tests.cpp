@@ -56,7 +56,7 @@ struct ThreeGroups
     ThreeGroups()
     {
         th.start();
-        th.stepUI();
+        th.sync();
         for (int i = 0; i < 3; ++i)
             send(cmsg::CreateGroup(0));
         REQUIRE(part().getGroups().size() == 3);
@@ -101,13 +101,13 @@ struct ThreeGroups
         return part().getGroup(g)->triggerConditions;
     }
 
-    template <typename T> void send(const T &msg, size_t drainSteps = 30)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drainSteps);
+        th.sync();
     }
 
-    void sendUndo(size_t drainSteps = 30) { send(cmsg::Undo(true), drainSteps); }
+    void sendUndo() { send(cmsg::Undo(true)); }
 
     // the mix of gain and pan an edit to some other field must leave alone
     struct Levels

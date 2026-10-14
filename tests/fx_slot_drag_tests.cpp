@@ -54,19 +54,19 @@ struct FXFixture
     FXFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
     // bus >= 0 addresses a bus, otherwise part is used - the same convention the messages use
     void setSlot(int bus, int part, int slot, AvailableBusEffects type, float p0)
     {
         th.sendToSerialization(cmsg::SetBusEffectToType({bus, part, slot, (int)type}));
-        th.stepUI(10);
+        th.sync();
 
         auto bes = storage(bus, part, slot);
         bes.params[0] = p0;
         th.sendToSerialization(cmsg::SetBusEffectStorage({bus, part, slot, bes}));
-        th.stepUI(10);
+        th.sync();
     }
 
     scxt::engine::BusEffectStorage storage(int bus, int part, int slot)
@@ -89,7 +89,7 @@ TEST_CASE("A part fx drag resolves per its action", "[fx_drag]")
         f.setSlot(-1, 0, 1, AvailableBusEffects::delay, marker * 2);
 
         f.th.sendToSerialization(cmsg::SwapPartFX({0, 0, 0, 1, cmsg::fx_swap}));
-        f.th.stepUI(20);
+        f.th.sync();
 
         REQUIRE(f.storage(-1, 0, 0).type == AvailableBusEffects::delay);
         REQUIRE(f.storage(-1, 0, 0).params[0] == marker * 2);
@@ -104,7 +104,7 @@ TEST_CASE("A part fx drag resolves per its action", "[fx_drag]")
         f.setSlot(-1, 0, 1, AvailableBusEffects::delay, marker * 2);
 
         f.th.sendToSerialization(cmsg::SwapPartFX({0, 0, 0, 1, cmsg::fx_move}));
-        f.th.stepUI(20);
+        f.th.sync();
 
         REQUIRE(f.storage(-1, 0, 0).type == AvailableBusEffects::none);
         REQUIRE(f.storage(-1, 0, 0).params[0] == 0.f);
@@ -119,7 +119,7 @@ TEST_CASE("A part fx drag resolves per its action", "[fx_drag]")
         f.setSlot(-1, 0, 1, AvailableBusEffects::delay, marker * 2);
 
         f.th.sendToSerialization(cmsg::SwapPartFX({0, 0, 0, 1, cmsg::fx_copy}));
-        f.th.stepUI(20);
+        f.th.sync();
 
         REQUIRE(f.storage(-1, 0, 0).type == AvailableBusEffects::reverb1);
         REQUIRE(f.storage(-1, 0, 0).params[0] == marker);
@@ -134,7 +134,7 @@ TEST_CASE("A part fx drag resolves per its action", "[fx_drag]")
         f.setSlot(-1, 0, 1, AvailableBusEffects::delay, marker * 2);
 
         f.th.sendToSerialization(cmsg::SwapPartFX({0, 0, 0, 1, 74}));
-        f.th.stepUI(20);
+        f.th.sync();
 
         REQUIRE(f.storage(-1, 0, 0).type == AvailableBusEffects::reverb1);
         REQUIRE(f.storage(-1, 0, 1).type == AvailableBusEffects::delay);
@@ -152,7 +152,7 @@ TEST_CASE("A bus fx drag resolves per its action", "[fx_drag]")
         f.setSlot(bus, -1, 1, AvailableBusEffects::flanger, marker * 2);
 
         f.th.sendToSerialization(cmsg::SwapBusFX({bus, 0, bus, 1, cmsg::fx_swap}));
-        f.th.stepUI(20);
+        f.th.sync();
 
         REQUIRE(f.storage(bus, -1, 0).type == AvailableBusEffects::flanger);
         REQUIRE(f.storage(bus, -1, 0).params[0] == marker * 2);
@@ -167,7 +167,7 @@ TEST_CASE("A bus fx drag resolves per its action", "[fx_drag]")
         f.setSlot(bus, -1, 1, AvailableBusEffects::flanger, marker * 2);
 
         f.th.sendToSerialization(cmsg::SwapBusFX({bus, 0, bus, 1, cmsg::fx_move}));
-        f.th.stepUI(20);
+        f.th.sync();
 
         REQUIRE(f.storage(bus, -1, 0).type == AvailableBusEffects::none);
         REQUIRE(f.storage(bus, -1, 0).params[0] == 0.f);
@@ -182,7 +182,7 @@ TEST_CASE("A bus fx drag resolves per its action", "[fx_drag]")
         f.setSlot(bus, -1, 1, AvailableBusEffects::flanger, marker * 2);
 
         f.th.sendToSerialization(cmsg::SwapBusFX({bus, 0, bus, 1, cmsg::fx_copy}));
-        f.th.stepUI(20);
+        f.th.sync();
 
         REQUIRE(f.storage(bus, -1, 0).type == AvailableBusEffects::phaser);
         REQUIRE(f.storage(bus, -1, 0).params[0] == marker);
@@ -198,7 +198,7 @@ TEST_CASE("A bus fx drag resolves per its action", "[fx_drag]")
         f.setSlot(other, -1, 0, AvailableBusEffects::flanger, marker * 2);
 
         f.th.sendToSerialization(cmsg::SwapBusFX({bus, 0, other, 0, cmsg::fx_move}));
-        f.th.stepUI(20);
+        f.th.sync();
 
         REQUIRE(f.storage(bus, -1, 0).type == AvailableBusEffects::none);
         REQUIRE(f.storage(other, -1, 0).type == AvailableBusEffects::phaser);

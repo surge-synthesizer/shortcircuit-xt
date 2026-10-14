@@ -233,7 +233,7 @@ std::string withStreamingVersion(const std::string &json, uint64_t version)
 
 bool warnedAboutNewerVersion(scxt::clients::console_ui::ConsoleHarness &th)
 {
-    th.stepUI(30);
+    th.sync();
     for (const auto &w : th.editor->readWarnings())
         if (std::get<1>(w) == "Saved by a newer Shortcircuit XT")
             return true;
@@ -244,7 +244,7 @@ TEST_CASE("Loading engine state from a newer version warns", "[streaming]")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     std::string state;
     {
@@ -272,7 +272,7 @@ TEST_CASE("Loading a part from a newer version warns", "[streaming]")
     th.start();
     // the part is unstreamed on this thread, so keep the audio thread out of the way
     th.audioThreadProvider.reset();
-    th.stepUI();
+    th.sync();
 
     auto &eng = *th.engine;
     auto bg = eng.getMessageController()->threadingChecker.bypassChecksInScope();

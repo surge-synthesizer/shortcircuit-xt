@@ -577,6 +577,13 @@ CREATE TABLE IF NOT EXISTS BrowserLocations (
         qCV.notify_all();
     }
 
+    // returns once every enqueued item has been handled; for tests
+    void waitUntilIdle()
+    {
+        std::unique_lock<std::mutex> lk(qLock);
+        waitingCV.wait(lk, [this]() { return waiting.load() && pathQ.empty(); });
+    }
+
     sqlite3 *getReadOnlyConn(bool notifyOnError = true)
     {
         if (!rodbh)

@@ -338,7 +338,7 @@ TEST_CASE("SCL/KBM - SetSclKbm applies through the real message pipe", "[tuning]
 
     auto scl = Tunings::evenDivisionOfSpanByM(2, 6).rawText;
     th.sendToSerialization(scxt::messaging::client::SetSclKbm({scl, ""}));
-    th.stepUI(20);
+    th.sync();
 
     REQUIRE(th.engine->dawExtraState.sclContents == scl);
     REQUIRE(th.engine->midikeyRetuner.hasSCLKBM());
@@ -347,7 +347,7 @@ TEST_CASE("SCL/KBM - SetSclKbm applies through the real message pipe", "[tuning]
 
     // A scale which does not parse leaves the live tuning exactly as it was
     th.sendToSerialization(scxt::messaging::client::SetSclKbm({"not a scale at all", ""}));
-    th.stepUI(20);
+    th.sync();
 
     REQUIRE(th.engine->dawExtraState.sclContents == scl);
     REQUIRE(th.engine->runtimeConfig.tuningMode == scxt::engine::Engine::TuningMode::SCL_KBM);
@@ -355,7 +355,7 @@ TEST_CASE("SCL/KBM - SetSclKbm applies through the real message pipe", "[tuning]
 
     // and clearing it takes the mode back to 12-TET
     th.sendToSerialization(scxt::messaging::client::SetSclKbm({"", ""}));
-    th.stepUI(20);
+    th.sync();
 
     REQUIRE(th.engine->dawExtraState.sclContents.empty());
     REQUIRE(!th.engine->midikeyRetuner.hasSCLKBM());
@@ -374,17 +374,17 @@ TEST_CASE("Tuning awareness - pitch bend and MPE glides toggle independently", "
     REQUIRE(rc.tuningAwareMPEGlides);
 
     th.sendToSerialization(scxt::messaging::client::SetPitchBendTuningAwareness(false));
-    th.stepUI(20);
+    th.sync();
     REQUIRE(!rc.tuningAwarePitchBends);
     REQUIRE(rc.tuningAwareMPEGlides);
 
     th.sendToSerialization(scxt::messaging::client::SetMpeTuningAwareness(false));
-    th.stepUI(20);
+    th.sync();
     REQUIRE(!rc.tuningAwarePitchBends);
     REQUIRE(!rc.tuningAwareMPEGlides);
 
     th.sendToSerialization(scxt::messaging::client::SetPitchBendTuningAwareness(true));
-    th.stepUI(20);
+    th.sync();
     REQUIRE(rc.tuningAwarePitchBends);
     REQUIRE(!rc.tuningAwareMPEGlides);
 }
@@ -398,7 +398,7 @@ TEST_CASE("SCL/KBM - a mapping with no scale means 12-TET, not no tuning", "[tun
 
     th.sendToSerialization(
         scxt::messaging::client::SetSclKbm({"", Tunings::tuneA69To(432.0).rawText}));
-    th.stepUI(20);
+    th.sync();
 
     REQUIRE(th.engine->dawExtraState.sclContents == scxt::tuning::twelveTETSclText());
     REQUIRE(th.engine->midikeyRetuner.hasSCLKBM());
@@ -440,12 +440,12 @@ TEST_CASE("SCL/KBM - resetting to no scale clears the mapping too", "[tuning]")
 
     th.sendToSerialization(scxt::messaging::client::SetSclKbm(
         {Tunings::evenDivisionOfSpanByM(2, 6).rawText, Tunings::tuneA69To(432.0).rawText}));
-    th.stepUI(20);
+    th.sync();
     REQUIRE(!th.engine->dawExtraState.sclContents.empty());
     REQUIRE(!th.engine->dawExtraState.kbmContents.empty());
 
     th.sendToSerialization(scxt::messaging::client::SetSclKbm({"", ""}));
-    th.stepUI(20);
+    th.sync();
 
     REQUIRE(th.engine->dawExtraState.sclContents.empty());
     REQUIRE(th.engine->dawExtraState.kbmContents.empty());

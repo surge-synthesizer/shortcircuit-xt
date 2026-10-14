@@ -68,16 +68,16 @@ struct ImporterFixture
     ImporterFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
     scxt::engine::Engine &engine() { return *th.engine; }
     scxt::engine::Part &part0() { return *th.engine->getPatch()->getPart(0); }
 
-    void loadSample(const fs::path &p, size_t drainSteps = 50)
+    void loadSample(const fs::path &p)
     {
         th.sendToSerialization(cmsg::AddSample(p.u8string()));
-        th.stepUI(drainSteps);
+        th.sync();
     }
 };
 

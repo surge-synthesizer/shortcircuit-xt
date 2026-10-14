@@ -62,23 +62,20 @@ struct UndoFixture
     UndoFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
     scxt::engine::Engine &engine() { return *th.engine; }
     scxt::undo::UndoManager &undoManager() { return th.engine->undoManager; }
 
-    template <typename T> void send(const T &msg, size_t drainSteps = 10)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drainSteps);
+        th.sync();
     }
 
-    // c2s_undo / c2s_redo. GroupChangeItem::restore hops the audio thread
-    // via stopAudioThreadThenRunOnSerial so callers of sample-load undo
-    // should pass a larger drainSteps.
-    void sendUndo(size_t drainSteps = 10) { send(cmsg::Undo(true), drainSteps); }
-    void sendRedo(size_t drainSteps = 10) { send(cmsg::Redo(true), drainSteps); }
+    void sendUndo() { send(cmsg::Undo(true)); }
+    void sendRedo() { send(cmsg::Redo(true)); }
 };
 
 } // namespace
@@ -394,7 +391,7 @@ TEST_CASE("Multi sample add coalesces to one undo", "[undo]")
     // batch so a whole multi-file drop is a single undo entry.
     f.send(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
     for (int i = 0; i < 3; ++i)
-        f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}), 30);
+        f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}));
     f.send(cmsg::EndEdit(false));
 
     REQUIRE(part->getGroups().size() == baseGroups + 1);
@@ -402,7 +399,7 @@ TEST_CASE("Multi sample add coalesces to one undo", "[undo]")
     REQUIRE(f.undoManager().undoStackSize() == baseSize + 1);
 
     // a single undo removes the whole drop, not one zone at a time
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroups().size() == baseGroups);
     REQUIRE(f.undoManager().undoStackSize() == baseSize);
 }
@@ -420,18 +417,18 @@ TEST_CASE("Redo of the first sample add re-creates its group", "[undo]")
 
     // The first drop into a blank engine implicitly creates the group, so undo
     // takes the group with it and redo has to put it back
-    f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}), 30);
+    f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}));
     REQUIRE(part->getGroups().size() == 1);
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroups().empty());
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroups().size() == 1);
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroups().empty());
 }
 
@@ -459,7 +456,7 @@ TEST_CASE("Multi compound element add coalesces to one undo", "[undo]")
 
     f.send(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::coalesce_batch, false, -1}));
     for (const auto &el : samples)
-        f.send(cmsg::AddCompoundElementWithRange({el, 60, 48, 72, 0, 127}), 30);
+        f.send(cmsg::AddCompoundElementWithRange({el, 60, 48, 72, 0, 127}));
     f.send(cmsg::EndEdit(false));
 
     REQUIRE(part->getGroups().size() == baseGroups + 1);
@@ -467,7 +464,7 @@ TEST_CASE("Multi compound element add coalesces to one undo", "[undo]")
     REQUIRE(f.undoManager().undoStackSize() == baseSize + 1);
 
     // a single undo removes the whole drop, not just the first element
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroups().size() == baseGroups);
     REQUIRE(f.undoManager().undoStackSize() == baseSize);
 }
@@ -735,7 +732,7 @@ TEST_CASE("Delete variant undo restores sample", "[undo]")
     REQUIRE(fs::exists(sampleP));
 
     UndoFixture f;
-    f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}), 30);
+    f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}));
     auto &part = f.engine().getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 1);
     auto &zone = part->getGroup(0)->getZone(0);
@@ -743,14 +740,14 @@ TEST_CASE("Delete variant undo restores sample", "[undo]")
     REQUIRE(zone->samplePointers[0]);
 
     f.send(cmsg::ApplySelectActions({{0, 0, 0, true, true, true}}));
-    f.send(cmsg::DeleteVariant(0), 30);
+    f.send(cmsg::DeleteVariant(0));
     REQUIRE(!zone->variantData.variants[0].active);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(zone->variantData.variants[0].active);
     REQUIRE(zone->samplePointers[0]);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(!zone->variantData.variants[0].active);
 }
 
@@ -882,10 +879,10 @@ TEST_CASE("Add blank zone undo deletes zone", "[undo]")
     f.send(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
     REQUIRE(part->getGroup(0)->getZone(1)->mapping.keyboardRange.keyStart == 61);
 }
@@ -898,15 +895,15 @@ TEST_CASE("Delete zone undo resurrects", "[undo]")
     REQUIRE(fs::exists(sampleP));
 
     UndoFixture f;
-    f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}), 30);
+    f.send(cmsg::AddSampleWithRange({sampleP.u8string(), 60, 48, 72, 0, 127}));
     auto &part = f.engine().getPatch()->getPart(0);
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
     auto zoneName = part->getGroup(0)->getZone(0)->getName();
 
-    f.send(cmsg::DeleteZone(ZoneAddress{0, 0, 0}), 30);
+    f.send(cmsg::DeleteZone(ZoneAddress{0, 0, 0}));
     REQUIRE(part->getGroup(0)->getZones().size() == 0);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
     auto &rz = part->getGroup(0)->getZone(0);
     REQUIRE(rz->getName() == zoneName);
@@ -918,7 +915,7 @@ TEST_CASE("Delete zone undo resurrects", "[undo]")
     REQUIRE(lz.has_value());
     REQUIRE(lz->zone == 0);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->getZones().size() == 0);
 }
 
@@ -934,16 +931,16 @@ TEST_CASE("Delete selected zones undo resurrects all", "[undo]")
     f.send(cmsg::ApplySelectActions({{0, 0, 0, true, true, true},
                                      {0, 0, 1, true, false, false},
                                      {0, 0, 2, true, false, false}}));
-    f.send(cmsg::DeleteAllSelectedZones(true), 30);
+    f.send(cmsg::DeleteAllSelectedZones(true));
     REQUIRE(part->getGroup(0)->getZones().size() == 0);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->getZones().size() == 3);
     REQUIRE(part->getGroup(0)->getZone(0)->mapping.keyboardRange.keyStart == 10);
     REQUIRE(part->getGroup(0)->getZone(1)->mapping.keyboardRange.keyStart == 21);
     REQUIRE(part->getGroup(0)->getZone(2)->mapping.keyboardRange.keyStart == 31);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->getZones().size() == 0);
 }
 
@@ -953,13 +950,13 @@ TEST_CASE("Duplicate zone undo removes copy", "[undo]")
     f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     auto &part = f.engine().getPatch()->getPart(0);
 
-    f.send(cmsg::DuplicateZone(ZoneAddress{0, 0, 0}), 30);
+    f.send(cmsg::DuplicateZone(ZoneAddress{0, 0, 0}));
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 }
 
@@ -970,13 +967,13 @@ TEST_CASE("Paste zone undo removes pasted", "[undo]")
     auto &part = f.engine().getPatch()->getPart(0);
 
     f.send(cmsg::CopyZone(ZoneAddress{0, 0, 0}));
-    f.send(cmsg::PasteZone(ZoneAddress{0, 0, 0}), 30);
+    f.send(cmsg::PasteZone(ZoneAddress{0, 0, 0}));
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 }
 
@@ -984,20 +981,20 @@ TEST_CASE("Move zone undo returns to source group", "[undo]")
 {
     UndoFixture f;
     f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
-    f.send(cmsg::CreateGroup(0), 20);
+    f.send(cmsg::CreateGroup(0));
     auto &part = f.engine().getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 2);
 
     f.send(cmsg::ApplySelectActions({{0, 0, 0, true, true, true}}));
-    f.send(cmsg::MoveZonesFromTo({{ZoneAddress{0, 0, 0}}, ZoneAddress{0, 1, -1}}), 30);
+    f.send(cmsg::MoveZonesFromTo({{ZoneAddress{0, 0, 0}}, ZoneAddress{0, 1, -1}}));
     REQUIRE(part->getGroup(0)->getZones().size() == 0);
     REQUIRE(part->getGroup(1)->getZones().size() == 1);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
     REQUIRE(part->getGroup(1)->getZones().size() == 0);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->getZones().size() == 0);
     REQUIRE(part->getGroup(1)->getZones().size() == 1);
 }
@@ -1009,13 +1006,13 @@ TEST_CASE("Create group undo deletes group", "[undo]")
     f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     REQUIRE(part->getGroups().size() == 1);
 
-    f.send(cmsg::CreateGroup(0), 20);
+    f.send(cmsg::CreateGroup(0));
     REQUIRE(part->getGroups().size() == 2);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroups().size() == 1);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroups().size() == 2);
 }
 
@@ -1028,15 +1025,15 @@ TEST_CASE("Delete group undo resurrects with zones", "[undo]")
     f.send(cmsg::RenameGroup({ZoneAddress{0, 0, -1}, std::string{"Keepers"}}));
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.send(cmsg::DeleteGroup(ZoneAddress{0, 0, -1}), 30);
+    f.send(cmsg::DeleteGroup(ZoneAddress{0, 0, -1}));
     REQUIRE(part->getGroups().size() == 0);
 
-    f.sendUndo(40);
+    f.sendUndo();
     REQUIRE(part->getGroups().size() == 1);
     REQUIRE(part->getGroup(0)->name == "Keepers");
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.sendRedo(40);
+    f.sendRedo();
     REQUIRE(part->getGroups().size() == 0);
 }
 
@@ -1045,19 +1042,19 @@ TEST_CASE("Clear part undo restores groups", "[undo]")
     UndoFixture f;
     auto &part = f.engine().getPatch()->getPart(0);
     f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
-    f.send(cmsg::CreateGroup(0), 20);
+    f.send(cmsg::CreateGroup(0));
     f.send(cmsg::AddBlankZone({0, 1, 61, 72, 0, 127}));
     REQUIRE(part->getGroups().size() == 2);
 
-    f.send(cmsg::ClearPart(0), 30);
+    f.send(cmsg::ClearPart(0));
     REQUIRE(part->getGroups().size() == 0);
 
-    f.sendUndo(40);
+    f.sendUndo();
     REQUIRE(part->getGroups().size() == 2);
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
     REQUIRE(part->getGroup(1)->getZones().size() == 1);
 
-    f.sendRedo(40);
+    f.sendRedo();
     REQUIRE(part->getGroups().size() == 0);
 }
 
@@ -1066,20 +1063,20 @@ TEST_CASE("Move group undo returns to source position", "[undo]")
     UndoFixture f;
     auto &part = f.engine().getPatch()->getPart(0);
     f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
-    f.send(cmsg::CreateGroup(0), 20);
+    f.send(cmsg::CreateGroup(0));
     f.send(cmsg::RenameGroup({ZoneAddress{0, 0, -1}, std::string{"GroupA"}}));
     f.send(cmsg::RenameGroup({ZoneAddress{0, 1, -1}, std::string{"GroupB"}}));
 
     // swap form (second address zone < 0)
-    f.send(cmsg::MoveGroupTo({ZoneAddress{0, 0, -1}, ZoneAddress{0, 1, -1}}), 30);
+    f.send(cmsg::MoveGroupTo({ZoneAddress{0, 0, -1}, ZoneAddress{0, 1, -1}}));
     REQUIRE(part->getGroup(0)->name == "GroupB");
     REQUIRE(part->getGroup(1)->name == "GroupA");
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->name == "GroupA");
     REQUIRE(part->getGroup(1)->name == "GroupB");
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->name == "GroupB");
     REQUIRE(part->getGroup(1)->name == "GroupA");
 }
@@ -1090,14 +1087,14 @@ TEST_CASE("Duplicate group undo removes copy", "[undo]")
     auto &part = f.engine().getPatch()->getPart(0);
     f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
 
-    f.send(cmsg::DuplicateGroup(ZoneAddress{0, 0, -1}), 30);
+    f.send(cmsg::DuplicateGroup(ZoneAddress{0, 0, -1}));
     REQUIRE(part->getGroups().size() == 2);
     REQUIRE(part->getGroup(1)->getZones().size() == 1);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroups().size() == 1);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroups().size() == 2);
 }
 
@@ -1109,19 +1106,19 @@ TEST_CASE("Activate and deactivate part undo/redo", "[undo]")
     REQUIRE(patch->getPart(0)->configuration.active);
     REQUIRE(!patch->getPart(1)->configuration.active);
 
-    f.send(cmsg::ActivateNextPart(true), 30);
+    f.send(cmsg::ActivateNextPart(true));
     REQUIRE(patch->getPart(1)->configuration.active);
 
-    f.sendUndo(40);
+    f.sendUndo();
     REQUIRE(!patch->getPart(1)->configuration.active);
 
-    f.sendRedo(40);
+    f.sendRedo();
     REQUIRE(patch->getPart(1)->configuration.active);
 
-    f.send(cmsg::DeactivatePart(1), 30);
+    f.send(cmsg::DeactivatePart(1));
     REQUIRE(!patch->getPart(1)->configuration.active);
 
-    f.sendUndo(40);
+    f.sendUndo();
     REQUIRE(patch->getPart(1)->configuration.active);
 }
 
@@ -1133,14 +1130,13 @@ TEST_CASE("Mixer bus effect undo/redo", "[undo]")
 
     // bus AUX_0, no part, slot 0 → reverb1
     f.send(cmsg::SetBusEffectToType({(int)scxt::engine::BusAddress::AUX_0, -1, 0,
-                                     (int)scxt::engine::AvailableBusEffects::reverb1}),
-           30);
+                                     (int)scxt::engine::AvailableBusEffects::reverb1}));
     REQUIRE(bus.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::reverb1);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(bus.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::none);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(bus.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::reverb1);
 }
 
@@ -1152,13 +1148,13 @@ TEST_CASE("Mixer bus send undo/redo", "[undo]")
 
     auto next = orig;
     next.sendLevels[0] = 0.8f;
-    f.send(cmsg::SetBusSendStorage({(int)scxt::engine::BusAddress::PART_0, next}), 20);
+    f.send(cmsg::SetBusSendStorage({(int)scxt::engine::BusAddress::PART_0, next}));
     REQUIRE(bus.busSendStorage.sendLevels[0] == Approx(0.8f));
 
-    f.sendUndo(20);
+    f.sendUndo();
     REQUIRE(bus.busSendStorage.sendLevels[0] == Approx(orig.sendLevels[0]));
 
-    f.sendRedo(20);
+    f.sendRedo();
     REQUIRE(bus.busSendStorage.sendLevels[0] == Approx(0.8f));
 }
 
@@ -1168,9 +1164,8 @@ TEST_CASE("Mixer bus effect gesture coalesces to one undo", "[undo]")
     auto busAddr = (int)scxt::engine::BusAddress::AUX_0;
     auto &bus = f.engine().getPatch()->busses.busByAddress(scxt::engine::BusAddress::AUX_0);
 
-    f.send(
-        cmsg::SetBusEffectToType({busAddr, -1, 0, (int)scxt::engine::AvailableBusEffects::reverb1}),
-        30);
+    f.send(cmsg::SetBusEffectToType(
+        {busAddr, -1, 0, (int)scxt::engine::AvailableBusEffects::reverb1}));
     auto origP0 = bus.busEffectStorage[0].params[0];
     auto baseSize = f.undoManager().undoStackSize();
 
@@ -1189,10 +1184,10 @@ TEST_CASE("Mixer bus effect gesture coalesces to one undo", "[undo]")
 
     f.send(cmsg::EndEdit(true));
 
-    f.sendUndo(20);
+    f.sendUndo();
     REQUIRE(bus.busEffectStorage[0].params[0] == Approx(origP0));
 
-    f.sendRedo(20);
+    f.sendRedo();
     REQUIRE(bus.busEffectStorage[0].params[0] == Approx(0.21f));
 }
 
@@ -1219,10 +1214,10 @@ TEST_CASE("Mixer bus send gesture coalesces to one undo", "[undo]")
 
     f.send(cmsg::EndEdit(true));
 
-    f.sendUndo(20);
+    f.sendUndo();
     REQUIRE(bus.busSendStorage.sendLevels[0] == Approx(orig.sendLevels[0]));
 
-    f.sendRedo(20);
+    f.sendRedo();
     REQUIRE(bus.busSendStorage.sendLevels[0] == Approx(0.31f));
 }
 
@@ -1234,13 +1229,13 @@ TEST_CASE("Part config undo/redo", "[undo]")
 
     auto next = orig;
     next.channel = 5;
-    f.send(cmsg::UpdatePartFullConfig({(int16_t)0, next}), 20);
+    f.send(cmsg::UpdatePartFullConfig({(int16_t)0, next}));
     REQUIRE(part->configuration.channel == 5);
 
-    f.sendUndo(20);
+    f.sendUndo();
     REQUIRE(part->configuration.channel == orig.channel);
 
-    f.sendRedo(20);
+    f.sendRedo();
     REQUIRE(part->configuration.channel == 5);
 }
 
@@ -1252,13 +1247,13 @@ TEST_CASE("Part name undo/redo", "[undo]")
 
     auto next = part->names;
     snprintf(next.name, sizeof(next.name), "%s", "Cello Sustain");
-    f.send(cmsg::UpdatePartNames({(int16_t)0, next}), 20);
+    f.send(cmsg::UpdatePartNames({(int16_t)0, next}));
     REQUIRE(std::string(part->names.name) == "Cello Sustain");
 
-    f.sendUndo(20);
+    f.sendUndo();
     REQUIRE(std::string(part->names.name) == orig);
 
-    f.sendRedo(20);
+    f.sendRedo();
     REQUIRE(std::string(part->names.name) == "Cello Sustain");
 }
 
@@ -1270,20 +1265,19 @@ TEST_CASE("Swap bus fx undo/redo", "[undo]")
     auto &b2 = f.engine().getPatch()->busses.busByAddress(aux1);
 
     f.send(cmsg::SetBusEffectToType({(int)scxt::engine::BusAddress::AUX_0, -1, 0,
-                                     (int)scxt::engine::AvailableBusEffects::reverb1}),
-           30);
+                                     (int)scxt::engine::AvailableBusEffects::reverb1}));
     REQUIRE(b1.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::reverb1);
     REQUIRE(b2.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::none);
 
-    f.send(cmsg::SwapBusFX({(int16_t)scxt::engine::BusAddress::AUX_0, 0, (int16_t)aux1, 0, 0}), 30);
+    f.send(cmsg::SwapBusFX({(int16_t)scxt::engine::BusAddress::AUX_0, 0, (int16_t)aux1, 0, 0}));
     REQUIRE(b1.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::none);
     REQUIRE(b2.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::reverb1);
 
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(b1.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::reverb1);
     REQUIRE(b2.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::none);
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(b1.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::none);
     REQUIRE(b2.busEffectStorage[0].type == scxt::engine::AvailableBusEffects::reverb1);
 }
@@ -1297,9 +1291,9 @@ TEST_CASE("Macro edits still raise wrapper param events", "[undo]")
     mc.passWrapperEventsToWrapperQueue = true;
 
     auto baseSize = f.undoManager().undoStackSize();
-    f.send(cmsg::MacroBeginEndEdit({true, (int16_t)0, (int16_t)0}), 20);
-    f.send(cmsg::SetMacroValue({(int16_t)0, (int16_t)0, 0.73f}), 20);
-    f.send(cmsg::MacroBeginEndEdit({false, (int16_t)0, (int16_t)0}), 20);
+    f.send(cmsg::MacroBeginEndEdit({true, (int16_t)0, (int16_t)0}));
+    f.send(cmsg::SetMacroValue({(int16_t)0, (int16_t)0, 0.73f}));
+    f.send(cmsg::MacroBeginEndEdit({false, (int16_t)0, (int16_t)0}));
 
     // the drag coalesced to one undo entry
     REQUIRE(f.undoManager().undoStackSize() == baseSize + 1);
@@ -1351,15 +1345,12 @@ TEST_CASE("Stack clearing messages clear undo and redo", "[undo]")
     REQUIRE(f.undoManager().hasUndoSteps());
     REQUIRE(f.undoManager().hasRedoSteps());
 
-    SECTION("reset engine clears")
-    {
-        f.send(cmsg::ResetEngine(std::string{"InitSampler.dat"}), 30);
-    }
+    SECTION("reset engine clears") { f.send(cmsg::ResetEngine(std::string{"InitSampler.dat"})); }
 
     SECTION("unstream engine state clears")
     {
         auto state = scxt::json::streamEngineState(f.engine());
-        f.send(cmsg::UnstreamEngineState(state), 30);
+        f.send(cmsg::UnstreamEngineState(state));
     }
 
     REQUIRE(!f.undoManager().hasUndoSteps());
@@ -1384,8 +1375,8 @@ TEST_CASE("Replace part with instrument is one undo entry", "[undo]")
 
     // the message sequence the mapping pane sends for drop-to-replace
     f.send(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::part_stream, false, 0}));
-    f.send(cmsg::ClearPart(0), 30);
-    f.send(cmsg::AddSample(sf2P.u8string()), 60);
+    f.send(cmsg::ClearPart(0));
+    f.send(cmsg::AddSample(sf2P.u8string()));
 
     bool importChangedPart =
         part->getGroups().size() != 1 || part->getGroup(0)->name != "ComplexPatch";
@@ -1393,12 +1384,12 @@ TEST_CASE("Replace part with instrument is one undo entry", "[undo]")
     REQUIRE(f.undoManager().undoStackSize() == baseSize + 1);
 
     // one undo restores the prior patch, not the cleared blank state
-    f.sendUndo(60);
+    f.sendUndo();
     REQUIRE(part->getGroups().size() == 1);
     REQUIRE(part->getGroup(0)->name == "ComplexPatch");
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.sendRedo(60);
+    f.sendRedo();
     bool redoChangedPart =
         part->getGroups().size() != 1 || part->getGroup(0)->name != "ComplexPatch";
     REQUIRE(redoChangedPart);
@@ -1416,22 +1407,22 @@ TEST_CASE("Load part into undo restores prior part", "[undo]")
 
     f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     f.send(cmsg::RenameGroup({ZoneAddress{0, 0, -1}, std::string{"SavedName"}}));
-    f.send(cmsg::SavePart({pp.u8string(), 0, (int)scxt::patch_io::SaveStyles::NO_SAMPLES}), 30);
+    f.send(cmsg::SavePart({pp.u8string(), 0, (int)scxt::patch_io::SaveStyles::NO_SAMPLES}));
     REQUIRE(fs::exists(pp));
 
     f.send(cmsg::RenameGroup({ZoneAddress{0, 0, -1}, std::string{"PreLoadName"}}));
     f.send(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.send(cmsg::LoadPartInto({pp.u8string(), (int16_t)0}), 40);
+    f.send(cmsg::LoadPartInto({pp.u8string(), (int16_t)0}));
     REQUIRE(part->getGroup(0)->name == "SavedName");
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
-    f.sendUndo(40);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->name == "PreLoadName");
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.sendRedo(40);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->name == "SavedName");
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
@@ -1450,22 +1441,22 @@ TEST_CASE("Load multi undo restores prior engine", "[undo]")
 
     f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     f.send(cmsg::RenameGroup({ZoneAddress{0, 0, -1}, std::string{"SavedName"}}));
-    f.send(cmsg::SaveMulti({mp.u8string(), (int)scxt::patch_io::SaveStyles::NO_SAMPLES}), 30);
+    f.send(cmsg::SaveMulti({mp.u8string(), (int)scxt::patch_io::SaveStyles::NO_SAMPLES}));
     REQUIRE(fs::exists(mp));
 
     f.send(cmsg::RenameGroup({ZoneAddress{0, 0, -1}, std::string{"PreLoadName"}}));
     f.send(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.send(cmsg::LoadMulti(mp.u8string()), 40);
+    f.send(cmsg::LoadMulti(mp.u8string()));
     REQUIRE(part->getGroup(0)->name == "SavedName");
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
-    f.sendUndo(40);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->name == "PreLoadName");
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 
-    f.sendRedo(40);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->name == "SavedName");
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
 
@@ -1485,12 +1476,12 @@ TEST_CASE("SF2 import undo restores prior part", "[undo]")
     f.send(cmsg::RenameGroup({ZoneAddress{0, 0, -1}, std::string{"BeforeImport"}}));
     REQUIRE(part->getGroups().size() == 1);
 
-    f.send(cmsg::AddSample(sf2P.u8string()), 60);
+    f.send(cmsg::AddSample(sf2P.u8string()));
     bool importChangedPart =
         part->getGroups().size() != 1 || part->getGroup(0)->name != "BeforeImport";
     REQUIRE(importChangedPart);
 
-    f.sendUndo(60);
+    f.sendUndo();
     REQUIRE(part->getGroups().size() == 1);
     REQUIRE(part->getGroup(0)->name == "BeforeImport");
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
@@ -1512,16 +1503,14 @@ TEST_CASE("Load sample into group undo/redo", "[undo]")
 
     // AddSampleToGroup → engine::loadSampleIntoGroup (engine.cpp:938-940).
     // Pushes GroupChangeItem before scheduling the audio-thread add.
-    f.send(cmsg::AddSampleToGroup({sampleP.string(), 0, 0}), 30);
+    f.send(cmsg::AddSampleToGroup({sampleP.string(), 0, 0}));
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
     REQUIRE(f.undoManager().hasUndoSteps());
 
-    // GroupChangeItem::restore uses stopAudioThreadThenRunOnSerial —
-    // drain longer so the audio-thread pause completes.
-    f.sendUndo(30);
+    f.sendUndo();
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
     REQUIRE(f.undoManager().hasRedoSteps());
 
-    f.sendRedo(30);
+    f.sendRedo();
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
 }

@@ -157,7 +157,7 @@ struct Fixture
     Fixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
     scxt::engine::Part &part0() { return *th.engine->getPatch()->getPart(0); }
@@ -165,7 +165,7 @@ struct Fixture
     void load(const fs::path &p)
     {
         th.sendToSerialization(scxt::messaging::client::AddSample(p.u8string()));
-        th.stepUI(50);
+        th.sync();
     }
 
     scxt::engine::Zone &onlyZone()

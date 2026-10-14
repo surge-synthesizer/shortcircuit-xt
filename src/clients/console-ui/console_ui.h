@@ -203,6 +203,8 @@ struct ConsoleUI
     void onPartKeySwitchDisplay(const scxt::messaging::client::partKeySwitchPayload_t &) ON_STUB;
     int lastLearnedNote{-1};
     void onLearnedNote(int16_t k) { lastLearnedNote = k; }
+    int64_t lastHarnessSync{0};
+    void onHarnessSync(int64_t s) { lastHarnessSync = s; }
 
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &) ON_STUB;

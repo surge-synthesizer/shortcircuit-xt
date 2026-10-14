@@ -46,13 +46,13 @@ struct Fixture
     Fixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
-    template <typename T> void send(const T &msg, size_t drain = 20)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drain);
+        th.sync();
     }
 
     auto &part() { return th.engine->getPatch()->getPart(0); }
@@ -104,7 +104,7 @@ struct Fixture
         return part()->getGroup(a.group)->getZone(a.zone)->mapping.keyboardRange.keyStart;
     }
 
-    void undo() { send(cmsg::Undo(true), 40); }
+    void undo() { send(cmsg::Undo(true)); }
 };
 } // namespace
 
@@ -427,7 +427,7 @@ TEST_CASE("Initialize and duplicate a part", "[sidebar]")
 
     SECTION("duplicate goes to the first free slot")
     {
-        f.send(cmsg::DuplicatePart(0), 60);
+        f.send(cmsg::DuplicatePart(0));
         auto &p1 = f.th.engine->getPatch()->getPart(1);
         REQUIRE(p1->configuration.active);
         REQUIRE(p1->getGroups().size() == 1);
@@ -438,7 +438,7 @@ TEST_CASE("Initialize and duplicate a part", "[sidebar]")
     SECTION("initialize clears the slot but keeps it on")
     {
         auto ch = f.part()->configuration.channel;
-        f.send(cmsg::InitializePart(0), 60);
+        f.send(cmsg::InitializePart(0));
         REQUIRE(f.part()->getGroups().empty());
         REQUIRE(f.part()->macros[0].name != "Changed");
         REQUIRE(f.part()->configuration.active);

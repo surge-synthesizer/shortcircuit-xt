@@ -226,6 +226,9 @@ struct MessageController : MoveableOnly<MessageController>
      */
     void sendRawFromClient(const clientToSerializationMessage_t &s);
 
+    // the serialization thread only polls audio messages every 50ms when idle
+    void wakeSerialization() { clientToSerializationConditionVar.notify_one(); }
+
     typedef audio::SerializationToAudio serializationToAudioMessage_t;
     typedef audio::AudioToSerialization audioToSerializationMessage_t;
 

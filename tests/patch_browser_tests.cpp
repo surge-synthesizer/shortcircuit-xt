@@ -58,13 +58,13 @@ struct Harness
     Harness()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
-    template <typename T> void send(const T &msg, size_t drainSteps = 30)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drainSteps);
+        th.sync();
     }
 
     scxt::engine::Part &part(int16_t p) { return *th.engine->getPatch()->getPart(p); }
@@ -259,7 +259,7 @@ TEST_CASE("A part dropped on a card loads there and undoes", "[patchbrowser]")
     REQUIRE(std::string(h.part(6).names.name) == "Lead");
     REQUIRE(h.firstSampleOf(6)->type == scxt::sample::Sample::SCXT_FILE);
 
-    h.send(cmsg::Undo(true), 60);
+    h.send(cmsg::Undo(true));
     REQUIRE(h.part(6).getGroups().empty());
 }
 
@@ -271,7 +271,7 @@ TEST_CASE("The whole of a patch file loads from its entry", "[patchbrowser]")
     SECTION("Full Multi replaces the multi")
     {
         auto full = Files::find(scxt::patch_io::getSCXTCompoundList(files.mono), "Full Multi");
-        h.send(cmsg::AddCompoundElementWithRange({full, 60, 48, 72, 0, 127}), 50);
+        h.send(cmsg::AddCompoundElementWithRange({full, 60, 48, 72, 0, 127}));
 
         REQUIRE(h.th.engine->getSelectionManager()->getPatchFiles().multi.path == files.mono);
         REQUIRE(std::string(h.part(1).names.name) == "Drums");

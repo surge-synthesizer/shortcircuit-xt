@@ -37,12 +37,12 @@ TEST_CASE("Duplicate Group")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     // Add two zones to the initial group (group 0, part 0)
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 1);
@@ -51,7 +51,7 @@ TEST_CASE("Duplicate Group")
 
     // Duplicate group 0
     th.sendToSerialization(cmsg::DuplicateGroup(ZoneAddress{0, 0, -1}));
-    th.stepUI();
+    th.sync();
 
     // Should now have two groups
     REQUIRE(part->getGroups().size() == 2);
@@ -67,13 +67,13 @@ TEST_CASE("Copy and Paste Group")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     // Add zones to the initial group
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 73, 84, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 1);
@@ -85,14 +85,14 @@ TEST_CASE("Copy and Paste Group")
 
     // Copy the group
     th.sendToSerialization(cmsg::CopyGroup(ZoneAddress{0, 0, -1}));
-    th.stepUI();
+    th.sync();
 
     // Clipboard should now hold a group
     REQUIRE(th.engine->clipboard.getClipboardType() == scxt::engine::Clipboard::ContentType::GROUP);
 
     // Paste into part 0 (group address is where it will be added after)
     th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
-    th.stepUI();
+    th.sync();
 
     // Should now have two groups
     REQUIRE(part->getGroups().size() == 2);
@@ -105,7 +105,7 @@ TEST_CASE("Copy and Paste Group")
 
     // Paste again - should get a distinct name, and land straight after group 0
     th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(part->getGroups().size() == 3);
     REQUIRE(part->getGroup(1)->name == originalName + " (copy 2)");
@@ -116,19 +116,19 @@ TEST_CASE("Delete Group")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     // Add a zone to the initial group and create a second group
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 2);
 
     // Delete group 0
     th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, 0, -1}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(part->getGroups().size() == 1);
 }
@@ -137,14 +137,14 @@ TEST_CASE("Delete Empty Groups")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     // Add a zone to the initial group so it is non-empty
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     // Create two additional empty groups
     th.sendToSerialization(cmsg::CreateGroup(0));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 3);
@@ -154,7 +154,7 @@ TEST_CASE("Delete Empty Groups")
 
     // Delete all empty groups for part 0
     th.sendToSerialization(cmsg::DeleteEmptyGroups(0));
-    th.stepUI();
+    th.sync();
 
     // Only the non-empty group should remain
     REQUIRE(part->getGroups().size() == 1);
@@ -165,23 +165,23 @@ TEST_CASE("Paste Group Does Nothing When Clipboard Holds Zone")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 1);
 
     // Copy a zone (not a group) so clipboard holds ZONE type
     th.sendToSerialization(cmsg::CopyZone(ZoneAddress{0, 0, 0}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(th.engine->clipboard.getClipboardType() == scxt::engine::Clipboard::ContentType::ZONE);
 
     // PasteGroup should be a no-op since clipboard holds a zone
     th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
-    th.stepUI();
+    th.sync();
 
     // Still one group
     REQUIRE(part->getGroups().size() == 1);
@@ -191,14 +191,14 @@ TEST_CASE("Create Group In An Out Of Range Part Falls Back To Part 0")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     auto n = part->getGroups().size();
 
     // numParts is one past the last valid part index
     th.sendToSerialization(cmsg::CreateGroup((int)scxt::numParts));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(part->getGroups().size() == n + 1);
 }
@@ -207,30 +207,30 @@ TEST_CASE("Delete Group With An Out Of Range Index Is A No-op")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 1);
 
     // group == size() is one past the end
     th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, 1, -1}));
-    th.stepUI();
+    th.sync();
     REQUIRE(part->getGroups().size() == 1);
 
     th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, 74, -1}));
-    th.stepUI();
+    th.sync();
     REQUIRE(part->getGroups().size() == 1);
 
     th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, -1, -1}));
-    th.stepUI();
+    th.sync();
     REQUIRE(part->getGroups().size() == 1);
 
     // and the in-range one still works
     th.sendToSerialization(cmsg::DeleteGroup(ZoneAddress{0, 0, -1}));
-    th.stepUI();
+    th.sync();
     REQUIRE(part->getGroups().empty());
 }
 
@@ -238,14 +238,14 @@ TEST_CASE("Moving Zones To Another Group Keeps Them Selected")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     // three zones in group 0, an empty group 1 to move into
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 73, 84, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI(20);
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(part->getGroups().size() == 2);
@@ -254,7 +254,7 @@ TEST_CASE("Moving Zones To Another Group Keeps Them Selected")
     // move the first two into group 1; -1 means append
     th.sendToSerialization(cmsg::MoveZonesFromTo(
         {{ZoneAddress{0, 0, 0}, ZoneAddress{0, 0, 1}}, ZoneAddress{0, 1, -1}}));
-    th.stepUI(30);
+    th.sync();
 
     REQUIRE(part->getGroup(0)->getZones().size() == 1);
     REQUIRE(part->getGroup(1)->getZones().size() == 2);
@@ -275,14 +275,14 @@ TEST_CASE("Moving Zones Into A Group Which Already Has Zones Keeps Them Selected
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI(20);
+    th.sync();
     th.sendToSerialization(cmsg::AddBlankZone({0, 1, 24, 36, 0, 127}));
-    th.stepUI(20);
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(part->getGroup(0)->getZones().size() == 2);
@@ -290,7 +290,7 @@ TEST_CASE("Moving Zones Into A Group Which Already Has Zones Keeps Them Selected
 
     th.sendToSerialization(cmsg::MoveZonesFromTo(
         {{ZoneAddress{0, 0, 0}, ZoneAddress{0, 0, 1}}, ZoneAddress{0, 1, -1}}));
-    th.stepUI(30);
+    th.sync();
 
     REQUIRE(part->getGroup(0)->getZones().empty());
     REQUIRE(part->getGroup(1)->getZones().size() == 3);
@@ -304,15 +304,9 @@ TEST_CASE("Moving Zones Into A Group Which Already Has Zones Keeps Them Selected
 
 namespace multi_structure_test
 {
-// drain until the audio thread has applied the structure change
 template <typename F> bool stepUntil(scxt::clients::console_ui::ConsoleHarness &th, F done)
 {
-    for (int i = 0; i < 300; ++i)
-    {
-        if (done())
-            return true;
-        th.stepUI(1);
-    }
+    th.sync();
     return done();
 }
 } // namespace multi_structure_test
@@ -322,7 +316,7 @@ TEST_CASE("Copy And Paste Several Zones At Once")
     namespace mst = multi_structure_test;
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     // sample zones are never given a name; they show their sample's
     th.sendToSerialization(
@@ -344,7 +338,7 @@ TEST_CASE("Copy And Paste Several Zones At Once")
     REQUIRE(name0 != name1);
 
     th.sendToSerialization(cmsg::CopyZones({ZoneAddress{0, 0, 1}, ZoneAddress{0, 0, 0}}));
-    th.stepUI();
+    th.sync();
     REQUIRE(th.engine->clipboard.getClipboardType() == scxt::engine::Clipboard::ContentType::ZONE);
     REQUIRE(th.engine->clipboard.getClipboardItemCount() == 2);
 
@@ -385,13 +379,13 @@ TEST_CASE("Duplicate Several Zones Across Groups At Once")
     namespace mst = multi_structure_test;
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
     th.sendToSerialization(cmsg::AddBlankZone({0, 1, 24, 36, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(mst::stepUntil(th, [&part]() {
@@ -420,13 +414,13 @@ TEST_CASE("Copy, Paste, Duplicate And Delete Several Groups At Once")
     namespace mst = multi_structure_test;
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
     th.sendToSerialization(cmsg::AddBlankZone({0, 1, 61, 72, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 3; }));
@@ -434,7 +428,7 @@ TEST_CASE("Copy, Paste, Duplicate And Delete Several Groups At Once")
     auto name1 = part->getGroup(1)->name;
 
     th.sendToSerialization(cmsg::CopyGroups({ZoneAddress{0, 1, -1}, ZoneAddress{0, 0, -1}}));
-    th.stepUI();
+    th.sync();
     REQUIRE(th.engine->clipboard.getClipboardItemCount() == 2);
 
     // no group named puts them at the end
@@ -461,7 +455,7 @@ TEST_CASE("Copy, Paste, Duplicate And Delete Several Groups At Once")
     };
     selectGroup(3, true);
     selectGroup(4, false);
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(cmsg::DeleteAllSelectedGroups(true));
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 3; }));
     REQUIRE(part->getGroup(0)->name == name0);
@@ -478,11 +472,11 @@ TEST_CASE("Selecting A Group That No Longer Exists Is Ignored")
     namespace mst = multi_structure_test;
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 2; }));
@@ -493,7 +487,7 @@ TEST_CASE("Selecting A Group That No Longer Exists Is Ignored")
         auto sa = scxt::selection::SelectionManager::SelectActionContents(ZoneAddress{0, 5, -1});
         sa.forZone = forZone;
         th.sendToSerialization(cmsg::ApplySelectActions({sa}));
-        th.stepUI();
+        th.sync();
     }
 
     th.sendToSerialization(cmsg::CreateGroup(0));
@@ -509,7 +503,7 @@ TEST_CASE("Pasting Zones With No Group Named Lands Them Somewhere Sensible")
     namespace mst = multi_structure_test;
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     auto &part = th.engine->getPatch()->getPart(0);
@@ -518,7 +512,7 @@ TEST_CASE("Pasting Zones With No Group Named Lands Them Somewhere Sensible")
     }));
 
     th.sendToSerialization(cmsg::CopyZones({ZoneAddress{0, 0, 0}}));
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::PasteZone(ZoneAddress{0, -1, -1}));
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroup(0)->getZones().size() == 2; }));
@@ -536,7 +530,7 @@ TEST_CASE("Pasting Zones After A Zone Lands Them Next To It")
     namespace mst = multi_structure_test;
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 10, 20, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 21, 30, 0, 127}));
@@ -547,7 +541,7 @@ TEST_CASE("Pasting Zones After A Zone Lands Them Next To It")
     }));
 
     th.sendToSerialization(cmsg::CopyZones({ZoneAddress{0, 0, 2}}));
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::PasteZone(ZoneAddress{0, 0, 0}));
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroup(0)->getZones().size() == 4; }));
@@ -556,7 +550,7 @@ TEST_CASE("Pasting Zones After A Zone Lands Them Next To It")
     REQUIRE(g->getZone(1)->mapping.keyboardRange.keyStart == 31);
     REQUIRE(g->getZone(2)->mapping.keyboardRange.keyStart == 21);
     REQUIRE(g->getZone(3)->mapping.keyboardRange.keyStart == 31);
-    th.stepUI();
+    th.sync();
     auto lead = th.engine->getSelectionManager()->currentLeadZone(*th.engine);
     REQUIRE(lead.has_value());
     REQUIRE(*lead == ZoneAddress{0, 0, 1});
@@ -575,7 +569,7 @@ TEST_CASE("Pasting Groups After A Group Keeps Folds On Their Groups")
     namespace mst = multi_structure_test;
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 10, 20, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
@@ -594,26 +588,26 @@ TEST_CASE("Pasting Groups After A Group Keeps Folds On Their Groups")
     REQUIRE(mst::stepUntil(th, [sm]() { return sm->isGroupCollapsed(0, 2); }));
 
     th.sendToSerialization(cmsg::CopyGroups({ZoneAddress{0, 0, -1}, ZoneAddress{0, 1, -1}}));
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::PasteGroup(ZoneAddress{0, 0, -1}));
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 5; }));
     REQUIRE(part->getGroup(0)->name == name0);
     REQUIRE(part->getGroup(1)->name == name0 + " (copy)");
     REQUIRE(part->getGroup(4)->name == name2);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->isGroupCollapsed(0, 4));
     REQUIRE(!sm->isGroupCollapsed(0, 2));
 
     th.sendToSerialization(cmsg::Undo(true));
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 3; }));
-    th.stepUI();
+    th.sync();
     REQUIRE(part->getGroup(2)->name == name2);
     REQUIRE(sm->isGroupCollapsed(0, 2));
 
     th.sendToSerialization(cmsg::Redo(true));
     REQUIRE(mst::stepUntil(th, [&part]() { return part->getGroups().size() == 5; }));
-    th.stepUI();
+    th.sync();
     REQUIRE(part->getGroup(4)->name == name2);
     REQUIRE(sm->isGroupCollapsed(0, 4));
     REQUIRE(!sm->isGroupCollapsed(0, 2));

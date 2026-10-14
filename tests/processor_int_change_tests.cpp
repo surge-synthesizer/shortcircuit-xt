@@ -65,13 +65,13 @@ struct IntChangeFixture
     IntChangeFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
     template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(10);
+        th.sync();
     }
 
     scxt::engine::Zone &zone(int z)

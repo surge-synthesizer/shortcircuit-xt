@@ -41,7 +41,7 @@ TEST_CASE("Out of range macro messages are refused")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     auto &part = th.engine->getPatch()->getPart(0);
     auto before = part->macros[0].value;
@@ -50,18 +50,18 @@ TEST_CASE("Out of range macro messages are refused")
     th.sendToSerialization(cmsg::SetMacroValue({-1, 0, 0.75f}));
     th.sendToSerialization(cmsg::SetMacroValue({0, (int16_t)scxt::macrosPerPart, 0.75f}));
     th.sendToSerialization(cmsg::SetMacroValue({0, -1, 0.75f}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(part->macros[0].value == before);
 
     th.sendToSerialization(cmsg::MacroBeginEndEdit({true, scxt::numParts, 0}));
     th.sendToSerialization(cmsg::MacroBeginEndEdit({true, 0, (int16_t)scxt::macrosPerPart}));
     th.sendToSerialization(cmsg::MacroBeginEndEdit({false, -1, -1}));
-    th.stepUI();
+    th.sync();
 
     // and an in-range one still lands
     th.sendToSerialization(cmsg::SetMacroValue({0, 0, 0.75f}));
-    th.stepUI();
+    th.sync();
     REQUIRE(part->macros[0].value == 0.75f);
 }
 
@@ -69,10 +69,10 @@ TEST_CASE("Out of range mod row reorder is refused")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     auto &zone = th.engine->getPatch()->getPart(0)->getGroup(0)->getZone(0);
     auto &routes = zone->routingTable.routes;
@@ -87,14 +87,14 @@ TEST_CASE("Out of range mod row reorder is refused")
         th.sendToSerialization(cmsg::ReorderModRow({false, bad, 0, false}));
         th.sendToSerialization(cmsg::ReorderModRow({false, 0, bad, true}));
     }
-    th.stepUI();
+    th.sync();
 
     REQUIRE_FALSE(routes[0].active);
     REQUIRE(routes[1].active);
 
     // an in-range swap still works
     th.sendToSerialization(cmsg::ReorderModRow({true, 0, 1, false}));
-    th.stepUI();
+    th.sync();
     REQUIRE(routes[0].active);
     REQUIRE_FALSE(routes[1].active);
 }
@@ -103,10 +103,10 @@ TEST_CASE("An out of range variant field offset is refused")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     auto &zone = th.engine->getPatch()->getPart(0)->getGroup(0)->getZone(0);
     auto before = zone->variantData.variants[0];
@@ -119,7 +119,7 @@ TEST_CASE("An out of range variant field offset is refused")
     th.sendToSerialization(cmsg::UpdateVariantField({0, false, -8, 8, edited}));
     th.sendToSerialization(cmsg::UpdateVariantField({0, false, 0, vsz + 8, edited}));
     th.sendToSerialization(cmsg::UpdateVariantField({0, true, 0, (size_t)-1, edited}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(zone->variantData.variants[0].startSample == before.startSample);
 
@@ -137,10 +137,10 @@ TEST_CASE("Out of range part in a zone delta is refused")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     auto &zone = th.engine->getPatch()->getPart(0)->getGroup(0)->getZone(0);
     auto keyStart = zone->mapping.keyboardRange.keyStart;
@@ -149,7 +149,7 @@ TEST_CASE("Out of range part in a zone delta is refused")
     th.sendToSerialization(cmsg::ApplyZoneDelta({false, false, scxt::numParts, 0, 1, 0}));
     th.sendToSerialization(cmsg::ApplyZoneDelta({false, false, 4096, 0, 1, 0}));
     th.sendToSerialization(cmsg::ApplyZoneDelta({false, false, -1, 0, 1, 0}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(zone->mapping.keyboardRange.keyStart == keyStart);
 }
