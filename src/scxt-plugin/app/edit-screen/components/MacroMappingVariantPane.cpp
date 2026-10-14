@@ -134,6 +134,7 @@ void MacroMappingVariantPane::resized()
 void MacroMappingVariantPane::setMappingData(const engine::Zone::ZoneMappingData &m)
 {
     mappingView = m;
+    mappingDisplay->updatePitchBendEnablement();
     mappingDisplay->repaint();
 }
 

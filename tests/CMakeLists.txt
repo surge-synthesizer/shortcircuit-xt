@@ -62,6 +62,7 @@ add_executable(scxt-test
 		mapping_selection_tests.cpp
 		mapping_drop_geometry_tests.cpp
 		value_edit_lag_tests.cpp
+		pitch_bend_range_tests.cpp
 		voice_oversampling_tests.cpp
 		voice_display_tests.cpp
 		file_map_view_tests.cpp

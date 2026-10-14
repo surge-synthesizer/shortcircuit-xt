@@ -597,8 +597,17 @@ SC_STREAMDEF(scxt::engine::Group::GroupOutputInfo, SC_FROM({
                  findOrSet(v, "prCon", true, result.procRoutingConsistent);
                  findOrSet(v, "buCon", true, result.busRoutingConsistent);
                  findOrSet(v, "mc", -1, result.midiChannel);
-                 findOrSet(v, "pbu", 2, result.pbUp);
-                 findOrSet(v, "pbd", 2, result.pbDown);
+                 findOrSet(v, "pbu", 2.f, result.pbUp);
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'10'14))
+                 {
+                     // down used to be a positive magnitude
+                     findOrSet(v, "pbd", 2.f, result.pbDown);
+                     result.pbDown = -result.pbDown;
+                 }
+                 else
+                 {
+                     findOrSet(v, "pbd", -2.f, result.pbDown);
+                 }
                  result.routeTo = (engine::BusAddress)(rt);
 
                  findOrSet(v, "glt", 0.f, result.glideTime);
@@ -695,18 +704,23 @@ SC_STREAMDEF(scxt::engine::Group, SC_FROM({
                              *(group.parentPart->parentPatch->parentEngine));
                      }
                  }
-                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2025'11'12))
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'10'14))
                  {
+                     // zones hold the old ranges as read: -1 for the group, down a magnitude
+                     const auto &oi = group.outputInfo;
                      for (auto &z : group)
                      {
-                         if (z->mapping.pbUp == group.outputInfo.pbUp)
+                         auto &m = z->mapping;
+                         if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2025'11'12))
                          {
-                             z->mapping.pbUp = -1;
+                             if (m.pbUp == oi.pbUp)
+                                 m.pbUp = -1;
+                             if (m.pbDown == -oi.pbDown)
+                                 m.pbDown = -1;
                          }
-                         if (z->mapping.pbDown == group.outputInfo.pbDown)
-                         {
-                             z->mapping.pbDown = -1;
-                         }
+                         m.pbUseGroup = m.pbUp < 0 && m.pbDown < 0;
+                         m.pbUp = m.pbUp < 0 ? oi.pbUp : m.pbUp;
+                         m.pbDown = m.pbDown < 0 ? oi.pbDown : -m.pbDown;
                      }
                  }
                  group.setupOnUnstream(*(group.parentPart->parentPatch->parentEngine));
@@ -748,6 +762,7 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
                       {"velR", t.velocityRange},
                       {"pbDown", t.pbDown},
                       {"pbUp", t.pbUp},
+                      {"pbGrp", t.pbUseGroup},
 
                       {"velocitySens", t.velocitySens},
                       {"amplitude", t.amplitude},
@@ -762,8 +777,20 @@ SC_STREAMDEF(scxt::engine::Zone::ZoneMappingData, SC_FROM({
                  zmd.rootKey = std::clamp(zmd.rootKey, (int16_t)0, (int16_t)127);
                  findIf(v, {"keyR", "keyboardRange"}, zmd.keyboardRange);
                  findIf(v, {"velR", "velocityRange"}, zmd.velocityRange);
-                 findIf(v, "pbDown", zmd.pbDown);
-                 findIf(v, "pbUp", zmd.pbUp);
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'10'14))
+                 {
+                     // the group's unstream converts these once it knows its own ranges
+                     zmd.pbDown = -1;
+                     zmd.pbUp = -1;
+                     findIf(v, "pbDown", zmd.pbDown);
+                     findIf(v, "pbUp", zmd.pbUp);
+                 }
+                 else
+                 {
+                     findOrSet(v, "pbDown", -2.f, zmd.pbDown);
+                     findOrSet(v, "pbUp", 2.f, zmd.pbUp);
+                     findOrSet(v, "pbGrp", true, zmd.pbUseGroup);
+                 }
 
                  findIf(v, "amplitude", zmd.amplitude);
                  if (SC_UNSTREAMING_FROM_THIS_OR_OLDER(0x2024'06'03))

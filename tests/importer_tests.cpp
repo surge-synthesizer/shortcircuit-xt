@@ -409,6 +409,15 @@ TEST_CASE("Import EXS fixture", "[importer]")
             if (z->mapping.keyboardRange.keyEnd > 0)
                 anyMappedRange = true;
     CHECK(anyMappedRange);
+
+    // exs holds the down range as a magnitude, scxt as the signed offset reached
+    for (auto &g : part.getGroups())
+    {
+        CHECK(g->outputInfo.pbDown <= 0.f);
+        CHECK(g->outputInfo.pbUp >= 0.f);
+        for (auto &z : g->getZones())
+            CHECK(z->mapping.pbUseGroup);
+    }
 }
 
 TEST_CASE("Import multisample fixture", "[importer]")

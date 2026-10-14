@@ -99,8 +99,9 @@ struct ThreeZones
             m.amplitude = -6.f * z;
             m.pitchOffset = 1.f * z;
             m.tracking = 0.5f + 0.25f * z;
-            m.pbDown = (int16_t)(1 + z);
-            m.pbUp = (int16_t)(4 + z);
+            m.pbDown = -1.f - z;
+            m.pbUp = 4.f + z;
+            m.pbUseGroup = (z != 1);
         }
     }
 
@@ -145,6 +146,7 @@ TEST_CASE("Mapping fields know whether they cross a selection", "[mapping]")
             INFO("offset " << o);
             REQUIRE(Zone::mappingFieldCrossesZones((ptrdiff_t)o, sizeof(float)));
         }
+        REQUIRE(Zone::mappingFieldCrossesZones((ptrdiff_t)MAP_OFF(pbUseGroup), sizeof(bool)));
     }
 
     SECTION("the key center stays on the lead")
@@ -230,14 +232,16 @@ TEST_CASE("The pitch bend range spans the selection", "[mapping]")
 {
     ThreeZones t;
 
-    t.f.send(cmsg::UpdateZoneMappingInt16TValue({MAP_OFF(pbDown), (int16_t)12}));
-    t.f.send(cmsg::UpdateZoneMappingInt16TValue({MAP_OFF(pbUp), (int16_t)2}));
+    t.f.send(cmsg::UpdateZoneMappingFloatValue({MAP_OFF(pbDown), -12.5f}));
+    t.f.send(cmsg::UpdateZoneMappingFloatValue({MAP_OFF(pbUp), 7.f}));
+    t.f.send(cmsg::UpdateZoneMappingBoolValue({MAP_OFF(pbUseGroup), false}));
 
     for (int z = 0; z < 3; ++z)
     {
         INFO("zone " << z);
-        REQUIRE(t.zone(z).mapping.pbDown == 12);
-        REQUIRE(t.zone(z).mapping.pbUp == 2);
+        REQUIRE(t.zone(z).mapping.pbDown == Approx(-12.5f));
+        REQUIRE(t.zone(z).mapping.pbUp == Approx(7.f));
+        REQUIRE(!t.zone(z).mapping.pbUseGroup);
     }
 }
 

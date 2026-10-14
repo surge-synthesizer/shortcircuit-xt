@@ -173,6 +173,23 @@ template <typename A, typename F> inline void addGuiStep(A &att, F andThen)
     };
 }
 
+/*
+ * A drag on the widget snaps to the metadata's quantization, pixelsPerUnit apart, and a
+ * shift-drag moves freely and finer. Typed values land as typed.
+ */
+template <typename A, typename W>
+inline void quantizeDragsUnlessShift(std::unique_ptr<A> &att, W &wid, float pixelsPerUnit)
+{
+    auto range = att->description.maxVal - att->description.minVal;
+    if (range > 0 && pixelsPerUnit > 0)
+        wid.dragScale = 100.f / (pixelsPerUnit * range);
+    addGuiStepBeforeSend(
+        *att, [&aWrite = att, w = juce::Component::SafePointer(&wid)](const auto &) {
+            if (w && w->isSetFromDrag() && !juce::ModifierKeys::currentModifiers.isShiftDown())
+                aWrite->value = aWrite->description.quantize(aWrite->value);
+        });
+}
+
 template <typename Payload, typename ValueType = float>
 struct PayloadDataAttachment : sst::jucegui::data::Continuous
 {
@@ -256,6 +273,23 @@ struct PayloadDataAttachment : sst::jucegui::data::Continuous
     }
 
     std::function<std::string(float)> valueToString{nullptr};
+
+    // a value here replaces the current value's text, e.g. when another setting supplies it
+    std::function<std::optional<std::string>()> displayOverride{nullptr};
+    std::string getValueAsString() const override
+    {
+        if (displayOverride)
+            if (auto r = displayOverride())
+                return *r;
+        return Continuous::getValueAsString();
+    }
+    std::string getValueAsStringWithoutUnits() const override
+    {
+        if (displayOverride)
+            if (auto r = displayOverride())
+                return *r;
+        return Continuous::getValueAsStringWithoutUnits();
+    }
 
     std::string getValueAsStringFor(float f) const override
     {

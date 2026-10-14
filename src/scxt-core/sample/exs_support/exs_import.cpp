@@ -1103,16 +1103,17 @@ bool importEXS(const fs::path &p, engine::Engine &e)
         globalTuneSemis = coarse + import_support::centsToSemitones((float)fine);
     }
 
-    int16_t globalPbUp = 2, globalPbDown = 2;
+    float globalPbUp = 2, globalPbDown = -2;
     bool haveGlobalPb = false;
     if (haveParams && params->has(EXSParam::PITCH_BEND_UP))
     {
         haveGlobalPb = true;
         int up = params->get(EXSParam::PITCH_BEND_UP, 2);
         int down = params->get(EXSParam::PITCH_BEND_DOWN, -1);
-        globalPbUp = (int16_t)up;
+        globalPbUp = (float)up;
         // EXS convention: PITCH_BEND_DOWN == -1 means "match PITCH_BEND_UP"
-        globalPbDown = (int16_t)((down == -1) ? up : down);
+        // exs holds the down range as a magnitude, scxt as the signed offset reached
+        globalPbDown = -(float)((down == -1) ? up : down);
     }
     if (haveGlobalPb)
     {

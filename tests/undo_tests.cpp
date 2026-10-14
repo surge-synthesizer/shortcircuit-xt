@@ -529,18 +529,32 @@ TEST_CASE("Group output values undo/redo", "[undo]")
         REQUIRE(group->outputInfo.muted);
     }
 
-    SECTION("int16 (pitch bend up)")
+    SECTION("int16 (midi channel)")
     {
-        auto orig = group->outputInfo.pbUp;
+        auto orig = group->outputInfo.midiChannel;
         f.send(cmsg::UpdateGroupOutputInt16TValue(
-            {offsetof(scxt::engine::Group::GroupOutputInfo, pbUp), (int16_t)(orig + 5)}));
-        REQUIRE(group->outputInfo.pbUp == orig + 5);
+            {offsetof(scxt::engine::Group::GroupOutputInfo, midiChannel), (int16_t)(orig + 5)}));
+        REQUIRE(group->outputInfo.midiChannel == orig + 5);
 
         f.sendUndo();
-        REQUIRE(group->outputInfo.pbUp == orig);
+        REQUIRE(group->outputInfo.midiChannel == orig);
 
         f.sendRedo();
-        REQUIRE(group->outputInfo.pbUp == orig + 5);
+        REQUIRE(group->outputInfo.midiChannel == orig + 5);
+    }
+
+    SECTION("float (pitch bend down)")
+    {
+        auto orig = group->outputInfo.pbDown;
+        f.send(cmsg::UpdateGroupOutputFloatValue(
+            {offsetof(scxt::engine::Group::GroupOutputInfo, pbDown), orig - 10.5f}));
+        REQUIRE(group->outputInfo.pbDown == Approx(orig - 10.5f));
+
+        f.sendUndo();
+        REQUIRE(group->outputInfo.pbDown == Approx(orig));
+
+        f.sendRedo();
+        REQUIRE(group->outputInfo.pbDown == Approx(orig - 10.5f));
     }
 }
 
