@@ -28,7 +28,9 @@
 #ifndef SCXT_SRC_SCXT_CORE_DSP_GENERATOR_H
 #define SCXT_SRC_SCXT_CORE_DSP_GENERATOR_H
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <utility>
 #include "configuration.h"
@@ -72,6 +74,43 @@ inline InterpolationTypes fromStringInterpolationTypes(const std::string &s)
         return Sinc;
     return p->second;
 }
+
+// ZOHAA's phase warp v^k, k = (r + 1/r) / 2, as a cubic fitted once per block
+struct ZOHAAWarp
+{
+    // f(v) = v + (v^2 - v)(p + qv), which keeps f(1) exactly 1 however often it is squared
+    float p{0.f}, q{0.f};
+    int squarings{0};
+
+    static ZOHAAWarp forRatio(int64_t ratio)
+    {
+        ZOHAAWarp w;
+        // a stopped playhead never moves its fraction, so any finite k will do
+        auto r = (double)std::max(std::abs(ratio), (int64_t)1) / (double)(1 << 24);
+        auto k = 0.5 * r + 0.5 / r;
+        // the fit is only monotone below k == 2, and (v^(k/2))^2 == v^k
+        while (k >= 2.0)
+        {
+            k *= 0.5;
+            w.squarings++;
+        }
+        // through v^k at 0, 1/3, 2/3 and 1
+        auto p1 = std::pow(1.0 / 3.0, k);
+        auto p2 = std::pow(2.0 / 3.0, k);
+        // rounding just below k == 2 must not tip the slope at 0 negative
+        w.p = (float)std::min(1.0, 4.5 * p2 - 9.0 * p1);
+        w.q = (float)(4.5 + 13.5 * p1 - 13.5 * p2);
+        return w;
+    }
+
+    float operator()(float v) const
+    {
+        auto f = v + (v * v - v) * (p + q * v);
+        for (int n = 0; n < squarings; ++n)
+            f *= f;
+        return f;
+    }
+};
 
 /*
  * The shape of the forward loop crossfade, issue #2689.

@@ -2152,33 +2152,33 @@ TEST_CASE("Generator golden - interpolation types", "[generator][golden]")
          0.591397524f,  0.669858217f,  0.679021895f,  0.609060884f,  0.457119524f,  0.065336354f,
          -0.147455275f, -0.352828920f, -0.537845612f, -0.805791795f},
         // loop-fwd-fade-zohaa
-        {0.243701771f,  0.455565512f,  0.609605432f,  0.690663159f,  0.687355042f,  0.600345731f,
-         0.402792543f,  0.153508812f,  -0.117711775f, -0.401506603f, -0.621342957f, -0.782283306f,
-         -0.881450415f, -0.890391231f, -0.828602374f, -0.723035395f, -0.572643161f, -0.408071041f,
-         -0.252561569f, -0.157980070f, -0.076394692f, -0.040027563f, -0.082477421f, -0.119217388f,
-         -0.172682121f, -0.241485357f, -0.267758727f, -0.265495479f, -0.228573561f, -0.124589317f,
-         -0.030798040f, 0.167327195f,  0.389847994f,  0.565923810f,  0.673425436f,  0.698085666f,
-         0.638086677f,  0.499570340f,  0.299293101f,  0.065984592f,  -0.178216726f, -0.401279896f,
-         -0.572951913f, -0.676220655f, -0.697008312f, -0.632737279f, -0.491810471f, -0.289658487f,
-         -0.051500335f, 0.189220503f,  0.409869611f,  0.580808461f,  0.679272056f,  0.695894301f,
-         0.627182186f,  0.444731385f,  0.206737280f,  -0.060982451f, -0.326835573f, -0.579655766f,
-         -0.754599631f, -0.859196961f, -0.897300124f, -0.851258099f, -0.744584084f, -0.612107098f,
-         -0.450937122f, -0.292897850f, -0.158964187f, -0.099105448f, -0.052893177f, -0.050229490f,
-         -0.116315082f, -0.165774539f, -0.218832523f, -0.265371233f, -0.267362326f, -0.235785678f,
-         -0.170035660f, -0.040685296f, 0.104299039f,  0.343129724f,  0.530780554f,  0.655265689f,
-         0.699949205f,  0.659035265f,  0.538255990f,  0.350719422f,  0.119678810f,  -0.122257218f,
-         -0.352284968f, -0.539716423f, -0.659441113f, -0.699884832f, -0.654624999f, -0.529968202f,
-         -0.341170162f, -0.109219946f, 0.136557713f,  0.362098187f,  0.546343446f,  0.663973212f,
-         0.699727178f,  0.650709450f,  0.521571755f,  0.256514341f,  -0.004859393f, -0.272608638f,
-         -0.515715122f, -0.723782659f, -0.844715357f, -0.889537096f, -0.870032549f, -0.776757896f,
-         -0.636896729f, -0.492052287f, -0.333672673f, -0.193999991f, -0.090061739f, -0.067811564f,
-         -0.055698540f, -0.081089303f, -0.160060421f, -0.211642712f, -0.253862888f, -0.268805325f,
-         -0.242244631f, -0.181469291f, -0.091566727f, 0.044248462f,  0.291307658f,  0.493426502f,
-         0.633259296f,  0.697135091f,  0.675763547f,  0.572239399f,  0.399429947f,  0.176459819f,
-         -0.068606041f, -0.301641762f, -0.500831127f, -0.639051676f, -0.698155403f, -0.672844112f,
-         -0.564815760f, -0.388804227f, -0.165812910f, 0.079131290f,  0.314722508f,  0.508742750f,
-         0.643235981f,  0.699034810f,  0.669488728f,  0.558382332f,  0.340472221f,  0.048858002f,
-         -0.217765599f, -0.467822224f, -0.673137665f, -0.826519489f},
+        {0.243666425f,  0.455623418f,  0.609695733f,  0.690651774f,  0.687341869f,  0.600178063f,
+         0.402831703f,  0.153489977f,  -0.117711797f, -0.401539266f, -0.621316433f, -0.782317162f,
+         -0.881476462f, -0.890402138f, -0.828572869f, -0.722838759f, -0.572679460f, -0.408056021f,
+         -0.252561569f, -0.157960072f, -0.076408975f, -0.040012211f, -0.082468204f, -0.119212829f,
+         -0.172691092f, -0.241513848f, -0.267756581f, -0.265494764f, -0.228573561f, -0.124580570f,
+         -0.030806435f, 0.167405978f,  0.390000880f,  0.565882504f,  0.673444748f,  0.698061287f,
+         0.638107419f,  0.499556273f,  0.299293071f,  0.065947898f,  -0.178180262f, -0.401342362f,
+         -0.573057532f, -0.676202536f, -0.697001994f, -0.632597804f, -0.491846412f, -0.289640158f,
+         -0.051500294f, 0.189255968f,  0.409839034f,  0.580851078f,  0.679316223f,  0.695901811f,
+         0.627151072f,  0.444495469f,  0.206783056f,  -0.061002094f, -0.326835632f, -0.579683363f,
+         -0.754580498f, -0.859213293f, -0.897283852f, -0.851283431f, -0.744543552f, -0.611880958f,
+         -0.450974405f, -0.292883754f, -0.158964172f, -0.099090211f, -0.052902285f, -0.050223686f,
+         -0.116321884f, -0.165766791f, -0.218841463f, -0.265385062f, -0.267363816f, -0.235783279f,
+         -0.170035660f, -0.040679585f, 0.104257591f,  0.343196213f,  0.530900419f,  0.655241013f,
+         0.699949741f,  0.658925295f,  0.538288236f,  0.350702018f,  0.119678766f,  -0.122293495f,
+         -0.352252394f, -0.539765000f, -0.659502625f, -0.699885428f, -0.654600263f, -0.529755414f,
+         -0.341214240f, -0.109200068f, 0.136557758f,  0.362129718f,  0.546319842f,  0.663997412f,
+         0.699722052f,  0.650735259f,  0.521524966f,  0.256229699f,  -0.004810594f, -0.272627622f,
+         -0.515715182f, -0.723803461f, -0.844704747f, -0.889535308f, -0.869977117f, -0.776795149f,
+         -0.636848509f, -0.491813958f, -0.333708584f, -0.193987593f, -0.090061642f, -0.067801245f,
+         -0.055702806f, -0.081091329f, -0.160077080f, -0.211634293f, -0.253869534f, -0.268797576f,
+         -0.242250025f, -0.181465447f, -0.091566764f, 0.044283926f,  0.291273385f,  0.493480593f,
+         0.633337557f,  0.697128892f,  0.675745308f,  0.572051704f,  0.399471402f,  0.176440343f,
+         -0.068606086f, -0.301675022f, -0.500804782f, -0.639082849f, -0.698168397f, -0.672863424f,
+         -0.564774334f, -0.388533533f, -0.165861920f, 0.079151295f,  0.314722568f,  0.508768022f,
+         0.643221080f,  0.699038863f,  0.669434726f,  0.558424652f,  0.340413332f,  0.048547074f,
+         -0.217717379f, -0.467839241f, -0.673137665f, -0.826532543f},
     }};
 
     for (size_t ci = 0; ci < cases.size(); ++ci)
@@ -2821,5 +2821,151 @@ TEST_CASE("A zone's end point behind a playing voice finishes its sample", "[gen
     f.zone->refreshVoiceGeneratorBounds();
     f.eng->processAudio();
     REQUIRE(voice->GD[0].isFinished);
+}
+
+namespace
+{
+// v^k as ZOHAA computed it before #2691, a powf per sample
+float powWarp(int64_t ratio, float v)
+{
+    auto subRatio = std::abs((float)ratio / (float)(1 << 24));
+    return std::pow(v, 0.5f * subRatio + 0.5f / subRatio);
+}
+
+// the ZOHAA kernel's catmull-rom, read the way the generator lines up its window
+float zohaaReference(const float *s, int64_t pos, int64_t ratio)
+{
+    auto p = (int)(pos >> 24);
+    auto f = powWarp(ratio, (float)(pos & ((1 << 24) - 1)) / (float)(1 << 24));
+    auto y0 = s[p - 2], y1 = s[p - 1], y2 = s[p], y3 = s[p + 1];
+    auto a = ((3.f * (y1 - y2)) - y0 + y3) * 0.5f;
+    auto b = y2 + y2 + y0 - (5.f * y1 + y3) * 0.5f;
+    auto c = (y2 - y0) * 0.5f;
+    return ((a * f + b) * f + c) * f + y1;
+}
+
+double rmsDb(const std::vector<float> &got, const std::vector<float> &ref)
+{
+    double e{0}, r{0};
+    for (size_t i = 0; i < got.size(); ++i)
+    {
+        e += (got[i] - ref[i]) * (got[i] - ref[i]);
+        r += ref[i] * ref[i];
+    }
+    return 10.0 * std::log10(e / r);
+}
+} // namespace
+
+TEST_CASE("The ZOHAA warp is monotone at every ratio", "[generator][zohaa]")
+{
+    static constexpr int vSteps{4096};
+    static constexpr int64_t one{1 << 24};
+
+    std::vector<int64_t> ratios{1, 2, 1000, one - 1, one, one + 1, (int64_t)1 << 40};
+    // twelve octaves either side, fine enough to land just either side of every k == 2^n
+    for (int i = -120000; i <= 120000; ++i)
+        ratios.push_back((int64_t)std::llround(std::exp2(i / 10000.0) * one));
+
+    for (auto r : ratios)
+    {
+        auto w = dsp::ZOHAAWarp::forRatio(r);
+        INFO("ratio " << r << " p " << w.p << " q " << w.q << " squarings " << w.squarings);
+        REQUIRE(w(0.f) == 0.f);
+        REQUIRE(w(1.f) == 1.f);
+
+        auto prev = 0.f;
+        for (int q = 1; q <= vSteps; ++q)
+        {
+            auto f = w((float)q / vSteps);
+            if (f < prev)
+            {
+                INFO("v " << (float)q / vSteps << " " << f << " < " << prev);
+                REQUIRE(f >= prev);
+            }
+            prev = f;
+        }
+    }
+}
+
+TEST_CASE("The ZOHAA warp is the identity at unity", "[generator][zohaa]")
+{
+    auto w = dsp::ZOHAAWarp::forRatio(1 << 24);
+    REQUIRE(w.squarings == 0);
+    for (int q = 0; q <= 16; ++q)
+        REQUIRE(w(q / 16.f) == Approx(q / 16.f).margin(1e-6));
+}
+
+TEST_CASE("The ZOHAA warp follows the pow it replaced", "[generator][zohaa]")
+{
+    for (int i = 1; i < 2000; ++i)
+    {
+        // non integer throughout, where the warp actually runs
+        auto r = (int64_t)std::llround(std::exp2(-6.0 + i * 0.006037) * (1 << 24));
+        auto w = dsp::ZOHAAWarp::forRatio(r);
+        INFO("ratio " << r / (double)(1 << 24));
+        double worst{0};
+        for (int q = 0; q <= 256; ++q)
+        {
+            auto v = q / 256.f;
+            worst = std::max(worst, (double)std::fabs(w(v) - powWarp(r, v)));
+        }
+        REQUIRE(worst < 0.01);
+    }
+}
+
+TEST_CASE("ZOHAA without the pow sounds as it did", "[generator][zohaa]")
+{
+    // the ratios and the 12kHz-at-48k worst case measured in #2691, with its cubic column;
+    // the last five need squaring, past where that table stopped
+    struct Case
+    {
+        double ratio, tableDb;
+    };
+    auto c =
+        GENERATE(Case{0.9187, -79.1}, Case{0.7492, -58.7}, Case{0.5946, -50.8}, Case{1.4983, -53.8},
+                 Case{2.1189, -48.3}, Case{0.2973, -59.5}, Case{3.1748, -55.6}, Case{3.9, -51.5},
+                 Case{0.2531, -51.5}, Case{5.3, -51.5}, Case{0.11, -51.5}, Case{13.3, -51.5});
+    INFO("ratio " << c.ratio);
+
+    static constexpr int fileLength{1 << 16};
+    static constexpr int startAt{16};
+    static constexpr int samples{4096};
+
+    LoopedGenerator g(fileLength, fileLength - 256, 128);
+    g.fillWithSine(4);
+    g.GD.interpolationType = dsp::InterpolationTypes::ZOHAA;
+    g.GD.samplePos = startAt;
+    g.setRatio(c.ratio);
+    auto got = g.render(samples);
+
+    std::vector<float> ref;
+    for (int i = 0; i < samples; ++i)
+        ref.push_back(
+            zohaaReference(g.sample(), ((int64_t)startAt << 24) + i * g.GD.ratio, g.GD.ratio));
+
+    auto db = rmsDb(got, ref);
+    INFO("difference " << db << "dB");
+    REQUIRE(db < c.tableDb + 1.5);
+}
+
+TEST_CASE("ZOHAA ping-pong crossfade stays continuous at a fractional ratio", "[generator][zohaa]")
+{
+    // the mirror reads at its own fraction, so it runs the warp a second time
+    GenConfig c;
+    c.name = "zohaa-alt-fractional";
+    c.loopForward = false;
+    c.loopFade = gFade;
+    c.ratio = (int32_t)(unityRatio * 1.37);
+    c.interp = dsp::InterpolationTypes::ZOHAA;
+    c.recordBlocks = 24;
+
+    GenHarness h(c);
+    auto got = capture(c, h);
+    float worst{0};
+    for (size_t i = 1; i < got.size(); ++i)
+        worst = std::max(worst, std::abs(got[i] - got[i - 1]));
+    INFO("worst step " << worst);
+    // the 0.35 the unity-ratio continuity test allows, scaled by the ratio
+    REQUIRE(worst < 0.35f * 1.37f);
 }
 } // namespace generator_test

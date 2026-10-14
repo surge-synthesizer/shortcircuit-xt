@@ -175,6 +175,7 @@ struct KernelProcessor
     float *Output[NUM_CHANNELS];
 
     GeneratorIO *IO{nullptr}; // only used for debug constraints
+    const ZOHAAWarp *warp{nullptr};
 
     void ProcessKernel(GeneratorState *__restrict GD)
     {
@@ -301,11 +302,9 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
     auto m0{ks.m0};
     auto i{ks.i};
 
-    auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
-    auto warp = [subRatio](float v) { return std::pow(v, 0.5f * subRatio + 0.5f / subRatio); };
+    const auto &warp = *ks.warp;
     auto f_subPos = warp((float)(ks.SampleSubPos) / (float)(1 << 24));
-    // a wrap translates the read and keeps the playhead's fraction; only a mirror turns it
-    // round, and warp is a pow, so do not pay for a second one unless it differs
+    // a wrap translates the read and keeps the playhead's fraction; only a mirror turns it round
     auto f_fadeSubPos = f_subPos;
     if constexpr (LOOP_ACTIVE)
     {
@@ -1071,6 +1070,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
     int NSamples = GD->blockSize;
 
+    // ratio is fixed for the block, so its warp is fitted once here rather than per sample
+    const auto zohaaWarp = GD->interpolationType == InterpolationTypes::ZOHAA
+                               ? ZOHAAWarp::forRatio(GD->ratio)
+                               : ZOHAAWarp{};
+
     int i{0};
     for (i = 0; i < NSamples && !IsFinished; i++)
     {
@@ -1087,14 +1091,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                                             fade.mainGain,                                         \
                                             fade.partnerGain,                                      \
                                             {OutputL, OutputR},                                    \
-                                            IO};                                                   \
+                                            IO,                                                    \
+                                            &zohaaWarp};                                           \
     kp.ProcessKernel(GD);
 
 #define KPMono(E, T, C, data, fadeData)                                                            \
     KernelProcessor<E, T, C, loopActive> ks{                                                       \
         SamplePos,        SampleSubPos, int32_t(m0), i,           fade.partnerSubPos,              \
         int32_t(fadeM0),  {data},       {fadeData},  fade.active, fade.mainGain,                   \
-        fade.partnerGain, {OutputL},    IO};                                                       \
+        fade.partnerGain, {OutputL},    IO,          &zohaaWarp};                                  \
     ks.ProcessKernel(GD);
 
         using type_from_cond = typename std::conditional<fp, float, int16_t>::type;
