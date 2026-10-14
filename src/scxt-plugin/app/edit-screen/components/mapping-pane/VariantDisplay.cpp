@@ -691,6 +691,9 @@ void VariantDisplay::rebuild()
     case dsp::InterpolationTypes::ZeroOrderHold:
         srcButton->setLabel("ZOH");
         break;
+    case dsp::InterpolationTypes::Cubic:
+        srcButton->setLabel("CUB");
+        break;
     }
 
     auto samp = editor->sampleManager.getSample(variantView.variants[selectedVariation].sampleID);
@@ -1066,6 +1069,7 @@ void VariantDisplay::showSRCMenu()
             });
     };
     add(dsp::InterpolationTypes::Sinc, "Sinc");
+    add(dsp::InterpolationTypes::Cubic, "Cubic");
     add(dsp::InterpolationTypes::Linear, "Linear");
     add(dsp::InterpolationTypes::ZOHAA, "Zero-Order Hold (Anti-Aliased)");
     add(dsp::InterpolationTypes::ZeroOrderHold, "Zero Order Hold");

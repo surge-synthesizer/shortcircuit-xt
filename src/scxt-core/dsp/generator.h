@@ -45,7 +45,8 @@ enum InterpolationTypes
     Sinc,
     Linear,
     ZOHAA,
-    ZeroOrderHold
+    ZeroOrderHold,
+    Cubic
 };
 DECLARE_ENUM_STRING(InterpolationTypes);
 
@@ -61,6 +62,8 @@ inline std::string toStringInterpolationTypes(const InterpolationTypes &p)
         return "zaa";
     case ZeroOrderHold:
         return "zoh";
+    case Cubic:
+        return "cub";
     }
     return "sinc";
 }
@@ -68,7 +71,7 @@ inline std::string toStringInterpolationTypes(const InterpolationTypes &p)
 inline InterpolationTypes fromStringInterpolationTypes(const std::string &s)
 {
     static auto inverse = makeEnumInverse<InterpolationTypes, toStringInterpolationTypes>(
-        InterpolationTypes::Sinc, InterpolationTypes::ZeroOrderHold);
+        InterpolationTypes::Sinc, InterpolationTypes::Cubic);
     auto p = inverse.find(s);
     if (p == inverse.end())
         return Sinc;

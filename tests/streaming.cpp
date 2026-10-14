@@ -265,6 +265,55 @@ TEST_CASE("An unstreamed loop crossfade curve restores the law its patch was mad
     }
 }
 
+TEST_CASE("Interpolation types stream by name, and old names still load")
+{
+    namespace dsp = scxt::dsp;
+
+    auto roundTrip = [](dsp::InterpolationTypes t) {
+        scxt::engine::Zone z;
+        z.variantData.variants[0].active = true;
+        z.variantData.variants[0].interpolationType = t;
+        auto s = testStream(z);
+        scxt::engine::Zone k2;
+        testUnstream(s, k2);
+        return std::make_pair(s, k2.variantData.variants[0].interpolationType);
+    };
+
+    SECTION("the names and values sessions already carry are unchanged")
+    {
+        REQUIRE(dsp::Sinc == 0);
+        REQUIRE(dsp::Linear == 1);
+        REQUIRE(dsp::ZOHAA == 2);
+        REQUIRE(dsp::ZeroOrderHold == 3);
+
+        REQUIRE(dsp::fromStringInterpolationTypes("sinc") == dsp::Sinc);
+        REQUIRE(dsp::fromStringInterpolationTypes("lin") == dsp::Linear);
+        REQUIRE(dsp::fromStringInterpolationTypes("zaa") == dsp::ZOHAA);
+        REQUIRE(dsp::fromStringInterpolationTypes("zoh") == dsp::ZeroOrderHold);
+
+        for (auto t : {dsp::Sinc, dsp::Linear, dsp::ZOHAA, dsp::ZeroOrderHold})
+        {
+            INFO("type " << dsp::toStringInterpolationTypes(t));
+            REQUIRE(roundTrip(t).second == t);
+        }
+    }
+
+    SECTION("cubic round trips as its own name")
+    {
+        REQUIRE(dsp::toStringInterpolationTypes(dsp::Cubic) == "cub");
+        REQUIRE(dsp::fromStringInterpolationTypes("cub") == dsp::Cubic);
+
+        auto [s, t] = roundTrip(dsp::Cubic);
+        REQUIRE(s.find("\"cub\"") != std::string::npos);
+        REQUIRE(t == dsp::Cubic);
+    }
+
+    SECTION("a name this build does not know falls back to sinc")
+    {
+        REQUIRE(dsp::fromStringInterpolationTypes("quintic") == dsp::Sinc);
+    }
+}
+
 TEST_CASE("Only a real windows path is remapped on unstream")
 {
     auto un = [](const std::string &s) { return scxt::json::unstreamPathFromString(s).string(); };

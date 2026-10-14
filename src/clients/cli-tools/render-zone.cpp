@@ -109,7 +109,7 @@ void usage()
   --reverse          play the sample backwards
   --loop-mode M      during-voice | while-gated | count          (during-voice)
   --loop-count N     loops, when --loop-mode count
-  --interp I         sinc | linear | zoh | zohaa                 (sinc)
+  --interp I         sinc | cubic | linear | zoh | zohaa         (sinc)
   --hold SECONDS     how long the key is held                    (10)
   --tail SECONDS     how long to render after release            (1)
   --release R        AEG release, 0..1                           (0, instant)
@@ -238,6 +238,8 @@ int main(int argc, char **argv)
         auto it = args["interp"];
         if (it == "sinc")
             v.interpolationType = scxt::dsp::InterpolationTypes::Sinc;
+        else if (it == "cubic")
+            v.interpolationType = scxt::dsp::InterpolationTypes::Cubic;
         else if (it == "linear")
             v.interpolationType = scxt::dsp::InterpolationTypes::Linear;
         else if (it == "zoh")

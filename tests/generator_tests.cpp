@@ -2088,13 +2088,14 @@ TEST_CASE("Generator golden - interpolation types", "[generator][golden]")
         const char *name;
         scxt::dsp::InterpolationTypes interp;
     };
-    static const std::array<Case, 3> cases{{
+    static const std::array<Case, 4> cases{{
         {"loop-fwd-fade-linear", scxt::dsp::InterpolationTypes::Linear},
         {"loop-fwd-fade-zoh", scxt::dsp::InterpolationTypes::ZeroOrderHold},
         {"loop-fwd-fade-zohaa", scxt::dsp::InterpolationTypes::ZOHAA},
+        {"loop-fwd-fade-cubic", scxt::dsp::InterpolationTypes::Cubic},
     }};
 
-    static const std::array<std::vector<float>, 3> expected{{
+    static const std::array<std::vector<float>, 4> expected{{
         // loop-fwd-fade-linear
         {0.243457705f,  0.454551131f,  0.607087731f,  0.684822917f,  0.683175862f,  0.597655058f,
          0.397246629f,  0.150383502f,  -0.117711894f, -0.401692122f, -0.619019747f, -0.780739427f,
@@ -2179,6 +2180,34 @@ TEST_CASE("Generator golden - interpolation types", "[generator][golden]")
          -0.564774334f, -0.388533533f, -0.165861920f, 0.079151295f,  0.314722568f,  0.508768022f,
          0.643221080f,  0.699038863f,  0.669434726f,  0.558424652f,  0.340413332f,  0.048547074f,
          -0.217717379f, -0.467839241f, -0.673137665f, -0.826532543f},
+        // loop-fwd-fade-cubic
+        {0.245574310f,  0.456033379f,  0.610606015f,  0.691024661f,  0.687135935f,  0.599603117f,
+         0.400948286f,  0.151985109f,  -0.117711939f, -0.403560579f, -0.622746825f, -0.782556415f,
+         -0.881738186f, -0.890038848f, -0.828113139f, -0.722164750f, -0.570938587f, -0.406859189f,
+         -0.252561450f, -0.156726480f, -0.075640887f, -0.039903495f, -0.082376689f, -0.119364627f,
+         -0.172830090f, -0.241611466f, -0.267858982f, -0.265435010f, -0.228573531f, -0.124035388f,
+         -0.030347263f, 0.167963386f,  0.391544342f,  0.567246914f,  0.673743308f,  0.697976589f,
+         0.637106478f,  0.498429745f,  0.299292952f,  0.063673355f,  -0.180148587f, -0.401784778f,
+         -0.574122667f, -0.676798463f, -0.696902275f, -0.632119119f, -0.490118504f, -0.288175941f,
+         -0.051500160f, 0.191453189f,  0.411488384f,  0.581152558f,  0.679760277f,  0.695649385f,
+         0.626666427f,  0.443686694f,  0.204582646f,  -0.062570348f, -0.326835752f, -0.581395626f,
+         -0.755612195f, -0.859328330f, -0.897117317f, -0.850442111f, -0.743911088f, -0.611106157f,
+         -0.449180961f, -0.291756958f, -0.158964112f, -0.098145112f, -0.052413121f, -0.050183009f,
+         -0.116391607f, -0.166024446f, -0.218980864f, -0.265432477f, -0.267294735f, -0.235594466f,
+         -0.170035616f, -0.040326886f, 0.106497541f,  0.343666792f,  0.532110155f,  0.656054258f,
+         0.699957192f,  0.658547461f,  0.536735117f,  0.349310070f,  0.119678631f,  -0.124541290f,
+         -0.354010791f, -0.540108919f, -0.660121799f, -0.699860692f, -0.654213905f, -0.529025793f,
+         -0.339095980f, -0.107611321f, 0.136557907f,  0.364080906f,  0.547591150f,  0.664168596f,
+         0.699667692f,  0.649875879f,  0.520796657f,  0.255254567f,  -0.007156560f, -0.274143159f,
+         -0.515715361f, -0.725096166f, -0.845280528f, -0.889523268f, -0.869415045f, -0.775559723f,
+         -0.636096835f, -0.490997970f, -0.331986308f, -0.192998230f, -0.090061545f, -0.067164011f,
+         -0.055474848f, -0.081105895f, -0.160245985f, -0.211912811f, -0.253972799f, -0.268770844f,
+         -0.241990000f, -0.181158662f, -0.091566727f, 0.046492640f,  0.293123871f,  0.493863642f,
+         0.634125829f,  0.697332025f,  0.675461054f,  0.571408153f,  0.397478610f,  0.174883842f,
+         -0.068606243f, -0.303733200f, -0.502225816f, -0.639303386f, -0.698296726f, -0.672219813f,
+         -0.564129412f, -0.387605906f, -0.163506806f, 0.080749452f,  0.314722687f,  0.510331869f,
+         0.644022286f,  0.699067354f,  0.668885887f,  0.557020485f,  0.339496702f,  0.047482330f,
+         -0.220033675f, -0.469194412f, -0.673137784f, -0.827330709f},
     }};
 
     for (size_t ci = 0; ci < cases.size(); ++ci)
@@ -2966,6 +2995,77 @@ TEST_CASE("ZOHAA ping-pong crossfade stays continuous at a fractional ratio", "[
         worst = std::max(worst, std::abs(got[i] - got[i - 1]));
     INFO("worst step " << worst);
     // the 0.35 the unity-ratio continuity test allows, scaled by the ratio
+    REQUIRE(worst < 0.35f * 1.37f);
+}
+
+TEST_CASE("Cubic interpolates a sine between its samples", "[generator][cubic]")
+{
+    static constexpr int fileLength{1 << 16};
+    static constexpr int startAt{16};
+    static constexpr int samples{4096};
+    static constexpr int cycle{32};
+
+    auto worstError = [](dsp::InterpolationTypes t) {
+        LoopedGenerator g(fileLength, fileLength - 256, 128);
+        g.fillWithSine(cycle);
+        g.GD.interpolationType = t;
+        g.GD.samplePos = startAt;
+        g.setRatio(1.37);
+        auto out = g.render(samples);
+
+        double worst{0};
+        for (int i = 0; i < samples; ++i)
+        {
+            // samplePos p at zero subposition reads data[p - 1]
+            auto at = ((double)((int64_t)startAt << 24) + (double)i * g.GD.ratio) / (1 << 24) - 1;
+            worst = std::max(worst, std::fabs(out[i] - std::sin(2.0 * M_PI * at / cycle)));
+        }
+        return worst;
+    };
+
+    auto cubic = worstError(dsp::InterpolationTypes::Cubic);
+    auto linear = worstError(dsp::InterpolationTypes::Linear);
+    INFO("cubic " << cubic << " linear " << linear);
+    REQUIRE(cubic < 2e-4);
+    REQUIRE(cubic * 20 < linear);
+}
+
+TEST_CASE("Cubic loops across the wrap", "[generator][cubic]")
+{
+    static constexpr double cps{0.0917};
+    auto cycle = GENERATE(16, 32, 64);
+    // a loop at the start or at the end of the file has its window run into the zero pad
+    auto atEnd = GENERATE(false, true);
+    static constexpr int fileLength{4096};
+    INFO("cycle " << cycle << " at end " << atEnd);
+
+    LoopedGenerator g(fileLength, atEnd ? fileLength - cycle : 0, cycle);
+    g.fillWithSine(cycle);
+    g.GD.interpolationType = dsp::InterpolationTypes::Cubic;
+    g.setRatio(cps * cycle);
+    auto out = g.render(1 << 14);
+
+    REQUIRE(cyclesPerSample(out, 512) == Approx(cps).epsilon(0.005));
+    // the interpolator's own error falls 18dB an octave; a wrap into the pad is about -32dB
+    REQUIRE(residualDb(out, 512, cps) < -55.0 - 18.0 * std::log2(cycle / 16.0));
+}
+
+TEST_CASE("Cubic ping-pong crossfade stays continuous at a fractional ratio", "[generator][cubic]")
+{
+    GenConfig c;
+    c.name = "cubic-alt-fractional";
+    c.loopForward = false;
+    c.loopFade = gFade;
+    c.ratio = (int32_t)(unityRatio * 1.37);
+    c.interp = dsp::InterpolationTypes::Cubic;
+    c.recordBlocks = 24;
+
+    GenHarness h(c);
+    auto got = capture(c, h);
+    float worst{0};
+    for (size_t i = 1; i < got.size(); ++i)
+        worst = std::max(worst, std::abs(got[i] - got[i - 1]));
+    INFO("worst step " << worst);
     REQUIRE(worst < 0.35f * 1.37f);
 }
 } // namespace generator_test
