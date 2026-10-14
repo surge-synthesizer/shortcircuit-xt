@@ -280,15 +280,15 @@ static void setupTwoLatchGroupsThroughMessages(scxt::clients::console_ui::Consol
 {
     // adding a zone selects it, which leads the group the condition then lands on
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 72, 0, 127}));
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(cmsg::UpdateGroupTriggerConditions(keySwitchLatchOn(SW_A)));
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(cmsg::AddBlankZone({0, 1, 48, 72, 0, 127}));
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(cmsg::UpdateGroupTriggerConditions(keySwitchLatchOn(SW_B)));
-    th.stepUI();
+    th.sync();
 }
 
 TEST_CASE("Keyswitch latch - a switch press refreshes the client", "[keyswitch]")
@@ -297,7 +297,7 @@ TEST_CASE("Keyswitch latch - a switch press refreshes the client", "[keyswitch]"
     // engine tells them
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
     setupTwoLatchGroupsThroughMessages(th);
 
     auto &part = *th.engine->getPatch()->getPart(0);
@@ -307,15 +307,14 @@ TEST_CASE("Keyswitch latch - a switch press refreshes the client", "[keyswitch]"
 
     auto pressAndRelease = [&th](int key) {
         th.sendToSerialization(cmsg::NoteFromGUI({key, 1.f, true}));
-        th.stepUI();
+        th.sync();
         th.sendToSerialization(cmsg::NoteFromGUI({key, 0.f, false}));
-        th.stepUI();
+        th.sync();
     };
 
     th.editor->structureUpdateCount = 0;
     pressAndRelease(SW_B);
-    for (int i = 0; i < 100 && th.editor->structureUpdateCount == 0; ++i)
-        th.stepUI(1);
+    th.sync();
 
     REQUIRE(part.getGroup(0)->mutedByLatch);
     REQUIRE(!part.getGroup(1)->mutedByLatch);
@@ -324,7 +323,7 @@ TEST_CASE("Keyswitch latch - a switch press refreshes the client", "[keyswitch]"
     // pressing the key that is already live changes nothing, so sends nothing
     th.editor->structureUpdateCount = 0;
     pressAndRelease(SW_B);
-    th.stepUI(20);
+    th.sync();
     REQUIRE(th.editor->structureUpdateCount == 0);
 }
 
@@ -582,7 +581,7 @@ TEST_CASE("Keyswitch default - changing it from the client arms it", "[keyswitch
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
     setupTwoLatchGroupsThroughMessages(th);
 
     auto &part = *th.engine->getPatch()->getPart(0);
@@ -591,8 +590,7 @@ TEST_CASE("Keyswitch default - changing it from the client arms it", "[keyswitch
     auto conf = part.configuration;
     conf.defaultKeySwitchKey = SW_B;
     th.sendToSerialization(cmsg::UpdatePartFullConfig({0, conf}));
-    for (int i = 0; i < 100 && !part.getGroup(0)->mutedByLatch; ++i)
-        th.stepUI(1);
+    th.sync();
 
     REQUIRE(part.configuration.defaultKeySwitchKey == SW_B);
     REQUIRE(part.getGroup(0)->mutedByLatch);
@@ -601,14 +599,13 @@ TEST_CASE("Keyswitch default - changing it from the client arms it", "[keyswitch
     // any other part edit leaves a hand-picked articulation alone
     th.sendToSerialization(cmsg::NoteFromGUI({SW_A, 1.f, true}));
     th.sendToSerialization(cmsg::NoteFromGUI({SW_A, 0.f, false}));
-    for (int i = 0; i < 100 && part.getGroup(0)->mutedByLatch; ++i)
-        th.stepUI(1);
+    th.sync();
     REQUIRE(!part.getGroup(0)->mutedByLatch);
 
     conf = part.configuration;
     conf.level = 0.5f;
     th.sendToSerialization(cmsg::UpdatePartFullConfig({0, conf}));
-    th.stepUI(20);
+    th.sync();
     REQUIRE(part.configuration.level == 0.5f);
     REQUIRE(!part.getGroup(0)->mutedByLatch);
     REQUIRE(part.getGroup(1)->mutedByLatch);
@@ -642,25 +639,24 @@ TEST_CASE("Note learn - the learned key reaches the client", "[keyswitch]")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     th.sendToSerialization(cmsg::ArmNoteLearn(true));
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(cmsg::NoteFromGUI({SW_B, 1.f, true}));
     th.sendToSerialization(cmsg::NoteFromGUI({SW_B, 0.f, false}));
-    for (int i = 0; i < 100 && th.editor->lastLearnedNote < 0; ++i)
-        th.stepUI(1);
+    th.sync();
     REQUIRE(th.editor->lastLearnedNote == SW_B);
 
     // a cancelled learn leaves the next note alone
     th.editor->lastLearnedNote = -1;
     th.sendToSerialization(cmsg::ArmNoteLearn(true));
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(cmsg::ArmNoteLearn(false));
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(cmsg::NoteFromGUI({SW_A, 1.f, true}));
     th.sendToSerialization(cmsg::NoteFromGUI({SW_A, 0.f, false}));
-    th.stepUI(20);
+    th.sync();
     REQUIRE(th.editor->lastLearnedNote == -1);
     REQUIRE(!th.engine->noteLearnArmed);
 }

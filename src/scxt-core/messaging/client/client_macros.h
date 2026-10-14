@@ -125,4 +125,22 @@
         typedef className T;                                                                       \
     };
 
+// for messages only some clients want; a client without cliMethod drops them
+#define SERIAL_TO_CLIENT_OPT_IN(className, s2id, s2payloadType, cliMethod)                         \
+    struct className                                                                               \
+    {                                                                                              \
+        static constexpr SerializationToClientMessageIds s2c_id{s2id};                             \
+        typedef s2payloadType s2c_payload_t;                                                       \
+        template <typename Client>                                                                 \
+        static void executeOnClient(Client *c, const s2c_payload_t &payload)                       \
+        {                                                                                          \
+            if constexpr (requires { c->cliMethod(payload); })                                     \
+                c->cliMethod(payload);                                                             \
+        }                                                                                          \
+    };                                                                                             \
+    template <> struct SerializationToClientType<className::s2c_id>                                \
+    {                                                                                              \
+        typedef className T;                                                                       \
+    };
+
 #endif // SHORTCIRCUIT_CLIENT_MACROS_H

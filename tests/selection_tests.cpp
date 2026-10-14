@@ -42,9 +42,9 @@ TEST_CASE("Create a Single Blank Zone and it is Selected")
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
 
-    th.stepUI();
+    th.sync();
     th.sendToSerialization(scxt::messaging::client::AddBlankZone({0, 0, 60, 72, 0, 64}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(th.engine->getSelectionManager()->state[0].leadZone ==
             scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
@@ -54,7 +54,7 @@ TEST_CASE("Create five zones then multi-select")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
 
@@ -74,7 +74,7 @@ TEST_CASE("Create five zones then multi-select")
     th.sendToSerialization(abz({0, 0, 73, 82, 0, 64}));
     th.sendToSerialization(abz({0, 0, 73, 82, 65, 127}));
     th.sendToSerialization(abz({0, 0, 83, 92, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(sm->state[0].leadZone == zad{0, 0, 4});
     REQUIRE(sm->state[0].selectedZones.size() == 1);
@@ -82,38 +82,38 @@ TEST_CASE("Create five zones then multi-select")
     INFO("Single select other zones");
     // remember SAC is p/g/z select, distinct, as-lead
     sel(0, 0, 2, true, true, true);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].leadZone == zad{0, 0, 2});
     REQUIRE(sm->state[0].selectedZones.size() == 1);
 
     INFO("Single select a second zone not as lead");
     sel(0, 0, 0, true, false, false);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].leadZone == zad{0, 0, 2});
     REQUIRE(sm->state[0].selectedZones.size() == 2);
 
     INFO("Swap the lead");
     sel(0, 0, 0, true, false, true);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].leadZone == zad{0, 0, 0});
     REQUIRE(sm->state[0].selectedZones.size() == 2);
 
     INFO("Unselect the non-lead");
     sel(0, 0, 2, false, false, false);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].leadZone == zad{0, 0, 0});
     REQUIRE(sm->state[0].selectedZones.size() == 1);
 
     INFO("Select two more groups as non-lead and lead");
     sel(0, 0, 1, true, false, true);
     sel(0, 0, 3, true, false, false);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].leadZone == zad{0, 0, 1});
     REQUIRE(sm->state[0].selectedZones.size() == 3);
 
     INFO("Select a different zone disticnt and get it lead with set clear");
     sel(0, 0, 4, true, true, true);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].leadZone == zad{0, 0, 4});
     REQUIRE(sm->state[0].selectedZones.size() == 1);
 }
@@ -122,7 +122,7 @@ TEST_CASE("Selecting an empty group makes it the lead group")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -139,14 +139,14 @@ TEST_CASE("Selecting an empty group makes it the lead group")
     // group 0 with one zone, plus an empty group 1
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 60, 72, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroups().size() == 2);
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroup(1)->getZones().empty());
 
     INFO("Distinct-select the empty group as lead");
     selGroup(0, 1, true, true, true);
-    th.stepUI();
+    th.sync();
 
     REQUIRE(sm->state[0].leadGroup == zad{0, 1, -1});
     REQUIRE(sm->state[0].selectedGroups.size() == 1);
@@ -157,7 +157,7 @@ TEST_CASE("Selecting an empty group clears prior zone selections")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -175,14 +175,14 @@ TEST_CASE("Selecting an empty group clears prior zone selections")
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI(30); // the adds and the group create hop the audio thread
+    th.sync();
 
     REQUIRE(sm->state[0].leadZone == zad{0, 0, 1});
     REQUIRE(!sm->state[0].selectedZones.empty());
 
     INFO("Distinct-select the empty group; zone state should clear");
     selGroup(0, 1, true, true, true);
-    th.stepUI();
+    th.sync();
 
     REQUIRE(sm->state[0].leadGroup == zad{0, 1, -1});
     REQUIRE(sm->state[0].selectedZones.empty());
@@ -193,7 +193,7 @@ TEST_CASE("AddBlankZone after selecting empty group lands in that group")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -209,17 +209,17 @@ TEST_CASE("AddBlankZone after selecting empty group lands in that group")
 
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 60, 72, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
 
     selGroup(0, 1, true, true, true);
-    th.stepUI();
+    th.sync();
 
     REQUIRE(sm->state[0].leadGroup == zad{0, 1, -1});
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroup(1)->getZones().empty());
 
     INFO("Create a blank zone explicitly targeting the empty group");
     th.sendToSerialization(cmsg::AddBlankZone({0, 1, 48, 72, 0, 127}));
-    th.stepUI();
+    th.sync();
 
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroup(0)->getZones().size() == 1);
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroup(1)->getZones().size() == 1);
@@ -230,7 +230,7 @@ TEST_CASE("Switching from empty group to non-empty group selects its zones")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -247,16 +247,16 @@ TEST_CASE("Switching from empty group to non-empty group selects its zones")
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
     th.sendToSerialization(cmsg::AddBlankZone({0, 0, 61, 72, 0, 127}));
     th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
 
     selGroup(0, 1, true, true, true);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].leadGroup == zad{0, 1, -1});
     REQUIRE(sm->state[0].selectedZones.empty());
 
     INFO("Now distinct-select the non-empty group 0");
     selGroup(0, 0, true, true, true);
-    th.stepUI();
+    th.sync();
 
     REQUIRE(sm->state[0].leadGroup == zad{0, 0, -1});
     REQUIRE(sm->state[0].selectedGroups.size() == 1);
@@ -289,7 +289,7 @@ void makeGroups(scxt::clients::console_ui::ConsoleHarness &th, int n)
     namespace cmsg = scxt::messaging::client;
     for (int i = 0; i < n; ++i)
         th.sendToSerialization(cmsg::CreateGroup(0));
-    th.stepUI();
+    th.sync();
 }
 } // namespace
 
@@ -297,7 +297,7 @@ TEST_CASE("Fold: setGroupCollapsed toggles a single group")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     makeGroups(th, 5); // 5 groups: 0..4
@@ -307,7 +307,7 @@ TEST_CASE("Fold: setGroupCollapsed toggles a single group")
     REQUIRE(!sm->isGroupCollapsed(0, 2));
 
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->isGroupCollapsed(0, 2));
     REQUIRE(sm->state[0].collapsedGroups.size() == 1);
 
@@ -316,7 +316,7 @@ TEST_CASE("Fold: setGroupCollapsed toggles a single group")
     REQUIRE((pgzGroupFeatures(th, 0, 1) & scxt::engine::GroupZoneFeatures::FOLDED) == 0);
 
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, false}));
-    th.stepUI();
+    th.sync();
     REQUIRE(!sm->isGroupCollapsed(0, 2));
     REQUIRE(sm->state[0].collapsedGroups.empty());
     REQUIRE((pgzGroupFeatures(th, 0, 2) & scxt::engine::GroupZoneFeatures::FOLDED) == 0);
@@ -326,20 +326,20 @@ TEST_CASE("Fold: setAllGroupsCollapsed true/false")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     makeGroups(th, 5); // 5 groups
     const auto &sm = th.engine->getSelectionManager();
 
     th.sendToSerialization(cmsg::SetAllGroupsCollapsed({0, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].collapsedGroups.size() == 5);
     for (int g = 0; g < 5; ++g)
         REQUIRE(sm->isGroupCollapsed(0, g));
 
     th.sendToSerialization(cmsg::SetAllGroupsCollapsed({0, false}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].collapsedGroups.empty());
 }
 
@@ -350,7 +350,7 @@ TEST_CASE("Fold: deleting a group below a folded group keeps the right group fol
     // appear folded. Fix: shift higher indices down by one on delete.
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -361,11 +361,11 @@ TEST_CASE("Fold: deleting a group below a folded group keeps the right group fol
     const auto &sm = th.engine->getSelectionManager();
 
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 3, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->isGroupCollapsed(0, 3));
 
     th.sendToSerialization(cmsg::DeleteGroup(zad{0, 1, -1}));
-    th.stepUI();
+    th.sync();
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroups().size() == 4);
     // Old group 3 is now at index 2; its FOLDED bit must have travelled.
     REQUIRE(sm->isGroupCollapsed(0, 2));
@@ -376,7 +376,7 @@ TEST_CASE("Fold: delete-fixup drops the deleted group's fold bit and clamps out-
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -388,12 +388,12 @@ TEST_CASE("Fold: delete-fixup drops the deleted group's fold bit and clamps out-
 
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 4, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].collapsedGroups.size() == 2);
 
     // Delete the folded group 2. Group 2's bit is gone; group 4's bit shifts to 3.
     th.sendToSerialization(cmsg::DeleteGroup(zad{0, 2, -1}));
-    th.stepUI(30); // the delete and its fold fixup hop the audio thread
+    th.sync();
     REQUIRE(th.engine->getPatch()->getPart(0)->getGroups().size() == 4);
     REQUIRE(!sm->isGroupCollapsed(0, 2));
     REQUIRE(sm->isGroupCollapsed(0, 3));
@@ -404,7 +404,7 @@ TEST_CASE("Deleting several selected groups is one undo step")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -416,7 +416,7 @@ TEST_CASE("Deleting several selected groups is one undo step")
 
     for (int g = 0; g < 5; ++g)
         th.sendToSerialization(cmsg::RenameGroup({zad{0, g, -1}, "G" + std::to_string(g)}));
-    th.stepUI();
+    th.sync();
 
     auto selectGroup = [&th](int g, bool distinct) {
         auto sa = scxt::selection::SelectionManager::SelectActionContents(zad{0, g, -1});
@@ -428,11 +428,11 @@ TEST_CASE("Deleting several selected groups is one undo step")
     };
     selectGroup(1, true);
     selectGroup(3, false);
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].selectedGroups.size() == 2);
 
     th.sendToSerialization(cmsg::DeleteAllSelectedGroups(true));
-    th.stepUI(30);
+    th.sync();
 
     REQUIRE(part->getGroups().size() == 3);
     REQUIRE(part->getGroup(0)->name == "G0");
@@ -441,7 +441,7 @@ TEST_CASE("Deleting several selected groups is one undo step")
 
     INFO("One undo brings both groups back, in their old places");
     th.sendToSerialization(cmsg::Undo(true));
-    th.stepUI(30);
+    th.sync();
 
     REQUIRE(part->getGroups().size() == 5);
     for (int g = 0; g < 5; ++g)
@@ -452,7 +452,7 @@ TEST_CASE("Fold: swap groups remaps fold state")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -461,24 +461,24 @@ TEST_CASE("Fold: swap groups remaps fold state")
     const auto &sm = th.engine->getSelectionManager();
 
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->isGroupCollapsed(0, 2));
     REQUIRE(!sm->isGroupCollapsed(0, 4));
 
     INFO("Swap group 2 and group 4 (tgt.zone == -1 path)");
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, -1}}));
-    th.stepUI(30); // the move and its fold remap hop the audio thread
+    th.sync();
 
     REQUIRE(!sm->isGroupCollapsed(0, 2));
     REQUIRE(sm->isGroupCollapsed(0, 4));
 
     INFO("Swap again with both endpoints collapsed — both stay collapsed");
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 1, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->isGroupCollapsed(0, 1));
     REQUIRE(sm->isGroupCollapsed(0, 4));
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 1, -1}, zad{0, 4, -1}}));
-    th.stepUI(30); // the move and its fold remap hop the audio thread
+    th.sync();
     REQUIRE(sm->isGroupCollapsed(0, 1));
     REQUIRE(sm->isGroupCollapsed(0, 4));
 }
@@ -487,7 +487,7 @@ TEST_CASE("Fold: moveGroupToAfter remaps fold state (src<tgt)")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -497,7 +497,7 @@ TEST_CASE("Fold: moveGroupToAfter remaps fold state (src<tgt)")
 
     // Initial fold state: group 2 collapsed, group 4 expanded.
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->isGroupCollapsed(0, 2));
     REQUIRE(!sm->isGroupCollapsed(0, 4));
 
@@ -505,7 +505,7 @@ TEST_CASE("Fold: moveGroupToAfter remaps fold state (src<tgt)")
     // Layout: 0 1 2 3 4 -> 0 1 3 4 2. Original-2 (collapsed) now sits at index 4.
     // Originals at 3 and 4 shift down to 2 and 3.
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, 0}}));
-    th.stepUI(30); // the move and its fold remap hop the audio thread
+    th.sync();
 
     REQUIRE(!sm->isGroupCollapsed(0, 2));
     REQUIRE(!sm->isGroupCollapsed(0, 3));
@@ -516,7 +516,7 @@ TEST_CASE("Fold: moveGroupToAfter remaps fold state (src>tgt)")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -527,7 +527,7 @@ TEST_CASE("Fold: moveGroupToAfter remaps fold state (src>tgt)")
     // Mirrors the bug Paul reported: fold 2, then drag 2 past 4. Original-2's
     // fold state must travel with it.
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 4, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->isGroupCollapsed(0, 4));
     REQUIRE(!sm->isGroupCollapsed(0, 1));
 
@@ -535,7 +535,7 @@ TEST_CASE("Fold: moveGroupToAfter remaps fold state (src>tgt)")
     // Layout: 0 1 2 3 4 -> 0 1 4 2 3. Original-4 (collapsed) sits at index 2.
     // Originals at 2,3 shift up to 3,4.
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 4, -1}, zad{0, 1, 0}}));
-    th.stepUI(30); // the move and its fold remap hop the audio thread
+    th.sync();
 
     REQUIRE(sm->isGroupCollapsed(0, 2));
     REQUIRE(!sm->isGroupCollapsed(0, 3));
@@ -546,7 +546,7 @@ TEST_CASE("Fold: moveGroupToAfter preserves fold state outside the affected wind
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     namespace cmsg = scxt::messaging::client;
     using zad = scxt::selection::SelectionManager::ZoneAddress;
@@ -559,12 +559,12 @@ TEST_CASE("Fold: moveGroupToAfter preserves fold state outside the affected wind
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 1, true}));
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 2, true}));
     th.sendToSerialization(cmsg::SetGroupCollapsed({0, 6, true}));
-    th.stepUI();
+    th.sync();
     REQUIRE(sm->state[0].collapsedGroups.size() == 3);
 
     // Move 2 to after 4. Affected window [2, 4] — group 6 must NOT be lost.
     th.sendToSerialization(cmsg::MoveGroupTo({zad{0, 2, -1}, zad{0, 4, 0}}));
-    th.stepUI(30); // the move and its fold remap hop the audio thread
+    th.sync();
 
     REQUIRE(sm->isGroupCollapsed(0, 1));
     REQUIRE(!sm->isGroupCollapsed(0, 2));
@@ -584,18 +584,18 @@ TEST_CASE("SCP preserves selection across parts", "[selection]")
     {
         scxt::clients::console_ui::ConsoleHarness srcH;
         srcH.start();
-        srcH.stepUI();
+        srcH.sync();
 
         // Select part 3 first, then add zones into it (the natural UI flow).
         srcH.sendToSerialization(cmsg::SelectPart(3));
         srcH.sendToSerialization(cmsg::AddBlankZone({3, 0, 48, 60, 0, 127}));
         srcH.sendToSerialization(cmsg::AddBlankZone({3, 0, 61, 72, 0, 127}));
         srcH.sendToSerialization(cmsg::AddBlankZone({3, 0, 73, 84, 0, 127}));
-        srcH.stepUI();
+        srcH.sync();
 
         srcH.sendToSerialization(cmsg::ApplySelectActions({{3, 0, 1, true, true, true}}));
         srcH.sendToSerialization(cmsg::SetGroupCollapsed({3, 0, true}));
-        srcH.stepUI();
+        srcH.sync();
 
         const auto &sm = srcH.engine->getSelectionManager();
         REQUIRE(sm->selectedPart == 3);
@@ -605,7 +605,7 @@ TEST_CASE("SCP preserves selection across parts", "[selection]")
 
         srcH.sendToSerialization(
             cmsg::SavePart({tmp.u8string(), 3, scxt::patch_io::SaveStyles::NO_SAMPLES}));
-        srcH.stepUI();
+        srcH.sync();
     }
     REQUIRE(std::filesystem::exists(tmp));
 
@@ -613,15 +613,15 @@ TEST_CASE("SCP preserves selection across parts", "[selection]")
     {
         scxt::clients::console_ui::ConsoleHarness dstH;
         dstH.start();
-        dstH.stepUI();
+        dstH.sync();
 
         const auto &dsm = dstH.engine->getSelectionManager();
         auto preState0 = dsm->state[0];
         auto preState5 = dsm->state[5];
 
         dstH.sendToSerialization(cmsg::LoadPartInto({tmp.u8string(), (int16_t)7}));
-        dstH.stepUI();
-        dstH.stepUI();
+        dstH.sync();
+        dstH.sync();
 
         // Structure loaded into part 7, and the selection slice landed at state[7]
         // with every .part remapped onto part 7.
@@ -642,16 +642,16 @@ TEST_CASE("SCP preserves selection across parts", "[selection]")
     {
         scxt::clients::console_ui::ConsoleHarness dstH;
         dstH.start();
-        dstH.stepUI();
+        dstH.sync();
 
         const auto &dsm = dstH.engine->getSelectionManager();
         dstH.sendToSerialization(cmsg::SelectPart(2));
-        dstH.stepUI();
+        dstH.sync();
         REQUIRE(dsm->selectedPart == 2);
 
         dstH.sendToSerialization(cmsg::LoadPartInto({tmp.u8string(), (int16_t)2}));
-        dstH.stepUI();
-        dstH.stepUI();
+        dstH.sync();
+        dstH.sync();
 
         // The saved selection (one zone, lead {2,0,1}) survived; we did NOT fall
         // back to "all of group 0 selected".

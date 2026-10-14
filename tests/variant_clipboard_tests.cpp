@@ -52,7 +52,7 @@ struct VariantClipboardFixture
     VariantClipboardFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
 
         send(cmsg::AddSampleWithRange({sample("Beep.wav"), 60, 48, 72, 0, 127}));
         send(cmsg::ApplySelectActions({{0, 0, 0, true, true, true}}));
@@ -61,10 +61,10 @@ struct VariantClipboardFixture
         REQUIRE(zone().getNumSampleLoaded() == 3);
     }
 
-    template <typename T> void send(const T &msg, size_t drainSteps = 30)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drainSteps);
+        th.sync();
     }
 
     static std::string sample(const std::string &n)

@@ -56,6 +56,30 @@ struct ConsoleHarness : scxt::MoveableOnly<ConsoleHarness>
     {
         scxt::messaging::client::clientSendToSerialization(t, *engine->getMessageController());
     }
+
+    // waits until serial and audio have handled everything sent and the replies are in
+    bool sync(std::chrono::milliseconds timeout = std::chrono::seconds(10))
+    {
+        auto token = ++syncsSent;
+        sendToSerialization(scxt::messaging::client::HarnessSync(token));
+        auto giveUp = std::chrono::steady_clock::now() + timeout;
+        while (true)
+        {
+            engine->getMessageController()->wakeSerialization();
+            editor->stepUI();
+            if (editor->lastHarnessSync >= token)
+                return true;
+            if (std::chrono::steady_clock::now() > giveUp)
+            {
+                SCLOG_IF(warnings, "Harness sync " << token << " timed out");
+                return false;
+            }
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
+        }
+    }
+
+  private:
+    int64_t syncsSent{0};
 };
 } // namespace scxt::clients::console_ui
 #endif // SHORTCIRCUITXT_CONSOLE_HARNESS_H

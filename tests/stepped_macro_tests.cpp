@@ -314,19 +314,19 @@ TEST_CASE("Stepped macro messages", "[macros]")
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     auto &macro = th.engine->getPatch()->getPart(0)->macros[0];
 
     auto stepped = macro;
     stepped.setMode(mac::UNIPOLAR, 5);
     th.sendToSerialization(cmsg::SetMacroFullState({(int16_t)0, (int16_t)0, stepped}));
-    th.stepUI();
+    th.sync();
     REQUIRE(macro.isStepped());
     REQUIRE(macro.steps == 5);
 
     th.sendToSerialization(cmsg::SetMacroValue({(int16_t)0, (int16_t)0, 0.55f}));
-    th.stepUI(20);
+    th.sync();
     REQUIRE(isOnAStep(macro));
     REQUIRE(macro.value == Approx(0.5f).margin(1e-6));
 
@@ -334,20 +334,20 @@ TEST_CASE("Stepped macro messages", "[macros]")
     auto oversized = macro;
     oversized.steps = 30000;
     th.sendToSerialization(cmsg::SetMacroFullState({(int16_t)0, (int16_t)0, oversized}));
-    th.stepUI();
+    th.sync();
     REQUIRE(macro.steps == mac::maxSteps);
 
     auto single = macro;
     single.steps = 1;
     th.sendToSerialization(cmsg::SetMacroFullState({(int16_t)0, (int16_t)0, single}));
-    th.stepUI();
+    th.sync();
     REQUIRE(macro.steps == 0);
     REQUIRE(!macro.isStepped());
 
     for (int i = 0; i < 10 && th.engine->undoManager.hasUndoSteps(); ++i)
     {
         th.sendToSerialization(cmsg::Undo(true));
-        th.stepUI(20);
+        th.sync();
     }
     REQUIRE(!macro.isStepped());
 }

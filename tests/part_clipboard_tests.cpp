@@ -53,7 +53,7 @@ struct PartClipboardFixture
     PartClipboardFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
 
         activate(1);
         selectPart(0);
@@ -63,10 +63,10 @@ struct PartClipboardFixture
         setNames(0, "Cello Sustain", "warm and slow");
     }
 
-    template <typename T> void send(const T &msg, size_t drainSteps = 30)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drainSteps);
+        th.sync();
     }
 
     static std::string sample(const std::string &n)

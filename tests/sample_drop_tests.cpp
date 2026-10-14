@@ -56,7 +56,7 @@ struct DropFixture
     DropFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
     scxt::engine::Part &part() { return *th.engine->getPatch()->getPart(0); }
@@ -68,19 +68,10 @@ struct DropFixture
         return part().getGroup(group)->getZones().size();
     }
 
-    // adds land after an audio thread hop, and a drain is not a barrier
     bool drainUntilZones(size_t group, size_t n)
     {
-        for (int i = 0; i < 300; ++i)
-        {
-            th.stepUI(1);
-            if (zonesIn(group) == n)
-            {
-                th.stepUI(20);
-                return true;
-            }
-        }
-        return false;
+        th.sync();
+        return zonesIn(group) == n;
     }
 
     void resetCounts()
@@ -98,22 +89,14 @@ struct DropFixture
         th.sendToSerialization(cmsg::AddSamples({{beep(60, 48, 72)}, -1, -1}));
         REQUIRE(drainUntilZones(0, 1));
         th.sendToSerialization(cmsg::ApplySelectActions({{0, 0, 0, true, true, true}}));
-        th.stepUI(30);
+        th.sync();
         REQUIRE(zone().getNumSampleLoaded() == 1);
     }
 
     bool drainUntilVariants(size_t n)
     {
-        for (int i = 0; i < 300; ++i)
-        {
-            th.stepUI(1);
-            if ((size_t)zone().getNumSampleLoaded() == n)
-            {
-                th.stepUI(20);
-                return true;
-            }
-        }
-        return false;
+        th.sync();
+        return (size_t)zone().getNumSampleLoaded() == n;
     }
 
     std::string variantName(int v)
@@ -200,7 +183,7 @@ TEST_CASE("A multi sample drop into an explicit group lands in that group", "[dr
     DropFixture f;
     for (int i = 0; i < 3; ++i)
         f.th.sendToSerialization(cmsg::CreateGroup(0));
-    f.th.stepUI(30);
+    f.th.sync();
     REQUIRE(f.part().getGroups().size() == 3);
 
     // the middle group is neither the first nor the most recently created one
@@ -221,7 +204,7 @@ TEST_CASE("A multi sample drop is a single undo step", "[drop][undo]")
     REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize + 1);
 
     f.th.sendToSerialization(cmsg::Undo(true));
-    f.th.stepUI(30);
+    f.th.sync();
     REQUIRE(f.part().getGroups().empty());
 }
 
@@ -316,7 +299,7 @@ TEST_CASE("A multi sample variant drop is a single undo step", "[drop][variants]
     REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize + 1);
 
     f.th.sendToSerialization(cmsg::Undo(true));
-    f.th.stepUI(30);
+    f.th.sync();
     REQUIRE(f.zone().getNumSampleLoaded() == 1);
 }
 
@@ -393,7 +376,7 @@ TEST_CASE("Browser auto-load replaces the lead zone's sample", "[drop][autoload]
     REQUIRE(f.variantName(0) == "Beep.wav");
 
     f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Kick.wav")));
-    f.th.stepUI(30);
+    f.th.sync();
 
     REQUIRE(f.variantName(0) == "Kick.wav");
     REQUIRE(f.zone().getNumSampleLoaded() == 1);
@@ -405,7 +388,7 @@ TEST_CASE("Browser auto-load leaves the zone geometry alone", "[drop][autoload]"
     f.th.sendToSerialization(cmsg::AddSamples({{beep(48, 36, 60)}, -1, -1}));
     REQUIRE(f.drainUntilZones(0, 1));
     f.th.sendToSerialization(cmsg::ApplySelectActions({{0, 0, 0, true, true, true}}));
-    f.th.stepUI(30);
+    f.th.sync();
 
     auto &z = f.zone();
     z.mapping.velocityRange = {20, 100};
@@ -418,7 +401,7 @@ TEST_CASE("Browser auto-load leaves the zone geometry alone", "[drop][autoload]"
     auto looped = writeLoopedWav(dir, 100, 200);
 
     f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(looped.u8string()));
-    f.th.stepUI(30);
+    f.th.sync();
 
     REQUIRE(f.variantName(0) == "Looped.wav");
     REQUIRE(z.mapping.rootKey == 48);
@@ -440,7 +423,7 @@ TEST_CASE("Browser auto-load collapses the zone to one variant", "[drop][autoloa
     REQUIRE(f.drainUntilVariants(4));
 
     f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Hat.wav")));
-    f.th.stepUI(30);
+    f.th.sync();
 
     REQUIRE(f.zone().getNumSampleLoaded() == 1);
     REQUIRE(f.variantName(0) == "Hat.wav");
@@ -464,7 +447,7 @@ TEST_CASE("Browser auto-load takes the loop from the sample, or leaves none",
     SECTION("a sample with loop points brings them in")
     {
         f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(looped.u8string()));
-        f.th.stepUI(30);
+        f.th.sync();
 
         const auto &v = f.zone().variantData.variants[0];
         REQUIRE(v.loopActive);
@@ -476,11 +459,11 @@ TEST_CASE("Browser auto-load takes the loop from the sample, or leaves none",
     SECTION("a sample with none loses the loop the last one had")
     {
         f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(looped.u8string()));
-        f.th.stepUI(30);
+        f.th.sync();
         REQUIRE(f.zone().variantData.variants[0].loopActive);
 
         f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Kick.wav")));
-        f.th.stepUI(30);
+        f.th.sync();
 
         const auto &v = f.zone().variantData.variants[0];
         REQUIRE(f.variantName(0) == "Kick.wav");
@@ -501,20 +484,20 @@ TEST_CASE("Browser auto-load is one undo step each time", "[drop][autoload][undo
     auto baseSize = f.th.engine->undoManager.undoStackSize();
 
     f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Hat.wav")));
-    f.th.stepUI(30);
+    f.th.sync();
     REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize + 1);
 
     f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Kick.wav")));
-    f.th.stepUI(30);
+    f.th.sync();
     REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize + 2);
 
     // the second swap backs out to the first, and the first back to all three variants
     f.th.sendToSerialization(cmsg::Undo(true));
-    f.th.stepUI(30);
+    f.th.sync();
     REQUIRE(f.variantName(0) == "Hat.wav");
 
     f.th.sendToSerialization(cmsg::Undo(true));
-    f.th.stepUI(30);
+    f.th.sync();
     REQUIRE(f.zone().getNumSampleLoaded() == 3);
     REQUIRE(f.variantName(0) == "Beep.wav");
 }
@@ -622,7 +605,7 @@ TEST_CASE("Browser auto-load with no zone to load into does nothing", "[drop][au
     auto baseSize = f.th.engine->undoManager.undoStackSize();
 
     f.th.sendToSerialization(cmsg::AutoLoadSampleIntoLeadZone(autoLoadPath("Kick.wav")));
-    f.th.stepUI(30);
+    f.th.sync();
 
     REQUIRE(f.part().getGroups().empty());
     REQUIRE(f.th.engine->undoManager.undoStackSize() == baseSize);

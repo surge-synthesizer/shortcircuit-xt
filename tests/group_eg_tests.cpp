@@ -205,11 +205,11 @@ TEST_CASE("The last group EG edits and undoes through messages", "[undo][groupeg
 
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     auto send = [&th](const auto &msg) {
         th.sendToSerialization(msg);
-        th.stepUI(10);
+        th.sync();
     };
 
     send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));

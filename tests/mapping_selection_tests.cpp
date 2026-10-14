@@ -49,18 +49,18 @@ struct MappingFixture
     MappingFixture()
     {
         th.start();
-        th.stepUI();
+        th.sync();
     }
 
     scxt::engine::Engine &engine() { return *th.engine; }
 
-    template <typename T> void send(const T &msg, size_t drainSteps = 30)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drainSteps);
+        th.sync();
     }
 
-    void sendUndo(size_t drainSteps = 30) { send(cmsg::Undo(true), drainSteps); }
+    void sendUndo() { send(cmsg::Undo(true)); }
 };
 
 /*

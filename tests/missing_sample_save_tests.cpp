@@ -60,7 +60,7 @@ struct SavedSampleFixture
         fs::copy_file(samplePath("next/Beep.wav"), sample);
 
         th.start();
-        th.stepUI();
+        th.sync();
         send(cmsg::AddSampleWithRange({sample.u8string(), 60, 48, 72, 0, 127}));
         REQUIRE(th.engine->getPatch()->getPart(0)->getGroups().size() == 1);
     }
@@ -74,7 +74,7 @@ struct SavedSampleFixture
     template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(30);
+        th.sync();
     }
 
     void save(SaveStyles style, bool asPart, const std::string &name)

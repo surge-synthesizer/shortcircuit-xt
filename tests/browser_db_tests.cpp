@@ -60,11 +60,11 @@ TEST_CASE("A browser database which cannot be opened reports an error", "[browse
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     WriterWorker w(missingDirectory(), *th.engine->getMessageController());
     w.openForWrite();
-    th.stepUI(30);
+    th.sync();
 
     REQUIRE(browserDatabaseErrors(th) == 1);
 }
@@ -73,18 +73,18 @@ TEST_CASE("Repeated writes to an unopenable browser database report once", "[bro
 {
     scxt::clients::console_ui::ConsoleHarness th;
     th.start();
-    th.stepUI();
+    th.sync();
 
     WriterWorker w(missingDirectory(), *th.engine->getMessageController());
     w.openForWrite();
-    th.stepUI(30);
+    th.sync();
 
     for (int i = 0; i < 3; ++i)
     {
         w.enqueueWorkItem(new WriterWorker::EnQDebugMsg("write " + std::to_string(i)));
-        th.stepUI(10);
+        w.waitUntilIdle();
     }
-    th.stepUI(30);
+    th.sync();
 
     REQUIRE(browserDatabaseErrors(th) == 1);
 }

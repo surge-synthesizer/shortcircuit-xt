@@ -55,7 +55,7 @@ struct FilesFixture
         std::filesystem::remove_all(dir);
         std::filesystem::create_directories(dir);
         th.start();
-        th.stepUI();
+        th.sync();
     }
     ~FilesFixture() { std::filesystem::remove_all(dir); }
 
@@ -65,10 +65,10 @@ struct FilesFixture
         return th.engine->getSelectionManager()->getPatchFiles();
     }
 
-    template <typename T> void send(const T &msg, size_t drainSteps = 10)
+    template <typename T> void send(const T &msg)
     {
         th.sendToSerialization(msg);
-        th.stepUI(drainSteps);
+        th.sync();
     }
 };
 
@@ -76,7 +76,7 @@ void activate(FilesFixture &f, int16_t part)
 {
     auto cfg = f.engine().getPatch()->getPart(part)->configuration;
     cfg.active = true;
-    f.send(cmsg::UpdatePartFullConfig({part, cfg}), 20);
+    f.send(cmsg::UpdatePartFullConfig({part, cfg}));
 }
 } // namespace
 
@@ -151,7 +151,7 @@ TEST_CASE("Saving a part names it for the file", "[patchfiles]")
     FilesFixture f("save_part");
     auto tmp = f.dir / "Cello Sustain.scp";
 
-    f.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}), 20);
+    f.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}));
     REQUIRE(std::filesystem::exists(tmp));
 
     REQUIRE(std::string(f.engine().getPatch()->getPart(0)->names.name) == "Cello Sustain");
@@ -168,12 +168,12 @@ TEST_CASE("Loading a part names the slot for the file", "[patchfiles]")
 
     {
         FilesFixture src("load_part_src");
-        src.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}), 20);
+        src.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}));
     }
     REQUIRE(std::filesystem::exists(tmp));
 
     FilesFixture f("load_part_dst");
-    f.send(cmsg::LoadPartInto({tmp.u8string(), (int16_t)5}), 20);
+    f.send(cmsg::LoadPartInto({tmp.u8string(), (int16_t)5}));
 
     REQUIRE(std::string(f.engine().getPatch()->getPart(5)->names.name) == "Viola Short");
     REQUIRE(f.files().parts[5].path == tmp);
@@ -193,14 +193,14 @@ TEST_CASE("Saving and loading a multi names it for the file", "[patchfiles]")
     {
         FilesFixture src("multi_src");
         REQUIRE(src.files().multiName == "Default Multi");
-        src.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}), 20);
+        src.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}));
         REQUIRE(src.files().multiName == "String Quartet");
         REQUIRE(src.files().multi.path == tmp);
     }
     REQUIRE(std::filesystem::exists(tmp));
 
     FilesFixture f("multi_dst");
-    f.send(cmsg::LoadMulti(tmp.u8string()), 30);
+    f.send(cmsg::LoadMulti(tmp.u8string()));
     REQUIRE(f.files().multiName == "String Quartet");
     REQUIRE(f.files().multi.path == tmp);
 
@@ -221,8 +221,8 @@ TEST_CASE("A multi load re-roots part files whose folder is gone", "[patchfiles]
 
     {
         FilesFixture src("reroot_writer");
-        src.send(cmsg::SavePart({part.u8string(), 0, pio::SaveStyles::NO_SAMPLES}), 20);
-        src.send(cmsg::SaveMulti({multi.u8string(), pio::SaveStyles::NO_SAMPLES}), 20);
+        src.send(cmsg::SavePart({part.u8string(), 0, pio::SaveStyles::NO_SAMPLES}));
+        src.send(cmsg::SaveMulti({multi.u8string(), pio::SaveStyles::NO_SAMPLES}));
         REQUIRE(src.files().parts[0].path == part);
     }
 
@@ -232,7 +232,7 @@ TEST_CASE("A multi load re-roots part files whose folder is gone", "[patchfiles]
     std::filesystem::remove_all(srcDir);
 
     FilesFixture f("reroot_loader");
-    f.send(cmsg::LoadMulti((dstDir / "Quartet.scm").u8string()), 30);
+    f.send(cmsg::LoadMulti((dstDir / "Quartet.scm").u8string()));
 
     REQUIRE(f.files().multi.path == dstDir / "Quartet.scm");
     // the part keeps its filename and follows the multi
@@ -253,22 +253,22 @@ TEST_CASE("A multi load leaves the screen where it was", "[patchfiles]")
         // a multi saved on the mixer, with part 1 selected and two parts live
         FilesFixture src("view_writer");
         activate(src, 1);
-        src.send(cmsg::SelectPart(1), 20);
-        src.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}), 20);
-        src.send(cmsg::UpdateOtherTabSelection({"multi.zone.lfo", "2"}), 20);
-        src.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}), 20);
+        src.send(cmsg::SelectPart(1));
+        src.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}));
+        src.send(cmsg::UpdateOtherTabSelection({"multi.zone.lfo", "2"}));
+        src.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}));
     }
 
     SECTION("The screen, tabs and part you were on all survive")
     {
         FilesFixture f("view_same_part");
-        f.send(cmsg::UpdateOtherTabSelection({"main_screen", "play"}), 20);
-        f.send(cmsg::UpdateOtherTabSelection({"multi.pgz", "group"}), 20);
-        f.send(cmsg::UpdateOtherTabSelection({"multi.zone.lfo", "1"}), 20);
+        f.send(cmsg::UpdateOtherTabSelection({"main_screen", "play"}));
+        f.send(cmsg::UpdateOtherTabSelection({"multi.pgz", "group"}));
+        f.send(cmsg::UpdateOtherTabSelection({"multi.zone.lfo", "1"}));
         activate(f, 1);
-        f.send(cmsg::SelectPart(1), 20);
+        f.send(cmsg::SelectPart(1));
 
-        f.send(cmsg::LoadMulti(tmp.u8string()), 30);
+        f.send(cmsg::LoadMulti(tmp.u8string()));
 
         const auto &sm = f.engine().getSelectionManager();
         REQUIRE(sm->otherTabSelection["main_screen"] == "play");
@@ -281,7 +281,7 @@ TEST_CASE("A multi load leaves the screen where it was", "[patchfiles]")
     SECTION("A fresh view stays fresh")
     {
         FilesFixture f("view_fresh");
-        f.send(cmsg::LoadMulti(tmp.u8string()), 30);
+        f.send(cmsg::LoadMulti(tmp.u8string()));
 
         REQUIRE(f.engine().getSelectionManager()->otherTabSelection.empty());
     }
@@ -290,10 +290,10 @@ TEST_CASE("A multi load leaves the screen where it was", "[patchfiles]")
     {
         FilesFixture f("view_gone_part");
         activate(f, 7);
-        f.send(cmsg::SelectPart(7), 20);
+        f.send(cmsg::SelectPart(7));
         REQUIRE(f.engine().getSelectionManager()->selectedPart == 7);
 
-        f.send(cmsg::LoadMulti(tmp.u8string()), 30);
+        f.send(cmsg::LoadMulti(tmp.u8string()));
 
         const auto &sm = f.engine().getSelectionManager();
         REQUIRE(f.engine().getPatch()->getPart(sm->selectedPart)->configuration.active);
@@ -307,16 +307,16 @@ TEST_CASE("A reset names the template and clears its files", "[patchfiles]")
 {
     FilesFixture f("reset");
     auto tmp = f.dir / "Something.scm";
-    f.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}), 20);
+    f.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}));
     REQUIRE(f.files().multiName == "Something");
 
-    f.send(cmsg::ResetEngine("InitSynth.dat"), 30);
+    f.send(cmsg::ResetEngine("InitSynth.dat"));
     REQUIRE(f.files().multiName == "Init Synth");
     REQUIRE(f.files().multi.path.empty());
     REQUIRE(std::string(f.engine().getPatch()->getPart(0)->names.name) == "Synth");
     REQUIRE(std::string(f.engine().getPatch()->getPart(1)->names.name) == "Default Part");
 
-    f.send(cmsg::ResetEngine("InitSamplerMulti.dat"), 30);
+    f.send(cmsg::ResetEngine("InitSamplerMulti.dat"));
     REQUIRE(f.files().multiName == "Init 16 Part");
     REQUIRE(std::string(f.engine().getPatch()->getPart(0)->names.name) == "Default Part");
 }
@@ -325,10 +325,10 @@ TEST_CASE("Clearing a part forgets the file it came from", "[patchfiles]")
 {
     FilesFixture f("clear");
     auto tmp = f.dir / "Kick.scp";
-    f.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}), 20);
+    f.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}));
     REQUIRE(f.files().parts[0].path == tmp);
 
-    f.send(cmsg::ClearPart(0), 20);
+    f.send(cmsg::ClearPart(0));
     REQUIRE(f.files().parts[0].path.empty());
     REQUIRE(std::string(f.engine().getPatch()->getPart(0)->names.name) == "Default Part");
 }
@@ -338,13 +338,13 @@ TEST_CASE("Renaming a multi is undoable", "[patchfiles]")
     FilesFixture f("rename");
     REQUIRE(f.files().multiName == "Default Multi");
 
-    f.send(cmsg::RenameMulti("Live Rig"), 20);
+    f.send(cmsg::RenameMulti("Live Rig"));
     REQUIRE(f.files().multiName == "Live Rig");
 
-    f.send(cmsg::Undo(true), 20);
+    f.send(cmsg::Undo(true));
     REQUIRE(f.files().multiName == "Default Multi");
 
-    f.send(cmsg::Redo(true), 20);
+    f.send(cmsg::Redo(true));
     REQUIRE(f.files().multiName == "Live Rig");
 }
 
@@ -353,8 +353,8 @@ TEST_CASE("Patch files survive a DAW state round trip", "[patchfiles]")
     FilesFixture f("daw");
     auto part = f.dir / "Snare.scp";
     auto tmp = f.dir / "Session Kit.scm";
-    f.send(cmsg::SavePart({part.u8string(), 0, pio::SaveStyles::NO_SAMPLES}), 20);
-    f.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}), 20);
+    f.send(cmsg::SavePart({part.u8string(), 0, pio::SaveStyles::NO_SAMPLES}));
+    f.send(cmsg::SaveMulti({tmp.u8string(), pio::SaveStyles::NO_SAMPLES}));
 
     std::string state;
     {
@@ -364,7 +364,7 @@ TEST_CASE("Patch files survive a DAW state round trip", "[patchfiles]")
 
     // the unstream has to happen on the serial thread, as a DAW state load does
     FilesFixture g("daw_restore");
-    g.send(cmsg::UnstreamEngineState(state), 30);
+    g.send(cmsg::UnstreamEngineState(state));
 
     REQUIRE(g.files().multiName == "Session Kit");
     REQUIRE(g.files().multi.path == tmp);
@@ -379,7 +379,7 @@ TEST_CASE("Patch files survive a DAW state round trip", "[patchfiles]")
 TEST_CASE("Only a DAW session carries the view", "[patchfiles]")
 {
     FilesFixture f("view_streams");
-    f.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}), 20);
+    f.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}));
 
     auto streamFor = [&f](scxt::engine::Engine::StreamReason r) {
         auto sg = scxt::engine::Engine::StreamGuard(r);
@@ -389,8 +389,8 @@ TEST_CASE("Only a DAW session carries the view", "[patchfiles]")
     REQUIRE(streamFor(scxt::engine::Engine::FOR_MULTI).find("\"tabs\"") == std::string::npos);
 
     FilesFixture g("view_streams_restore");
-    g.send(cmsg::UpdateOtherTabSelection({"main_screen", "play"}), 20);
-    g.send(cmsg::UnstreamEngineState(streamFor(scxt::engine::Engine::FOR_DAW)), 30);
+    g.send(cmsg::UpdateOtherTabSelection({"main_screen", "play"}));
+    g.send(cmsg::UnstreamEngineState(streamFor(scxt::engine::Engine::FOR_DAW)));
 
     REQUIRE(g.engine().getSelectionManager()->otherTabSelection["main_screen"] == "mixer");
     REQUIRE(g.th.editor->otherTabSelection["main_screen"] == "mixer");
@@ -400,11 +400,11 @@ TEST_CASE("A part load leaves the view where it was", "[patchfiles]")
 {
     FilesFixture f("view_part");
     auto tmp = f.dir / "Bass.scp";
-    f.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}), 20);
+    f.send(cmsg::SavePart({tmp.u8string(), 0, pio::SaveStyles::NO_SAMPLES}));
 
-    f.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}), 20);
-    f.send(cmsg::UpdateOtherTabSelection({"multi.pgz", "part"}), 20);
-    f.send(cmsg::LoadPartInto({tmp.u8string(), (int16_t)0}), 20);
+    f.send(cmsg::UpdateOtherTabSelection({"main_screen", "mixer"}));
+    f.send(cmsg::UpdateOtherTabSelection({"multi.pgz", "part"}));
+    f.send(cmsg::LoadPartInto({tmp.u8string(), (int16_t)0}));
 
     const auto &sm = f.engine().getSelectionManager();
     REQUIRE(sm->otherTabSelection["main_screen"] == "mixer");

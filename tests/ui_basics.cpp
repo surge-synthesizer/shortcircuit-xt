@@ -42,3 +42,20 @@ TEST_CASE("Basic Console UI Startup")
         std::this_thread::sleep_for(std::chrono::milliseconds(17));
     }
 }
+
+TEST_CASE("Harness sync returns once its reply arrives")
+{
+    scxt::clients::console_ui::ConsoleHarness th;
+    REQUIRE(th.start());
+
+    REQUIRE(th.sync());
+    REQUIRE(th.editor->lastHarnessSync == 1);
+
+    // a structure edit hops the audio thread and comes back before the sync reply
+    th.editor->structureUpdateCount = 0;
+    th.sendToSerialization(scxt::messaging::client::CreateGroup(0));
+    REQUIRE(th.sync());
+    REQUIRE(th.editor->lastHarnessSync == 2);
+    REQUIRE(th.engine->getPatch()->getPart(0)->getGroups().size() == 1);
+    REQUIRE(th.editor->structureUpdateCount > 0);
+}
