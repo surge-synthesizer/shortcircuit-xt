@@ -109,6 +109,8 @@ const datamodel::pmd finePitchShiftMetadata =
         .withLinearScaleFormatting("cents")
         .withDecimalPlaces(1)
         .withName("Fine Pitch Shift");
+const datamodel::pmd glideTimeOffsetMetadata =
+    datamodel::pmd().asPercentBipolar().withName("Glide Time Offset");
 } // namespace
 
 void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)
@@ -118,6 +120,7 @@ void MatrixEndpoints::MappingTarget::bind(scxt::voice::modulation::Matrix &m, en
     shmo::bindEl(m, mt, pitchOffsetT, mt.pitchOffset, pitchOffsetP);
     shmo::bindEl(m, mt, ampT, mt.amplitude, ampP);
     shmo::bindEl(m, mt, panT, mt.pan, panP);
+    shmo::bindEl(m, mt, glideTimeOffsetT, zeroBase, glideTimeOffsetP, &glideTimeOffsetMetadata);
 }
 
 void MatrixEndpoints::OutputTarget::bind(scxt::voice::modulation::Matrix &m, engine::Zone &z)

@@ -284,6 +284,7 @@ void GroupMatrixEndpoints::OutputTarget::bind(scxt::modulation::GroupMatrix &m, 
 {
     shmo::bindEl(m, g.outputInfo, ampT, g.outputInfo.amplitude, ampP);
     shmo::bindEl(m, g.outputInfo, panT, g.outputInfo.pan, panP);
+    shmo::bindEl(m, g.outputInfo, glideTimeT, g.outputInfo.glideTime, glideTimeP);
 }
 
 GroupMatrixEndpoints::Sources::Sources(engine::Engine *e)
