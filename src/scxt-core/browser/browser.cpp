@@ -33,6 +33,7 @@
 #include "utils.h"
 #include "sample/compound_file.h"
 #include "patch_io/patch_io.h"
+#include "sst/plugininfra/strnatcmp.h"
 
 #include "browser_db_impl.h"
 
@@ -160,6 +161,32 @@ std::optional<fs::path> Browser::stepPatchFile(const std::vector<fs::path> &file
     auto idx = (int)std::distance(files.begin(), it) + (direction > 0 ? 1 : -1);
     auto n = (int)files.size();
     return files[((idx % n) + n) % n];
+}
+
+std::vector<fs::path> Browser::singleSamplesIn(const fs::path &dir)
+{
+    std::vector<fs::path> res;
+    if (dir.empty())
+        return res;
+    try
+    {
+        if (!fs::is_directory(dir))
+            return res;
+        for (const auto &e : fs::directory_iterator(dir))
+        {
+            if (e.is_regular_file() && isLoadableSingleSample(e.path()))
+                res.push_back(e.path());
+        }
+    }
+    catch (const fs::filesystem_error &)
+    {
+        return {};
+    }
+
+    std::sort(res.begin(), res.end(), [](const auto &a, const auto &b) {
+        return strnatcasecmp(a.filename().u8string().c_str(), b.filename().u8string().c_str()) < 0;
+    });
+    return res;
 }
 
 void Browser::addRootPathForDeviceView(const fs::path &p, bool indexed,

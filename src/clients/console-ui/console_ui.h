@@ -205,6 +205,11 @@ struct ConsoleUI
     void onLearnedNote(int16_t k) { lastLearnedNote = k; }
     int64_t lastHarnessSync{0};
     void onHarnessSync(int64_t s) { lastHarnessSync = s; }
+    scxt::messaging::client::mappingHeaderState_t mappingHeaderState{-1, false};
+    void onMappingHeaderState(const scxt::messaging::client::mappingHeaderState_t &s)
+    {
+        mappingHeaderState = s;
+    }
 
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &) ON_STUB;

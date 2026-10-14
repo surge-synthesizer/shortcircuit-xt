@@ -601,6 +601,8 @@ void SelectionManager::sendSelectedZonesToClient()
                                   state[selectedPart].leadGroup, state[selectedPart].selectedGroups,
                                   state[selectedPart].displayGroups},
                               *(engine.getMessageController()));
+    // every selection change comes through here, and zone solo follows the selection
+    engine.refreshZoneSolo();
 }
 
 bool SelectionManager::ZoneAddress::isIn(const engine::Engine &e) const
