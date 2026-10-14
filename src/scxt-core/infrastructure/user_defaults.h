@@ -56,6 +56,7 @@ enum DefaultKeys
     autoExpandSelectedZones,
     zoneEditsInGroupMode,
     moveRootKeyWithZone,
+    useAccessibleWorkflow,
 
     nKeys // must be last K?
 };
@@ -107,6 +108,8 @@ inline std::string defaultKeyToString(DefaultKeys k)
         return "zoneEditsInGroupMode";
     case moveRootKeyWithZone:
         return "moveRootKeyWithZone";
+    case useAccessibleWorkflow:
+        return "useAccessibleWorkflow";
     default:
         std::terminate(); // for now
     }

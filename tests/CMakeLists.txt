@@ -69,6 +69,7 @@ add_executable(scxt-test
 		browser_db_tests.cpp
 		ram_usage_tests.cpp
 		group_settings_selection_tests.cpp
+		user_defaults_tests.cpp
 )
 
 target_compile_definitions(scxt-test PRIVATE

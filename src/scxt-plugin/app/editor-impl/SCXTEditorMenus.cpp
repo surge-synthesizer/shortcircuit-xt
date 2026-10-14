@@ -36,6 +36,7 @@
 #include "sst/plugininfra/version_information.h"
 #include "sst/jucegui/component-adapters/ComponentTags.h"
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
+#include "sst/jucegui/components/NamedPanel.h"
 #include "sst/jucegui/util/WheelCalibration.h"
 #include "sst/clap_juce_shim/menu_helper.h"
 
@@ -631,6 +632,18 @@ void SCXTEditor::addUIThemesMenu(juce::PopupMenu &p, bool addTitle)
                   });
     }
 
+    p.addSeparator();
+    p.addSectionHeader("Accessibility");
+    auto accessible = defaultsProvider.getUserDefaultValue(
+                          infrastructure::DefaultKeys::useAccessibleWorkflow, 0) != 0;
+    p.addItem("Use Accessibility-Optimized Workflow", true, accessible,
+              [w = juce::Component::SafePointer(this), accessible]() {
+                  if (!w)
+                      return;
+                  w->defaultsProvider.updateUserDefaultValue(
+                      infrastructure::DefaultKeys::useAccessibleWorkflow, accessible ? 0 : 1);
+              });
+
 #if JUCE_WINDOWS
     p.addSeparator();
     auto swr = defaultsProvider.getUserDefaultValue(
@@ -683,8 +696,21 @@ void SCXTEditor::popupMenuForContinuous(sst::jucegui::components::ContinuousPara
     auto p = juce::PopupMenu();
     p.addSectionHeader(data->getLabel());
     p.addSeparator();
-    p.addCustomItem(
-        -1, std::make_unique<shared::MenuValueTypein>(this, juce::Component::SafePointer(e)));
+    auto accessible = defaultsProvider.getUserDefaultValue(
+                          infrastructure::DefaultKeys::useAccessibleWorkflow, 0) != 0;
+    // the overlay type-in only places itself inside a named panel
+    if (accessible && e->findParentComponentOfClass<sst::jucegui::components::NamedPanel>())
+    {
+        p.addItem("Edit Value...", [w = juce::Component::SafePointer(e)]() {
+            if (w)
+                w->initiateTypeIn();
+        });
+    }
+    else
+    {
+        p.addCustomItem(
+            -1, std::make_unique<shared::MenuValueTypein>(this, juce::Component::SafePointer(e)));
+    }
     p.addSeparator();
     p.addItem("Set to Default", [w = juce::Component::SafePointer(e)]() {
         if (!w)
