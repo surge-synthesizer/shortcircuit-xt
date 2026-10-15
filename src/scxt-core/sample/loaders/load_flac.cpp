@@ -293,7 +293,9 @@ bool Sample::parseFlac(const fs::path &p)
                             memcpy(&smpl_chunk, d + off, sizeof(loaders::SamplerChunk));
                             off += sizeof(loaders::SamplerChunk);
 
-                            meta.key_root = smpl_chunk.dwMIDIUnityNote & 0xFF;
+                            auto tuning = loaders::smplTuning(smpl_chunk);
+                            meta.key_root = tuning.rootKey;
+                            meta.detune = tuning.cents;
                             meta.rootkey_present = true;
 
                             if (smpl_chunk.cSampleLoops > 0 &&

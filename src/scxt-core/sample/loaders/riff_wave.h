@@ -28,8 +28,10 @@
 #ifndef SCXT_SRC_SCXT_CORE_SAMPLE_LOADERS_RIFF_WAVE_H
 #define SCXT_SRC_SCXT_CORE_SAMPLE_LOADERS_RIFF_WAVE_H
 
-#pragma pack(push, 1)
+#include <algorithm>
 #include <cstdint>
+
+#pragma pack(push, 1)
 
 namespace scxt::sample::loaders
 {
@@ -136,6 +138,33 @@ struct GUID
 } // namespace scxt::sample::loaders
 
 #pragma pack(pop)
+
+namespace scxt::sample::loaders
+{
+struct SmplTuning
+{
+    int rootKey{60};
+    float cents{0.f};
+};
+
+// unity note plus fraction is the sample's own pitch, so cents is the tune that puts it on rootKey
+inline SmplTuning smplTuning(const SamplerChunk &c)
+{
+    SmplTuning res;
+    res.rootKey = std::clamp((int)c.dwMIDIUnityNote, 0, 127);
+    // the fraction is a uint32 share of one semitone up, 0x80000000 being 50 cents,
+    // so frac / 2^32 * 100 is cents; the uint32 cast keeps the top half from going negative
+    auto frac = (float)((double)(uint32_t)c.dwMIDIPitchFraction * 100.0 / 4294967296.0);
+    res.cents = -frac;
+    // a flat sample arrives as the key below, so E3 +90 is F3 tuned up 10
+    if (frac > 50.f && res.rootKey < 127)
+    {
+        res.rootKey++;
+        res.cents = 100.f - frac;
+    }
+    return res;
+}
+} // namespace scxt::sample::loaders
 
 // from MMsystem.h
 
