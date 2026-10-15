@@ -69,10 +69,21 @@ struct SmplSpec
 {
     uint32_t rootKey{60};
     std::optional<std::pair<uint32_t, uint32_t>> loop;
+    uint32_t pitchFraction{0};
+};
+
+// what an inst chunk carries
+struct InstSpec
+{
+    int8_t rootKey{60};
+    int8_t fineTune{0};
+    int8_t keyLow{0}, keyHigh{127};
+    int8_t velLow{1}, velHigh{127};
 };
 
 // Mono 16-bit PCM at 48k, nframes long.
-inline void writeWav(const fs::path &p, uint32_t nframes, std::optional<SmplSpec> smpl = {})
+inline void writeWav(const fs::path &p, uint32_t nframes, std::optional<SmplSpec> smpl = {},
+                     std::optional<InstSpec> inst = {})
 {
     std::vector<uint8_t> body;
     putTag(body, "WAVE");
@@ -95,7 +106,7 @@ inline void writeWav(const fs::path &p, uint32_t nframes, std::optional<SmplSpec
         putU32(body, 0); // product
         putU32(body, 1000000000 / 48000);
         putU32(body, smpl->rootKey);
-        putU32(body, 0); // pitch fraction
+        putU32(body, smpl->pitchFraction);
         putU32(body, 0); // smpte format
         putU32(body, 0); // smpte offset
         putU32(body, nLoops);
@@ -109,6 +120,16 @@ inline void writeWav(const fs::path &p, uint32_t nframes, std::optional<SmplSpec
             putU32(body, 0); // fraction
             putU32(body, 0); // play count
         }
+    }
+
+    if (inst)
+    {
+        putTag(body, "inst");
+        putU32(body, 7);
+        for (auto b : {inst->rootKey, inst->fineTune, (int8_t)0, inst->keyLow, inst->keyHigh,
+                       inst->velLow, inst->velHigh})
+            body.push_back((uint8_t)b);
+        body.push_back(0); // pad to even
     }
 
     putTag(body, "data");
@@ -133,6 +154,7 @@ struct WavSpec
     std::string name;
     uint32_t frames;
     std::optional<SmplSpec> smpl{};
+    std::optional<InstSpec> inst{};
 };
 
 inline fs::path buildSfz(const std::string &stem, const std::string &sfz,
@@ -142,7 +164,7 @@ inline fs::path buildSfz(const std::string &stem, const std::string &sfz,
     fs::remove_all(dir);
     fs::create_directories(dir);
     for (const auto &w : wavs)
-        writeWav(dir / w.name, w.frames, w.smpl);
+        writeWav(dir / w.name, w.frames, w.smpl, w.inst);
 
     auto p = dir / (stem + ".sfz");
     std::ofstream os(p, std::ios::binary);

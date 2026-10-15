@@ -228,14 +228,18 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
 
     // read smpl chunk
     mf.SeekI(wr, scxt::sample::loaders::mf_FromStart);
+    bool smplTuned{false};
     if (mf.riff_descend('smpl', &datasize))
     {
         loaders::SamplerChunk smpl_chunk;
         loaders::SampleLoop smpl_loop;
 
         mf.Read(&smpl_chunk, sizeof(loaders::SamplerChunk));
-        meta.key_root = smpl_chunk.dwMIDIUnityNote & 0xFF;
+        auto tuning = loaders::smplTuning(smpl_chunk);
+        meta.key_root = tuning.rootKey;
+        meta.detune = tuning.cents;
         meta.rootkey_present = true;
+        smplTuned = true;
 
         if (smpl_chunk.cSampleLoops > 0)
         {
@@ -258,15 +262,19 @@ bool Sample::parse_riff_wave(void *data, size_t filesize, bool skip_riffchunk)
     {
         loaders::wave_inst_chunk INST;
         mf.Read(&INST, sizeof(INST));
-        meta.key_root = INST.key_root;
         meta.key_low = INST.key_low;
         meta.key_high = INST.key_high;
         meta.vel_low = INST.vel_low;
         meta.vel_high = INST.vel_high;
-        meta.rootkey_present = true;
         meta.key_present = true;
         meta.vel_present = true;
-        meta.detune = INST.detune_cents * 0.01f;
+        // smpl is the more common carrier of the unity note, so it wins when both are there
+        if (!smplTuned)
+        {
+            meta.key_root = INST.key_root;
+            meta.detune = (int8_t)INST.detune_cents;
+            meta.rootkey_present = true;
+        }
     }
 
     // read acid chunk

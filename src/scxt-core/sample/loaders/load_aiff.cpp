@@ -285,7 +285,7 @@ bool Sample::parse_aiff(void *data, size_t filesize)
         if (mf.Read(&INST, sizeof(INST)))
         {
             meta.key_root = INST.baseNote;
-            meta.detune = INST.detune;
+            meta.detune = (int8_t)INST.detune;
             meta.key_low = INST.lowNote;
             meta.key_high = INST.highNote;
             meta.vel_low = INST.lowvelocity;

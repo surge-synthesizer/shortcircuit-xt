@@ -9,6 +9,7 @@ add_executable(scxt-test
 		sample_fuzz.cpp
 		sample_bit_depth.cpp
 		sample_drop_tests.cpp
+		sample_fine_tune_tests.cpp
 		processors_and_fx.cpp
 		processor_int_change_tests.cpp
 		vfx_temposync_tests.cpp

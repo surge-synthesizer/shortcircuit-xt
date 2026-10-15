@@ -223,6 +223,24 @@ struct alignas(16) Sample : MoveableOnly<Sample>
         char key_low{0}, key_high{0}, key_root{0};
         char vel_low{0}, vel_high{0};
         PlayMode playmode{pm_forward};
+        /*
+         * detune is the tune in cents that puts the sample in pitch on key_root, and
+         * zone creation adds it to the zone pitch. The formats say it two ways round.
+         *
+         * WAV and FLAC smpl chunk (Microsoft's RIFF spec) describe the sample's own pitch:
+         *   dwMIDIUnityNote: "the MIDI note which will replay the sample at original pitch"
+         *   dwMIDIPitchFraction: "the fraction of a semitone up from the specified
+         *   dwMIDIUnityNote. A value of 0x80000000 is 1/2 semitone (50 cents)"
+         * so unity + fraction is where the sample plays unaltered, and detune is minus the
+         * fraction. The fraction is unsigned, so a flat sample is written as the key below
+         * plus more than 50 cents; smplTuning folds that back up a key with a positive tune.
+         * E3 +90 is a sample 10 cents flat of F3, so it loads as F3 tuned up 10.
+         *
+         * WAV inst chunk: fine tune is the adjustment in cents, -50..50, used as is.
+         *
+         * AIFF INST chunk: detune is in cents, -50..50, and "negative numbers mean that
+         * the pitch of the sound should be lowered", so it is used as is too.
+         */
         float detune{0};
         unsigned int loop_start{0}, loop_end{0};
         bool rootkey_present{false}, key_present{false}, vel_present{false}, loop_present{false},

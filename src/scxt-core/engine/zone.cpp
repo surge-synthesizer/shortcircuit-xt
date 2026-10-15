@@ -301,6 +301,12 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index, int s
         samplePointers[index].reset();
     }
 
+    auto applyRootKey = [this](const auto &m) {
+        mapping.rootKey = m.key_root;
+        // adds, so an importer's own tune stacks on the sample's
+        mapping.pitchOffset += m.detune * 0.01f;
+    };
+
     if (sir & MAPPING)
     {
         if (samplePointers[index] && index == 0)
@@ -308,7 +314,7 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index, int s
             const auto &m = samplePointers[index]->meta;
 
             if (m.rootkey_present)
-                mapping.rootKey = m.key_root;
+                applyRootKey(m);
             if (m.key_present)
             {
                 mapping.keyboardRange = {m.key_low, m.key_high};
@@ -325,7 +331,7 @@ bool Zone::attachToSample(const sample::SampleManager &manager, int index, int s
         {
             const auto &m = samplePointers[index]->meta;
             if (m.rootkey_present)
-                mapping.rootKey = m.key_root;
+                applyRootKey(m);
         }
     }
     if (sir & (LOOP | ENDPOINTS))
