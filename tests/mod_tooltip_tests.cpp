@@ -85,7 +85,8 @@ bool looksBroken(const std::string &s, const pmd &md)
     auto p = s.find("inf");
     if (p == std::string::npos || (p > 0 && s[p - 1] == '-'))
         return false;
-    return s != md.valueToString(md.maxVal).value_or("");
+    auto unmarked = (s[0] == '>' || s[0] == '<') ? s.substr(1) : s;
+    return unmarked != md.valueToString(md.maxVal).value_or("");
 }
 
 // the shown strings are sane and the depth type-in reads back what it shows
