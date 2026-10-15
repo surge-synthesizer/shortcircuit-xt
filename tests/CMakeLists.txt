@@ -11,6 +11,7 @@ add_executable(scxt-test
 		sample_drop_tests.cpp
 		sample_fine_tune_tests.cpp
 		processors_and_fx.cpp
+		processor_param_name_tests.cpp
 		processor_int_change_tests.cpp
 		vfx_temposync_tests.cpp
 		generator_tests.cpp

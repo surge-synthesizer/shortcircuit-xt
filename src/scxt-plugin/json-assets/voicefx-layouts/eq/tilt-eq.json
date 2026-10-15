@@ -3,7 +3,6 @@
   "controls": {
     "freq": {
       "class": "knob70",
-      "label": "Frequency",
       "position": {
         "x": 15,
         "y": 25
@@ -15,7 +14,6 @@
     },
     "tilt": {
       "class": "knob70",
-      "label": "Tilt",
       "position": {
         "x": 105,
         "y": 25

@@ -3,7 +3,6 @@
   "controls": {
     "pregain": {
       "class": "knob30",
-      "label": "Pre Gain",
       "binding": {
         "type": "float",
         "index": 0
@@ -15,7 +14,6 @@
     },
     "prefreq": {
       "class": "knob30",
-      "label": "Pre Freq",
       "binding": {
         "type": "float",
         "index": 1
@@ -27,7 +25,6 @@
     },
     "prewidth": {
       "class": "knob30",
-      "label": "Pre BW",
       "binding": {
         "type": "float",
         "index": 2
@@ -39,7 +36,6 @@
     },
     "slew": {
       "class": "knob70",
-      "label": "Slew Rate",
       "binding": {
         "type": "float",
         "index": 3
@@ -51,7 +47,6 @@
     },
     "postgain": {
       "class": "knob30",
-      "label": "Post Gain",
       "binding": {
         "type": "float",
         "index": 4
@@ -63,7 +58,6 @@
     },
     "postfreq": {
       "class": "knob30",
-      "label": "Post Freq",
       "binding": {
         "type": "float",
         "index": 5
@@ -75,7 +69,6 @@
     },
     "postwidth": {
       "class": "knob30",
-      "label": "Post BW",
       "binding": {
         "type": "float",
         "index": 6

@@ -3,7 +3,6 @@
   "controls": {
     "frequency": {
       "class": "knob80",
-      "label": "Frequency",
       "binding": {
         "type": "float",
         "index": 0

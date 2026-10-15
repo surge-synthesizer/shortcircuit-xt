@@ -11,7 +11,6 @@
     },
     "decay": {
       "class": "knob40",
-      "label": "Decay",
       "binding": {
         "type": "float",
         "index": 6
@@ -23,7 +22,6 @@
     },
     "stiffness": {
       "class": "knob40",
-      "label": "Stiffness",
       "binding": {
         "type": "float",
         "index": 7

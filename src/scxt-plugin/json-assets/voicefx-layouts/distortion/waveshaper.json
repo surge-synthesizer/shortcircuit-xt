@@ -8,7 +8,6 @@
   "controls": {
     "drive": {
       "class": "knob80",
-      "label": "Drive",
       "binding": {
         "index": 0,
         "type": "float"
@@ -20,7 +19,6 @@
     },
     "bias": {
       "class": "knob40",
-      "label": "Bias",
       "binding": {
         "index": 1,
         "type": "float"
@@ -32,7 +30,6 @@
     },
     "postgain": {
       "class": "knob40",
-      "label": "Level",
       "binding": {
         "index": 2,
         "type": "float"

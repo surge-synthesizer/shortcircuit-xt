@@ -11,7 +11,6 @@
         },
         "threshold": {
             "class": "vslider",
-            "label": "Threshold",
             "binding": {
                 "type": "float",
                 "index": 0
@@ -23,7 +22,6 @@
         },
         "depth": {
             "class": "vslider",
-            "label": "Depth",
             "binding": {
                 "type": "float",
                 "index": 1
@@ -35,7 +33,6 @@
         },
         "tilt": {
             "class": "knob60",
-            "label": "Tilt",
             "binding": {
                 "type": "float",
                 "index": 2

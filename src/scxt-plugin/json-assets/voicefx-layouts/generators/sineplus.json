@@ -11,7 +11,6 @@
     },
     "rt": {
       "class": "knob40",
-      "label": "Tune",
       "binding": {
         "type": "float",
         "index": 0
@@ -23,7 +22,6 @@
     },
     "ba1": {
       "class": "knob40",
-      "label": "Root<>AB",
       "binding": {
         "type": "float",
         "index": 3
@@ -35,7 +33,6 @@
     },
     "ba2": {
       "class": "knob40",
-      "label": "A<>B",
       "binding": {
         "type": "float",
         "index": 4
@@ -47,7 +44,6 @@
     },
     "lev": {
       "class": "knob40",
-      "label": "Level",
       "binding": {
         "type": "float",
         "index": 5

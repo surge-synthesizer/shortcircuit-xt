@@ -869,6 +869,10 @@ void ProcessorPane::layoutControlsEBWaveforms()
 
     auto main = jlo::VList().withHeight(bounds.getWidth()).at(0, 0);
 
+    auto shortLabel = [this](int i) {
+        return createLabel(processorControlDescription.floatControlDescriptions[i].shortName);
+    };
+
     auto row1 = jlo::HList().withHeight(bounds.getHeight() / 2);
 
     auto res = createWidgetAttachedTo<jcmp::MultiSwitch>(intAttachments[0]);
@@ -877,13 +881,13 @@ void ProcessorPane::layoutControlsEBWaveforms()
     intEditors[0] = std::move(res);
 
     floatEditors[0] = createWidgetAttachedTo(floatAttachments[0]);
-    floatLabels[0] = createLabel("Tune");
+    floatLabels[0] = shortLabel(0);
     lok(floatEditors[0], floatLabels[0], row1);
     floatEditors[1] = createWidgetAttachedTo(floatAttachments[1]);
-    floatLabels[1] = createLabel("Sync");
+    floatLabels[1] = shortLabel(1);
     lok(floatEditors[1], floatLabels[1], row1);
     floatEditors[2] = createWidgetAttachedTo(floatAttachments[2]);
-    floatLabels[2] = createLabel("PWM");
+    floatLabels[2] = shortLabel(2);
     lok(floatEditors[2], floatLabels[2], row1);
 
     floatEditors[2]->setEnabled(isPulse);
@@ -901,10 +905,12 @@ void ProcessorPane::layoutControlsEBWaveforms()
     auto tres = createWidgetAttachedTo<jcmp::ToggleButton>(intAttachments[4]);
     tres->setDrawMode(jcmp::ToggleButton::DrawMode::LABELED);
     tres->setLabel(std::string("Rand ") + u8"\U000003C6");
+    setupFloatWidget(tres.get(), intAttachments[4]);
     intEditors[4] = std::move(tres);
     vl1.add(jlo::Component(*intEditors[4]).withHeight(16));
 
     floatEditors[4] = createWidgetAttachedTo<jcmp::HSliderFilled>(floatAttachments[4]);
+    // the short name does not fit beside the slider in this column
     floatLabels[4] = createLabel("W");
 
     auto wsl = jlo::HList().withHeight(16);
@@ -918,7 +924,7 @@ void ProcessorPane::layoutControlsEBWaveforms()
     row2.add(vl1);
 
     floatEditors[3] = createWidgetAttachedTo(floatAttachments[3]);
-    floatLabels[3] = createLabel("Detune");
+    floatLabels[3] = shortLabel(3);
     lok(floatEditors[3], floatLabels[3], row2);
     floatEditors[3]->setEnabled(isUnison);
     floatLabels[3]->setEnabled(isUnison);
@@ -930,10 +936,10 @@ void ProcessorPane::layoutControlsEBWaveforms()
     intEditors[2]->setEnabled(isUnison);
 
     floatEditors[5] = createWidgetAttachedTo(floatAttachments[5]);
-    floatLabels[5] = createLabel("Drift");
+    floatLabels[5] = shortLabel(5);
     lok(floatEditors[5], floatLabels[5], row2);
     floatEditors[6] = createWidgetAttachedTo(floatAttachments[6]);
-    floatLabels[6] = createLabel("Level");
+    floatLabels[6] = shortLabel(6);
     lok(floatEditors[6], floatLabels[6], row2);
 
     main.add(row2);

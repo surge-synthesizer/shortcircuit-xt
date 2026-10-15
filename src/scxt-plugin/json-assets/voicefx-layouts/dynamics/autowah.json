@@ -3,7 +3,6 @@
     "controls": {
         "depth": {
             "class": "knob40",
-            "label": "Depth",
             "binding": {
                 "type": "float",
                 "index": 1
@@ -15,7 +14,6 @@
         },
         "speed": {
             "class": "knob40",
-            "label": "Speed",
             "binding": {
                 "type": "float",
                 "index": 2
@@ -27,7 +25,6 @@
         },
         "sens": {
             "class": "knob60",
-            "label": "Sensitivity",
             "binding": {
                 "type": "float",
                 "index": 0
@@ -39,7 +36,6 @@
         },
         "freq-center": {
             "class": "knob40",
-            "label": "Base Freq",
             "binding": {
                 "type": "float",
                 "index": 3
@@ -51,7 +47,6 @@
         },
         "resonance": {
             "class": "knob40",
-            "label": "Resonance",
             "binding": {
                 "type": "float",
                 "index": 4
