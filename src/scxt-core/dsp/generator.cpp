@@ -132,6 +132,14 @@ template <typename T> struct KernelOp<InterpolationTypes::ZOHAA, T>
             KernelProcessor<InterpolationTypes::ZOHAA, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
 };
 
+template <typename T> struct KernelOp<InterpolationTypes::Cubic, T>
+{
+    template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+    static void
+    Process(GeneratorState *__restrict GD,
+            KernelProcessor<InterpolationTypes::Cubic, T, NUM_CHANNELS, LOOP_ACTIVE> &ks);
+};
+
 template <typename T> struct KernelOp<InterpolationTypes::Linear, T>
 {
     template <int NUM_CHANNELS, bool LOOP_ACTIVE>
@@ -175,6 +183,7 @@ struct KernelProcessor
     float *Output[NUM_CHANNELS];
 
     GeneratorIO *IO{nullptr}; // only used for debug constraints
+    const ZOHAAWarp *warp{nullptr};
 
     void ProcessKernel(GeneratorState *__restrict GD)
     {
@@ -288,36 +297,20 @@ void KernelOp<InterpolationTypes::Linear, T>::Process(
     }
 }
 
-template <typename T>
-template <int NUM_CHANNELS, bool LOOP_ACTIVE>
-void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
-    GeneratorState *__restrict GD,
-    KernelProcessor<InterpolationTypes::ZOHAA, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+// catmull-rom over the four samples around the playhead, at whatever fractions the kernel chose
+template <InterpolationTypes KT, typename T, int NUM_CHANNELS, bool LOOP_ACTIVE>
+void catmullRomProcess(KernelProcessor<KT, T, NUM_CHANNELS, LOOP_ACTIVE> &ks, float f_subPos,
+                       float f_fadeSubPos)
 {
     auto readSampleL{ks.ReadSample[0]};
     auto readFadeSampleL{ks.ReadFadeSample[0]};
     auto OutputL{ks.Output[0]};
-    auto SamplePos{ks.SamplePos};
-    auto m0{ks.m0};
     auto i{ks.i};
 
-    auto subRatio = std::abs((float)(GD->ratio) / (float)(1 << 24));
-    auto warp = [subRatio](float v) { return std::pow(v, 0.5f * subRatio + 0.5f / subRatio); };
-    auto f_subPos = warp((float)(ks.SampleSubPos) / (float)(1 << 24));
-    // a wrap translates the read and keeps the playhead's fraction; only a mirror turns it
-    // round, and warp is a pow, so do not pay for a second one unless it differs
-    auto f_fadeSubPos = f_subPos;
-    if constexpr (LOOP_ACTIVE)
-    {
-        if (ks.fadeActive && ks.FadeSubPos != ks.SampleSubPos)
-            f_fadeSubPos = warp((float)(ks.FadeSubPos) / (float)(1 << 24));
-    }
-
+    // y1 and y2 are the pair the linear kernel reads
     auto readPos = FIRoffset - 2;
 
-    // The crossfade partner has to be interpolated exactly like the main read. It used
-    // to be a linear blend of [readPos, readPos+1] - one sample early, since the cubic
-    // sits between readPos+1 and readPos+2 - using the already pow-warped subposition.
+    // the crossfade partner is interpolated exactly like the main read
     auto cubic = [readPos](const T *__restrict src, float f_subPos) {
         auto y0{NormalizeSampleToF32(src[readPos])};
         auto y1{NormalizeSampleToF32(src[readPos + 1])};
@@ -353,6 +346,35 @@ void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
                              cubic(readFadeSampleR, f_fadeSubPos) * ks.partnerGain;
         }
     }
+}
+
+template <typename T>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+void KernelOp<InterpolationTypes::ZOHAA, T>::Process(
+    GeneratorState *__restrict GD,
+    KernelProcessor<InterpolationTypes::ZOHAA, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+{
+    const auto &warp = *ks.warp;
+    auto f_subPos = warp((float)(ks.SampleSubPos) / (float)(1 << 24));
+    // a wrap translates the read and keeps the playhead's fraction; only a mirror turns it round
+    auto f_fadeSubPos = f_subPos;
+    if constexpr (LOOP_ACTIVE)
+    {
+        if (ks.fadeActive && ks.FadeSubPos != ks.SampleSubPos)
+            f_fadeSubPos = warp((float)(ks.FadeSubPos) / (float)(1 << 24));
+    }
+
+    catmullRomProcess(ks, f_subPos, f_fadeSubPos);
+}
+
+template <typename T>
+template <int NUM_CHANNELS, bool LOOP_ACTIVE>
+void KernelOp<InterpolationTypes::Cubic, T>::Process(
+    GeneratorState *__restrict GD,
+    KernelProcessor<InterpolationTypes::Cubic, T, NUM_CHANNELS, LOOP_ACTIVE> &ks)
+{
+    catmullRomProcess(ks, (float)(ks.SampleSubPos) / (float)(1 << 24),
+                      (float)(ks.FadeSubPos) / (float)(1 << 24));
 }
 
 template <int NUM_CHANNELS, bool LOOP_ACTIVE>
@@ -1071,6 +1093,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
 
     int NSamples = GD->blockSize;
 
+    // ratio is fixed for the block, so its warp is fitted once here rather than per sample
+    const auto zohaaWarp = GD->interpolationType == InterpolationTypes::ZOHAA
+                               ? ZOHAAWarp::forRatio(GD->ratio)
+                               : ZOHAAWarp{};
+
     int i{0};
     for (i = 0; i < NSamples && !IsFinished; i++)
     {
@@ -1087,14 +1114,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                                             fade.mainGain,                                         \
                                             fade.partnerGain,                                      \
                                             {OutputL, OutputR},                                    \
-                                            IO};                                                   \
+                                            IO,                                                    \
+                                            &zohaaWarp};                                           \
     kp.ProcessKernel(GD);
 
 #define KPMono(E, T, C, data, fadeData)                                                            \
     KernelProcessor<E, T, C, loopActive> ks{                                                       \
         SamplePos,        SampleSubPos, int32_t(m0), i,           fade.partnerSubPos,              \
         int32_t(fadeM0),  {data},       {fadeData},  fade.active, fade.mainGain,                   \
-        fade.partnerGain, {OutputL},    IO};                                                       \
+        fade.partnerGain, {OutputL},    IO,          &zohaaWarp};                                  \
     ks.ProcessKernel(GD);
 
         using type_from_cond = typename std::conditional<fp, float, int16_t>::type;
@@ -1145,6 +1173,12 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                          readFadeL, readFadeR);
                 break;
             }
+            case InterpolationTypes::Cubic:
+            {
+                KPStereo(InterpolationTypes::Cubic, type_from_cond, 2, readL, readR, readFadeL,
+                         readFadeR);
+                break;
+            }
             }
         }
         else
@@ -1169,6 +1203,11 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
             case InterpolationTypes::ZeroOrderHold:
             {
                 KPMono(InterpolationTypes::ZeroOrderHold, type_from_cond, 1, readL, readFadeL);
+                break;
+            }
+            case InterpolationTypes::Cubic:
+            {
+                KPMono(InterpolationTypes::Cubic, type_from_cond, 1, readL, readFadeL);
                 break;
             }
             }
