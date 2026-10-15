@@ -144,9 +144,10 @@ void MatrixEndpoints::ProcessorTarget::bind(scxt::voice::modulation::Matrix &m, 
     shmo::bindEl(m, p, mixT, p.mix, mixP);
     shmo::bindEl(m, p, outputLevelDbT, p.outputCubAmp, outputLevelDbP);
 
+    auto fs = datamodel::pmd::FeatureState{}.withTemposync(p.isTemposynced);
     for (int i = 0; i < scxt::maxProcessorFloatParams; ++i)
     {
-        shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], &d.floatControlDescriptions[i]);
+        shmo::bindEl(m, p, fpT[i], p.floatParams[i], floatP[i], &d.floatControlDescriptions[i], fs);
     }
 }
 
