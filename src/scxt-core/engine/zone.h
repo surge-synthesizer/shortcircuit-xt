@@ -440,6 +440,9 @@ struct Zone : MoveableOnly<Zone>, HasGroupZoneProcessors<Zone>, SampleRateSuppor
 
     Group *parentGroup{nullptr};
 
+    // runtime only; see Part::zoneSoloActive
+    bool soloedBySelection{false};
+
     bool isActive() { return activeVoices != 0; }
     uint32_t activeVoices{0};
     std::array<voice::Voice *, maxVoices> voiceWeakPointers;

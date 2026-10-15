@@ -2063,6 +2063,7 @@ void Engine::sendFullRefreshToClient() const
     getSelectionManager()->sendSelectedPartMacrosToClient();
     getSelectionManager()->sendOtherTabsSelectionToClient();
     getSelectionManager()->sendPatchFilesToClient();
+    sendMappingHeaderStateToClient();
 
     auto missing = collectMissingResolutionWorkItems(*this);
     // send missing even if empty. An empty missing flags dont show dialog
@@ -2303,6 +2304,14 @@ void Engine::processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int3
         return;
     }
 
+    // velocity the way findZone reads it
+    if (midiZoneAction.load() != MidiZoneAction::NONE &&
+        consumeMidiZoneNote(channel, key, (int16_t)std::clamp((int)(velocity * 128), 0, 127)))
+        return;
+    // a learn press whose release never came must not swallow this note's release
+    if (channel >= 0 && channel < 16 && key >= 0 && key < 128)
+        midiZoneSwallowedKeys[channel][key] = false;
+
     heldNotes.noteOn(channel, key, note_id, (float)velocity, samplesProcessed);
     voiceManager.processNoteOnEvent(port, channel, key, note_id, velocity, retune);
 }
@@ -2310,6 +2319,13 @@ void Engine::processNoteOnEvent(int16_t port, int16_t channel, int16_t key, int3
 void Engine::processNoteOffEvent(int16_t port, int16_t channel, int16_t key, int32_t note_id,
                                  double velocity)
 {
+    if (channel >= 0 && channel < 16 && key >= 0 && key < 128 &&
+        midiZoneSwallowedKeys[channel][key])
+    {
+        midiZoneSwallowedKeys[channel][key] = false;
+        return;
+    }
+
     fireReleaseTriggers(port, channel, key, note_id);
     voiceManager.processNoteOffEvent(port, channel, key, note_id, velocity);
 }

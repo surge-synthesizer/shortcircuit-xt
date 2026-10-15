@@ -93,6 +93,7 @@ struct SCXTEditorReceiver
     void onGroupTriggerConditions(const scxt::engine::GroupTriggerConditions &);
     void onPartKeySwitchDisplay(const scxt::messaging::client::partKeySwitchPayload_t &);
     void onLearnedNote(int16_t key);
+    void onMappingHeaderState(const scxt::messaging::client::mappingHeaderState_t &);
 
     void onGroupOrZoneModulatorStorageUpdated(
         const scxt::messaging::client::indexedModulatorStorageUpdate_t &);

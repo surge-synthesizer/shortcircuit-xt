@@ -718,7 +718,7 @@ using zoneBatchOpPayload_t =
 inline void doApplyZoneBatchOp(const zoneBatchOpPayload_t &payload, engine::Engine &engine)
 {
     auto op = payload.second;
-    if (op < engine::Engine::ROOT_TO_FIRST_KEY || op > engine::Engine::REMOVE_VELOCITY_CROSSFADES)
+    if (op < engine::Engine::ROOT_TO_FIRST_KEY || op > engine::Engine::FIX_OVERLAPS)
         return;
     engine.applyZoneBatchOp((engine::Engine::ZoneBatchOp)op, payload.first);
 }
