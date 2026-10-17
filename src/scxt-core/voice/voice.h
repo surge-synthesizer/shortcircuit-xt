@@ -118,10 +118,20 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     float glideProgress{0.f};
     bool inGlide{false};
 
+    // a modulated glide never finishes faster than this, so sweeping it to zero can't snap
+    static constexpr float glideFloorSeconds{0.005f};
+
+    // group glide time after the group matrix, plus this voice's offset
+    float effectiveGlideTime() const
+    {
+        return std::clamp(*zone->parentGroup->endpoints.outputTarget.glideTimeP +
+                              *endpoints->mappingTarget.glideTimeOffsetP,
+                          0.f, 1.f);
+    }
+
     void initiateGlide(uint8_t newKey)
     {
-        auto glideTime = zone->parentGroup->outputInfo.glideTime;
-        if (glideTime <= 0.f)
+        if (effectiveGlideTime() <= 0.f)
         {
             cancelGlide();
             return;
@@ -138,7 +148,7 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
     void startGlideFrom(float pitch)
     {
         cancelGlide();
-        if (zone->parentGroup->outputInfo.glideTime <= 0.f)
+        if (effectiveGlideTime() <= 0.f)
             return;
 
         glideSemitones = pitch - calculateVoicePitch();
@@ -152,39 +162,43 @@ struct alignas(16) Voice : MoveableOnly<Voice>,
         glideProgress = 0.f;
     }
 
+    float glideRateFor(float glideTime) const
+    {
+        auto rate = dsp::twentyFiveSecondExpTable.lookupRate(glideTime, dsp::twoToTheXTable);
+
+        // In constant rate mode, scale rate by interval so larger intervals take longer
+        if (zone->parentGroup->outputInfo.glideRateMode == engine::Group::CONSTANT_RATE)
+        {
+            auto semis = std::fabs(glideSemitones);
+            if (semis > 0.f)
+                rate /= (semis / 12.f);
+        }
+        return rate;
+    }
+
     // Advance glide state and return the pitch offset to apply
     float updateGlide()
     {
         if (!inGlide)
             return 0.f;
 
-        auto glideTime = zone->parentGroup->outputInfo.glideTime;
-        if (glideTime > 0.f)
-        {
-            auto rate = dsp::twentyFiveSecondExpTable.lookupRate(glideTime, dsp::twoToTheXTable);
+        // unmodulated, the effective time is the base and its rate is used unchanged
+        auto baseTime = zone->parentGroup->outputInfo.glideTime;
+        auto maxRate = 1.f / glideFloorSeconds;
+        if (baseTime > 0.f)
+            maxRate = std::max(maxRate, glideRateFor(baseTime));
 
-            // In constant rate mode, scale rate by interval so larger intervals take longer
-            if (zone->parentGroup->outputInfo.glideRateMode == engine::Group::CONSTANT_RATE)
-            {
-                auto semis = std::fabs(glideSemitones);
-                if (semis > 0.f)
-                    rate /= (semis / 12.f);
-            }
+        auto glideTime = effectiveGlideTime();
+        auto rate = glideTime > 0.f ? std::min(glideRateFor(glideTime), maxRate) : maxRate;
 
-            float glideIncrement = blockSize * sampleRateInv * rate;
-            glideProgress += glideIncrement;
-            if (glideProgress >= 1.f)
-            {
-                glideProgress = 1.f;
-                inGlide = false;
-            }
-            return glideSemitones * (1.f - glideProgress);
-        }
-        else
+        float glideIncrement = blockSize * sampleRateInv * rate;
+        glideProgress += glideIncrement;
+        if (glideProgress >= 1.f)
         {
+            glideProgress = 1.f;
             inGlide = false;
-            return 0.f;
         }
+        return glideSemitones * (1.f - glideProgress);
     }
 
     float retuningForKeyAtAttack{0.f};

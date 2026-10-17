@@ -27,6 +27,8 @@
 
 #include "catch2/catch2.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <memory>
 #include <string>
@@ -420,6 +422,355 @@ TEST_CASE("Glide from gated still glides over a held note", "[glide]")
             INFO("startPitch=" << startPitch);
             CHECK(startPitch < 62.f);
             CHECK(startPitch > 59.f);
+        }
+    }
+}
+
+/*
+ * Glide time modulation, GH #2405. The group matrix moves the group's glide time and the
+ * voice matrix adds a per-voice offset; the sum, clamped to 0..1, is what each voice glides
+ * at. These use the sample-less fixture since an oscillator holds the voice open however
+ * long a glide takes.
+ */
+namespace glide_mod_test
+{
+namespace gm = scxt::modulation;
+namespace vm = scxt::voice::modulation;
+using GOT = gm::GroupMatrixEndpoints::OutputTarget;
+using VMT = vm::MatrixEndpoints::MappingTarget;
+
+const auto groupMacro0 = gm::GroupMatrixEndpoints::Sources::MacroSources::macroSId(0);
+const auto voiceMacro0 = vm::MatrixEndpoints::Sources::MacroSources::macroSId(0);
+const auto voiceVelocity = vm::MatrixEndpoints::Sources::MIDISources::velocitySId;
+
+constexpr float blockSeconds = scxt::blockSize / TEST_SAMPLE_RATE;
+// floor time in blocks, plus one for the block the change lands in
+const int floorBlocks = (int)std::ceil(scxt::voice::Voice::glideFloorSeconds / blockSeconds) + 1;
+
+void routeGroupGlide(GlideFixture &f, int row, const gm::GroupMatrixConfig::SourceIdentifier &src,
+                     float depth)
+{
+    auto &r = f.group->routingTable.routes[row];
+    r.active = true;
+    r.source = src;
+    r.target = GOT::glideTimeTId;
+    r.depth = depth;
+    f.group->onRoutingChanged();
+}
+
+void routeVoiceGlide(GlideFixture &f, int row, const vm::MatrixConfig::SourceIdentifier &src,
+                     float depth)
+{
+    auto &r = f.zone->routingTable.routes[row];
+    r.active = true;
+    r.source = src;
+    r.target = VMT::glideTimeOffsetTId;
+    r.depth = depth;
+    f.zone->onRoutingChanged();
+}
+
+void setPlayMode(GlideFixture &f, scxt::engine::Group::PlayMode pm, float glideTime)
+{
+    f.setMonoWithGlide(glideTime);
+    f.group->outputInfo.playMode = pm;
+    f.group->resetPolyAndPlaymode(*f.eng);
+}
+
+// hold 60, play 72 over it at a velocity, and hand back the voice sounding 72
+scxt::voice::Voice *glideUpTo72(GlideFixture &f, float velocity = 1.f)
+{
+    f.noteOn(60);
+    f.runBlocks(20);
+    REQUIRE(f.voiceForKey(60) != nullptr);
+    f.eng->processNoteOnEvent(0, 0, 72, -1, velocity, 0.f);
+    f.runBlocks(1);
+    auto *v = f.voiceForKey(72);
+    REQUIRE(v != nullptr);
+    return v;
+}
+
+int blocksUntilGlideEnds(GlideFixture &f, scxt::voice::Voice *v, int maxBlocks = 20000)
+{
+    int n{0};
+    while (v->inGlide && n < maxBlocks)
+    {
+        f.runBlocks(1);
+        ++n;
+    }
+    return n;
+}
+
+/*
+ * Run until the glide ends and require every block to step towards 72 by no more than a
+ * glide at the floor time would. Returns how many blocks that took.
+ */
+int requireBoundedFinish(GlideFixture &f, scxt::voice::Voice *v)
+{
+    auto maxStep = 12.f * blockSeconds / scxt::voice::Voice::glideFloorSeconds;
+    auto last = v->pitchFloat;
+    int n{0};
+    while (v->inGlide && n < 1000)
+    {
+        f.runBlocks(1);
+        ++n;
+        auto step = v->pitchFloat - last;
+        INFO("block " << n << " pitch " << v->pitchFloat << " step " << step);
+        REQUIRE(step >= 0.f);
+        REQUIRE(step <= maxStep * 1.001f);
+        last = v->pitchFloat;
+    }
+    REQUIRE_FALSE(v->inGlide);
+    REQUIRE(v->pitchFloat == Approx(72.f).margin(0.001f));
+    return n;
+}
+} // namespace glide_mod_test
+
+TEST_CASE("Glide time targets are in the matrix menus", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    GlideFixture f{false};
+
+    REQUIRE(f.eng->groupModTargets.count(GOT::glideTimeTId));
+    REQUIRE(f.eng->voiceModTargets.count(VMT::glideTimeOffsetTId));
+
+    bool sawGroup{false};
+    auto gmeta = gm::getGroupMatrixMetadata(*f.group);
+    for (const auto &t : std::get<2>(gmeta))
+    {
+        if (std::get<0>(t) == GOT::glideTimeTId)
+        {
+            sawGroup = true;
+            REQUIRE(gm::displayPath(std::get<1>(t)) == "Output");
+            REQUIRE(gm::displayName(std::get<1>(t)) == "Glide Time");
+        }
+    }
+    REQUIRE(sawGroup);
+
+    bool sawVoice{false};
+    auto vmeta = vm::getVoiceMatrixMetadata(*f.zone);
+    for (const auto &t : std::get<2>(vmeta))
+    {
+        if (std::get<0>(t) == VMT::glideTimeOffsetTId)
+        {
+            sawVoice = true;
+            REQUIRE(vm::displayPath(std::get<1>(t)) == "Zone");
+            REQUIRE(vm::displayName(std::get<1>(t)) == "Glide Time");
+        }
+    }
+    REQUIRE(sawVoice);
+
+    // the group target shows as a time over the glide range; the voice offset as bipolar percent
+    gm::GroupMatrix gmat;
+    gmat.forUIMode = true;
+    gm::GroupMatrixEndpoints{nullptr}.bindTargetBaseValues(gmat, *f.group);
+    const auto &gmd = gmat.activeTargetsToPMD.at(GOT::glideTimeTId);
+    REQUIRE(gmd.name == "Glide Time");
+    REQUIRE(gmd.minVal == 0.f);
+    REQUIRE(gmd.maxVal == 1.f);
+
+    vm::Matrix zm;
+    zm.forUIMode = true;
+    vm::MatrixEndpoints{nullptr}.bindTargetBaseValues(zm, *f.zone);
+    const auto &vmd = zm.activeTargetsToPMD.at(VMT::glideTimeOffsetTId);
+    REQUIRE(vmd.name == "Glide Time Offset");
+    REQUIRE(vmd.minVal == -1.f);
+    REQUIRE(vmd.maxVal == 1.f);
+    REQUIRE(zm.activeTargetsToBaseValue.at(VMT::glideTimeOffsetTId) == 0.f);
+}
+
+TEST_CASE("Group glide time target lengthens the glide", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    auto blocksWithMacro = [](float macro) {
+        GlideFixture f{false};
+        setPlayMode(f, scxt::engine::Group::PlayMode::MONO, 0.2f);
+        routeGroupGlide(f, 0, groupMacro0, 0.3f);
+        f.eng->getPatch()->getPart(0)->macros[0].value = macro;
+        auto *v = glideUpTo72(f);
+        REQUIRE(v->inGlide);
+        INFO("effective " << v->effectiveGlideTime());
+        REQUIRE(v->effectiveGlideTime() == Approx(0.2f + 0.3f * macro).margin(1e-5));
+        return blocksUntilGlideEnds(f, v);
+    };
+
+    auto unmod = blocksWithMacro(0.f);
+    auto modded = blocksWithMacro(1.f);
+    INFO("unmodulated " << unmod << " modulated " << modded);
+    REQUIRE(unmod > 5);
+    REQUIRE(modded > unmod * 5);
+    REQUIRE(modded < 20000);
+}
+
+TEST_CASE("Voice glide time offset follows velocity", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    auto blocksAtVelocity = [](float vel) {
+        GlideFixture f{false};
+        setPlayMode(f, scxt::engine::Group::PlayMode::MONO, 0.2f);
+        // the offset spans -1..1 so this is +0.3 at full velocity
+        routeVoiceGlide(f, 0, voiceVelocity, 0.15f);
+        auto *v = glideUpTo72(f, vel);
+        REQUIRE(v->inGlide);
+        INFO("effective " << v->effectiveGlideTime());
+        REQUIRE(v->effectiveGlideTime() == Approx(0.2f + 0.3f * vel).margin(1e-5));
+        return blocksUntilGlideEnds(f, v);
+    };
+
+    auto soft = blocksAtVelocity(0.2f);
+    auto hard = blocksAtVelocity(1.f);
+    INFO("soft " << soft << " hard " << hard);
+    REQUIRE(soft > 5);
+    REQUIRE(hard > soft * 5);
+}
+
+TEST_CASE("A negative voice glide offset can remove the glide", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    GlideFixture f{false};
+    setPlayMode(f, scxt::engine::Group::PlayMode::MONO, SLOW_GLIDE);
+    routeVoiceGlide(f, 0, voiceVelocity, -0.5f);
+    auto *v = glideUpTo72(f, 1.f);
+    REQUIRE(v->effectiveGlideTime() == 0.f);
+    REQUIRE_FALSE(v->inGlide);
+    REQUIRE(v->pitchFloat == Approx(72.f).margin(0.01f));
+}
+
+TEST_CASE("Glide time modulation clamps to the full range", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    auto pitchAfter = [](bool overdrive) {
+        GlideFixture f{false};
+        setPlayMode(f, scxt::engine::Group::PlayMode::MONO, overdrive ? 0.9f : 1.f);
+        if (overdrive)
+        {
+            routeGroupGlide(f, 0, groupMacro0, 1.f);
+            routeVoiceGlide(f, 0, voiceVelocity, 1.f);
+            f.eng->getPatch()->getPart(0)->macros[0].value = 1.f;
+        }
+        auto *v = glideUpTo72(f);
+        REQUIRE(v->effectiveGlideTime() == 1.f);
+        f.runBlocks(500);
+        REQUIRE(v->inGlide);
+        REQUIRE(std::isfinite(v->pitchFloat));
+        return v->pitchFloat;
+    };
+
+    auto atMax = pitchAfter(false);
+    auto overdriven = pitchAfter(true);
+    REQUIRE(atMax > 60.f);
+    REQUIRE(atMax < 61.f);
+    REQUIRE(overdriven == Approx(atMax).margin(1e-5));
+}
+
+TEST_CASE("Dropping glide time mid glide finishes at the floor rate", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    GlideFixture f{false};
+    // about half a second, so the glide is still near its start when the drop lands
+    setPlayMode(f, scxt::engine::Group::PlayMode::MONO, 0.6f);
+    routeGroupGlide(f, 0, groupMacro0, -0.59f);
+    auto *v = glideUpTo72(f);
+    f.runBlocks(100);
+    REQUIRE(v->inGlide);
+    REQUIRE(v->pitchFloat < 64.f);
+
+    // a 0.01 glide time is well under a millisecond; unfloored it would snap in one block
+    f.eng->getPatch()->getPart(0)->macros[0].value = 1.f;
+    auto n = requireBoundedFinish(f, v);
+    INFO("finished in " << n << " blocks, floor " << floorBlocks);
+    REQUIRE(n > 1);
+    REQUIRE(n <= floorBlocks);
+}
+
+TEST_CASE("Sweeping glide time to zero mid glide does not snap", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    for (auto pm : {scxt::engine::Group::PlayMode::MONO, scxt::engine::Group::PlayMode::LEGATO})
+    {
+        DYNAMIC_SECTION("Play mode " << scxt::engine::Group::toStringPlayMode(pm))
+        {
+            GlideFixture f{false};
+            setPlayMode(f, pm, 0.6f);
+            routeGroupGlide(f, 0, groupMacro0, -1.f);
+            auto *v = glideUpTo72(f);
+            f.runBlocks(100);
+            REQUIRE(v->inGlide);
+
+            // sweep through the small times down to zero and past it
+            auto &macro = f.eng->getPatch()->getPart(0)->macros[0];
+            auto maxStep = 12.f * blockSeconds / scxt::voice::Voice::glideFloorSeconds;
+            auto last = v->pitchFloat;
+            for (int i = 1; i <= 8 && v->inGlide; ++i)
+            {
+                macro.value = std::min(1.f, 0.5f + i * 0.0625f);
+                f.runBlocks(1);
+                REQUIRE(v->pitchFloat - last >= 0.f);
+                REQUIRE(v->pitchFloat - last <= maxStep * 1.001f);
+                last = v->pitchFloat;
+            }
+            REQUIRE(v->effectiveGlideTime() == 0.f);
+            requireBoundedFinish(f, v);
+        }
+    }
+}
+
+TEST_CASE("Zero glide time with positive modulation arms the glide", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    using grp_t = scxt::engine::Group;
+    for (auto pm : {grp_t::PlayMode::MONO, grp_t::PlayMode::LEGATO})
+    {
+        DYNAMIC_SECTION("Group target, play mode " << grp_t::toStringPlayMode(pm))
+        {
+            GlideFixture f{false};
+            setPlayMode(f, pm, 0.f);
+            routeGroupGlide(f, 0, groupMacro0, SLOW_GLIDE);
+            f.eng->getPatch()->getPart(0)->macros[0].value = 1.f;
+
+            auto *v = glideUpTo72(f);
+            INFO("startPitch=" << v->pitchFloat);
+            CHECK(v->inGlide);
+            CHECK(v->pitchFloat < 62.f);
+            CHECK(v->pitchFloat > 59.f);
+
+            f.runBlocks(300);
+            CHECK(v->pitchFloat == Approx(72.f).margin(0.01f));
+        }
+        DYNAMIC_SECTION("Voice target, play mode " << grp_t::toStringPlayMode(pm))
+        {
+            GlideFixture f{false};
+            setPlayMode(f, pm, 0.f);
+            routeVoiceGlide(f, 0, voiceMacro0, SLOW_GLIDE * 0.5f);
+            f.eng->getPatch()->getPart(0)->macros[0].value = 1.f;
+
+            auto *v = glideUpTo72(f);
+            INFO("startPitch=" << v->pitchFloat);
+            CHECK(v->inGlide);
+            CHECK(v->pitchFloat < 62.f);
+            CHECK(v->pitchFloat > 59.f);
+
+            f.runBlocks(300);
+            CHECK(v->pitchFloat == Approx(72.f).margin(0.01f));
+        }
+    }
+}
+
+TEST_CASE("Zero glide time with zero modulation still snaps", "[glide][modulation]")
+{
+    using namespace glide_mod_test;
+    using grp_t = scxt::engine::Group;
+    for (auto pm : {grp_t::PlayMode::MONO, grp_t::PlayMode::LEGATO})
+    {
+        DYNAMIC_SECTION("Play mode " << grp_t::toStringPlayMode(pm))
+        {
+            GlideFixture f{false};
+            setPlayMode(f, pm, 0.f);
+            routeGroupGlide(f, 0, groupMacro0, SLOW_GLIDE);
+            f.eng->getPatch()->getPart(0)->macros[0].value = 0.f;
+
+            auto *v = glideUpTo72(f);
+            CHECK_FALSE(v->inGlide);
+            CHECK(v->pitchFloat == Approx(72.f).margin(0.01f));
         }
     }
 }

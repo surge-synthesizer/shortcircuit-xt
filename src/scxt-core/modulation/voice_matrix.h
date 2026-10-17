@@ -179,18 +179,26 @@ struct MatrixEndpoints
         static constexpr TG ampTId{'zmap', 'ampl', 0};
         // unregistered; kept so old routes to it can unstream onto pitch shift
         static constexpr TG legacyPlaybackRatioTId{'zmap', 'pbrt', 0};
-        MappingTarget(engine::Engine *e) : pitchOffsetT(pitchOffsetTId), panT(panTId), ampT(ampTId)
+        // an offset onto the group glide time, in its normalized 0..1 space
+        static constexpr TG glideTimeOffsetTId{'zmap', 'glid', 0};
+        MappingTarget(engine::Engine *e)
+            : pitchOffsetT(pitchOffsetTId), panT(panTId), ampT(ampTId),
+              glideTimeOffsetT(glideTimeOffsetTId)
         {
             if (e)
             {
                 registerVoiceModTarget(e, pitchOffsetT, "Zone", "Tune");
                 registerVoiceModTarget(e, panT, "Zone", "Pan");
                 registerVoiceModTarget(e, ampT, "Zone", "Amplitude", true);
+                registerVoiceModTarget(e, glideTimeOffsetT, "Zone", "Glide Time");
             }
         }
-        TG pitchOffsetT, panT, ampT;
+        TG pitchOffsetT, panT, ampT, glideTimeOffsetT;
 
-        const float *pitchOffsetP{nullptr}, *panP{nullptr}, *ampP{nullptr};
+        const float *pitchOffsetP{nullptr}, *panP{nullptr}, *ampP{nullptr},
+            *glideTimeOffsetP{nullptr};
+
+        float zeroBase{0.f};
 
         void bind(Matrix &m, engine::Zone &z);
     } mappingTarget;
