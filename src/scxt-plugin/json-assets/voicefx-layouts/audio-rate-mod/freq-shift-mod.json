@@ -11,7 +11,6 @@
     },
     "fine": {
       "class": "knob60",
-      "label": "Fine",
       "binding": {
         "index": 0,
         "type": "float"
@@ -23,7 +22,6 @@
     },
     "coarse": {
       "class": "knob60",
-      "label": "Coarse",
       "binding": {
         "index": 1,
         "type": "float"
@@ -35,7 +33,6 @@
     },
     "feedback": {
       "class": "knob60",
-      "label": "Feedback",
       "binding": {
         "index": 2,
         "type": "float"

@@ -11,7 +11,6 @@
         },
         "low": {
             "class": "knob40",
-            "label": "Start",
             "binding": {
                 "index": 2,
                 "type": "float"
@@ -23,7 +22,6 @@
         },
         "high": {
             "class": "knob40",
-            "label": "End",
             "binding": {
                 "index": 3,
                 "type": "float"
@@ -35,7 +33,6 @@
         },
         "rate": {
             "class": "knob40",
-            "label": "Rate",
             "binding": {
                 "index": 1,
                 "type": "float"
@@ -47,7 +44,6 @@
         },
         "res": {
             "class": "knob40",
-            "label": "Resonance",
             "binding": {
                 "index": 0,
                 "type": "float"

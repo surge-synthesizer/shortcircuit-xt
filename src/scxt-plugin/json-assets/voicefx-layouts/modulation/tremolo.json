@@ -3,7 +3,6 @@
     "controls": {
         "volume": {
             "class": "knob40",
-            "label": "Volume",
             "binding": {
                 "index": 0,
                 "type": "float"
@@ -15,7 +14,6 @@
         },
         "rate": {
             "class": "knob40",
-            "label": "Rate",
             "binding": {
                 "index": 1,
                 "type": "float"
@@ -27,7 +25,6 @@
         },
         "depth": {
             "class": "knob40",
-            "label": "Depth",
             "binding": {
                 "index": 2,
                 "type": "float"
@@ -39,7 +36,6 @@
         },
         "crossover": {
             "class": "knob40",
-            "label": "Crossover",
             "binding": {
                 "index": 3,
                 "type": "float"

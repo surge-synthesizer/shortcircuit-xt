@@ -3,7 +3,6 @@
   "controls": {
     "sr": {
       "class": "knob40",
-      "label": "Freq",
       "binding": {
         "type": "float",
         "index": 0
@@ -15,7 +14,6 @@
     },
     "bd": {
       "class": "knob40",
-      "label": "Bits",
       "binding": {
         "type": "float",
         "index": 1
@@ -27,7 +25,6 @@
     },
     "zp": {
       "class": "knob40",
-      "label": "ZeroPoint",
       "binding": {
         "type": "float",
         "index": 2
@@ -39,7 +36,6 @@
     },
     "freq": {
       "class": "knob40",
-      "label": "Cutoff",
       "binding": {
         "type": "float",
         "index": 3
@@ -58,7 +54,6 @@
     },
     "res": {
       "class": "knob40",
-      "label": "Reso",
       "binding": {
         "type": "float",
         "index": 4

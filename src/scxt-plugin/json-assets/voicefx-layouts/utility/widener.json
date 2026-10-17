@@ -3,7 +3,6 @@
   "controls": {
     "knob0": {
       "class": "knob50",
-      "label": "Amplitude",
       "binding": {
         "index": 0,
         "type": "float"
@@ -15,7 +14,6 @@
     },
     "knob1": {
       "class": "knob50",
-      "label": "Delay",
       "binding": {
         "index": 1,
         "type": "float"
@@ -27,7 +25,6 @@
     },
     "knob2": {
       "class": "knob50",
-      "label": "Source",
       "binding": {
         "index": 2,
         "type": "float"

@@ -3,7 +3,6 @@
   "controls": {
     "knob0": {
       "class": "knob70",
-      "label": "Volume",
       "binding": {
         "index": 0,
         "type": "float"
@@ -15,7 +14,6 @@
     },
     "knob1": {
       "class": "knob70",
-      "label": "Pan",
       "binding": {
         "index": 1,
         "type": "float"

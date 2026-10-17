@@ -938,7 +938,6 @@ struct ModRow : juce::Component, HasEditor, KeyCommandTarget, juce::DragAndDropT
         }
         void setValueString(const std::string &s) override
         {
-            auto dv = row->depthAttachment->getValue();
             auto ep = row->parent->routingTable.routes[row->index].extraPayload;
             if (!ep.has_value())
                 return;
@@ -956,7 +955,7 @@ struct ModRow : juce::Component, HasEditor, KeyCommandTarget, juce::DragAndDropT
                     "Modulation type in '" + s + "' did not convert to a valid modulation " +
                         "from base value " + std::to_string(ep->targetBaseValue) + " on control " +
                         md.name + ". \n\nInternal error is [" + emsg + "]");
-                v = dv;
+                return;
             }
 
             row->depthAttachment->setValueFromGUI(*v / (md.maxVal - md.minVal));

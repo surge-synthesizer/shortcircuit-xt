@@ -3,7 +3,6 @@
   "controls": {
     "knob0": {
       "class": "knob55",
-      "label": "L -> L",
       "binding": {
         "index": 0,
         "type": "float"
@@ -15,7 +14,6 @@
     },
     "knob1": {
       "class": "knob55",
-      "label": "L -> R",
       "binding": {
         "index": 1,
         "type": "float"
@@ -27,7 +25,6 @@
     },
     "knob2": {
       "class": "knob55",
-      "label": "R -> L",
       "binding": {
         "index": 2,
         "type": "float"
@@ -39,7 +36,6 @@
     },
     "knob3": {
       "class": "knob55",
-      "label": "R -> R",
       "binding": {
         "index": 3,
         "type": "float"

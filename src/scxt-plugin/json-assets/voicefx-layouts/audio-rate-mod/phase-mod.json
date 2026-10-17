@@ -3,7 +3,6 @@
   "controls": {
     "transpose": {
       "class": "knob60",
-      "label": "Frequency",
       "position": {
         "x": 8,
         "y": 4
@@ -15,7 +14,6 @@
     },
     "lpf": {
       "class": "knob60",
-      "label": "LPF",
       "position": {
         "x": 78,
         "y": 64
@@ -27,7 +25,6 @@
     },
     "depth": {
       "class": "knob60",
-      "label": "Depth",
       "position": {
         "x": 148,
         "y": 4

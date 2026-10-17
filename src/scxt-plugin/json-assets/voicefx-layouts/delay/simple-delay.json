@@ -3,7 +3,6 @@
   "controls": {
     "time-small": {
       "class": "knob50",
-      "label": "Time L",
       "binding": {
         "index": 0,
         "type": "float"
@@ -22,7 +21,6 @@
     },
     "time-large": {
       "class": "knob50",
-      "label": "Time",
       "binding": {
         "index": 0,
         "type": "float"
@@ -41,7 +39,6 @@
     },
     "time-small-r": {
       "class": "knob50",
-      "label": "Time R",
       "binding": {
         "index": 1,
         "type": "float"
@@ -60,7 +57,6 @@
     },
     "feedback": {
       "class": "knob40",
-      "label": "Feedback",
       "binding": {
         "index": 2,
         "type": "float"
@@ -72,7 +68,6 @@
     },
     "crossfeed": {
       "class": "knob40",
-      "label": "Crossfeed",
       "binding": {
         "index": 3,
         "type": "float"

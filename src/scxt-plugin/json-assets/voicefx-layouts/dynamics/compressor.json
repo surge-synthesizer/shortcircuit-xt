@@ -3,7 +3,6 @@
     "controls": {
         "sc-tilt": {
             "class": "knob40",
-            "label": "SC Tilt",
             "binding": {
                 "type": "float",
                 "index": 5
@@ -15,7 +14,6 @@
         },
         "sc-freq": {
             "class": "knob40",
-            "label": "Tilt Freq",
             "binding": {
                 "type": "float",
                 "index": 6
@@ -27,7 +25,6 @@
         },
         "threshold": {
             "class": "knob50",
-            "label": "Threshold",
             "binding": {
                 "type": "float",
                 "index": 0
@@ -40,7 +37,6 @@
 
         "attack": {
             "class": "knob30",
-            "label": "Attack",
             "binding": {
                 "type": "float",
                 "index": 2
@@ -52,7 +48,6 @@
         },
         "release": {
             "class": "knob30",
-            "label": "Release",
             "binding": {
                 "type": "float",
                 "index": 3
@@ -64,7 +59,6 @@
         },
         "ratio": {
             "class": "knob40",
-            "label": "Ratio",
             "binding": {
                 "type": "float",
                 "index": 1
@@ -76,7 +70,6 @@
         },
         "make-up": {
             "class": "knob40",
-            "label": "Makeup",
             "binding": {
                 "type": "float",
                 "index": 4

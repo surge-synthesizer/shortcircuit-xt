@@ -3,7 +3,6 @@
   "controls": {
     "lowcut": {
       "class": "knob40",
-      "label": "LowCut",
       "binding": {
         "index": 0,
         "type": "float"
@@ -15,7 +14,6 @@
     },
     "highcut": {
       "class": "knob40",
-      "label": "HighCut",
       "binding": {
         "index": 1,
         "type": "float"
@@ -27,7 +25,6 @@
     },
     "LowCutRes": {
       "class": "knob30",
-      "label": "Reso",
       "binding": {
         "index": 6,
         "type": "float"
@@ -39,7 +36,6 @@
     },
     "HiCutRes": {
       "class": "knob30",
-      "label": "Reso",
       "binding": {
         "index": 7,
         "type": "float"
@@ -51,7 +47,6 @@
     },
     "lowshelffreq": {
       "class": "knob40",
-      "label": "Lo Shelf",
       "binding": {
         "index": 2,
         "type": "float"
@@ -63,7 +58,6 @@
     },
     "highshelffreq": {
       "class": "knob40",
-      "label": "Hi Shelf",
       "binding": {
         "index": 3,
         "type": "float"
@@ -75,7 +69,6 @@
     },
     "lowshelfgain": {
       "class": "knob30",
-      "label": "Gain",
       "binding": {
         "index": 4,
         "type": "float"
@@ -87,7 +80,6 @@
     },
     "highshelfgain": {
       "class": "knob30",
-      "label": "Gain",
       "binding": {
         "index": 5,
         "type": "float"
