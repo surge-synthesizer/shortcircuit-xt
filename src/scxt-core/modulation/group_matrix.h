@@ -174,17 +174,20 @@ struct GroupMatrixEndpoints
 
     struct OutputTarget
     {
-        OutputTarget(engine::Engine *e) : panT{'gout', 'pan ', 0}, ampT{'gout', 'ampl', 0}
+        static constexpr TG glideTimeTId{'gout', 'glid', 0};
+        OutputTarget(engine::Engine *e)
+            : panT{'gout', 'pan ', 0}, ampT{'gout', 'ampl', 0}, glideTimeT(glideTimeTId)
         {
             if (e)
             {
                 registerGroupModTarget(e, panT, "Output", "Pan");
                 registerGroupModTarget(e, ampT, "Output", "Amplitude", true);
+                registerGroupModTarget(e, glideTimeT, "Output", "Glide Time");
             }
         }
-        TG panT, ampT;
+        TG panT, ampT, glideTimeT;
 
-        const float *panP{nullptr}, *ampP{nullptr};
+        const float *panP{nullptr}, *ampP{nullptr}, *glideTimeP{nullptr};
 
         void bind(GroupMatrix &m, engine::Group &z);
     } outputTarget;
