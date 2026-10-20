@@ -558,6 +558,8 @@ struct KeyAxis
     {
         return {d.keyboardRange.keyStart, d.keyboardRange.keyEnd};
     }
+    int16_t &start(Zone::ZoneMappingData &d) const { return d.keyboardRange.keyStart; }
+    int16_t &end(Zone::ZoneMappingData &d) const { return d.keyboardRange.keyEnd; }
     int16_t &fadeStart(Zone::ZoneMappingData &d) const { return d.keyboardRange.fadeStart; }
     int16_t &fadeEnd(Zone::ZoneMappingData &d) const { return d.keyboardRange.fadeEnd; }
 };
@@ -567,9 +569,68 @@ struct VelAxis
     {
         return {d.velocityRange.velStart, d.velocityRange.velEnd};
     }
+    int16_t &start(Zone::ZoneMappingData &d) const { return d.velocityRange.velStart; }
+    int16_t &end(Zone::ZoneMappingData &d) const { return d.velocityRange.velEnd; }
     int16_t &fadeStart(Zone::ZoneMappingData &d) const { return d.velocityRange.fadeStart; }
     int16_t &fadeEnd(Zone::ZoneMappingData &d) const { return d.velocityRange.fadeEnd; }
 };
+
+template <typename R> void fitFades(Zone::ZoneMappingData &d, R range)
+{
+    auto [lo, hi] = range(d);
+    auto span = (int16_t)(hi - lo + 1);
+    auto &fs = range.fadeStart(d);
+    auto &fe = range.fadeEnd(d);
+    if (fs + fe > span)
+    {
+        fs = std::min(fs, (int16_t)(span / 2));
+        fe = std::min(fe, (int16_t)(span - fs));
+    }
+}
+
+template <typename R>
+bool splitPartialOverlap(Zone::ZoneMappingData &lower, Zone::ZoneMappingData &upper)
+{
+    R range;
+    auto [lLo, lHi] = range(lower);
+    auto [uLo, uHi] = range(upper);
+    if (!(lLo < uLo && lHi >= uLo && lHi < uHi))
+        return false;
+    auto mid = (int16_t)((uLo + lHi) / 2);
+    range.end(lower) = mid;
+    range.start(upper) = (int16_t)(mid + 1);
+    return true;
+}
+
+template <typename R>
+bool splitPartialOverlapEitherWay(Zone::ZoneMappingData &a, Zone::ZoneMappingData &b)
+{
+    return splitPartialOverlap<R>(a, b) || splitPartialOverlap<R>(b, a);
+}
+
+void fixOverlaps(std::vector<Zone::ZoneMappingData> &m)
+{
+    for (size_t i = 0; i < m.size(); ++i)
+    {
+        for (size_t j = i + 1; j < m.size(); ++j)
+        {
+            auto [kiLo, kiHi] = KeyAxis{}(m[i]);
+            auto [kjLo, kjHi] = KeyAxis{}(m[j]);
+            auto [viLo, viHi] = VelAxis{}(m[i]);
+            auto [vjLo, vjHi] = VelAxis{}(m[j]);
+            if (kiHi < kjLo || kjHi < kiLo || viHi < vjLo || vjHi < viLo)
+                continue;
+            // keys first, since that is the overlap a mapping usually means to fix
+            if (!splitPartialOverlapEitherWay<KeyAxis>(m[i], m[j]))
+                splitPartialOverlapEitherWay<VelAxis>(m[i], m[j]);
+        }
+    }
+    for (auto &d : m)
+    {
+        fitFades(d, KeyAxis{});
+        fitFades(d, VelAxis{});
+    }
+}
 } // namespace structure_edit_detail
 
 void Engine::applyZoneBatchOp(ZoneBatchOp op, const std::vector<ZoneAddress> &which)
@@ -619,6 +680,13 @@ void Engine::applyZoneBatchOp(ZoneBatchOp op, const std::vector<ZoneAddress> &wh
     case REMOVE_VELOCITY_CROSSFADES:
         for (auto &d : m)
             d.velocityRange.fadeStart = d.velocityRange.fadeEnd = 0;
+        break;
+    case AUTO_CROSSFADES:
+        autoCrossfade(m, KeyAxis{}, VelAxis{});
+        autoCrossfade(m, VelAxis{}, KeyAxis{});
+        break;
+    case FIX_OVERLAPS:
+        fixOverlaps(m);
         break;
     }
 

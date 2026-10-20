@@ -736,7 +736,7 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
         }
     }
     mouseState = NONE;
-    display->mayBeAboutToMutate = false;
+    display->endMutationGesture();
     repaint();
 
     namespace cmsg = scxt::messaging::client;

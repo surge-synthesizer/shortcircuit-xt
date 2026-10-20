@@ -436,15 +436,25 @@ CLIENT_TO_SERIAL(DeleteVariant, c2s_delete_variant, deleteVariantPayload_t,
 CLIENT_TO_SERIAL(CopyVariant, c2s_copy_variant, int32_t, engine.copyVariant(payload));
 CLIENT_TO_SERIAL(PasteVariant, c2s_paste_variant, int32_t, engine.pasteVariant(payload));
 
+// an Engine::MidiZoneAction; NONE turns off whichever is on
 using initiateMidiZoneAction_t = int;
 inline void doInitiateMidiZoneAction(const initiateMidiZoneAction_t &payload,
                                      engine::Engine &engine, MessageController &cont)
 {
-    SCLOG_IF(debug, "Initating midi zone action " << payload);
-    // We need to trigger learn for edges and stuff
+    using mza = engine::Engine::MidiZoneAction;
+    if (payload < (int)mza::NONE || payload > (int)mza::SET_VEL_BOUNDS_SECOND)
+        return;
+    engine.setMidiZoneAction((mza)payload);
 }
 CLIENT_TO_SERIAL(InitiateMidiZoneAction, c2s_initiate_midizone_action, initiateMidiZoneAction_t,
                  doInitiateMidiZoneAction(payload, engine, cont));
+
+CLIENT_TO_SERIAL(SetZoneSolo, c2s_set_zone_solo, bool, engine.setZoneSolo(payload));
+
+// the midi zone action and whether zone solo is on
+using mappingHeaderState_t = std::pair<int32_t, bool>;
+SERIAL_TO_CLIENT(SendMappingHeaderState, s2c_send_mapping_header_state, mappingHeaderState_t,
+                 onMappingHeaderState);
 
 } // namespace scxt::messaging::client
 

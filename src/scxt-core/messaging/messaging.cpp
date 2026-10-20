@@ -125,6 +125,10 @@ void MessageController::parseAudioMessageOnSerializationThread(
     case audio::a2s_note_learned:
         serializationSendToClient(client::s2c_send_learned_note, (int16_t)as.payload.i[0], *this);
         break;
+    case audio::a2s_midi_zone_note:
+        engine.onMidiZoneNote((engine::Engine::MidiZoneAction)as.payload.i[0],
+                              (int16_t)as.payload.i[1], (int16_t)as.payload.i[2]);
+        break;
     case audio::a2s_none:
         break;
     }

@@ -58,6 +58,7 @@ struct MacroMappingVariantPane : sst::jucegui::components::NamedPanel, HasEditor
 
     // Restore the mapping-grid lock toggle from the persisted tab selection
     void setMappingLockFromModel(bool b);
+    void setMappingHeaderState(int32_t midiZoneAction, bool zoneSolo);
     void setEditAllFromModel(bool b);
     void setShowZoneNamesFromModel(bool b);
 

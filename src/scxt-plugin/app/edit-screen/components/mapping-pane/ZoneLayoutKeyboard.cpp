@@ -207,7 +207,7 @@ void ZoneLayoutKeyboard::mouseUp(const juce::MouseEvent &e)
 {
     if (moveRootKey)
     {
-        display->mayBeAboutToMutate = false;
+        display->endMutationGesture();
         moveRootKey = false;
         sendToSerialization(cmsg::RequestZoneMapping({editor->selectedPart}));
         repaint();

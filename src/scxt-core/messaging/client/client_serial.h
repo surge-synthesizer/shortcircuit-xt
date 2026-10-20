@@ -250,6 +250,7 @@ enum ClientToSerializationMessagesIds
     c2s_initialize_part,
     c2s_duplicate_part,
     c2s_request_reveal_zone_sample,
+    c2s_set_zone_solo,
 
     c2s_harness_sync,
 
@@ -317,6 +318,8 @@ enum SerializationToClientMessageIds
     s2c_set_colormap,
 
     s2c_reveal_file,
+
+    s2c_send_mapping_header_state,
 
     s2c_harness_sync,
 
