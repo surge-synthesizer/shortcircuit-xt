@@ -155,6 +155,12 @@ void AboutScreen::resetInfo()
                     false});
     if (!editor->engineStatus.runningHost.empty())
         info.push_back({"Host", editor->engineStatus.runningHost, false});
+
+    auto hostScale = editor->getHostGuiScale ? editor->getHostGuiScale() : 1.0;
+    info.push_back({"Scale",
+                    fmt::format("Zoom {}%, Host {}%", (int)std::round(editor->zoomFactor * 100),
+                                (int)std::round(hostScale * 100)),
+                    false});
     info.push_back({"Path", installedBinaryPath(), false});
 
     if (openSourceText.empty())

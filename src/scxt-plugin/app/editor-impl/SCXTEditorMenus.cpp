@@ -477,7 +477,7 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
         p.addSectionHeader("Zoom");
         p.addSeparator();
     }
-    for (auto v : {75, 80, 90, 100, 110, 125, 150, 200})
+    for (auto v : {50, 66, 75, 80, 90, 100, 110, 125, 150, 200})
     {
         bool checked = (std::fabs(zoomFactor * 100 - v) < 1);
         p.addItem(juce::String(v) + "%", true, checked,
@@ -486,6 +486,24 @@ void SCXTEditor::addZoomMenu(juce::PopupMenu &p, bool addTitle)
                           w->setZoomFactor(v * 0.01);
                   });
     }
+
+    struct ZoomTypein : shared::MenuValueTypeinBase
+    {
+        ZoomTypein(SCXTEditor *e) : shared::MenuValueTypeinBase(e) {}
+        std::string getInitialText() const override
+        {
+            return fmt::format("{}%", (int)std::round(editor->zoomFactor * 100));
+        }
+        void setValueString(const std::string &s) override
+        {
+            auto v = std::atof(s.c_str());
+            if (v <= 0)
+                return;
+            editor->setZoomFactor(std::clamp(std::round(v), 25.0, 400.0) * 0.01);
+        }
+    };
+    p.addSeparator();
+    p.addCustomItem(-1, std::make_unique<ZoomTypein>(this));
 
     auto r = juce::PopupMenu();
     auto invertScroll = defaultsProvider.getUserDefaultValue(infrastructure::invertScroll, 0) == 1;
