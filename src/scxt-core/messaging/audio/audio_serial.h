@@ -54,7 +54,8 @@ enum AudioToSerializationMessageId
     a2s_delete_this_pointer,
     a2s_schedule_sample_purge,
     a2s_keyswitch_changed,
-    a2s_note_learned
+    a2s_note_learned,
+    a2s_midi_zone_note
 };
 
 /**

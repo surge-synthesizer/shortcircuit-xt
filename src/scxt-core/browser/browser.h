@@ -100,6 +100,8 @@ struct Browser
     // wraps at both ends; nullopt when there is nowhere else to go
     static std::optional<fs::path> stepPatchFile(const std::vector<fs::path> &files,
                                                  const fs::path &current, int direction);
+    // the single samples beside a zone's sample, in natural order, for the file navigators
+    static std::vector<fs::path> singleSamplesIn(const fs::path &dir);
 
     static bool isLoadableFile(const fs::path &);
     static bool isLoadableSample(const fs::path &);

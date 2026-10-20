@@ -220,6 +220,9 @@ struct Part : MoveableOnly<Part>, SampleRateSupport
     // Last program change seen on a channel we respond to. Runtime state, not streamed.
     int16_t lastProgramChange{0};
 
+    // runtime only; while set, only zones flagged soloedBySelection make voices
+    bool zoneSoloActive{false};
+
     struct MacroUILagHandler : sst::basic_blocks::dsp::UIComponentLagHandlerBase<MacroUILagHandler>
     {
         Part &part;

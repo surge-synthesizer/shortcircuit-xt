@@ -202,7 +202,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
                     continue;
 
                 for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
-                    f(*part, *group, *zone, (size_t)pidx, (size_t)gidx, (size_t)zidx);
+                    if (!part->zoneSoloActive || zone->soloedBySelection)
+                        f(*part, *group, *zone, (size_t)pidx, (size_t)gidx, (size_t)zidx);
             }
         }
     }
@@ -364,6 +365,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
                     for (const auto &[zidx, zone] : sst::cpputils::enumerate(*group))
                     {
+                        if (part->zoneSoloActive && !zone->soloedBySelection)
+                            continue;
                         if (zone->mapping.keyboardRange.includes(pkey + kt) &&
                             zone->mapping.velocityRange.includes(velocity))
                         {
@@ -462,7 +465,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
 
     void setOmniFlavor(const OmniFlavor &of);
 
-    enum struct MidiZoneAction
+    /*
+     * The mapping header's MIDI buttons. The serialization thread sets the action and the
+     * audio thread reads it on every note on, stepping a learn forward and back to NONE itself.
+     */
+    enum struct MidiZoneAction : int32_t
     {
         NONE,
         SELECT,
@@ -470,7 +477,36 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         SET_KEY_BOUNDS_SECOND,
         SET_VEL_BOUNDS_START,
         SET_VEL_BOUNDS_SECOND
-    } midiZoneAction{MidiZoneAction::NONE};
+    };
+    std::atomic<MidiZoneAction> midiZoneAction{MidiZoneAction::NONE};
+    // audio thread: the first key or velocity of a two note learn
+    int16_t midiZoneLearnFirst{-1};
+    // audio thread: learn presses, whose releases must not reach the voice manager either
+    std::array<std::array<bool, 128>, 16> midiZoneSwallowedKeys{};
+    // audio thread: true when a learn took the note, so it must not sound
+    bool consumeMidiZoneNote(int16_t channel, int16_t key, int16_t velocity);
+
+    // serialization thread
+    void setMidiZoneAction(MidiZoneAction);
+    void onMidiZoneNote(MidiZoneAction kind, int16_t a, int16_t b);
+    // the first zone matching key and velocity among the groups midi select can see
+    std::optional<selection::SelectionManager::ZoneAddress> midiSelectTarget(int16_t key,
+                                                                             int16_t velocity);
+    void learnLeadZoneRange(bool keys, int16_t a, int16_t b);
+    // groups showing in the mapping pane when midi select went on
+    std::set<int32_t> midiSelectGroups;
+
+    /*
+     * Zone solo limits the selected part to its selected zones while it is on. Runtime only,
+     * like the midi actions; the serialization thread pushes the selection to the audio thread
+     * as flags on the zones whenever it changes.
+     */
+    bool zoneSoloEnabled{false};
+    mutable bool zoneSoloApplied{false};
+    void setZoneSolo(bool);
+    void refreshZoneSolo() const;
+
+    void sendMappingHeaderStateToClient() const;
 
     // audio thread: the next note-on is reported to the client as a learned key, not played
     bool noteLearnArmed{false};
@@ -916,7 +952,11 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
         AUTO_KEY_CROSSFADES,
         AUTO_VELOCITY_CROSSFADES,
         REMOVE_KEY_CROSSFADES,
-        REMOVE_VELOCITY_CROSSFADES
+        REMOVE_VELOCITY_CROSSFADES,
+        // key and velocity crossfades in one step, for the mapping header
+        AUTO_CROSSFADES,
+        // partial overlaps split down the middle; a zone inside another is left alone
+        FIX_OVERLAPS
     };
     // no zones means the selected zones of the selected part
     void applyZoneBatchOp(ZoneBatchOp,

@@ -241,7 +241,8 @@ struct VariantDisplay : juce::Component, HasEditor, KeyCommandTarget
     void mirrorWaveformViewports();
 
     void rebuild();
-    void selectNextFile(bool selectForward);
+    // steps the variant's sample through its folder; -1 is the selected variant
+    void selectNextFile(bool selectForward, int variant = -1);
     void showFileBrowser();
     void showFileInfos()
     {

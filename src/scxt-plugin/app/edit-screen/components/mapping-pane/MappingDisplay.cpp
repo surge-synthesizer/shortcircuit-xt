@@ -1150,6 +1150,7 @@ MappingDisplay::applyDeltaToSelectedZones(engine::Zone::ChangeDimension dim, int
     {
         sendToSerialization(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::zone_mapping, true, -1}));
         mayBeAboutToMutate = false;
+        mutationGestureOpen = true;
     }
 
     // this is absolute, lead-only, part, dim, dx, dy
@@ -1157,6 +1158,15 @@ MappingDisplay::applyDeltaToSelectedZones(engine::Zone::ChangeDimension dim, int
         cmsg::ApplyZoneDelta({false, leadOnly, editor->selectedPart, dim, deltaX, deltaY}));
 
     return (DeltaResult)mv;
+}
+
+void MappingDisplay::endMutationGesture()
+{
+    mayBeAboutToMutate = false;
+    if (!mutationGestureOpen)
+        return;
+    mutationGestureOpen = false;
+    sendToSerialization(cmsg::EndEdit(true));
 }
 
 void MappingDisplay::adjustDeltasToMakeSureTheyWillFit(engine::Zone::ChangeDimension dim,
@@ -1216,6 +1226,7 @@ bool MappingDisplay::applyAbsoluteToSelectedZones(engine::Zone::ChangeDimension 
     {
         sendToSerialization(cmsg::BeginEdit({(int32_t)cmsg::EditSubtree::zone_mapping, true, -1}));
         mayBeAboutToMutate = false;
+        mutationGestureOpen = true;
     }
 
     sendToSerialization(

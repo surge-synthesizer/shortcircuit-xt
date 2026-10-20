@@ -57,38 +57,65 @@ struct ZoneLayoutDisplay;
 struct ZoneLayoutKeyboard;
 struct MappingDisplay;
 
+// a toggle drawn like a glyph button, with an optional second glyph beside the first
+struct GlyphToggleButton : sst::jucegui::components::ToggleButton
+{
+    sst::jucegui::components::GlyphPainter::GlyphType glyph;
+    std::optional<sst::jucegui::components::GlyphPainter::GlyphType> secondGlyph;
+    int glyphZeroWidth{0};
+
+    GlyphToggleButton() : glyph(sst::jucegui::components::GlyphPainter::GlyphType::MIDI) {}
+    void paint(juce::Graphics &g) override;
+};
+
 struct MappingZoneHeader : HasEditor, juce::Component
 {
-    std::unique_ptr<sst::jucegui::components::TextPushButton> autoMap, fixOverlap, fadeOverlap,
-        zoneSolo;
-    std::unique_ptr<sst::jucegui::components::GlyphButton> midiButton, midiLRButton, midiUDButton;
-    std::unique_ptr<sst::jucegui::component_adapters::DiscreteToValueReference<
-        sst::jucegui::components::ToggleButton, bool>>
-        lockButton;
+    template <typename T>
+    using toggle_t = sst::jucegui::component_adapters::DiscreteToValueReference<T, bool>;
+
+    MappingDisplay *display{nullptr};
+
+    std::unique_ptr<sst::jucegui::components::TextPushButton> autoMap, fixOverlap, fadeOverlap;
+    // the engine owns these states; the bools mirror its last word
+    bool midiSelectOn{false}, keyLearnOn{false}, velLearnOn{false}, zoneSoloOn{false};
+    std::unique_ptr<toggle_t<GlyphToggleButton>> midiButton, midiLRButton, midiUDButton;
+    std::unique_ptr<toggle_t<sst::jucegui::components::ToggleButton>> zoneSolo;
+    std::unique_ptr<toggle_t<sst::jucegui::components::ToggleButton>> lockButton;
     std::unique_ptr<sst::jucegui::components::Label> fileLabel;
+    std::unique_ptr<sst::jucegui::components::GlyphButton> prevFileButton, nextFileButton;
     std::unique_ptr<sst::jucegui::components::MenuButton> fileMenu;
 
     MappingZoneHeader(MappingDisplay *d);
 
     void initiateMidiZoneAction(engine::Engine::MidiZoneAction);
+    void setStateFromModel(int32_t midiZoneAction, bool zoneSolo);
+
+    // the variant the file arrows and menu act on, in the lead zone
+    int fileVariant{0};
+    std::optional<selection::SelectionManager::ZoneAddress> fileNavigatorZone;
+    std::string fileFullPath;
+    void refreshFileNavigator();
+    void stepFile(bool forward);
+    void showFileMenu();
+    void loadFileIntoVariant(const fs::path &, int variant);
 
     void resized() override
     {
         auto b = getLocalBounds().reduced(1);
         autoMap->setBounds(b.withWidth(85));
 
-        midiButton->setBounds(b.withTrimmedLeft(91).withWidth(16));
-        midiLRButton->setBounds(b.withTrimmedLeft(113).withWidth(28));
-        midiUDButton->setBounds(b.withTrimmedLeft(147).withWidth(28));
-        if (scxt::hasFeature::mappingPane11Controls)
-        {
-            fixOverlap->setBounds(b.withTrimmedLeft(181).withWidth(85));
-            fadeOverlap->setBounds(b.withTrimmedLeft(181 + 87).withWidth(85));
-            zoneSolo->setBounds(b.withTrimmedLeft(181 + 2 * 87).withWidth(85));
-        }
+        midiButton->widget->setBounds(b.withTrimmedLeft(91).withWidth(16));
+        midiLRButton->widget->setBounds(b.withTrimmedLeft(113).withWidth(28));
+        midiUDButton->widget->setBounds(b.withTrimmedLeft(147).withWidth(28));
+        fixOverlap->setBounds(b.withTrimmedLeft(181).withWidth(85));
+        fadeOverlap->setBounds(b.withTrimmedLeft(181 + 87).withWidth(85));
+        zoneSolo->widget->setBounds(b.withTrimmedLeft(181 + 2 * 87).withWidth(85));
         lockButton->widget->setBounds(b.withTrimmedLeft(181 + 3 * 87).withWidth(16));
-        fileLabel->setBounds(b.withTrimmedLeft(181 + 3 * 87 + 20).withWidth(40));
-        fileMenu->setBounds(b.withTrimmedLeft(500));
+        fileLabel->setBounds(b.withTrimmedLeft(181 + 3 * 87 + 20).withWidth(30));
+        auto fb = b.withTrimmedLeft(181 + 3 * 87 + 52);
+        prevFileButton->setBounds(fb.withWidth(16));
+        nextFileButton->setBounds(fb.withTrimmedLeft(fb.getWidth() - 16));
+        fileMenu->setBounds(fb.reduced(18, 0));
     }
 };
 
@@ -132,6 +159,9 @@ struct MappingDisplay : juce::Component,
     bool isResizingZones{false};
 
     bool mayBeAboutToMutate{false};
+    // a drag sent BeginEdit, so its mouse up owes an EndEdit
+    bool mutationGestureOpen{false};
+    void endMutationGesture();
 
     // When set, drags in the zone grid select only; they don't move or resize zones
     bool mappingLocked{false};
