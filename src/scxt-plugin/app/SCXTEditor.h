@@ -225,6 +225,8 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     float zoomFactor{1.f};
     void setZoomFactor(float zoomFactor); // 1.0 == 100%
     std::function<void(float)> onZoomChanged{nullptr};
+    // the scale the host set with clap gui set_scale
+    std::function<double()> getHostGuiScale{nullptr};
 
     void resized() override;
     void parentHierarchyChanged() override;

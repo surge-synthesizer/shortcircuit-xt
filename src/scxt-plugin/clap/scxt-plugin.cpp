@@ -166,6 +166,7 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
             }
         }
     };
+    ed->getHostGuiScale = [this]() { return clapJuceShim->getGuiScale(); };
     onShow = [e = ed.get()]() {
         e->setZoomFactor(e->zoomFactor);
         return true;
