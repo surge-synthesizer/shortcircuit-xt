@@ -488,7 +488,10 @@ void MappingDisplay::setActive(bool b)
         c->setInterceptsMouseClicks(b, b);
     };
 
-    enable(zoneHeader.get());
+    // midi select is how a zone gets picked when none is selected
+    for (auto *c : zoneHeader->getChildren())
+        if (c != zoneHeader->midiButton->widget.get())
+            enable(c);
     for (auto &r : rules)
         enable(r.get());
     forEachMapElPair(labels, glyphs, [&](auto &l, auto &g) {

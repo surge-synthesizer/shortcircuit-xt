@@ -53,7 +53,7 @@ std::set<int32_t> mappingPaneVisibleGroups(const selection::SelectionManager &sm
 }
 } // namespace
 
-bool Engine::consumeMidiZoneNote(int16_t channel, int16_t key, int16_t velocity)
+void Engine::observeMidiZoneNote(int16_t key, int16_t velocity)
 {
     using mza = MidiZoneAction;
     auto act = midiZoneAction.load();
@@ -68,38 +68,32 @@ bool Engine::consumeMidiZoneNote(int16_t channel, int16_t key, int16_t velocity)
         getMessageController()->sendAudioToSerialization(a2s);
     };
 
+    // the client may switch a learn off underneath us, so step it only if it is still on
     switch (act)
     {
     case mza::SELECT:
         post(act, key, velocity);
-        return false;
+        break;
     case mza::SET_KEY_BOUNDS_START:
     case mza::SET_VEL_BOUNDS_START:
     {
         auto keys = act == mza::SET_KEY_BOUNDS_START;
         midiZoneLearnFirst = keys ? key : velocity;
-        // the client may have switched the learn off underneath us, and then the note plays
-        if (!midiZoneAction.compare_exchange_strong(act, keys ? mza::SET_KEY_BOUNDS_SECOND
-                                                              : mza::SET_VEL_BOUNDS_SECOND))
-            return false;
+        midiZoneAction.compare_exchange_strong(act, keys ? mza::SET_KEY_BOUNDS_SECOND
+                                                         : mza::SET_VEL_BOUNDS_SECOND);
         break;
     }
     case mza::SET_KEY_BOUNDS_SECOND:
     case mza::SET_VEL_BOUNDS_SECOND:
     {
         auto kind = act;
-        if (!midiZoneAction.compare_exchange_strong(act, mza::NONE))
-            return false;
-        post(kind, midiZoneLearnFirst, kind == mza::SET_KEY_BOUNDS_SECOND ? key : velocity);
+        if (midiZoneAction.compare_exchange_strong(act, mza::NONE))
+            post(kind, midiZoneLearnFirst, kind == mza::SET_KEY_BOUNDS_SECOND ? key : velocity);
         break;
     }
     default:
-        return false;
+        break;
     }
-
-    if (channel >= 0 && channel < 16 && key >= 0 && key < 128)
-        midiZoneSwallowedKeys[channel][key] = true;
-    return true;
 }
 
 void Engine::setMidiZoneAction(MidiZoneAction a)
@@ -112,7 +106,14 @@ void Engine::setMidiZoneAction(MidiZoneAction a)
         a = MidiZoneAction::SET_VEL_BOUNDS_START;
 
     if (a == MidiZoneAction::SELECT)
+    {
         midiSelectGroups = mappingPaneVisibleGroups(*selectionManager);
+        // with nothing showing, any zone in the part is fair game
+        auto pidx = selectionManager->selectedPart;
+        if (midiSelectGroups.empty() && pidx >= 0 && pidx < numParts)
+            for (int g = 0; g < (int)patch->getPart(pidx)->getGroups().size(); ++g)
+                midiSelectGroups.insert(g);
+    }
     midiZoneAction.store(a);
     sendMappingHeaderStateToClient();
 }

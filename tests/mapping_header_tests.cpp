@@ -83,7 +83,7 @@ struct HeaderFixture
 };
 } // namespace
 
-TEST_CASE("Learn notes take the action and make no voices", "[mapping-header]")
+TEST_CASE("Learn notes take the action and still play", "[mapping-header]")
 {
     std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
     auto &part = *eng->getPatch()->getPart(0);
@@ -91,47 +91,33 @@ TEST_CASE("Learn notes take the action and make no voices", "[mapping-header]")
     addBlankZoneToGroup(part, 0, 0, 127);
     auto &grp = *part.getGroup(0);
 
-    eng->midiZoneAction = mza::SET_KEY_BOUNDS_START;
-    eng->processNoteOnEvent(0, 0, 60, -1, 0.8, 0.f);
-    REQUIRE(eng->midiZoneAction.load() == mza::SET_KEY_BOUNDS_SECOND);
-    REQUIRE(countLiveVoicesInGroup(grp) == 0);
-    eng->processNoteOffEvent(0, 0, 60, -1, 0.f);
+    SECTION("key learn")
+    {
+        eng->midiZoneAction = mza::SET_KEY_BOUNDS_START;
+        eng->processNoteOnEvent(0, 0, 60, -1, 0.8, 0.f);
+        REQUIRE(eng->midiZoneAction.load() == mza::SET_KEY_BOUNDS_SECOND);
+        REQUIRE(countLiveVoicesForKey(grp, 60) == 1);
+        eng->processNoteOffEvent(0, 0, 60, -1, 0.f);
 
-    eng->processNoteOnEvent(0, 0, 50, -1, 0.8, 0.f);
-    REQUIRE(eng->midiZoneAction.load() == mza::NONE);
-    REQUIRE(countLiveVoicesInGroup(grp) == 0);
-    eng->processNoteOffEvent(0, 0, 50, -1, 0.f);
-    REQUIRE(!eng->midiZoneSwallowedKeys[0][50]);
-    REQUIRE(!eng->midiZoneSwallowedKeys[0][60]);
-
-    // one shot, so the third note plays
-    eng->processNoteOnEvent(0, 0, 55, -1, 0.8, 0.f);
-    REQUIRE(countLiveVoicesForKey(grp, 55) == 1);
-    eng->processNoteOffEvent(0, 0, 55, -1, 0.f);
-
-    SECTION("velocity learn swallows its notes too")
+        eng->processNoteOnEvent(0, 0, 50, -1, 0.8, 0.f);
+        REQUIRE(eng->midiZoneAction.load() == mza::NONE);
+        REQUIRE(countLiveVoicesForKey(grp, 50) == 1);
+    }
+    SECTION("velocity learn")
     {
         eng->midiZoneAction = mza::SET_VEL_BOUNDS_START;
         eng->processNoteOnEvent(0, 0, 62, -1, 0.2, 0.f);
         eng->processNoteOnEvent(0, 0, 63, -1, 0.9, 0.f);
         REQUIRE(eng->midiZoneAction.load() == mza::NONE);
-        REQUIRE(countLiveVoicesForKey(grp, 62) == 0);
-        REQUIRE(countLiveVoicesForKey(grp, 63) == 0);
+        REQUIRE(countLiveVoicesForKey(grp, 62) == 1);
+        REQUIRE(countLiveVoicesForKey(grp, 63) == 1);
     }
-    SECTION("select still plays the note")
+    SECTION("select")
     {
         eng->midiZoneAction = mza::SELECT;
         eng->processNoteOnEvent(0, 0, 64, -1, 0.8, 0.f);
         REQUIRE(eng->midiZoneAction.load() == mza::SELECT);
         REQUIRE(countLiveVoicesForKey(grp, 64) == 1);
-    }
-    SECTION("a learn release doesn't let go of a held key")
-    {
-        eng->processNoteOnEvent(0, 0, 70, -1, 0.8, 0.f);
-        eng->midiZoneAction = mza::SET_KEY_BOUNDS_START;
-        eng->processNoteOnEvent(0, 0, 71, -1, 0.8, 0.f);
-        eng->processNoteOffEvent(0, 0, 71, -1, 0.f);
-        REQUIRE(countLiveVoicesForKey(grp, 70) == 1);
     }
 }
 
@@ -281,6 +267,25 @@ TEST_CASE("MIDI select keeps the groups it started with", "[mapping-header]")
     REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 1, 0});
 
     // group 0 no longer has a selected zone, but it was showing when select went on
+    f.play(45);
+    REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
+}
+
+TEST_CASE("MIDI select with nothing selected can reach any group", "[mapping-header]")
+{
+    HeaderFixture f;
+    f.send(cmsg::AddBlankZone({0, 0, 40, 50, 0, 127}));
+    f.send(cmsg::CreateGroup(0));
+    f.send(cmsg::AddBlankZone({0, 1, 60, 70, 0, 127}));
+    f.send(cmsg::ApplySelectActions(
+        {scxt::selection::SelectionManager::SelectActionContents::deselectSentinel()}));
+    REQUIRE(f.sel().selectedZones.empty());
+
+    f.startAction(mza::SELECT);
+    f.play(65);
+    REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 1, 0});
+
+    // group 0 is still reachable though only group 1 now shows
     f.play(45);
     REQUIRE(f.sel().leadZone == scxt::selection::SelectionManager::ZoneAddress{0, 0, 0});
 }
