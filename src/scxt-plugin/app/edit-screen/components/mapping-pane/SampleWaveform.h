@@ -58,7 +58,7 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     }
 
     juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ;
-    // the outer node of each loop marker's fade, on the marker itself when there is no fade
+    // each loop marker's fade node, on its curve; on the marker itself when there is no fade
     juce::Rectangle<int> fadeStartLoopHZ, fadeEndLoopHZ;
     std::vector<std::pair<int, int>> slicePixelAndSamplePositions;
     static constexpr int sliceSnapZoneInPixels{4};
@@ -87,12 +87,22 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
 
     // where in the grab box the mouse landed, so the marker doesn't jump to the cursor
     float dragGrabOffsetPx{0.f};
-    // a fade drag sets the curve from vertical travel, relative to where it began
-    float fadeDragStartY{0.f}, fadeDragStartCurve{0.f};
+    // a fade drag sets the length or the curve, whichever way it first moves
+    enum struct FadeDragAxis
+    {
+        UNDECIDED,
+        LENGTH,
+        CURVE
+    } fadeDragAxis{FadeDragAxis::UNDECIDED};
+    static constexpr float fadeDragAxisLockPx{3.f};
+    juce::Point<float> fadeDragStart;
+    float fadeDragStartCurve{0.f};
 
     // the loop marker the in-flight fade drag measures from
     int64_t fadeAnchor();
     int64_t clampedLoopFade();
+    float loopFadeT();
+    juce::Point<int> fadeNodeFor(int64_t anchor);
 
     // the sample point the in-flight drag is editing, or nullptr when not dragging
     int64_t *draggedPoint();

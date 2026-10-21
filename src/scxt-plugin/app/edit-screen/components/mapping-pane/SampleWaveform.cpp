@@ -74,15 +74,15 @@ void SampleWaveform::rebuildHotZones()
     startLoopHZ = juce::Rectangle<int>(rangeStartBox(ls), r.getY(), hotZoneSize, hotZoneSize);
     endLoopHZ = juce::Rectangle<int>(rangeEndBox(le), r.getY(), hotZoneSize, hotZoneSize);
 
-    auto fadeLen = clampedLoopFade();
-    auto fadeBox = [r](int px) {
-        return juce::Rectangle<int>(px - hotZoneSize / 2, r.getCentreY() - hotZoneSize / 2,
-                                    hotZoneSize, hotZoneSize);
+    auto fadeBox = [this](int64_t anchor) {
+        auto p = fadeNodeFor(anchor);
+        return juce::Rectangle<int>(p.x - hotZoneSize / 2, p.y - hotZoneSize / 2, hotZoneSize,
+                                    hotZoneSize);
     };
     if (v.loopActive)
     {
-        fadeStartLoopHZ = fadeBox(xPixelForSample(v.startLoop - fadeLen, false));
-        fadeEndLoopHZ = fadeBox(xPixelForSample(v.endLoop - fadeLen, false));
+        fadeStartLoopHZ = fadeBox(v.startLoop);
+        fadeEndLoopHZ = fadeBox(v.endLoop);
     }
     else
     {
@@ -399,11 +399,12 @@ void SampleWaveform::mouseDown(const juce::MouseEvent &e)
     {
         if (isFadeDrag())
         {
-            // grab the fade's outer node, wherever on the marker the drag began
+            // grab the fade's node, wherever on the marker the drag began
             auto &v = display->variantView.variants[display->selectedVariation];
-            dragGrabOffsetPx = e.position.x - xPixelForSample(fadeAnchor() - clampedLoopFade());
-            fadeDragStartY = e.position.y;
+            dragGrabOffsetPx = e.position.x - fadeNodeFor(fadeAnchor()).x;
+            fadeDragStart = e.position;
             fadeDragStartCurve = v.loopCurve;
+            fadeDragAxis = FadeDragAxis::UNDECIDED;
         }
         else if (auto *f = draggedPoint())
         {
@@ -423,6 +424,24 @@ int64_t SampleWaveform::clampedLoopFade()
 {
     auto &v = display->variantView.variants[display->selectedVariation];
     return scxt::dsp::clampLoopFade(v.loopFade, v.startSample, v.startLoop, v.endLoop);
+}
+
+float SampleWaveform::loopFadeT()
+{
+    auto &v = display->variantView.variants[display->selectedVariation];
+    // a ping-pong turn stays linear whatever the curve says
+    if (v.loopDirection != scxt::engine::Zone::LoopDirection::FORWARD_ONLY)
+        return 0.f;
+    return scxt::dsp::fadeTFromCurve(v.loopCurve);
+}
+
+juce::Point<int> SampleWaveform::fadeNodeFor(int64_t anchor)
+{
+    // halfway along the window, which for a ping-pong loop is where it turns
+    auto r = getInsetBounds();
+    auto x = xPixelForSample(anchor - clampedLoopFade() / 2, false);
+    auto y = r.getBottom() - scxt::dsp::getFadeGainToAmp(0.5f, loopFadeT()) * r.getHeight();
+    return {x, (int)std::round(y)};
 }
 
 int64_t *SampleWaveform::draggedPoint()
@@ -458,14 +477,28 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
 
     if (isFadeDrag())
     {
-        v.loopFade = scxt::dsp::clampLoopFade(fadeAnchor() - samplePos, v.startSample, v.startLoop,
-                                              v.endLoop);
-        display->onVariantFieldChanged(v.loopFade);
-
-        // a ping-pong turn ignores the curve, so leave it be
-        if (v.loopDirection == scxt::engine::Zone::LoopDirection::FORWARD_ONLY)
+        // the first way the drag moves is the only one it edits
+        if (fadeDragAxis == FadeDragAxis::UNDECIDED)
         {
-            auto dy = (fadeDragStartY - e.position.y) / std::max(getInsetBounds().getHeight(), 1);
+            auto d = e.position - fadeDragStart;
+            if (std::max(std::abs(d.x), std::abs(d.y)) < fadeDragAxisLockPx)
+                return;
+            // a ping-pong turn ignores the curve, so it only has a length
+            auto forward = v.loopDirection == scxt::engine::Zone::LoopDirection::FORWARD_ONLY;
+            fadeDragAxis = (!forward || std::abs(d.x) >= std::abs(d.y)) ? FadeDragAxis::LENGTH
+                                                                        : FadeDragAxis::CURVE;
+        }
+
+        if (fadeDragAxis == FadeDragAxis::LENGTH)
+        {
+            // the node is halfway along the fade
+            v.loopFade = scxt::dsp::clampLoopFade(2 * (fadeAnchor() - samplePos), v.startSample,
+                                                  v.startLoop, v.endLoop);
+            display->onVariantFieldChanged(v.loopFade);
+        }
+        else
+        {
+            auto dy = (fadeDragStart.y - e.position.y) / std::max(getInsetBounds().getHeight(), 1);
             auto c = std::clamp(fadeDragStartCurve + dy * scxt::dsp::loopCurveMax, 0.f,
                                 scxt::dsp::loopCurveMax);
             if (c != v.loopCurve)
@@ -768,9 +801,8 @@ void SampleWaveform::paint(juce::Graphics &g)
 
         const auto forward = v.loopDirection == scxt::engine::Zone::LoopDirection::FORWARD_ONLY;
 
-        // the law the generator fades with, so the picture cannot drift from the sound. A
-        // ping-pong turn stays linear whatever the curve says, so it draws at t=0
-        const auto fadeT = forward ? scxt::dsp::fadeTFromCurve(v.loopCurve) : 0.f;
+        // the law the generator fades with, so the picture cannot drift from the sound
+        const auto fadeT = loopFadeT();
 
         /*
          * A ping-pong turn sits half a fade inside its marker and the window is the half
@@ -907,7 +939,8 @@ void SampleWaveform::paint(juce::Graphics &g)
         {
             if (hz.getRight() < 0 || hz.getX() > getWidth())
                 continue;
-            g.setColour(a2a);
+            // the colour of the curve it sits on
+            g.setColour(editor->themeColor(theme::ColorMap::generic_content_medium));
             g.fillRect(hz);
             g.setColour(bg1);
             auto bx = hz.reduced(3).toFloat();
