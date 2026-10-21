@@ -481,10 +481,8 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     std::atomic<MidiZoneAction> midiZoneAction{MidiZoneAction::NONE};
     // audio thread: the first key or velocity of a two note learn
     int16_t midiZoneLearnFirst{-1};
-    // audio thread: learn presses, whose releases must not reach the voice manager either
-    std::array<std::array<bool, 128>, 16> midiZoneSwallowedKeys{};
-    // audio thread: true when a learn took the note, so it must not sound
-    bool consumeMidiZoneNote(int16_t channel, int16_t key, int16_t velocity);
+    // audio thread: hands a note on to the action; the note still plays
+    void observeMidiZoneNote(int16_t key, int16_t velocity);
 
     // serialization thread
     void setMidiZoneAction(MidiZoneAction);
