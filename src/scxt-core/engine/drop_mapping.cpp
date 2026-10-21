@@ -47,14 +47,14 @@ float pullOf(float fromTop) { return 1.f - std::clamp(fromTop, 0.f, 1.f); }
 
 int16_t lastKeyOf(int firstKey, int width) { return (int16_t)std::min(firstKey + width - 1, 127); }
 
-// tile 0..127 across the elements, all of them sharing one key range
+// tile 1..127 across the elements, all of them sharing one key range
 std::vector<DropRange> velocitySplit(int n, int16_t root, int16_t keyLo, int16_t keyHi, float bend)
 {
     std::vector<DropRange> ranges;
     ranges.reserve(n);
 
     auto gamma = std::pow(2.f, -std::clamp(bend, -1.f, 1.f));
-    int start{0};
+    int start{1};
 
     for (int i = 0; i < n; ++i)
     {
@@ -62,7 +62,7 @@ std::vector<DropRange> velocitySplit(int n, int16_t root, int16_t keyLo, int16_t
         if (i < n - 1)
         {
             auto t = std::pow((float)(i + 1) / n, gamma);
-            end = std::clamp((int)std::round(127.f * t), 0, 127);
+            end = std::clamp((int)std::round(127.f * t), 1, 127);
         }
         // with more samples than velocities the bands run out of room, so stop inverting
         end = std::max(end, start);

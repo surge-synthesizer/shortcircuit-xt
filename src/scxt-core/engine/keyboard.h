@@ -30,6 +30,7 @@
 #include <utility>
 #include <cassert>
 #include <algorithm>
+#include <cmath>
 
 namespace scxt::engine
 {
@@ -103,7 +104,18 @@ struct KeyboardRange
 
 struct VelocityRange
 {
-    int16_t velStart{0}, velEnd{127}; // Start is >= end is <= so a single note has start == end
+    // a note on has velocity at least 1, as midi 1 makes velocity 0 a note off
+    static constexpr int16_t lowestVelocity{1}, highestVelocity{127};
+
+    // so a tiny float velocity from clap or midi 2 plays as 1
+    static int16_t fromFloat(double v)
+    {
+        return (int16_t)std::clamp((int)std::round(v * 127), (int)lowestVelocity,
+                                   (int)highestVelocity);
+    }
+
+    // Start is >= end is <= so a single note has start == end
+    int16_t velStart{lowestVelocity}, velEnd{highestVelocity};
 
     // See comment above
     int16_t fadeStart{0}, fadeEnd{0};
@@ -115,6 +127,8 @@ struct VelocityRange
     {
         if (velEnd < velStart)
             std::swap(velStart, velEnd);
+        velStart = std::clamp(velStart, lowestVelocity, highestVelocity);
+        velEnd = std::clamp(velEnd, lowestVelocity, highestVelocity);
 
         if (fadeStart + fadeEnd > velEnd - velStart)
         {

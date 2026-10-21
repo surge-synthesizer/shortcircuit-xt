@@ -74,7 +74,7 @@ inline void addBlankZoneToGroup(scxt::engine::Part &part, int groupIdx, int keyL
     auto z = std::make_unique<scxt::engine::Zone>();
     z->mapping.keyboardRange.keyStart = keyLo;
     z->mapping.keyboardRange.keyEnd = keyHi;
-    z->mapping.velocityRange.velStart = 0;
+    z->mapping.velocityRange.velStart = 1;
     z->mapping.velocityRange.velEnd = 127;
     z->initialize();
     part.getGroup(groupIdx)->addZone(z);

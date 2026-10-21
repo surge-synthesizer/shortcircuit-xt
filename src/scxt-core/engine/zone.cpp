@@ -914,7 +914,8 @@ bool Zone::canApplyChange(ChangeDimension dim, int deltaX, int deltaY, const Key
     if (dim & MOVE_CTR_NO_ROOTKEY)
     {
         return kr.keyStart + deltaX >= 0 && kr.keyEnd + deltaX <= 127 &&
-               vr.velStart + deltaY >= 0 && vr.velEnd + deltaY <= 127;
+               vr.velStart + deltaY >= VelocityRange::lowestVelocity &&
+               vr.velEnd + deltaY <= VelocityRange::highestVelocity;
     }
 
     auto doApply = true;
@@ -927,7 +928,7 @@ bool Zone::canApplyChange(ChangeDimension dim, int deltaX, int deltaY, const Key
     auto iDim = (int)dim;
     if (iDim & VEL_RANGE_START)
     {
-        doApply = doApply && (vr.velStart + deltaY >= 0);
+        doApply = doApply && (vr.velStart + deltaY >= VelocityRange::lowestVelocity);
         doApply = doApply && (vr.velStart + deltaY < vr.velEnd - 1);
         doApply = doApply && (hasFeature::geometryChangesAdjustFade ||
                               (vr.velEnd - vr.velStart - deltaY >= vr.fadeStart + vr.fadeEnd));
@@ -1079,7 +1080,7 @@ bool Zone::canApplyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY,
     }
     if (dim == VEL_RANGE_START)
     {
-        return newY >= 0 && newY < 127 && newY <= vr.velEnd - 1;
+        return newY >= VelocityRange::lowestVelocity && newY < 127 && newY <= vr.velEnd - 1;
     }
     if (dim == VEL_RANGE_END)
     {
@@ -1122,7 +1123,7 @@ void Zone::applyAbsoluteBoundEdit(ChangeDimension dim, int newX, int newY, Keybo
     if (dim == VEL_RANGE_START)
     {
         // same bound as canApply above, else the edit validates and then silently does nothing
-        if (newY >= 0 && newY <= 127 && newY <= vr.velEnd - 1)
+        if (newY >= VelocityRange::lowestVelocity && newY <= 127 && newY <= vr.velEnd - 1)
             vr.velStart = newY;
     }
     if (dim == VEL_RANGE_END)

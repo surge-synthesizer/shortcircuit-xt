@@ -1188,9 +1188,9 @@ void MappingDisplay::adjustDeltasToMakeSureTheyWillFit(engine::Zone::ChangeDimen
     if (kr.keyEnd + deltaX > 127 &&
         (isMove || (dim & engine::Zone::ChangeDimension::KEY_RANGE_END)))
         deltaX = 127 - kr.keyEnd;
-    if (vr.velStart + deltaY < 0 &&
+    if (vr.velStart + deltaY < engine::VelocityRange::lowestVelocity &&
         (isMove || (dim & engine::Zone::ChangeDimension::VEL_RANGE_START)))
-        deltaY = -vr.velStart;
+        deltaY = engine::VelocityRange::lowestVelocity - vr.velStart;
     if (vr.velEnd + deltaY >= 127 &&
         (isMove || (dim & engine::Zone::ChangeDimension::VEL_RANGE_END)))
         deltaY = 127 - vr.velEnd;
