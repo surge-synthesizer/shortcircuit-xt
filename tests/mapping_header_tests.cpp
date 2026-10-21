@@ -187,9 +187,8 @@ TEST_CASE("Learn velocity range sets the lead zone velocities", "[mapping-header
 
     f.startAction(mza::SET_VEL_BOUNDS_START);
     REQUIRE(f.clientAction() == (int)mza::SET_VEL_BOUNDS_START);
-    // velocity reads as v * 128, so these are 96 and 32
-    f.play(60, 0.75f);
-    f.play(61, 0.25f);
+    f.play(60, 96 / 127.f);
+    f.play(61, 32 / 127.f);
 
     const auto &vr = f.zone(0, 0)->mapping.velocityRange;
     REQUIRE(vr.velStart == 32);

@@ -1037,6 +1037,12 @@ SC_STREAMDEF(scxt::engine::VelocityRange, SC_FROM({
                  findIf(v, {"ve", "velEnd"}, to.velEnd);
                  findIf(v, {"fs", "fadeStart"}, to.fadeStart);
                  findIf(v, {"fe", "fadeEnd"}, to.fadeEnd);
+                 if (SC_UNSTREAMING_FROM_PRIOR_TO(0x2026'10'20))
+                 {
+                     // velocity ranges used to start at 0
+                     to.velStart = std::max(to.velStart, engine::VelocityRange::lowestVelocity);
+                     to.velEnd = std::max(to.velEnd, engine::VelocityRange::lowestVelocity);
+                 }
              }));
 
 SC_STREAMDEF(engine::Engine::EngineStatusMessage, SC_FROM({

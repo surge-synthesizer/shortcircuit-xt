@@ -125,7 +125,7 @@ TEST_CASE("An absolute velocity edit agrees with its own validation", "[bound_ed
 {
     SECTION("full velocity is reachable")
     {
-        VelocityRange vr{0, 100};
+        VelocityRange vr{1, 100};
         REQUIRE(Zone::canApplyAbsoluteBoundEdit(Zone::VEL_RANGE_END, 0, 127, KeyboardRange{48, 72},
                                                 vr));
         REQUIRE(applyVel(Zone::VEL_RANGE_END, 127, vr).velEnd == 127);
@@ -134,7 +134,7 @@ TEST_CASE("An absolute velocity edit agrees with its own validation", "[bound_ed
     SECTION("a start one below the end is not a silent no-op")
     {
         // canApply accepts velEnd - 1, so apply has to write it rather than validate and drop it
-        VelocityRange vr{0, 100};
+        VelocityRange vr{1, 100};
         REQUIRE(Zone::canApplyAbsoluteBoundEdit(Zone::VEL_RANGE_START, 0, 99, KeyboardRange{48, 72},
                                                 vr));
         REQUIRE(applyVel(Zone::VEL_RANGE_START, 99, vr).velStart == 99);
@@ -142,12 +142,13 @@ TEST_CASE("An absolute velocity edit agrees with its own validation", "[bound_ed
 
     SECTION("out of range velocities are refused")
     {
-        VelocityRange vr{0, 100};
+        VelocityRange vr{1, 100};
         REQUIRE(applyVel(Zone::VEL_RANGE_END, 128, vr).velEnd == 100);
         REQUIRE(applyVel(Zone::VEL_RANGE_END, -1, vr).velEnd == 100);
-        REQUIRE(applyVel(Zone::VEL_RANGE_START, 128, vr).velStart == 0);
-        REQUIRE(applyVel(Zone::VEL_RANGE_START, -1, vr).velStart == 0);
+        REQUIRE(applyVel(Zone::VEL_RANGE_START, 128, vr).velStart == 1);
+        REQUIRE(applyVel(Zone::VEL_RANGE_START, -1, vr).velStart == 1);
+        REQUIRE(applyVel(Zone::VEL_RANGE_START, 0, vr).velStart == 1);
         // and start may not cross end
-        REQUIRE(applyVel(Zone::VEL_RANGE_START, 110, vr).velStart == 0);
+        REQUIRE(applyVel(Zone::VEL_RANGE_START, 110, vr).velStart == 1);
     }
 }

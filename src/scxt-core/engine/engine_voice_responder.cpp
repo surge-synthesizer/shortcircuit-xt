@@ -46,8 +46,8 @@ int32_t Engine::VoiceManagerResponder::beginVoiceCreationTransaction(
     else
     {
         auto useKey = engine.midikeyRetuner.remapKeyTo(channel, key);
-        nts = engine.findZone(channel, useKey, key, noteId,
-                              std::clamp((int)(velocity * 128), 0, 127), findZoneWorkingBuffer);
+        nts = engine.findZone(channel, useKey, key, noteId, VelocityRange::fromFloat(velocity),
+                              findZoneWorkingBuffer);
     }
 
     auto voicesCreated{0};
@@ -195,7 +195,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
                     {
                         v->velKeyFade = z->mapping.keyboardRange.fadeAmpltiudeAt(key);
                         v->velKeyFade *= z->mapping.velocityRange.fadeAmpltiudeAt(
-                            (int16_t)std::clamp(velocity * 127.0, 0., 127.));
+                            VelocityRange::fromFloat(velocity));
                     }
 
                     v->originalMidiKey = key;

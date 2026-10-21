@@ -204,8 +204,8 @@ void Engine::learnLeadZoneRange(bool keys, int16_t a, int16_t b)
     }
     else
     {
-        m.velocityRange.velStart = (int16_t)std::clamp((int)lo, 0, 127);
-        m.velocityRange.velEnd = (int16_t)std::clamp((int)hi, 0, 127);
+        m.velocityRange.velStart = (int16_t)std::clamp((int)lo, 1, 127);
+        m.velocityRange.velEnd = (int16_t)std::clamp((int)hi, 1, 127);
         fit(m.velocityRange.fadeStart, m.velocityRange.fadeEnd,
             m.velocityRange.velEnd - m.velocityRange.velStart + 1);
     }

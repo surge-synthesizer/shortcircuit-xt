@@ -39,7 +39,7 @@ namespace scxt::engine
 struct DropRange
 {
     DropRange(int16_t r, int16_t kl, int16_t kh)
-        : root(r), keyLo(kl), keyHi(kh), velLo(0), velHi(127)
+        : root(r), keyLo(kl), keyHi(kh), velLo(1), velHi(127)
     {
     }
     DropRange(int16_t r, int16_t kl, int16_t kh, int16_t vl, int16_t vh)

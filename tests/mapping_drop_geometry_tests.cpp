@@ -56,7 +56,7 @@ void requireWellFormed(const std::vector<scxt::engine::DropRange> &rs)
         REQUIRE(r.keyLo <= r.keyHi);
         REQUIRE(r.root >= 0);
         REQUIRE(r.root <= 127);
-        REQUIRE(r.velLo >= 0);
+        REQUIRE(r.velLo >= 1);
         REQUIRE(r.velHi <= 127);
         REQUIRE(r.velLo <= r.velHi);
     }
@@ -185,7 +185,7 @@ TEST_CASE("Drop Geometry Keyboard Spread")
 
 TEST_CASE("Drop Geometry Velocity Spread")
 {
-    SECTION("velocity covers 0 to 127 with no gaps and no overlap")
+    SECTION("velocity covers 1 to 127 with no gaps and no overlap")
     {
         for (int n : {2, 3, 4, 8})
         {
@@ -193,7 +193,7 @@ TEST_CASE("Drop Geometry Velocity Spread")
             g.shift = true;
             auto r = scxt::engine::dropRangesFor(g);
             REQUIRE((int)r.size() == n);
-            REQUIRE(r.front().velLo == 0);
+            REQUIRE(r.front().velLo == 1);
             REQUIRE(r.back().velHi == 127);
             for (size_t i = 1; i < r.size(); ++i)
             {
@@ -357,7 +357,7 @@ TEST_CASE("Drop Geometry Fills The Keyboard At The Top")
         {
             REQUIRE(e.keyLo == 0);
             REQUIRE(e.keyHi == 127);
-            REQUIRE(e.velLo == 0);
+            REQUIRE(e.velLo == 1);
             REQUIRE(e.velHi == 127);
         }
     }
@@ -386,7 +386,7 @@ TEST_CASE("Drop Geometry Over The Keyboard")
         auto r = scxt::engine::dropRangesFor(g);
 
         REQUIRE(r.size() == 4);
-        REQUIRE(r.front().velLo == 0);
+        REQUIRE(r.front().velLo == 1);
         REQUIRE(r.back().velHi == 127);
         for (size_t i = 0; i < r.size(); ++i)
         {
@@ -410,7 +410,7 @@ TEST_CASE("Drop Geometry Over The Keyboard")
         {
             REQUIRE(e.keyLo == 55);
             REQUIRE(e.keyHi == 55);
-            REQUIRE(e.velLo == 0);
+            REQUIRE(e.velLo == 1);
             REQUIRE(e.velHi == 127);
         }
     }
@@ -445,7 +445,7 @@ TEST_CASE("Drop Geometry Velocity Bend")
                 INFO("bend " << bend << " n " << n);
                 REQUIRE((int)r.size() == n);
                 requireWellFormed(r);
-                REQUIRE(r.front().velLo == 0);
+                REQUIRE(r.front().velLo == 1);
                 REQUIRE(r.back().velHi == 127);
                 for (size_t i = 1; i < r.size(); ++i)
                     REQUIRE(r[i].velLo == r[i - 1].velHi + 1);
@@ -489,7 +489,7 @@ TEST_CASE("Drop Geometry Velocity Bend")
         g.velocityBend = 1.f;
         for (const auto &e : scxt::engine::dropRangesFor(g))
         {
-            REQUIRE(e.velLo == 0);
+            REQUIRE(e.velLo == 1);
             REQUIRE(e.velHi == 127);
         }
     }

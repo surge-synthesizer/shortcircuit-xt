@@ -202,6 +202,7 @@ void zoneGeometry(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes, int &
         mp.velocityRange.velEnd = hv;
         mp.velocityRange.fadeEnd = hv - lv;
     }
+    mp.velocityRange.normalize();
 }
 
 void zonePlayback(std::unique_ptr<engine::Zone> &zn, opCodeMap_t &opCodes)

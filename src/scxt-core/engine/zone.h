@@ -584,8 +584,12 @@ SC_DESCRIBE(
     SC_FIELD(keyboardRange.keyEnd, pmd().asMIDINote().withName("Key End"));
     SC_FIELD(keyboardRange.fadeStart, pmd().asMIDIPitch().withUnit("").withName("Fade Start"));
     SC_FIELD(keyboardRange.fadeEnd, pmd().asMIDIPitch().withUnit("").withName("Fade End"));
-    SC_FIELD(velocityRange.velStart, pmd().asMIDIPitch().withUnit("").withName("Velocity Start"));
-    SC_FIELD(velocityRange.velEnd, pmd().asMIDIPitch().withUnit("").withName("Velocity End"));
+    SC_FIELD(velocityRange.velStart,
+             pmd().asMIDIPitch().withRange(1, 127).withDefault(1).withUnit("").withName(
+                 "Velocity Start"));
+    SC_FIELD(velocityRange.velEnd,
+             pmd().asMIDIPitch().withRange(1, 127).withDefault(127).withUnit("").withName(
+                 "Velocity End"));
     SC_FIELD(velocityRange.fadeStart,
              pmd().asMIDIPitch().withUnit("").withName("Velocity Fade Start"));
     SC_FIELD(velocityRange.fadeEnd, pmd().asMIDIPitch().withUnit("").withName("Velocity Fade End"));

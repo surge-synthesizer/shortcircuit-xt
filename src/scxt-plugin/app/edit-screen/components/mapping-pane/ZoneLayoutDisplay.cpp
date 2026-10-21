@@ -34,6 +34,9 @@
 
 namespace scxt::ui::app::edit_screen
 {
+// velocities lowVel..127 fill the height, one row each
+static constexpr int lowVel{engine::VelocityRange::lowestVelocity};
+static constexpr double velRows{engine::VelocityRange::highestVelocity - lowVel + 1};
 
 ZoneLayoutDisplay::ZoneLayoutDisplay(MappingDisplay *d) : HasEditor(d->editor), display(d) {}
 
@@ -291,17 +294,16 @@ void ZoneLayoutDisplay::createEmptyZoneAt(const juce::Point<int> &pos)
     auto displayRegion = getLocalBounds().toFloat();
     auto kw = hZoom * displayRegion.getWidth() /
               (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote);
-    auto vh = vZoom * displayRegion.getHeight() / 127.0;
+    auto vh = vZoom * displayRegion.getHeight() / velRows;
 
     auto newX = pos.x / kw + hPct * 128;
     auto cKey = (int)std::round(newX);
-    auto newY = 127 - pos.y / vh - vPct * 128;
-    auto cVel = (int)std::round(newY);
+    auto cVel = std::clamp(127 - (int)std::floor(pos.y / vh + vPct * velRows), lowVel, 127);
 
     // finding the 'best' rectangle is actually pretty hard.
     // the brute force is n^5 in rectangles. So lets use a little
     // heuristic - at this point find max vel and max key span
-    int16_t velMax{127}, velMin{0};
+    int16_t velMax{127}, velMin{lowVel};
     int16_t keyMax{127}, keyMin{0};
     for (auto &r : display->summary)
     {
@@ -353,9 +355,9 @@ void ZoneLayoutDisplay::createEmptyZoneAt(const juce::Point<int> &pos)
         if (velMax != cVel && velMax != 127)
             velMax--;
 
-        while (velMin > 0 && !overlap(keyMin, keyMax, velMin, velMax))
+        while (velMin > lowVel && !overlap(keyMin, keyMax, velMin, velMax))
             velMin--;
-        if (velMin != cVel && velMin != 0)
+        if (velMin != cVel && velMin != lowVel)
             velMin++;
     }
     else
@@ -550,7 +552,7 @@ void ZoneLayoutDisplay::mouseDrag(const juce::MouseEvent &e)
 
     auto kw = hZoom * displayRegion.getWidth() /
               (ZoneLayoutKeyboard::lastMidiNote - ZoneLayoutKeyboard::firstMidiNote + 1);
-    auto vh = vZoom * displayRegion.getHeight() / 127.0;
+    auto vh = vZoom * displayRegion.getHeight() / velRows;
     auto dx = e.position.x - lastMousePos.x;
     auto dy = -(e.position.y - lastMousePos.y);
     auto deltaX = (int)(dx / kw);
@@ -713,14 +715,14 @@ void ZoneLayoutDisplay::mouseUp(const juce::MouseEvent &e)
             displayRegion.getWidth() /
             (ZoneLayoutKeyboard::lastMidiNote -
              ZoneLayoutKeyboard::firstMidiNote); // this had a +1, which doesn't seem to be needed?
-        auto vh = displayRegion.getHeight() / 127.f;
+        auto vh = displayRegion.getHeight() / velRows;
 
         auto ks = (int)std::clamp(std::floor(r.getX() / kw + ZoneLayoutKeyboard::firstMidiNote),
                                   0.f, 127.f);
         auto ke = (int)std::clamp(std::ceil(r.getRight() / kw + ZoneLayoutKeyboard::firstMidiNote),
                                   0.f, 127.f);
-        auto vs = (int)std::clamp(127.f - std::floor(r.getBottom() / vh), 0.f, 127.f);
-        auto ve = (int)std::clamp(127.f - std::ceil(r.getY() / vh), 0.f, 127.f);
+        auto vs = std::clamp(127 - (int)std::floor(r.getBottom() / vh), lowVel, 127);
+        auto ve = std::clamp(127 - (int)std::ceil(r.getY() / vh), lowVel, 127);
 
         namespace cmsg = scxt::messaging::client;
         // Prefer lead group so an empty selected group still routes here
@@ -788,8 +790,8 @@ juce::Rectangle<float> ZoneLayoutDisplay::rectangleForRangeSkipEnd(int kL, int k
         std::swap(x1, x0);
 
     // Then velocities
-    auto normvL = 1.0 - 1.0 * vL / 128;
-    auto normvH = 1.0 - 1.0 * vH / 128;
+    auto normvL = 1.0 - (vL - lowVel) / velRows;
+    auto normvH = 1.0 - (vH - lowVel) / velRows;
 
     auto scvL = (normvL - vPct) * vZoom;
     auto scvH = (normvH - vPct) * vZoom;
@@ -986,7 +988,7 @@ void ZoneLayoutDisplay::paint(juce::Graphics &g)
             if (mul && !first)
             {
                 g.setColour(editor->themeColor(theme::ColorMap::accent_1a, 0.6f));
-                if (rr.velLo == 0 && rr.velHi == 127)
+                if (rr.velLo == lowVel && rr.velHi == 127)
                     g.drawVerticalLine(rb.getX(), rb.getY(), rb.getBottom());
                 else
                     g.drawHorizontalLine(rb.getBottom(), rb.getX(), rb.getRight());
