@@ -38,6 +38,7 @@
 #include "sst/jucegui/components/DraggableTextEditableValue.h"
 #include "sst/jucegui/util/WheelCalibration.h"
 #include "sst/clap_juce_shim/menu_helper.h"
+#include "clapwrapper/standalone_features.h"
 
 #include "app/SCXTEditor.h"
 #include "app/editor-impl/KeyBindings.h"
@@ -123,6 +124,18 @@ void SCXTEditor::showMainMenu(bool alignWithHeaderButton)
     m.addSubMenu("UI Behavior", skin);
 
     addKeyCommandItem(m, "Keyboard Shortcuts...", SHOW_KEYBINDINGS_EDITOR);
+
+    // only the clap-wrapper standalone answers this extension
+    if (clapHost)
+    {
+        auto *sf = static_cast<const clap_wrapper_standalone_features_t *>(
+            clapHost->get_extension(clapHost, CLAP_WRAPPER_STANDALONE_FEATURES));
+        if (sf && sf->supports_audio_midi_configuration_screen(clapHost))
+        {
+            m.addItem("Audio/MIDI Settings...",
+                      [sf, h = clapHost]() { sf->show_audio_midi_configuration_screen(h); });
+        }
+    }
 
     m.addSeparator();
     m.addItem("Release all Voices", [w = juce::Component::SafePointer(this)]() {
