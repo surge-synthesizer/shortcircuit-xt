@@ -52,6 +52,11 @@ set_target_properties(${PROJECT_NAME}_all PROPERTIES ARTEFACT_DIRECTORY ${CMAKE_
 
 target_compile_definitions(clap-wrapper-compile-options-public INTERFACE CLAP_WRAPPER_LOGLEVEL=0)
 
+# the windows backends share file-local helper names
+if (TARGET scxt_clapfirst_standalone-clap-wrapper-standalone-lib)
+    set_target_properties(scxt_clapfirst_standalone-clap-wrapper-standalone-lib PROPERTIES UNITY_BUILD FALSE)
+endif()
+
 if (UNIX AND NOT APPLE)
     # For now I'm adding a set of cmake install rules only for linux
     # The directories on windows and macos aren't run by the INSTALL dir
