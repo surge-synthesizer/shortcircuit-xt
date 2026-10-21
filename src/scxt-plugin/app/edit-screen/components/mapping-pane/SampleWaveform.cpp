@@ -748,14 +748,8 @@ void SampleWaveform::paint(juce::Graphics &g)
     auto bg1 = editor->themeColor(theme::ColorMap::bg_1);
     auto imf = editor->themeApplier.interBoldFor(10);
 
-    /*
-     * A range end is up-to, so its line comes back a pixel into the range - the other way when
-     * mirrored. The letters swap with it: playback still runs left to right, so whichever marker
-     * is on the left is the one it starts from.
-     */
+    // a range end is up-to, so its line comes back a pixel into the range - the other way mirrored
     auto endNudge = isReversed() ? 1 : -1;
-    auto startLetter = isReversed() ? "E" : "S";
-    auto endLetter = isReversed() ? "S" : "E";
 
     /*
      * Draw the crossfade where the engine actually performs it, at the clamped length
@@ -861,7 +855,7 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.fillRect(startSampleHZ);
         g.setColour(bg1);
         g.setFont(imf);
-        g.drawText(startLetter, startSampleHZ, juce::Justification::centred);
+        g.drawText("S", startSampleHZ, juce::Justification::centred);
     }
     if (se > 0 && se <= getWidth())
     {
@@ -870,7 +864,7 @@ void SampleWaveform::paint(juce::Graphics &g)
         g.fillRect(endSampleHZ);
         g.setColour(bg1);
         g.setFont(imf);
-        g.drawText(endLetter, endSampleHZ, juce::Justification::centred);
+        g.drawText("E", endSampleHZ, juce::Justification::centred);
     }
     if (v.loopActive)
     {
