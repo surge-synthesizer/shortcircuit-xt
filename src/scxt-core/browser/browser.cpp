@@ -71,11 +71,11 @@ std::vector<Browser::indexedRootPath_t> Browser::getRootPathsForDeviceView() con
     auto osdef = getOSDefaultRootPathsForDeviceView();
     std::vector<Browser::indexedRootPath_t> res;
     for (const auto &[p, s] : osdef)
-        res.emplace_back(p, s, false);
-    res.emplace_back(patchIODirectory, "User Patches", true);
+        res.emplace_back(p, s, RootKind::OS);
+    res.emplace_back(patchIODirectory, "User Patches", RootKind::USER_PATCHES);
     auto fav = browserDb.getBrowserLocations();
     for (const auto &p : fav)
-        res.emplace_back(p.first, p.first.filename().u8string(), p.second);
+        res.emplace_back(p.first, p.first.filename().u8string(), RootKind::FAVORITE);
 
     return res;
 }

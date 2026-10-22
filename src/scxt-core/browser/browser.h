@@ -86,7 +86,13 @@ struct Browser
      * from any non realtime thread other than the sql thread but is really intended
      * to be called from the serialization thread.
      */
-    using indexedRootPath_t = std::tuple<fs::path, std::string, bool>;
+    enum struct RootKind
+    {
+        OS,
+        USER_PATCHES,
+        FAVORITE
+    };
+    using indexedRootPath_t = std::tuple<fs::path, std::string, RootKind>;
     std::vector<indexedRootPath_t> getRootPathsForDeviceView() const;
     void addRootPathForDeviceView(const fs::path &, bool indexed, messaging::MessageController &);
     void removeRootPathForDeviceView(const fs::path &, messaging::MessageController &);
