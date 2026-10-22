@@ -52,6 +52,18 @@ namespace scxt::ui::app::browser_ui
 {
 namespace jcmp = sst::jucegui::components;
 
+// a filesystem_error escaping a ui callback takes the host down with it
+static bool isDirectory(const fs::path &p)
+{
+    std::error_code ec;
+    return fs::is_directory(p, ec);
+}
+static bool isDirectory(const fs::directory_entry &d)
+{
+    std::error_code ec;
+    return d.is_directory(ec);
+}
+
 struct TempPane : HasEditor, juce::Component
 {
     std::string label;
@@ -76,7 +88,9 @@ struct DriveArea : juce::Component, HasEditor
     struct DriveAreaRow : juce::Component
     {
         DriveArea *driveArea{nullptr};
-        uint32_t rowNumber{0};
+        // the list's row, and where that row lives in browserPane->roots
+        uint32_t listRow{0};
+        size_t rootIndex{0};
         bool selected{false};
         bool hovered{false};
 
@@ -86,7 +100,7 @@ struct DriveArea : juce::Component, HasEditor
             auto *ed = driveArea->browserPane->editor;
             auto *bp = driveArea->browserPane;
 
-            if (rowNumber >= 0 && rowNumber < bp->roots.size())
+            if (rootIndex < bp->roots.size())
             {
                 g.setFont(ed->themeApplier.interMediumFor(12));
 
@@ -106,7 +120,7 @@ struct DriveArea : juce::Component, HasEditor
                 g.setColour(fillColor);
                 g.fillRect(0, 0, getWidth(), getHeight());
                 g.setColour(textColor);
-                g.drawText(std::get<1>(bp->roots[rowNumber]), 1, 1, getWidth() - 2, getHeight() - 2,
+                g.drawText(std::get<1>(bp->roots[rootIndex]), 1, 1, getWidth() - 2, getHeight() - 2,
                            juce::Justification::centredLeft);
             }
         }
@@ -126,21 +140,26 @@ struct DriveArea : juce::Component, HasEditor
         void showPopup()
         {
             auto *bp = driveArea->browserPane;
-            auto pth = std::get<0>(bp->roots[rowNumber]);
-            auto nm = std::get<1>(bp->roots[rowNumber]);
+            auto pth = std::get<0>(bp->roots[rootIndex]);
+            auto nm = std::get<1>(bp->roots[rootIndex]);
+            auto kind = std::get<2>(bp->roots[rootIndex]);
 
             auto p = juce::PopupMenu();
             p.addSectionHeader(nm);
             p.addSeparator();
 
-            p.addItem("Remove '" + nm + "' from Favorites", [w = juce::Component::SafePointer(
-                                                                 driveArea->browserPane),
-                                                             removeThis = pth]() {
-                if (!w)
-                    return;
-                namespace cmsg = scxt::messaging::client;
-                w->sendToSerialization(cmsg::RemoveBrowserDeviceLocation(removeThis.u8string()));
-            });
+            if (kind == browser::Browser::RootKind::FAVORITE)
+            {
+                p.addItem(
+                    "Remove '" + nm + "' from Favorites",
+                    [w = juce::Component::SafePointer(driveArea->browserPane), removeThis = pth]() {
+                        if (!w)
+                            return;
+                        namespace cmsg = scxt::messaging::client;
+                        w->sendToSerialization(
+                            cmsg::RemoveBrowserDeviceLocation(removeThis.u8string()));
+                    });
+            }
 #if SHOW_INDEX_MENUS
             // TODO: If Indexed
             p.addItem("Add '" + nm + "' to Search Index", false, false, [](){});
@@ -152,7 +171,7 @@ struct DriveArea : juce::Component, HasEditor
                               cmsg::ReindexBrowserLocation{pth.u8string()});
                       });
 #endif
-            if (!fs::is_directory(pth))
+            if (!isDirectory(pth))
             {
                 pth = pth.parent_path();
             }
@@ -201,24 +220,14 @@ struct DriveArea : juce::Component, HasEditor
     DriveArea(BrowserPane *b, SCXTEditor *e) : browserPane(b), HasEditor(e)
     {
         listView = std::make_unique<sst::jucegui::components::ListView>();
-        listView->getRowCount = [this]() {
-            int ct{0};
-            for (auto &[p, s, user] : browserPane->roots)
-            {
-                if (user && (filterMode == 0 || filterMode == 2))
-                    ct++;
-                if (!user && (filterMode == 0 || filterMode == 1))
-                    ct++;
-            }
-            return ct;
-        };
+        listView->getRowCount = [this]() { return (uint32_t)visibleRoots.size(); };
         listView->getRowHeight = [this]() { return 18; };
         listView->makeRowComponent = [this]() { return makeComponent(); };
         listView->assignComponentToRow = [this](const auto &c, auto r) {
             return assignComponentToRow(c, r);
         };
         listView->setRowSelection = [this](const auto &c, auto r) { return setRowSelection(c, r); };
-        listView->refresh();
+        refreshRows();
         addAndMakeVisible(*listView);
     };
 
@@ -226,8 +235,12 @@ struct DriveArea : juce::Component, HasEditor
     void setFilterMode(int m)
     {
         filterMode = m;
-        listView->refresh();
+        refreshRows();
     }
+
+    // indices into browserPane->roots of the rows the filter shows
+    std::vector<size_t> visibleRoots;
+    void refreshRows();
 
     ~DriveArea() {}
 
@@ -251,22 +264,10 @@ struct DriveArea : juce::Component, HasEditor
     void assignComponentToRow(const std::unique_ptr<juce::Component> &c, int r)
     {
         auto *dar = dynamic_cast<DriveAreaRow *>(c.get());
-        if (dar)
+        if (dar && r >= 0 && r < visibleRoots.size())
         {
-            // this assumes user comes second
-            if (filterMode == 0 || filterMode == 1)
-                dar->rowNumber = r;
-            else
-            {
-                auto fnu{0};
-                for (auto &[p, s, u] : browserPane->roots)
-                {
-                    if (u)
-                        break;
-                    fnu++;
-                }
-                dar->rowNumber = r + fnu;
-            }
+            dar->listRow = r;
+            dar->rootIndex = visibleRoots[r];
             dar->repaint();
         }
     }
@@ -389,8 +390,8 @@ struct DriveFSArea : juce::Component, HasEditor, KeyCommandTarget
             editor->displayError("Browser Filesystem Error", e.what());
         }
         std::sort(lcontents.begin(), lcontents.end(), [](auto &a, auto &b) {
-            auto ida = fs::is_directory(a.dirent.path());
-            auto idb = fs::is_directory(b.dirent.path());
+            auto ida = isDirectory(a.dirent);
+            auto idb = isDirectory(b.dirent);
             if (ida != idb)
             {
                 if (ida)
@@ -475,7 +476,7 @@ struct DriveFSArea : juce::Component, HasEditor, KeyCommandTarget
     {
         const auto &d = contents[row];
         return !d.expandableAddress.has_value() && !(d.dirent == fs::path("..")) &&
-               d.dirent.is_directory();
+               isDirectory(d.dirent);
     }
     void enterDirectory(int row);
     void selectRowFromKeys(int row, bool preview);
@@ -575,7 +576,7 @@ struct DevicesPane : HasEditor, juce::Component
 
 void DriveArea::DriveAreaRow::mouseDown(const juce::MouseEvent &e)
 {
-    if (rowNumber >= 0 && rowNumber < driveArea->browserPane->roots.size())
+    if (rootIndex < driveArea->browserPane->roots.size())
     {
         if (e.mods.isPopupMenu())
         {
@@ -584,8 +585,37 @@ void DriveArea::DriveAreaRow::mouseDown(const juce::MouseEvent &e)
         else
         {
             driveArea->browserPane->devicesPane->driveFSArea->setRootRow(
-                std::get<0>(driveArea->browserPane->roots[rowNumber]));
-            driveArea->listView->rowSelected(rowNumber, true, e.mods);
+                std::get<0>(driveArea->browserPane->roots[rootIndex]));
+            driveArea->listView->rowSelected(listRow, true, e.mods);
+        }
+    }
+}
+
+void DriveArea::refreshRows()
+{
+    // selection is by list row, so it goes stale when the rows change; this clears it
+    listView->setSelectionMode(jcmp::ListView::SINGLE_SELECTION);
+
+    using rk = browser::Browser::RootKind;
+    visibleRoots.clear();
+    for (size_t i = 0; i < browserPane->roots.size(); ++i)
+    {
+        auto isOS = std::get<2>(browserPane->roots[i]) == rk::OS;
+        if (filterMode == 0 || (filterMode == 1 && isOS) || (filterMode == 2 && !isOS))
+            visibleRoots.push_back(i);
+    }
+    listView->refresh();
+
+    // devicesPane is still being built when this runs from our constructor
+    auto *dp = browserPane->devicesPane.get();
+    if (!dp || !dp->driveFSArea)
+        return;
+    for (size_t r = 0; r < visibleRoots.size(); ++r)
+    {
+        if (std::get<0>(browserPane->roots[visibleRoots[r]]) == dp->driveFSArea->rootPath)
+        {
+            listView->rowSelected(r, true);
+            break;
         }
     }
 }
@@ -752,7 +782,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
             const auto &entry = data[rowNumber];
 
             // a double click on the glyph of a multi-sample file opens or closes it
-            if (!entry.expandableAddress.has_value() && !entry.dirent.is_directory() &&
+            if (!entry.expandableAddress.has_value() && !isDirectory(entry.dirent) &&
                 browser::Browser::isExpandableInBrowser(entry.dirent.path()) &&
                 event.position.x < glyphSize + 2)
             {
@@ -803,7 +833,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
         if (rowNumber >= 0 && rowNumber < data.size())
         {
             const auto &entry = data[rowNumber];
-            return !entry.dirent.is_directory();
+            return !isDirectory(entry.dirent);
         }
         return false;
     }
@@ -882,7 +912,7 @@ struct DriveFSRowComponent : public juce::Component, WithSampleInfo
                 g.drawText(entry.expandableAddress->name, b.reduced(2, 0),
                            juce::Justification::centredLeft);
             }
-            else if (entry.dirent.is_directory())
+            else if (isDirectory(entry.dirent))
             {
                 jcmp::GlyphPainter::paintGlyph(g, r, jcmp::GlyphPainter::FOLDER,
                                                textColor.withAlpha(isSelected ? 1.f : 0.5f));
@@ -949,7 +979,7 @@ void DriveFSArea::activateRow(int row)
     {
         upOneLevel();
     }
-    else if (d.dirent.is_directory())
+    else if (isDirectory(d.dirent))
     {
         setCurrentPath(d.dirent.path());
     }
@@ -1119,7 +1149,7 @@ bool DriveFSArea::previewRow(int row)
     }
 
     const auto &p = entry.dirent.path();
-    if (entry.dirent.is_directory() || !browser::Browser::isLoadableSingleSample(p))
+    if (isDirectory(entry.dirent) || !browser::Browser::isLoadableSingleSample(p))
         return false;
 
     auto address = sample::Sample::SampleFileAddress{
@@ -1140,7 +1170,7 @@ bool DriveFSArea::autoLoadRow(int row)
         return false;
 
     const auto &p = entry.dirent.path();
-    if (entry.dirent.is_directory() || !browser::Browser::isLoadableSingleSample(p))
+    if (isDirectory(entry.dirent) || !browser::Browser::isLoadableSingleSample(p))
         return false;
 
     sendToSerialization(scxt::messaging::client::AutoLoadSampleIntoLeadZone(p.u8string()));
@@ -1467,7 +1497,7 @@ void BrowserPane::resetRoots()
     roots = editor->browser.getRootPathsForDeviceView();
     if (devicesPane && devicesPane->driveArea && devicesPane->driveArea->listView)
     {
-        devicesPane->driveArea->listView->refresh();
+        devicesPane->driveArea->refreshRows();
     }
     repaint();
 }
@@ -1503,7 +1533,7 @@ void BrowserPane::restoreSelectedPath(const std::string &u8path)
     if (u8path.empty() || !devicesPane || !devicesPane->driveFSArea)
         return;
     auto p = fs::path(fs::u8path(u8path));
-    if (!fs::exists(p) || !fs::is_directory(p))
+    if (!isDirectory(p))
         return;
     devicesPane->driveFSArea->restoreFromSavedPath(p);
     repaint();
