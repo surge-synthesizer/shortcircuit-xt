@@ -161,4 +161,19 @@ else ()
             COMMAND ${CMAKE_COMMAND} -E make_directory installer
             COMMAND ${CMAKE_COMMAND} -E tar cvf installer/${SCXT_ZIP} --format=zip ${SCXT_PRODUCT_DIR}/
             COMMAND ${CMAKE_COMMAND} -E echo "Installer in: installer/${SCXT_ZIP}")
+
+    # non-debian hosts still get the zip
+    find_program(SCXT_DPKG_DEB dpkg-deb)
+    if (SCXT_DPKG_DEB)
+        set(SCXT_DEB shortcircuit-xt-linux${SCXT_EXTRA_INSTALLER_NAME}-${SCXT_DATE}-${VERSION_CHUNK}.deb)
+        message(STATUS "Debian package: Target is installer/${SCXT_DEB}")
+        add_custom_command(
+                TARGET shortcircuit-installer
+                POST_BUILD
+                USES_TERMINAL
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                COMMAND ${CMAKE_COMMAND} -E make_directory installer
+                COMMAND ${CMAKE_SOURCE_DIR}/scripts/installer_linux/make_deb.sh ${SCXT_PRODUCT_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}/installer/${SCXT_DEB} "${SCXT_DATE}-${VERSION_CHUNK}"
+                COMMAND ${CMAKE_COMMAND} -E echo "Debian package in: installer/${SCXT_DEB}")
+    endif ()
 endif ()
