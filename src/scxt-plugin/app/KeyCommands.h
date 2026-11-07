@@ -42,6 +42,11 @@ enum KeyCommands : uint32_t
     SHOW_LOG,
     SHOW_ABOUT,
 
+    SAVE_PART,
+    SAVE_MULTI,
+    PREVIOUS_FILE,
+    NEXT_FILE,
+
     FOCUS_PLAY,
     FOCUS_PARTS,
     FOCUS_GROUPS,

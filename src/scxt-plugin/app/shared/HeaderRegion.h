@@ -119,6 +119,9 @@ struct HeaderRegion : juce::Component, HasEditor, juce::FileDragAndDropTarget
     void doLoadMulti();
     void doSaveSelectedPart(patch_io::SaveStyles style);
     void doLoadIntoSelectedPart();
+    // no dialog once the item has a file to go back to
+    void doSaveMultiInPlace();
+    void doSaveSelectedPartInPlace();
 
     /*
      * The label names the multi, or the selected part when the sidebar is showing

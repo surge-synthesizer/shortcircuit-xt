@@ -245,25 +245,26 @@ inline std::optional<fs::path> inPlaceTarget(const selection::SelectionManager::
     return scxt::guaranteeExtension(dir / stem, ext);
 }
 
+// a monolith saves back as one, so its samples go with it
+inline patch_io::SaveStyles inPlaceStyle(const selection::SelectionManager::PatchFile &pf)
+{
+    return pf.monolith ? patch_io::SaveStyles::AS_MONOLITH : patch_io::SaveStyles::NO_SAMPLES;
+}
+
 template <typename T> void doSaveMultiInPlace(T *that, std::unique_ptr<juce::FileChooser> &fc)
 {
     namespace cmsg = scxt::messaging::client;
 
     const auto &pf = that->editor->patchFiles.multi;
-    // a monolith is read back from the file we would be replacing, so ask where
-    // to put it until that is solved
-    if (pf.monolith)
-        return doSaveMulti(that, fc, patch_io::SaveStyles::AS_MONOLITH);
-
+    auto style = inPlaceStyle(pf);
     auto target = inPlaceTarget(pf, that->editor->patchFiles.multiName, multiExtension());
     if (!target)
-        return doSaveMulti(that, fc, patch_io::SaveStyles::NO_SAMPLES);
+        return doSaveMulti(that, fc, style);
 
     doSaveInPlace(that, *target, *target == pf.path, "Multi",
-                  [w = juce::Component::SafePointer(that), t = *target]() {
+                  [w = juce::Component::SafePointer(that), t = *target, style]() {
                       if (w)
-                          w->sendToSerialization(cmsg::SaveMulti(
-                              {t.u8string(), (int)patch_io::SaveStyles::NO_SAMPLES}));
+                          w->sendToSerialization(cmsg::SaveMulti({t.u8string(), (int)style}));
                   });
 }
 
@@ -273,19 +274,15 @@ void doSavePartInPlace(T *that, std::unique_ptr<juce::FileChooser> &fc, int part
     namespace cmsg = scxt::messaging::client;
 
     const auto &pf = that->editor->patchFiles.parts[part];
-    if (pf.monolith)
-        return doSavePart(that, fc, part, patch_io::SaveStyles::AS_MONOLITH);
-
-    auto target = inPlaceTarget(pf, that->editor->partNames[part].name,
-                                partExtension(patch_io::SaveStyles::NO_SAMPLES));
+    auto style = inPlaceStyle(pf);
+    auto target = inPlaceTarget(pf, that->editor->partNames[part].name, partExtension(style));
     if (!target)
-        return doSavePart(that, fc, part, patch_io::SaveStyles::NO_SAMPLES);
+        return doSavePart(that, fc, part, style);
 
     doSaveInPlace(that, *target, *target == pf.path, "Part",
-                  [w = juce::Component::SafePointer(that), t = *target, part]() {
+                  [w = juce::Component::SafePointer(that), t = *target, part, style]() {
                       if (w)
-                          w->sendToSerialization(cmsg::SavePart(
-                              {t.u8string(), part, (int)patch_io::SaveStyles::NO_SAMPLES}));
+                          w->sendToSerialization(cmsg::SavePart({t.u8string(), part, (int)style}));
                   });
 }
 
@@ -317,7 +314,6 @@ void populatePartIOMenu(T *that, juce::PopupMenu &p, int part, bool withDeactiva
     namespace cmsg = scxt::messaging::client;
 
     const auto &pf = that->editor->patchFiles.parts[part];
-    auto mono = pf.monolith;
     p.addItem("Load Part...", [w = juce::Component::SafePointer(that), part]() {
         if (w)
             doLoadPartInto(w.getComponent(), w->fileChooser, part);
@@ -328,7 +324,7 @@ void populatePartIOMenu(T *that, juce::PopupMenu &p, int part, bool withDeactiva
                   if (w)
                       w->sendToSerialization(cmsg::LoadPartInto({path.u8string(), part}));
               });
-    p.addItem("Save Part", !mono, false, [w = juce::Component::SafePointer(that), part]() {
+    p.addItem("Save Part", [w = juce::Component::SafePointer(that), part]() {
         if (w)
             doSavePartInPlace(w.getComponent(), w->fileChooser, part);
     });

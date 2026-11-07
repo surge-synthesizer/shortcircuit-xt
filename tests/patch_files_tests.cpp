@@ -34,10 +34,13 @@
 
 #include "console_harness.h"
 #include "engine/engine.h"
+#include "infrastructure/md5support.h"
 #include "json/stream.h"
 #include "messaging/client/client_messages.h"
 #include "patch_io/patch_io.h"
+#include "sample/sample_manager.h"
 #include "selection/selection_manager.h"
+#include "test_utils.h"
 
 namespace cmsg = scxt::messaging::client;
 namespace pio = scxt::patch_io;
@@ -410,4 +413,108 @@ TEST_CASE("A part load leaves the view where it was", "[patchfiles]")
     REQUIRE(sm->otherTabSelection["main_screen"] == "mixer");
     REQUIRE(sm->otherTabSelection["multi.pgz"] == "part");
     REQUIRE(sm->selectedPart == 0);
+}
+
+namespace
+{
+// a part of Hat then Kick, saved as a monolith and loaded back from it
+struct MonolithFixture : FilesFixture
+{
+    std::filesystem::path mono;
+    size_t hatLength{0}, kickLength{0};
+
+    MonolithFixture(const std::string &named) : FilesFixture(named)
+    {
+        send(cmsg::AddSampleWithRange({samplePath("next/Hat.wav").u8string(), 60, 48, 59, 0, 127}));
+        send(
+            cmsg::AddSampleWithRange({samplePath("next/Kick.wav").u8string(), 66, 60, 72, 0, 127}));
+        REQUIRE(zones(0) == 2);
+        hatLength = sampleOf(0, 0)->getSampleLength();
+        kickLength = sampleOf(0, 1)->getSampleLength();
+        REQUIRE(hatLength != kickLength);
+
+        mono = dir / "Kit.scp";
+        send(cmsg::SavePart({mono.u8string(), 0, pio::SaveStyles::AS_MONOLITH}));
+        send(cmsg::LoadPartInto({mono.u8string(), (int16_t)0}));
+        REQUIRE(files().parts[0].monolith);
+        REQUIRE(sampleOf(0, 0)->type == scxt::sample::Sample::SCXT_FILE);
+        REQUIRE(th.editor->readErrors().empty());
+    }
+
+    size_t zones(int part)
+    {
+        const auto &pt = engine().getPatch()->getPart(part);
+        return pt->getGroups().empty() ? 0 : pt->getGroup(0)->getZones().size();
+    }
+
+    std::shared_ptr<scxt::sample::Sample> sampleOf(int part, int zone)
+    {
+        const auto &z = engine().getPatch()->getPart(part)->getGroup(0)->getZone(zone);
+        return engine().getSampleManager()->getSample(z->variantData.variants[0].sampleID);
+    }
+
+    std::string md5() { return scxt::infrastructure::createMD5SumFromFile(mono); }
+};
+} // namespace
+
+TEST_CASE("A monolith part saves back over itself", "[patchfiles]")
+{
+    MonolithFixture f("monolith_in_place");
+
+    // dropping Hat moves Kick from the second slot in the file to the first
+    f.send(cmsg::DeleteZone(scxt::selection::SelectionManager::ZoneAddress{0, 0, 0}));
+    REQUIRE(f.zones(0) == 1);
+    f.send(cmsg::SavePart({f.mono.u8string(), 0, pio::SaveStyles::AS_MONOLITH}));
+
+    REQUIRE(f.th.editor->readErrors().empty());
+    REQUIRE(!std::filesystem::exists(f.dir / ".Kit.scp.saving"));
+    REQUIRE(f.files().parts[0].monolith);
+
+    auto kick = f.sampleOf(0, 0);
+    REQUIRE(kick->getSampleLength() == f.kickLength);
+    REQUIRE(kick->getCompoundRegion() == 0);
+    REQUIRE(kick->getMD5Sum() == f.md5());
+
+    SECTION("Loading the file again finds the right sample")
+    {
+        f.send(cmsg::LoadPartInto({f.mono.u8string(), (int16_t)1}));
+        REQUIRE(f.zones(1) == 1);
+        REQUIRE(f.sampleOf(1, 0) == kick);
+    }
+
+    SECTION("A fresh engine reads it back")
+    {
+        FilesFixture g("monolith_in_place_reload");
+        g.send(cmsg::LoadPartInto({f.mono.u8string(), (int16_t)0}));
+        const auto &pt = g.engine().getPatch()->getPart(0);
+        REQUIRE(pt->getGroup(0)->getZones().size() == 1);
+        auto sid = pt->getGroup(0)->getZone(0)->variantData.variants[0].sampleID;
+        REQUIRE(g.engine().getSampleManager()->getSample(sid)->getSampleLength() == f.kickLength);
+    }
+
+    SECTION("A DAW session saved afterwards points at the new file")
+    {
+        std::string state;
+        {
+            auto sg = scxt::engine::Engine::StreamGuard(scxt::engine::Engine::FOR_DAW);
+            state = scxt::json::streamEngineState(f.engine());
+        }
+        FilesFixture g("monolith_in_place_daw");
+        g.send(cmsg::UnstreamEngineState(state));
+        REQUIRE(g.th.editor->readErrors().empty());
+        const auto &pt = g.engine().getPatch()->getPart(0);
+        auto sid = pt->getGroup(0)->getZone(0)->variantData.variants[0].sampleID;
+        auto smp = g.engine().getSampleManager()->getSample(sid);
+        REQUIRE(smp);
+        REQUIRE(!smp->isMissingPlaceholder);
+        REQUIRE(smp->getSampleLength() == f.kickLength);
+    }
+
+    SECTION("And again")
+    {
+        f.send(cmsg::SavePart({f.mono.u8string(), 0, pio::SaveStyles::AS_MONOLITH}));
+        REQUIRE(f.th.editor->readErrors().empty());
+        REQUIRE(f.sampleOf(0, 0)->getMD5Sum() == f.md5());
+        REQUIRE(f.sampleOf(0, 0)->getSampleLength() == f.kickLength);
+    }
 }
