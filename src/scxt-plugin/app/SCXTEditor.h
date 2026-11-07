@@ -39,6 +39,7 @@
 #include "selection/selection_manager.h"
 #include "sst/jucegui/components/HSlider.h"
 #include "sst/jucegui/components/ToolTip.h"
+#include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/accessibility/FocusDebugger.h"
 #include "sst/jucegui/components/WindowPanel.h"
 #include "sst/jucegui/screens/ScreenHolder.h"
@@ -476,9 +477,12 @@ template <typename W, typename A> inline void HasEditor::setupFloatWidget(W *w, 
 {
     // a type-in field already shows its value, so it gets no value popup
     constexpr bool showsOwnValue = requires(W *x) { x->activateEditor(); };
+    // a toggle shows its state, so its popup is just the name and a click leaves it be
+    constexpr bool showsOwnState =
+        std::is_base_of_v<sst::jucegui::components::ToggleButton, std::remove_pointer_t<W>>;
 
     w->onBeginEdit = [this, &slRef = *w, &atRef = *a]() {
-        if constexpr (!showsOwnValue)
+        if constexpr (!showsOwnValue && !showsOwnState)
         {
             updateValueTooltip(atRef);
             editor->showTooltip(slRef);
@@ -486,13 +490,17 @@ template <typename W, typename A> inline void HasEditor::setupFloatWidget(W *w, 
         editor->beginEditNotifyEngine(atRef);
     };
     w->onEndEdit = [this, &atRef = *a]() {
-        editor->hideTooltip();
+        if constexpr (!showsOwnState)
+            editor->hideTooltip();
         editor->endEditNotifyEngine(atRef);
     };
     if constexpr (!showsOwnValue)
     {
         w->onIdleHover = [this, &slRef = *w, &atRef = *a]() {
-            updateValueTooltip(atRef);
+            if constexpr (showsOwnState)
+                editor->setTooltipContents(atRef.getLabel(), std::vector<std::string>{});
+            else
+                updateValueTooltip(atRef);
             editor->showTooltip(slRef);
         };
         w->onIdleHoverEnd = [this]() { editor->hideTooltip(); };
