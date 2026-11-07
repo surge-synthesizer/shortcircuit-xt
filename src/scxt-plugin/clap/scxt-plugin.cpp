@@ -38,6 +38,7 @@
 #include "messaging/client/detail/client_serial_impl.h"
 #include "messaging/client/interaction_messages.h"
 #include "messaging/client/enginestatus_messages.h"
+#include "messaging/host_state.h"
 #include "sst/basic-blocks/modulators/TransportClapAdapter.h"
 
 namespace scxt::clap_first::scxt_plugin
@@ -180,35 +181,20 @@ std::unique_ptr<juce::Component> SCXTPlugin::createEditor()
 
 bool SCXTPlugin::stateSave(const clap_ostream *ostream) noexcept
 {
-    // Thie entire function needs to send and wait on serialization
-    // thread, but that's a big change. For now its entire read-only
-    // except for this purge, which I beleive causes #2205 so comment
-    // out to get beta not flaky with the mild cost that a daw could
-    // reference a sample a zone does not if a delete absent a purge
-    // happens in the code path.
-    // engine->getSampleManager()->purgeUnreferencedSamples();
-    engine->prepareToStream();
-    engine->prepareDawExtraState();
-    try
-    {
-        auto sg = scxt::engine::Engine::StreamGuard(engine::Engine::FOR_DAW);
-        auto xml = scxt::json::streamEngineState(*engine);
-
-        auto c = xml.c_str();
-        auto s = xml.length() + 1; // write the null terminator
-        while (s > 0)
-        {
-            auto r = ostream->write(ostream, c, s);
-            if (r <= 0) // a host which keeps returning 0 would spin here forever
-                return false;
-            s -= r;
-            c += r;
-        }
-    }
-    catch (const std::runtime_error &err)
-    {
-        SCLOG_IF(warnings, "Streaming exception [" << err.what() << "]");
+    // purging unreferenced samples here is what caused #2205, so a save doesn't
+    std::string xml;
+    if (!scxt::messaging::hostStateSave(*engine, xml))
         return false;
+
+    auto c = xml.c_str();
+    auto s = xml.length() + 1; // write the null terminator
+    while (s > 0)
+    {
+        auto r = ostream->write(ostream, c, s);
+        if (r <= 0) // a host which keeps returning 0 would spin here forever
+            return false;
+        s -= r;
+        c += r;
     }
     return true;
 }
@@ -241,19 +227,17 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
         return false;
     }
 
-    auto data = std::string(buffer.data());
+    SCLOG_IF(plugin, "State has size " << totalRd);
 
-    engine->getMessageController()->threadingChecker.bypassThreadChecks++;
-    SCLOG_IF(plugin, "State has size " << buffer.size());
+    // the unstream runs on serial; we return as soon as the blob is queued
+    if (!scxt::messaging::hostStateLoad(*engine, std::string(buffer.data())))
+        return false;
 
-    synchronousEngineUnstream(engine, data);
-    SCLOG_IF(plugin, "Back from unstream");
-
+    // queued behind the load, so the host rescans the loaded values
+    auto bypass = engine->getMessageController()->threadingChecker.bypassChecksInScope();
     scxt::messaging::client::clientSendToSerialization(
         scxt::messaging::client::RequestHostCallback{(uint64_t)RESCAN_PARAM_IVT},
         *engine->getMessageController());
-
-    engine->getMessageController()->threadingChecker.bypassThreadChecks--;
     return true;
 }
 
@@ -666,32 +650,6 @@ void SCXTPlugin::onMainThread() noexcept
             _host.stateMarkDirty();
         }
     }
-}
-
-bool SCXTPlugin::synchronousEngineUnstream(const std::unique_ptr<scxt::engine::Engine> &engine,
-                                           const std::string &payload)
-{
-    auto &cont = engine->getMessageController();
-    std::unique_lock<std::mutex> guard(cont->streamNotificationMutex);
-    auto originalStreamCount{cont->streamNotificationCount};
-
-    scxt::messaging::client::clientSendToSerialization(
-        scxt::messaging::client::UnstreamEngineState{payload}, *engine->getMessageController());
-
-    auto secondsBeforeTimeout{30.0};
-    auto waitDuration = std::chrono::milliseconds(100);
-    auto maxIterations = secondsBeforeTimeout / 100;
-
-    int iterations = 0;
-    while (cont->streamNotificationCount == originalStreamCount && iterations < maxIterations)
-    {
-        cont->streamNotificationConditionVariable.wait_for(guard, waitDuration);
-        iterations++;
-    }
-
-    if (iterations >= maxIterations)
-        SCLOG_IF(plugin, "State restore took longer than 30 seconds");
-    return iterations < maxIterations;
 }
 
 } // namespace scxt::clap_first::scxt_plugin

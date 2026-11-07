@@ -627,6 +627,8 @@ void SCXTEditorReceiver::onActivityNotification(
     }
 }
 
+void SCXTEditorReceiver::onHostStateLoaded(uint64_t generation) { editor.endHostLoad(generation); }
+
 void SCXTEditorReceiver::onMissingResolutionWorkItemList(
     const std::vector<engine::MissingResolutionWorkItem> &items)
 {

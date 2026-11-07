@@ -37,6 +37,8 @@
 #include <queue>
 #include <stack>
 #include <chrono>
+#include <memory>
+#include <optional>
 
 #include "client/client_serial.h"
 #include "audio/audio_serial.h"
@@ -363,22 +365,43 @@ struct MessageController : MoveableOnly<MessageController>
     std::function<void(uint64_t)> requestHostCallback{nullptr};
 
     /*
-     * A client which requests streaming can use this mutex and condition
-     * variable to communicate on number of unstreams. See the scxt-plugin
-     * setState for an example
+     * The state a host handed us, held from the host's call until serial has unstreamed it.
+     * The host thread offers a blob and returns; serial takes the newest one. While a blob
+     * is held a host save returns it unchanged, and a failed load keeps holding its blob
+     * until the first edit, so an autosave can't replace the project with a broken engine.
      */
-    std::mutex streamNotificationMutex;
-    std::condition_variable streamNotificationConditionVariable;
-    uint64_t streamNotificationCount{1743}; // just dont start at zero to help debug
-    void sendStreamCompleteNotification()
+    struct HostStateSlot
     {
+        enum Phase
         {
-            // Notify any waiting unstreamers
-            std::lock_guard<std::mutex> nguard{streamNotificationMutex};
-            streamNotificationCount++;
-        }
-        streamNotificationConditionVariable.notify_all();
-    }
+            IDLE,
+            PENDING,
+            LOADING,
+            FAILED
+        };
+
+        // main thread; replaces a blob serial has not taken yet
+        uint64_t offer(std::string &&blob);
+        // serial thread; empty when a later nudge already took the blob
+        std::optional<std::pair<uint64_t, std::shared_ptr<const std::string>>> take();
+        // serial thread; ignored when a newer blob has arrived since
+        void finish(uint64_t generation, bool ok);
+        // serial thread
+        void clearFailed();
+
+        // what a host save returns instead of streaming the engine, if anything
+        std::shared_ptr<const std::string> heldBlob() const;
+        std::pair<Phase, uint64_t> status() const;
+
+        // main thread only; the editor raises its loading screen from here
+        std::function<void(uint64_t)> onLoadBegin{nullptr};
+
+      private:
+        mutable std::mutex mutex;
+        Phase phase{IDLE};
+        uint64_t generation{0};
+        std::shared_ptr<const std::string> blob;
+    } hostStateSlot;
 
     /*
      * Helping the client know things like a waiting message and so on

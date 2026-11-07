@@ -68,6 +68,7 @@ add_library(${PROJECT_NAME} STATIC
 
         messaging/audio/audio_messages.cpp
         messaging/messaging.cpp
+        messaging/host_state.cpp
 
         modulation/group_matrix.cpp
         modulation/voice_matrix.cpp

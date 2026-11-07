@@ -48,52 +48,71 @@ SERIAL_TO_CLIENT(SendActivityNotification, s2c_send_activity_notification,
 SERIAL_TO_CLIENT(EngineStatusUpdate, s2c_engine_status, engine::Engine::EngineStatusMessage,
                  onEngineStatus);
 
-using unstreamEngineStatePayload_t = std::string;
-inline void doUnstreamEngineState(const unstreamEngineStatePayload_t &payload,
-                                  engine::Engine &engine, MessageController &cont)
+// onDone gets whether the unstream worked, on serial, once audio is running again
+inline void unstreamEngineStateOnSerial(std::shared_ptr<const std::string> payload,
+                                        engine::Engine &engine, MessageController &cont,
+                                        std::function<void(bool)> onDone)
 {
     auto mc = messaging::MessageController::ClientActivityNotificationGuard(
         "Unstreaming Engine State", cont);
     engine.undoManager.clear();
+
+    auto unstream = [payload](engine::Engine &e) {
+        try
+        {
+            e.immediatelyTerminateAllVoices();
+            scxt::json::unstreamEngineState(e, *payload);
+            return true;
+        }
+        catch (std::exception &err)
+        {
+            RAISE_ERROR_ENGINE(e, "Unstreaming Error",
+                               std::string("Unable to unstream engine state ") + err.what());
+        }
+        return false;
+    };
+
     if (cont.isAudioRunning)
     {
-        cont.stopAudioThreadThenRunOnSerial([payload, &nonconste = engine](auto &e) {
-            auto &cont = *e.getMessageController();
-            try
-            {
-                nonconste.immediatelyTerminateAllVoices();
-                scxt::json::unstreamEngineState(nonconste, payload);
-            }
-            catch (std::exception &err)
-            {
-                RAISE_ERROR_ENGINE(nonconste, "Unstreaming Error",
-                                   std::string("Unable to unstream engine state ") + err.what());
-            }
-            // Restart then notify on every path: a failed unstream must neither
-            // wedge audio nor hang a setState waiter.
-            cont.restartAudioThreadFromSerial();
-            cont.sendStreamCompleteNotification();
+        cont.stopAudioThreadThenRunOnSerial([unstream, onDone, &nonconste = engine](auto &e) {
+            auto ok = unstream(nonconste);
+            // restart on every path, a failed unstream must not wedge audio
+            e.getMessageController()->restartAudioThreadFromSerial();
+            if (onDone)
+                onDone(ok);
         });
     }
     else
     {
         engine.stopEngineRequests++;
-        try
-        {
-            engine.immediatelyTerminateAllVoices();
-            scxt::json::unstreamEngineState(engine, payload);
-        }
-        catch (std::exception &err)
-        {
-            RAISE_ERROR_ENGINE(engine, "Unstreaming Error",
-                               std::string("Unable to unstream engine state ") + err.what());
-        }
+        auto ok = unstream(engine);
         engine.stopEngineRequests--;
-        cont.sendStreamCompleteNotification();
+        if (onDone)
+            onDone(ok);
     }
 }
+
+using unstreamEngineStatePayload_t = std::string;
 CLIENT_TO_SERIAL(UnstreamEngineState, c2s_unstream_engine_state, unstreamEngineStatePayload_t,
-                 doUnstreamEngineState(payload, engine, cont));
+                 unstreamEngineStateOnSerial(std::make_shared<const std::string>(payload), engine,
+                                             cont, nullptr));
+
+// the generation of a host load that has finished, worked or not
+SERIAL_TO_CLIENT(HostStateLoaded, s2c_host_state_loaded, uint64_t, onHostStateLoaded);
+
+// the payload is only a nudge; the blob waits in the host state slot
+inline void doLoadHostState(engine::Engine &engine, MessageController &cont)
+{
+    auto pending = cont.hostStateSlot.take();
+    if (!pending)
+        return;
+    auto [generation, blob] = *pending;
+    unstreamEngineStateOnSerial(blob, engine, cont, [generation, &cont](bool ok) {
+        cont.hostStateSlot.finish(generation, ok);
+        serializationSendToClient(s2c_host_state_loaded, generation, cont);
+    });
+}
+CLIENT_TO_SERIAL(LoadHostState, c2s_load_host_state, uint64_t, doLoadHostState(engine, cont));
 
 using stopSounds_t = bool;
 inline void stopSoundsMessage(const stopSounds_t &payload, messaging::MessageController &cont)
