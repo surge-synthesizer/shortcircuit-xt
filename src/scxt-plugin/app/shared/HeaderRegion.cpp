@@ -444,6 +444,13 @@ void HeaderRegion::doLoadIntoSelectedPart()
     shared::doLoadPartInto(this, fileChooser, editor->selectedPart);
 }
 
+void HeaderRegion::doSaveMultiInPlace() { shared::doSaveMultiInPlace(this, fileChooser); }
+
+void HeaderRegion::doSaveSelectedPartInPlace()
+{
+    shared::doSavePartInPlace(this, fileChooser, editor->selectedPart);
+}
+
 void HeaderRegion::showSaveMenu(bool atMousePosition)
 {
     auto p = juce::PopupMenu();
@@ -467,29 +474,8 @@ void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
     auto pt = editor->selectedPart;
     auto ptn = std::to_string(pt + 1);
 
-    p.addItem("Save Multi", !editor->patchFiles.multi.monolith, false,
-              [w = juce::Component::SafePointer(this)]() {
-                  if (w)
-                      shared::doSaveMultiInPlace(w.getComponent(), w->fileChooser);
-              });
-    p.addItem("Save Multi As...", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->doSaveMulti(patch_io::SaveStyles::NO_SAMPLES);
-    });
-    p.addItem("Save Multi as Monolith...", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->doSaveMulti(patch_io::SaveStyles::AS_MONOLITH);
-    });
-    p.addItem("Save Multi with Collected Samples...", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->doSaveMulti(patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
-    });
-    p.addSeparator();
-    p.addItem("Save Part " + ptn, !editor->patchFiles.parts[pt].monolith, false,
-              [w = juce::Component::SafePointer(this), pt]() {
-                  if (w)
-                      shared::doSavePartInPlace(w.getComponent(), w->fileChooser, pt);
-              });
+    // parts first: they are saved far more often than the multi
+    editor->addKeyCommandItem(p, "Save Part " + ptn, SAVE_PART);
     p.addItem("Save Part " + ptn + " As...", [w = juce::Component::SafePointer(this)]() {
         if (w)
             w->doSaveSelectedPart(patch_io::SaveStyles::NO_SAMPLES);
@@ -504,6 +490,20 @@ void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
                   if (w)
                       w->doSaveSelectedPart(patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
               });
+    p.addSeparator();
+    editor->addKeyCommandItem(p, "Save Multi", SAVE_MULTI);
+    p.addItem("Save Multi As...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doSaveMulti(patch_io::SaveStyles::NO_SAMPLES);
+    });
+    p.addItem("Save Multi as Monolith...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doSaveMulti(patch_io::SaveStyles::AS_MONOLITH);
+    });
+    p.addItem("Save Multi with Collected Samples...", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doSaveMulti(patch_io::SaveStyles::WITH_COLLECTED_SAMPLES);
+    });
 
     p.addSeparator();
     auto exm = juce::PopupMenu();
@@ -541,15 +541,15 @@ void HeaderRegion::populateSaveMenu(juce::PopupMenu &p)
     p.addSubMenu("Export", exm);
 
     p.addSeparator();
-    p.addItem("Load Multi", [w = juce::Component::SafePointer(this)]() {
-        if (w)
-            w->doLoadMulti();
-    });
     p.addItem("Load Part Into " + std::to_string(editor->selectedPart + 1),
               [w = juce::Component::SafePointer(this)]() {
                   if (w)
                       w->doLoadIntoSelectedPart();
               });
+    p.addItem("Load Multi", [w = juce::Component::SafePointer(this)]() {
+        if (w)
+            w->doLoadMulti();
+    });
 }
 
 bool HeaderRegion::nameIsForPart() const

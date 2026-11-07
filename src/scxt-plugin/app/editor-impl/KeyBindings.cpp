@@ -59,6 +59,11 @@ void KeyBindings::setupKeyBindings()
     manager->addBinding(SHOW_KEYBINDINGS_EDITOR, {(uint32_t)mod::ALT, (int)'B'});
     manager->addBinding(SHOW_TUNING_EDITOR, {(uint32_t)mod::ALT, (int)'T'});
 
+    manager->addBinding(SAVE_PART, {(uint32_t)mod::COMMAND, (int)'S'});
+    manager->addBinding(SAVE_MULTI, {(uint32_t)(mod::COMMAND | mod::ALT), (int)'S'});
+    manager->addBinding(PREVIOUS_FILE, {(uint32_t)mod::COMMAND, (int)'['});
+    manager->addBinding(NEXT_FILE, {(uint32_t)mod::COMMAND, (int)']'});
+
     manager->addBinding(FOCUS_ZONES, {(uint32_t)mod::COMMAND, (int)'1'});
     manager->addBinding(FOCUS_GROUPS, {(uint32_t)mod::COMMAND, (int)'2'});
     manager->addBinding(FOCUS_PARTS, {(uint32_t)mod::COMMAND, (int)'3'});
@@ -87,7 +92,7 @@ void KeyBindings::setupKeyBindings()
 
 KeyCommandInfo KeyBindings::commandInfo(KeyCommands c)
 {
-    static constexpr const char *general{"General"}, *screens{"Screens"},
+    static constexpr const char *general{"General"}, *files{"Files"}, *screens{"Screens"},
         *edit{"Selection and Clipboard"};
     using sc = KeyCommandScope;
 
@@ -105,6 +110,15 @@ KeyCommandInfo KeyBindings::commandInfo(KeyCommands c)
         return {"showLog", "Show Log", general, sc::GLOBAL};
     case SHOW_ABOUT:
         return {"showAbout", "About Shortcircuit XT", general, sc::GLOBAL};
+
+    case SAVE_PART:
+        return {"savePart", "Save Part", files, sc::GLOBAL};
+    case SAVE_MULTI:
+        return {"saveMulti", "Save Multi", files, sc::GLOBAL};
+    case PREVIOUS_FILE:
+        return {"previousFile", "Previous File in Folder", files, sc::GLOBAL};
+    case NEXT_FILE:
+        return {"nextFile", "Next File in Folder", files, sc::GLOBAL};
 
     case FOCUS_PLAY:
         return {"focusPlay", "Play Screen", screens, sc::GLOBAL};

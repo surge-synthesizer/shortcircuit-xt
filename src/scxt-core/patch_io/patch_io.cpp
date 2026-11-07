@@ -25,6 +25,7 @@
  * https://github.com/surge-synthesizer/shortcircuit-xt
  */
 
+#include <algorithm>
 #include <fstream>
 #include <map>
 #include <optional>
@@ -55,6 +56,7 @@
 #include "cmrc/cmrc.hpp"
 #include "browser/browser.h"
 #include "infrastructure/user_defaults.h"
+#include "infrastructure/md5support.h"
 
 CMRC_DECLARE(scxt_resources_core);
 
@@ -132,7 +134,8 @@ std::string readSCDataChunk(const std::unique_ptr<RIFF::File> &f)
 }
 
 bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Engine &e,
-                         const sample::SampleManager::sampleMap_t &addThese)
+                         const sample::SampleManager::sampleMap_t &addThese,
+                         std::vector<fs::path> &writtenOrder)
 {
     SCLOG_IF(patchIO, "Adding " << addThese.size() << " samples to monolith");
     auto lst = f->AddSubList(sampleChunk);
@@ -150,6 +153,7 @@ bool addMonolithBinaries(const std::unique_ptr<RIFF::File> &f, const engine::Eng
         paths.insert(sample->getPath());
     }
     std::vector<fs::path> sortedPaths(paths.begin(), paths.end());
+    writtenOrder = sortedPaths;
     std::vector<std::string> sortedPathsStr;
     for (auto &p : sortedPaths)
     {
@@ -621,6 +625,56 @@ bool onlyCollect(const fs::path &p, scxt::engine::Engine &e, int part)
     return true;
 }
 
+// written beside the target then copied over it, so a failed save leaves the old file whole
+static void saveReplacing(std::unique_ptr<RIFF::File> &f, const fs::path &target,
+                          const engine::Engine &e)
+{
+    // a dotfile, so open panels and the browser never list it
+    auto tmp = target.parent_path() / ("." + target.filename().u8string() + ".saving");
+    std::error_code ec;
+    try
+    {
+        f->Save(tmp.u8string());
+    }
+    catch (const RIFF::Exception &)
+    {
+        fs::remove(tmp, ec);
+        throw;
+    }
+    // libgig keeps the file it saved to open
+    f.reset();
+    // windows won't replace a monolith we still hold open for its samples
+    e.getSampleManager()->releaseMonolithFile(target);
+
+    // copied not renamed, as a new inode leaves the macos open panel showing a dead entry
+    fs::copy_file(tmp, target, fs::copy_options::overwrite_existing, ec);
+    auto msg = ec ? ec.message() : std::string();
+    fs::remove(tmp, ec);
+    if (!msg.empty())
+        throw RIFF::Exception("Unable to replace " + target.u8string() + ": " + msg);
+}
+
+// samples read from a monolith we just saved over sit at new entries in the new file
+static void repointAfterSave(const engine::Engine &e, const fs::path &target,
+                             const std::vector<fs::path> &writtenOrder)
+{
+    const auto &sm = e.getSampleManager();
+    std::unordered_map<SampleID, int> newRegions;
+    for (const auto &[sid, remap] : sm->remapIds)
+    {
+        auto sp = sm->getSample(sid);
+        std::error_code ec;
+        if (!sp || sp->type != sample::Sample::SCXT_FILE ||
+            !fs::equivalent(sp->getPath(), target, ec))
+            continue;
+        auto pos = std::find(writtenOrder.begin(), writtenOrder.end(), remap.second.path);
+        if (pos != writtenOrder.end())
+            newRegions[sp->id] = (int)std::distance(writtenOrder.begin(), pos);
+    }
+    if (!newRegions.empty())
+        sm->repointMonolithSamples(newRegions, infrastructure::createMD5SumFromFile(target));
+}
+
 bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
 {
     if (style == SaveStyles::ONLY_COLLECT)
@@ -631,6 +685,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
     {
         return false;
     }
+    std::vector<fs::path> monolithOrder;
 
     fs::path riffPath = p;
     fs::path collectDir;
@@ -676,7 +731,7 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
         {
             std::vector<fs::path> tmpf;
             auto smp = getSamplePathsFor(e, -1, tmpf);
-            auto res = addMonolithBinaries(f, e, smp);
+            auto res = addMonolithBinaries(f, e, smp, monolithOrder);
             removeTempFiles(tmpf);
             if (!res)
             {
@@ -690,7 +745,8 @@ bool saveMulti(const fs::path &p, scxt::engine::Engine &e, SaveStyles style)
 
         addSCDataChunk(f, msg);
 
-        f->Save(riffPath.u8string());
+        saveReplacing(f, riffPath, e);
+        repointAfterSave(e, riffPath, monolithOrder);
 
         // the multi is now named for the file it lives in
         e.getSelectionManager()->setMultiFile(riffPath, style == SaveStyles::AS_MONOLITH);
@@ -729,6 +785,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
     {
         return false;
     }
+    std::vector<fs::path> monolithOrder;
 
     fs::path riffPath = p;
     fs::path collectDir;
@@ -774,7 +831,7 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
         {
             std::vector<fs::path> tmpf;
             auto smp = getSamplePathsFor(e, part, tmpf);
-            auto res = addMonolithBinaries(f, e, smp);
+            auto res = addMonolithBinaries(f, e, smp, monolithOrder);
             removeTempFiles(tmpf);
             if (!res)
             {
@@ -832,7 +889,8 @@ bool savePart(const fs::path &p, scxt::engine::Engine &e, int part, patch_io::Sa
         }
         addSCDataChunk(f, msg);
 
-        f->Save(riffPath.u8string());
+        saveReplacing(f, riffPath, e);
+        repointAfterSave(e, riffPath, monolithOrder);
 
         e.getSelectionManager()->setPartFile(part, riffPath, style == SaveStyles::AS_MONOLITH);
         e.getSelectionManager()->sendPatchFilesToClient();

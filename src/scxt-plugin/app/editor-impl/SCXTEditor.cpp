@@ -815,6 +815,20 @@ bool SCXTEditor::handleGlobalKeyCommand(KeyCommands command)
     case SHOW_ABOUT:
         showAboutOverlay();
         return true;
+    case SAVE_PART:
+        if (headerRegion)
+            headerRegion->doSaveSelectedPartInPlace();
+        return true;
+    case SAVE_MULTI:
+        if (headerRegion)
+            headerRegion->doSaveMultiInPlace();
+        return true;
+    case PREVIOUS_FILE:
+    case NEXT_FILE:
+        // follows the header label, part or multi, as the jog arrows do
+        if (headerRegion)
+            headerRegion->jogTo(command == NEXT_FILE ? 1 : -1);
+        return true;
 
     // these only mean something to a focused KeyCommandTarget
     case SELECT_ALL:

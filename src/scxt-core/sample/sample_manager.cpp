@@ -446,6 +446,24 @@ std::optional<SampleID> SampleManager::loadSampleFromSCXTMonolith(const fs::path
     return sp->id;
 }
 
+void SampleManager::repointMonolithSamples(const std::unordered_map<SampleID, int> &newRegions,
+                                           const std::string &md5)
+{
+    auto lk = acquireMapLock();
+    for (const auto &[id, region] : newRegions)
+    {
+        auto it = samples.find(id);
+        if (it == samples.end())
+            continue;
+        auto &sp = it->second;
+        sp->region = region;
+        sp->md5Sum = md5;
+        sp->compoundSourceDetails =
+            sp->getPath().filename().u8string() + " @ " + std::to_string(region);
+        scxtMonolithMD5ByPath[sp->getPath().u8string()] = md5;
+    }
+}
+
 std::optional<SampleID> SampleManager::setupSampleFromMultifile(const fs::path &p,
                                                                 const std::string &md5, int idx,
                                                                 void *data, size_t dataSize)

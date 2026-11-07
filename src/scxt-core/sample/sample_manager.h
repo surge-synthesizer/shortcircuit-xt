@@ -151,6 +151,12 @@ struct SampleManager : MoveableOnly<SampleManager>
         monolithIndex.clear();
     }
 
+    // windows won't replace a file that is still open
+    void releaseMonolithFile(const fs::path &p) { scxtMonolithFilesByPath.erase(p.u8string()); }
+    // after a monolith is saved over, its samples sit at new indices under a new md5
+    void repointMonolithSamples(const std::unordered_map<SampleID, int> &newRegions,
+                                const std::string &md5);
+
     typedef std::vector<std::pair<SampleID, Sample::SampleFileAddress>> sampleAddressesAndIds_t;
     sampleAddressesAndIds_t getSampleAddressesAndIDs() const
     {
