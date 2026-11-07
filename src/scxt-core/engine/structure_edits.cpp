@@ -509,15 +509,16 @@ void Engine::deleteZonesWithMissingSamples(int16_t part)
 namespace structure_edit_detail
 {
 // the lower zone fades out and the upper fades in across the span both share
-template <typename R, typename O>
-void autoCrossfade(std::vector<Zone::ZoneMappingData> &m, R range, O other)
+template <typename R, typename O, typename P>
+void autoCrossfade(std::vector<Zone::ZoneMappingData> &m, std::vector<bool> &touched, R range,
+                   O other, P pairs)
 {
     std::vector<int16_t> fadeIn(m.size(), -1), fadeOut(m.size(), -1);
     for (size_t i = 0; i < m.size(); ++i)
     {
         for (size_t j = 0; j < m.size(); ++j)
         {
-            if (i == j)
+            if (i == j || !pairs(i, j))
                 continue;
             auto [iLo, iHi] = range(m[i]);
             auto [jLo, jHi] = range(m[j]);
@@ -531,6 +532,7 @@ void autoCrossfade(std::vector<Zone::ZoneMappingData> &m, R range, O other)
             auto w = (int16_t)(iHi - jLo + 1);
             fadeOut[i] = std::max(fadeOut[i], w);
             fadeIn[j] = std::max(fadeIn[j], w);
+            touched[i] = touched[j] = true;
         }
     }
     for (size_t i = 0; i < m.size(); ++i)
@@ -608,12 +610,15 @@ bool splitPartialOverlapEitherWay(Zone::ZoneMappingData &a, Zone::ZoneMappingDat
     return splitPartialOverlap<R>(a, b) || splitPartialOverlap<R>(b, a);
 }
 
-void fixOverlaps(std::vector<Zone::ZoneMappingData> &m)
+template <typename P>
+void fixOverlaps(std::vector<Zone::ZoneMappingData> &m, std::vector<bool> &touched, P pairs)
 {
     for (size_t i = 0; i < m.size(); ++i)
     {
         for (size_t j = i + 1; j < m.size(); ++j)
         {
+            if (!pairs(i, j))
+                continue;
             auto [kiLo, kiHi] = KeyAxis{}(m[i]);
             auto [kjLo, kjHi] = KeyAxis{}(m[j]);
             auto [viLo, viHi] = VelAxis{}(m[i]);
@@ -621,8 +626,9 @@ void fixOverlaps(std::vector<Zone::ZoneMappingData> &m)
             if (kiHi < kjLo || kjHi < kiLo || viHi < vjLo || vjHi < viLo)
                 continue;
             // keys first, since that is the overlap a mapping usually means to fix
-            if (!splitPartialOverlapEitherWay<KeyAxis>(m[i], m[j]))
-                splitPartialOverlapEitherWay<VelAxis>(m[i], m[j]);
+            if (splitPartialOverlapEitherWay<KeyAxis>(m[i], m[j]) ||
+                splitPartialOverlapEitherWay<VelAxis>(m[i], m[j]))
+                touched[i] = touched[j] = true;
         }
     }
     for (auto &d : m)
@@ -647,12 +653,45 @@ void Engine::applyZoneBatchOp(ZoneBatchOp op, const std::vector<ZoneAddress> &wh
         if (isValidZoneAddress(a))
             zones.push_back(a);
     std::sort(zones.begin(), zones.end());
+    zones.erase(std::unique(zones.begin(), zones.end()), zones.end());
     if (zones.empty())
         return;
+
+    // overlap ops see every zone in the targets' groups, as the unselected ones are visible too
+    auto seesGroups = op == AUTO_KEY_CROSSFADES || op == AUTO_VELOCITY_CROSSFADES ||
+                      op == AUTO_CROSSFADES || op == FIX_OVERLAPS;
+    std::vector<bool> selected(zones.size(), true);
+    if (seesGroups)
+    {
+        auto targets = zones;
+        zones.clear();
+        selected.clear();
+        for (const auto &a : targets)
+        {
+            if (!zones.empty() && zones.back().part == a.part && zones.back().group == a.group)
+                continue;
+            auto &grp = getPatch()->getPart(a.part)->getGroup(a.group);
+            for (int z = 0; z < (int)grp->getZones().size(); ++z)
+            {
+                ZoneAddress za{a.part, a.group, z};
+                zones.push_back(za);
+                selected.push_back(std::binary_search(targets.begin(), targets.end(), za));
+            }
+        }
+    }
+    // an unselected zone only answers to a selected one in its own group
+    auto pairs = [&zones, &selected](size_t i, size_t j) {
+        if (selected[i] && selected[j])
+            return true;
+        if (!selected[i] && !selected[j])
+            return false;
+        return zones[i].part == zones[j].part && zones[i].group == zones[j].group;
+    };
 
     std::vector<Zone::ZoneMappingData> m;
     for (const auto &a : zones)
         m.push_back(getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone)->mapping);
+    std::vector<bool> touched(m.size(), false);
 
     switch (op)
     {
@@ -668,10 +707,10 @@ void Engine::applyZoneBatchOp(ZoneBatchOp op, const std::vector<ZoneAddress> &wh
         }
         break;
     case AUTO_KEY_CROSSFADES:
-        autoCrossfade(m, KeyAxis{}, VelAxis{});
+        autoCrossfade(m, touched, KeyAxis{}, VelAxis{}, pairs);
         break;
     case AUTO_VELOCITY_CROSSFADES:
-        autoCrossfade(m, VelAxis{}, KeyAxis{});
+        autoCrossfade(m, touched, VelAxis{}, KeyAxis{}, pairs);
         break;
     case REMOVE_KEY_CROSSFADES:
         for (auto &d : m)
@@ -682,21 +721,32 @@ void Engine::applyZoneBatchOp(ZoneBatchOp op, const std::vector<ZoneAddress> &wh
             d.velocityRange.fadeStart = d.velocityRange.fadeEnd = 0;
         break;
     case AUTO_CROSSFADES:
-        autoCrossfade(m, KeyAxis{}, VelAxis{});
-        autoCrossfade(m, VelAxis{}, KeyAxis{});
+        autoCrossfade(m, touched, KeyAxis{}, VelAxis{}, pairs);
+        autoCrossfade(m, touched, VelAxis{}, KeyAxis{}, pairs);
         break;
     case FIX_OVERLAPS:
-        fixOverlaps(m);
+        fixOverlaps(m, touched, pairs);
         break;
     }
 
-    undo::pushPayloadUndoFor<undo::ZoneMappingSpec>(*this, zones);
+    std::vector<ZoneAddress> written;
+    std::vector<Zone::ZoneMappingData> wm;
+    for (size_t i = 0; i < zones.size(); ++i)
+    {
+        if (selected[i] || touched[i])
+        {
+            written.push_back(zones[i]);
+            wm.push_back(m[i]);
+        }
+    }
+
+    undo::pushPayloadUndoFor<undo::ZoneMappingSpec>(*this, written);
     messageController->scheduleAudioThreadCallback(
-        [zones, m](auto &e) {
-            for (size_t i = 0; i < zones.size(); ++i)
+        [written, wm](auto &e) {
+            for (size_t i = 0; i < written.size(); ++i)
             {
-                const auto &a = zones[i];
-                e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone)->mapping = m[i];
+                const auto &a = written[i];
+                e.getPatch()->getPart(a.part)->getGroup(a.group)->getZone(a.zone)->mapping = wm[i];
             }
         },
         [](const auto &e) { undo::refreshLeadDisplay(e, true); });

@@ -406,6 +406,60 @@ TEST_CASE("Fade overlaps crossfades both keys and velocities", "[mapping-header]
     REQUIRE(f.zone(0, 2)->mapping.velocityRange.fadeEnd == 0);
 }
 
+TEST_CASE("Fix overlaps meets unselected zones in the selected groups", "[mapping-header]")
+{
+    HeaderFixture f;
+    f.send(cmsg::AddBlankZone({0, 0, 40, 52, 0, 127}));
+    f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    // overlaps the unselected zone only, so neither moves
+    f.send(cmsg::AddBlankZone({0, 0, 58, 66, 0, 127}));
+    f.send(cmsg::CreateGroup(0));
+    // another group layering the selected zone is left alone
+    f.send(cmsg::AddBlankZone({0, 1, 45, 50, 0, 127}));
+    f.send(cmsg::AddBlankZone({0, 1, 100, 110, 0, 127}));
+    f.select(0, 0);
+    f.select(1, 1, false, false);
+
+    f.send(cmsg::ApplyZoneBatchOp({{}, scxt::engine::Engine::FIX_OVERLAPS}));
+    REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyEnd == 50);
+    REQUIRE(f.zone(0, 1)->mapping.keyboardRange.keyStart == 51);
+    REQUIRE(f.zone(0, 1)->mapping.keyboardRange.keyEnd == 60);
+    REQUIRE(f.zone(0, 2)->mapping.keyboardRange.keyStart == 58);
+    REQUIRE(f.zone(1, 0)->mapping.keyboardRange.keyStart == 45);
+    REQUIRE(f.zone(1, 0)->mapping.keyboardRange.keyEnd == 50);
+    // the selection is untouched
+    REQUIRE(f.sel().selectedZones.size() == 2);
+
+    f.undo();
+    REQUIRE(f.zone(0, 0)->mapping.keyboardRange.keyEnd == 52);
+    REQUIRE(f.zone(0, 1)->mapping.keyboardRange.keyStart == 48);
+}
+
+TEST_CASE("Fade overlaps crossfades against unselected zones", "[mapping-header]")
+{
+    HeaderFixture f;
+    f.send(cmsg::AddBlankZone({0, 0, 40, 52, 0, 127}));
+    f.send(cmsg::AddBlankZone({0, 0, 48, 60, 0, 127}));
+    f.send(cmsg::AddBlankZone({0, 0, 58, 66, 0, 127}));
+    f.select(0, 1);
+
+    f.send(cmsg::ApplyZoneBatchOp({{}, scxt::engine::Engine::AUTO_CROSSFADES}));
+    REQUIRE(f.zone(0, 0)->mapping.keyboardRange.fadeEnd == 5);
+    REQUIRE(f.zone(0, 1)->mapping.keyboardRange.fadeStart == 5);
+    REQUIRE(f.zone(0, 1)->mapping.keyboardRange.fadeEnd == 3);
+    REQUIRE(f.zone(0, 2)->mapping.keyboardRange.fadeStart == 3);
+
+    // the context menu names its targets rather than using the selection
+    f.undo();
+    REQUIRE(f.zone(0, 0)->mapping.keyboardRange.fadeEnd == 0);
+    REQUIRE(f.zone(0, 2)->mapping.keyboardRange.fadeStart == 0);
+    f.send(cmsg::ApplyZoneBatchOp({{{0, 0, 2}}, scxt::engine::Engine::AUTO_KEY_CROSSFADES}));
+    REQUIRE(f.zone(0, 2)->mapping.keyboardRange.fadeStart == 3);
+    REQUIRE(f.zone(0, 1)->mapping.keyboardRange.fadeEnd == 3);
+    REQUIRE(f.zone(0, 1)->mapping.keyboardRange.fadeStart == 0);
+    REQUIRE(f.zone(0, 0)->mapping.keyboardRange.fadeEnd == 0);
+}
+
 TEST_CASE("The header state reaches a fresh client", "[mapping-header]")
 {
     HeaderFixture f;
