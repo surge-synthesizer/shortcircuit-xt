@@ -50,6 +50,7 @@
 #include "app/other-screens/TuningScreen.h"
 #include "app/other-screens/ThemeEditor.h"
 #include "app/other-screens/WelcomeScreen.h"
+#include "app/other-screens/HostLoadScreen.h"
 #include "app/edit-screen/components/RoutingPane.h"
 
 #include "app/missing-resolution/MissingResolutionScreen.h"
@@ -128,6 +129,9 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
     missingResolutionScreen = std::make_unique<missing_resolution::MissingResolutionScreen>(this);
     addChildComponent(*missingResolutionScreen);
 
+    hostLoadScreen = std::make_unique<other_screens::HostLoadScreen>(this);
+    addChildComponent(*hostLoadScreen);
+
     setStyle(style());
 
     auto zfi = defaultsProvider.getUserDefaultValue(infrastructure::DefaultKeys::zoomLevel, 100);
@@ -156,10 +160,18 @@ SCXTEditor::SCXTEditor(messaging::MessageController &e, infrastructure::Defaults
                 w->drainCallbackQueue();
         });
     });
+
+    // after registering, so the end of a load already running reaches us
+    msgCont.hostStateSlot.onLoadBegin = [this](auto g) { beginHostLoad(g); };
+    auto [phase, generation] = msgCont.hostStateSlot.status();
+    if (phase == messaging::MessageController::HostStateSlot::PENDING ||
+        phase == messaging::MessageController::HostStateSlot::LOADING)
+        beginHostLoad(generation);
 }
 
 SCXTEditor::~SCXTEditor() noexcept
 {
+    msgCont.hostStateSlot.onLoadBegin = nullptr;
     juce::PopupMenu::dismissAllActiveMenus();
     idleTimer->stopTimer();
     msgCont.unregisterClient();
@@ -719,6 +731,23 @@ std::function<void()> SCXTEditor::makeComingSoon(const std::string &feature)
 }
 
 void SCXTEditor::showMissingResolutionScreen() { missingResolutionScreen->setVisible(true); }
+
+void SCXTEditor::beginHostLoad(uint64_t generation)
+{
+    hostLoadGeneration = generation;
+    juce::PopupMenu::dismissAllActiveMenus();
+    hostLoadScreen->setBounds(0, 0, edWidth, edHeight);
+    hostLoadScreen->setVisible(true);
+    hostLoadScreen->toFront(true);
+}
+
+void SCXTEditor::endHostLoad(uint64_t generation)
+{
+    // an older load finishing must not uncover a newer one
+    if (generation != hostLoadGeneration)
+        return;
+    hostLoadScreen->setVisible(false);
+}
 
 void SCXTEditor::onStyleChanged()
 {

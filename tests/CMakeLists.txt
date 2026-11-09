@@ -24,6 +24,7 @@ add_executable(scxt-test
 		modify_structure.cpp
 		sidebar_structure_tests.cpp
 		mapping_header_tests.cpp
+		host_state_tests.cpp
 		modulator_tests.cpp
 		mod_matrix_operations_tests.cpp
 		alternate_source_tests.cpp

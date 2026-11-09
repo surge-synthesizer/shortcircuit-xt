@@ -353,6 +353,9 @@ void Engine::immediatelyTerminateAllVoices()
 
 void Engine::markDirty() const
 {
+    // an edit makes the engine the truth again after a failed host load
+    messageController->hostStateSlot.clearFailed();
+
     messaging::audio::SerializationToAudio s2am;
     s2am.id = messaging::audio::s2a_state_mark_dirty;
     messageController->sendSerializationToAudio(s2am);

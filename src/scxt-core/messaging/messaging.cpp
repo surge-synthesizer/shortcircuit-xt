@@ -134,6 +134,58 @@ void MessageController::parseAudioMessageOnSerializationThread(
     }
 }
 
+uint64_t MessageController::HostStateSlot::offer(std::string &&b)
+{
+    std::lock_guard<std::mutex> g(mutex);
+    blob = std::make_shared<const std::string>(std::move(b));
+    phase = PENDING;
+    return ++generation;
+}
+
+std::optional<std::pair<uint64_t, std::shared_ptr<const std::string>>>
+MessageController::HostStateSlot::take()
+{
+    std::lock_guard<std::mutex> g(mutex);
+    if (phase != PENDING)
+        return std::nullopt;
+    phase = LOADING;
+    return std::make_pair(generation, blob);
+}
+
+void MessageController::HostStateSlot::finish(uint64_t gen, bool ok)
+{
+    std::lock_guard<std::mutex> g(mutex);
+    if (gen != generation)
+        return;
+    phase = ok ? IDLE : FAILED;
+    if (ok)
+        blob.reset();
+}
+
+void MessageController::HostStateSlot::clearFailed()
+{
+    std::lock_guard<std::mutex> g(mutex);
+    if (phase != FAILED)
+        return;
+    phase = IDLE;
+    blob.reset();
+}
+
+std::shared_ptr<const std::string> MessageController::HostStateSlot::heldBlob() const
+{
+    std::lock_guard<std::mutex> g(mutex);
+    if (phase == IDLE)
+        return nullptr;
+    return blob;
+}
+
+std::pair<MessageController::HostStateSlot::Phase, uint64_t>
+MessageController::HostStateSlot::status() const
+{
+    std::lock_guard<std::mutex> g(mutex);
+    return {phase, generation};
+}
+
 MessageController::~MessageController()
 {
     while (!cbStore.empty())

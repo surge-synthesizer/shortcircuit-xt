@@ -98,6 +98,7 @@ struct AboutScreen;
 struct LogScreen;
 struct TuningScreen;
 struct ThemeEditorWindow;
+struct HostLoadScreen;
 } // namespace other_screens
 
 // Receiver of typed s2c messages. Defined in SCXTEditorReceiver.h, which is
@@ -187,6 +188,12 @@ struct SCXTEditor : sst::jucegui::components::WindowPanel,
     std::unique_ptr<missing_resolution::MissingResolutionScreen> missingResolutionScreen;
     bool hasMissingSamples{false};
     void showMissingResolutionScreen();
+
+    // up from the host's state load until serial has finished that same load
+    std::unique_ptr<other_screens::HostLoadScreen> hostLoadScreen;
+    uint64_t hostLoadGeneration{0};
+    void beginHostLoad(uint64_t generation);
+    void endHostLoad(uint64_t generation);
 
     std::unique_ptr<sst::jucegui::components::ToolTip> toolTip;
 

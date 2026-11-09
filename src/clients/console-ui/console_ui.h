@@ -205,6 +205,13 @@ struct ConsoleUI
     void onLearnedNote(int16_t k) { lastLearnedNote = k; }
     int64_t lastHarnessSync{0};
     void onHarnessSync(int64_t s) { lastHarnessSync = s; }
+    uint64_t lastHostStateLoaded{0};
+    int hostStateLoadedCount{0};
+    void onHostStateLoaded(uint64_t g)
+    {
+        lastHostStateLoaded = g;
+        hostStateLoadedCount++;
+    }
     scxt::messaging::client::mappingHeaderState_t mappingHeaderState{-1, false};
     void onMappingHeaderState(const scxt::messaging::client::mappingHeaderState_t &s)
     {

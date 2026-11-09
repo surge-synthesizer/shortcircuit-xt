@@ -36,6 +36,7 @@ add_library(${PROJECT_NAME} STATIC
         app/mixer-screen/components/ChannelStrip.cpp
 
         app/other-screens/AboutScreen.cpp
+        app/other-screens/HostLoadScreen.cpp
         app/other-screens/LogScreen.cpp
         app/other-screens/TuningScreen.cpp
         app/other-screens/ThemeEditor.cpp

@@ -126,6 +126,7 @@ struct SCXTEditorReceiver
     void onAllProcessorDescriptions(const std::vector<dsp::processor::ProcessorDescription> &v);
 
     void onActivityNotification(const scxt::messaging::client::activityNotificationPayload_t &);
+    void onHostStateLoaded(uint64_t generation);
 
     void onTuningStatus(const scxt::messaging::client::tuningStatusPayload_t &);
     void onSclKbm(const scxt::messaging::client::sclKbmPayload_t &);

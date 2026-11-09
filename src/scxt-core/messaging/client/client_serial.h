@@ -67,6 +67,7 @@ enum ClientToSerializationMessagesIds
 
     // Stream and IO Messages
     c2s_unstream_engine_state,
+    c2s_load_host_state,
     c2s_save_multi,
     c2s_save_part,
 
@@ -263,6 +264,7 @@ enum SerializationToClientMessageIds
     s2c_report_unused_items,
     s2c_send_debug_info,
     s2c_send_activity_notification,
+    s2c_host_state_loaded,
 
     s2c_engine_status,
     s2c_update_group_or_zone_adsr_view,
