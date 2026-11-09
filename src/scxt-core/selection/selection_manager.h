@@ -168,6 +168,8 @@ struct SelectionManager
                                           const std::vector<int32_t> &deletedGroups = {});
     void selectPart(int16_t part);
     void clearAllSelections();
+    // selection is by index, which a delete shifts, so a delete leaves nothing selected
+    void selectNothingAfterDelete(bool zoneDeleted);
 
   protected:
     enum ConsistencyCheck

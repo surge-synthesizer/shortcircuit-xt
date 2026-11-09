@@ -1358,6 +1358,19 @@ void SelectionManager::restoreIdentities(const IdentitySnapshot &snap)
     }
 }
 
+void SelectionManager::selectNothingAfterDelete(bool zoneDeleted)
+{
+    auto &st = state[selectedPart];
+    // zones leave their group on show as a deselect does; deleted groups renumber the rest
+    st.displayGroups = zoneDeleted ? st.selectedGroups : selectedZones_t{};
+    st.selectedZones.clear();
+    st.selectedGroups.clear();
+    st.leadZone = {};
+    st.leadGroup = {};
+    sendClientDataForLeadSelectionState();
+    sendSelectedZonesToClient();
+}
+
 void SelectionManager::clearAllSelections()
 {
     for (auto &s : state)
