@@ -229,6 +229,55 @@ TEST_CASE("Two quick host loads unstream only the second", "[host-state]")
     REQUIRE(f.part()->getGroup(0)->getZone(0)->mapping.keyboardRange.keyStart == 70);
 }
 
+TEST_CASE("Params read a host load's macros before it lands", "[host-state]")
+{
+    std::string blob;
+    {
+        HostFixture src;
+        src.send(cmsg::AddBlankZone({0, 0, 40, 50, 0, 127}));
+        // serial is idle after the send, so the test thread can set these
+        src.part()->macros[3].setValue01(0.7f);
+        src.engine().getPatch()->getPart(2)->macros[5].setValue01(0.25f);
+        blob = src.save();
+    }
+
+    HostFixture f;
+    hsm::HostLoadMacros held;
+    REQUIRE(!held.find(f.engine(), 0, 3));
+
+    {
+        std::lock_guard<std::mutex> lk(f.engine().modifyStructureMutex);
+        REQUIRE(hsm::hostStateLoad(f.engine(), std::string(blob)));
+        REQUIRE(f.part()->macros[3].getValue01() == Approx(0.f));
+
+        auto *m = held.find(f.engine(), 0, 3);
+        REQUIRE(m);
+        REQUIRE(m->getValue01() == Approx(0.7f));
+        REQUIRE(held.find(f.engine(), 2, 5)->getValue01() == Approx(0.25f));
+        REQUIRE(!held.find(f.engine(), 0, scxt::macrosPerPart));
+    }
+
+    f.th.sync();
+    REQUIRE(!held.find(f.engine(), 0, 3));
+    REQUIRE(f.part()->macros[3].getValue01() == Approx(0.7f));
+    REQUIRE(f.engine().getPatch()->getPart(2)->macros[5].getValue01() == Approx(0.25f));
+}
+
+TEST_CASE("Params fall back to the engine when a pending blob doesn't read", "[host-state]")
+{
+    HostFixture f;
+    hsm::HostLoadMacros held;
+    {
+        std::lock_guard<std::mutex> lk(f.engine().modifyStructureMutex);
+        REQUIRE(hsm::hostStateLoad(f.engine(), std::string("{ this is not json }")));
+        REQUIRE(f.slot().status().first == HostSlot::PENDING);
+        REQUIRE(!held.find(f.engine(), 0, 0));
+    }
+    f.th.sync();
+    REQUIRE(f.slot().status().first == HostSlot::FAILED);
+    REQUIRE(!held.find(f.engine(), 0, 0));
+}
+
 TEST_CASE("A blob that is not a state changes nothing", "[host-state]")
 {
     HostFixture f;

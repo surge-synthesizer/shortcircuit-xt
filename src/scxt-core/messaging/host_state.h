@@ -28,9 +28,11 @@
 #ifndef SCXT_SRC_SCXT_CORE_MESSAGING_HOST_STATE_H
 #define SCXT_SRC_SCXT_CORE_MESSAGING_HOST_STATE_H
 
+#include <memory>
 #include <string>
 
 #include "engine/engine.h"
+#include "engine/patch.h"
 
 namespace scxt::messaging
 {
@@ -45,6 +47,17 @@ bool hostStateLoad(engine::Engine &e, std::string &&blob);
 
 // host main thread; the held blob while a load is pending or failed, else the engine
 bool hostStateSave(engine::Engine &e, std::string &out);
+
+// host main thread; while a host load runs, params answer with the macros it carries
+struct HostLoadMacros
+{
+    // null unless a load is pending or loading and its blob reads
+    const engine::Macro *find(engine::Engine &e, int part, int index);
+
+  private:
+    uint64_t generation{0};
+    std::unique_ptr<engine::Patch> patch;
+};
 } // namespace scxt::messaging
 
 #endif // SCXT_SRC_SCXT_CORE_MESSAGING_HOST_STATE_H

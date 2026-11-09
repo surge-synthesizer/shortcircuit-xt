@@ -561,7 +561,7 @@ bool SCXTPlugin::paramsInfo(uint32_t paramIndex, clap_param_info *info) const no
         assert(mac::macroIDToIndex(info->id) == index);
         info->flags = CLAP_PARAM_IS_AUTOMATABLE;
         info->cookie = nullptr; // super easy to reverse engineer
-        const auto &macro = engine->getPatch()->getPart(part)->macros[index];
+        const auto &macro = macroFor(info->id);
         copyToFixedBuffer(info->name, sizeof(info->name),
                           macro.pluginParameterNameFor(part, index).c_str());
         std::string moduleName = "Part " + std::to_string(part + 1) + " / Macros";

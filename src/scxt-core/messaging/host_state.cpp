@@ -93,4 +93,40 @@ bool hostStateSave(engine::Engine &e, std::string &out)
     }
     return true;
 }
+
+const engine::Macro *HostLoadMacros::find(engine::Engine &e, int part, int index)
+{
+    using slot_t = MessageController::HostStateSlot;
+    auto &slot = e.getMessageController()->hostStateSlot;
+    auto [phase, g] = slot.status();
+    if (phase != slot_t::PENDING && phase != slot_t::LOADING)
+    {
+        patch.reset();
+        return nullptr;
+    }
+
+    // offers come from this thread, so a held blob is this generation's
+    if (g != generation)
+    {
+        generation = g;
+        patch.reset();
+        if (auto blob = slot.heldBlob())
+        {
+            try
+            {
+                auto p = std::make_unique<engine::Patch>();
+                json::unstreamMultiStructure(*p, *blob);
+                patch = std::move(p);
+            }
+            catch (const std::exception &err)
+            {
+                SCLOG_IF(warnings, "Host state macros unreadable [" << err.what() << "]");
+            }
+        }
+    }
+
+    if (!patch || part < 0 || part >= numParts || index < 0 || index >= macrosPerPart)
+        return nullptr;
+    return &patch->getPart(part)->macros[index];
+}
 } // namespace scxt::messaging

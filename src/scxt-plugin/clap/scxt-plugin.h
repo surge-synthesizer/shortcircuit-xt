@@ -45,6 +45,7 @@
 #include "sst/clap_juce_shim/clap_juce_shim.h"
 
 #include "engine/engine.h"
+#include "messaging/host_state.h"
 #include "voice/voice.h"
 
 #include "clap-helpers-config.h"
@@ -124,8 +125,12 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
         auto idx = engine::Macro::macroIDToIndex(paramId);
         assert(part >= 0 && part < scxt::numParts);
         assert(idx >= 0 && idx < scxt::macrosPerPart);
+        if (auto *held = heldHostMacros.find(*engine, part, idx))
+            return *held;
         return engine->getPatch()->getPart(part)->macros[idx];
     }
+    // the validator and hosts read params straight after a load, before serial runs it
+    mutable scxt::messaging::HostLoadMacros heldHostMacros;
 
     void handleParamValueEvent(const clap_event_param_value *);
 
