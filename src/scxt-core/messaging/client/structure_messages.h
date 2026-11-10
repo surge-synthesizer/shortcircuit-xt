@@ -286,6 +286,7 @@ inline void removeZone(const selection::SelectionManager::ZoneAddress &a, engine
         },
         [t = a](auto &engine) {
             // no unreferenced-sample purge; undoing the delete needs them resident
+            engine.getSelectionManager()->selectNothingAfterDelete(true);
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, true, t);
             serializationSendToClient(s2c_send_pgz_structure, engine.getPartGroupZoneStructure(),
                                       *(engine.getMessageController()));
@@ -363,6 +364,7 @@ inline void removeSelectedZones(const bool &, engine::Engine &engine, MessageCon
         },
         [t = part](auto &engine) {
             // no unreferenced-sample purge; undoing the delete needs them resident
+            engine.getSelectionManager()->selectNothingAfterDelete(true);
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, true,
                                                                            {t, -1, -1});
 
@@ -413,6 +415,7 @@ inline void deleteGroupsByIndex(int16_t part, std::vector<int32_t> groups, engin
         },
         [part, groups](auto &engine) {
             // no unreferenced-sample purge; undoing the delete needs them resident
+            engine.getSelectionManager()->selectNothingAfterDelete(false);
             engine.getSelectionManager()->guaranteeConsistencyAfterDeletes(engine, false,
                                                                            {part, -1, -1}, groups);
 
