@@ -1044,7 +1044,7 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 }
             }
 
-            // Checks wheter the interpolation window extends beyond the loop start.
+            // Checks wether the interpolation window extends beyond the loop start.
             const auto firstReadIndex = p - static_cast<int>(FIRoffset);
             const bool windowCrossesLoopStart = loopForward && GD->hasLooped &&
                                                 p >= GD->loopLowerBound &&
