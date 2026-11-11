@@ -519,6 +519,33 @@ bool Engine::processAudio()
     return true;
 }
 
+bool Engine::waitForStoppedEngineWork(std::chrono::milliseconds giveUp)
+{
+#if BUILD_IS_DEBUG
+    messageController->threadingChecker.registerAsAudioThread();
+#endif
+    using slot_t = messaging::MessageController::HostStateSlot;
+    auto busy = [this]() {
+        auto phase = messageController->hostStateSlot.status().first;
+        return phase == slot_t::PENDING || phase == slot_t::LOADING || stopEngineRequests > 0;
+    };
+
+    auto until = std::chrono::steady_clock::now() + giveUp;
+    while (busy())
+    {
+        if (std::chrono::steady_clock::now() > until)
+        {
+            SCLOG_IF(warnings, "Offline render stopped waiting for engine work after "
+                                   << giveUp.count() << "ms");
+            return false;
+        }
+        drainSerialToEngineQueue();
+        messageController->wakeSerialization();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return true;
+}
+
 void Engine::drainSerialToEngineQueue()
 {
     bool tryToDrain{true};

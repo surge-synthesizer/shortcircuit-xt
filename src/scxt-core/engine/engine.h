@@ -120,6 +120,9 @@ struct Engine : MoveableOnly<Engine>, SampleRateSupport
     bool processAudio();
     void drainSerialToEngineQueue();
 
+    // offline render only; drains as it waits, since the stop and restart come through the queue
+    bool waitForStoppedEngineWork(std::chrono::milliseconds giveUp);
+
     sst::basic_blocks::modulators::Transport transport;
     void onTransportUpdated();
 
