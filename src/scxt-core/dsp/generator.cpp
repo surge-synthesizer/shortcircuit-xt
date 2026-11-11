@@ -875,6 +875,15 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                                : std::numeric_limits<int>::min();
 
     /*
+     * The FIR window spans [p - FIRoffset, p - FIRoffset + resampFIRSize - 1].
+     * Solve the boundary checks for p once per block: the first tap is before the
+     * loop when p < wrapLoEdge, and the last tap reaches its exclusive end when
+     * p >= wrapHiEdge.
+     */
+    const int wrapLoEdge = GD->loopLowerBound + static_cast<int>(FIRoffset);
+    const int wrapHiEdge = GD->loopUpperBound + static_cast<int>(FIRoffset) - resampFIRSize + 1;
+
+    /*
      * Is the loop still what is driving playback? Once a gated loop is released the
      * playhead runs on past loopUpperBound into the tail and there is no seam left to
      * smooth, so the crossfade has to stop rather than blend in unrelated pre-loop
@@ -1044,20 +1053,18 @@ void GeneratorSample(GeneratorState *__restrict GD, GeneratorIO *__restrict IO)
                 }
             }
 
-            // Checks wether the interpolation window extends beyond the loop start.
-            const auto firstReadIndex = p - static_cast<int>(FIRoffset);
-            const bool windowCrossesLoopStart = loopForward && GD->hasLooped &&
-                                                p >= GD->loopLowerBound &&
-                                                firstReadIndex < GD->loopLowerBound;
+            // Checks whether the interpolation window extends beyond the loop start.
+            const bool windowCrossesLoopStart =
+                loopForward && GD->hasLooped && p >= GD->loopLowerBound && p < wrapLoEdge;
 
             // Checks whether the interpolation window extends beyond the loop end.
-            const auto lastReadIndex = p - static_cast<int>(FIRoffset) + resampFIRSize - 1;
-            const bool windowCrossesLoopEnd = loopForward && lastReadIndex >= GD->loopUpperBound;
+            const bool windowCrossesLoopEnd = loopForward && p >= wrapHiEdge;
 
             // we need both checks because if we are just doing a post-release playdown
             // we don't want to re-pad
             if (((p < lowPadEdge && GD->hasLooped) || p >= WaveSize - resampFIRSize ||
-                 ((windowCrossesLoopEnd || windowCrossesLoopStart) && loopFade == 0)) &&
+                 ((windowCrossesLoopEnd || windowCrossesLoopStart) && loopFade == 0 &&
+                  loopIsContinuing())) &&
                 p <= GD->loopUpperBound)
             {
                 // the first pass heard the pad before the loop, so only wrap once round

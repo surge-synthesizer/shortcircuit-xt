@@ -368,7 +368,8 @@ TEST_CASE("Released gated loop plays sample tail", "[generator][loop-release]")
 {
     GenConfig c;
     c.loopWhileGated = true;
-    c.ratio = unityRatio;
+    // Fractional positions give the taps across the loop boundary nonzero weight.
+    c.ratio = unityRatio + unityRatio / 2;
     c.blockSizeOverride = 1;
     c.warmupBlocks = 400;
     c.ungateAtBlock = 0;
@@ -400,12 +401,20 @@ TEST_CASE("Released gated loop plays sample tail", "[generator][loop-release]")
     // Keeps track of the checked samples, in order to avoid
     // like false-positives in case we don't check any.
     size_t checkedSamples = 0;
+    float maxTailContributionBeforeLoopEnd = 0.f;
 
     for (size_t i = 0; i < a.recL.size(); ++i)
     {
         const auto p = a.recPos[i];
         const auto firstReadIndex = p - static_cast<int>(scxt::dsp::FIRoffset);
         const auto lastReadIndex = firstReadIndex + static_cast<int>(scxt::dsp::FIRipol_N) - 1;
+
+        // The playhead is still inside the loop, but the FIR window reaches the tail.
+        if (p < gEndLoop && lastReadIndex >= gEndLoop)
+        {
+            maxTailContributionBeforeLoopEnd =
+                std::max(maxTailContributionBeforeLoopEnd, std::abs(b.recL[i] - a.recL[i]));
+        }
 
         if (firstReadIndex >= gEndLoop && lastReadIndex < gEndSample)
         {
@@ -416,6 +425,7 @@ TEST_CASE("Released gated loop plays sample tail", "[generator][loop-release]")
     }
 
     REQUIRE(checkedSamples > 0);
+    REQUIRE(maxTailContributionBeforeLoopEnd > goldenTolerance);
 }
 
 TEST_CASE("Generator harness honours the layout contract", "[generator]")
@@ -1590,7 +1600,7 @@ TEST_CASE("Generator golden - gated loop and release", "[generator][golden]")
          -0.698103189f, -0.659080923f, -0.572309494f, -0.444075286f, -0.283668905f, -0.102711365f,
          0.085687436f,  0.267878324f,  0.430662096f,  0.562245190f,  0.653094888f,  0.696629286f,
          0.689694345f,  0.632792532f,  0.530046225f,  0.388899118f,  0.219589651f,  0.034180775f,
-         -0.152438074f, -0.333102375f, -0.475502700f, -0.612469792f, -0.659310937f, -0.699999869f,
+         -0.152438074f, -0.333102375f, -0.475502700f, -0.612469792f, -0.674643159f, -0.699999869f,
          -0.674643159f, -0.600410044f, -0.482678413f, -0.329977751f, -0.153370902f, 0.034347337f,
          0.219577193f,  0.388899118f,  0.530046165f,  0.632792532f,  0.689694345f,  0.696629286f,
          0.653094947f,  0.562245250f,  0.430662155f,  0.267878413f,  0.085687503f,  -0.102711305f,
