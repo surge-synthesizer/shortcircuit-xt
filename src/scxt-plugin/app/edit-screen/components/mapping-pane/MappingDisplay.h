@@ -37,6 +37,7 @@
 #include "sst/jucegui/components/TextPushButton.h"
 #include "sst/jucegui/components/GlyphButton.h"
 #include "sst/jucegui/components/MenuButton.h"
+#include "sst/jucegui/components/NamedPanelDivider.h"
 #include "sst/jucegui/components/TickSeparatorLabel.h"
 #include "sst/jucegui/components/ToggleButton.h"
 #include "sst/jucegui/components/ZoomContainer.h"
@@ -236,6 +237,7 @@ struct MappingDisplay : juce::Component,
         NumRules
     };
     std::array<std::unique_ptr<sst::jucegui::components::TickSeparatorLabel>, NumRules> rules;
+    std::unique_ptr<sst::jucegui::components::NamedPanelDivider> divider;
 
     MappingDisplay(MacroMappingVariantPane *p);
     ~MappingDisplay();

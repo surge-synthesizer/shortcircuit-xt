@@ -134,6 +134,29 @@ void MacroMappingVariantPane::resized()
     macroDisplay->setBounds(getContentArea());
 }
 
+juce::Rectangle<int> MacroMappingVariantPane::sideBoxFor(const juce::Component &display)
+{
+    auto *pane = display.getParentComponent();
+    if (!pane)
+        return {};
+
+    // same truncated quarters as the processor row in EditScreen::layoutInto
+    auto fw = (int)(pane->getWidth() * 0.25);
+    // processor content is inset like ours, so its left edge lands on 3 * fw locally
+    auto inset = display.getX();
+    return {3 * fw, 0, fw - 2 * inset, display.getHeight()};
+}
+
+juce::Rectangle<int> MacroMappingVariantPane::sideBoxDividerFor(const juce::Component &display)
+{
+    static constexpr int ruleWidth{3};
+    // centred on the gap between processors 3 and 4
+    auto gap = sideBoxFor(display).getX() - display.getX();
+    return juce::Rectangle<int>(gap - ruleWidth / 2, 0, ruleWidth, display.getHeight())
+        .reduced(0, 4)
+        .withTrimmedTop(20);
+}
+
 void MacroMappingVariantPane::setMappingData(const engine::Zone::ZoneMappingData &m)
 {
     mappingView = m;

@@ -29,6 +29,7 @@
 #include "app/SCXTEditor.h"
 #include "app/edit-screen/EditScreen.h"
 #include "app/edit-screen/components/AdsrPane.h"
+#include "app/edit-screen/components/MacroMappingVariantPane.h"
 #include "messaging/client/client_serial.h"
 #include "messaging/client/structure_messages.h"
 #include "SampleWaveform.h"
@@ -309,7 +310,7 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
         return scxt::dsp::clampLoopFade(f, v.startSample, v.startLoop, v.endLoop);
     };
     editor->themeApplier.applyVariantLoopTheme(discreteSampleEditors[fadeL].get());
-    addLabel(fadeL, "XF");
+    addLabel(fadeL, "XFade");
 
     attachFloatSamplePoint(curve, "Curve", variantView.variants[selectedVariation].loopCurve);
     addGlyph(curve, jcmp::GlyphPainter::GlyphType::CURVE);
@@ -452,107 +453,91 @@ void VariantDisplay::rebuildForSelectedVariation(size_t sel, bool rebuildTabs, E
     resized();
 }
 
+juce::Rectangle<int> VariantDisplay::sampleDisplayRegion()
+{
+    auto side = MacroMappingVariantPane::sideBoxFor(*this);
+    return getLocalBounds()
+        .withRight(side.getX() - MacroMappingVariantPane::sideBoxDividerPad)
+        .withTrimmedTop(5);
+}
+
 void VariantDisplay::resized()
 {
     auto &v = variantView.variants[selectedVariation];
 
     auto viewArea = sampleDisplayRegion();
     waveformsTabbedGroup->setBounds(viewArea);
-    auto p = getLocalBounds().withLeft(getLocalBounds().getWidth() - sidePanelWidth);
+    divider->setBounds(MacroMappingVariantPane::sideBoxDividerFor(*this));
 
-    auto npw = 3;
-    auto npd = getLocalBounds()
-                   .withLeft(getLocalBounds().getWidth() - sidePanelWidth - sidePanelDividerPad)
-                   .withWidth(sidePanelDividerPad);
-    npd = npd.reduced((npd.getWidth() - npw) * 0.5, 4).withTrimmedTop(20);
-    divider->setBounds(npd);
+    auto p = MacroMappingVariantPane::sideBoxFor(*this).withHeight(18).translated(0, 24);
 
-    p = p.withHeight(18).translated(0, 24);
-    auto row = p;
-
+    // rows are right aligned; a zero width takes what the fixed widths leave over
     int padding{4};
-    auto ofRow = [&row, padding](const auto &wid, auto w) {
-        wid->setBounds(row.withWidth(w));
-        row = row.translated(w + padding, 0);
-    };
-    auto addPad = [&row](auto w) { row = row.translated(w, 0); };
-    auto addGap = [&row, &p](auto g) {
-        row = row.translated(0, g);
-        p = p.translated(0, g);
-    };
-    auto newRow = [&row, &p, padding](auto &s) {
-        if (row.getX() != p.getRight() + padding)
+    using item_t = std::pair<juce::Component *, int>;
+    auto layRow = [&p, padding](std::initializer_list<item_t> items) {
+        int fixed{0}, flex{0};
+        for (const auto &[c, w] : items)
         {
-            SCLOG_IF(uiTheme, s << " Mismatched p layout " << row.getX() << " " << p.getRight());
+            if (w > 0)
+                fixed += w;
+            else
+                flex++;
+        }
+        auto spare = p.getWidth() - fixed - padding * ((int)items.size() - 1);
+        auto flexW = flex > 0 ? spare / flex : 0;
+
+        auto x = p.getX() + (flex > 0 ? 0 : spare);
+        for (const auto &[c, w] : items)
+        {
+            auto ww = w > 0 ? w : flexW;
+            if (c)
+                c->setBounds(p.withX(x).withWidth(ww));
+            x += ww + padding;
         }
         p = p.translated(0, 23);
-        row = p;
     };
+    auto addGap = [&p](auto g) { p = p.translated(0, g); };
 
-    // Old layout for playmode button
-    // ofRow(playModeLabel, 27);
-    // ofRow(playModeButton, 87);
-    // ofRow(reverseActive, 14);
-    // newRow("playMode");
+    // value column of the single rows, and the two halves of the paired rows below it
+    static constexpr int valW{72}, leftValW{57}, glyphW{18}, rightValW{valW - glyphW - 4};
 
-    for (const auto m : {startP, endP})
-    {
-        int off{0};
-        if (m == startP)
-        {
-            ofRow(reverseActive, 14);
-            off = 14;
-        }
-        ofRow(labels[m], p.getWidth() - 72 - padding - off);
-        ofRow(discreteSampleEditors[m], 72);
-        newRow("ctrl");
-    }
+    layRow({{reverseActive.get(), 14},
+            {labels[startP].get(), 0},
+            {discreteSampleEditors[startP].get(), valW}});
+    layRow({{labels[endP].get(), 0}, {discreteSampleEditors[endP].get(), valW}});
 
     addGap(10);
     if (v.loopMode == engine::Zone::LOOP_COUNT)
-    {
-        ofRow(loopModeButton, 88);
-        ofRow(loopCnt, 26);
-    }
+        layRow({{nullptr, 0},
+                {loopCnt.get(), 26},
+                {loopModeButton.get(), 88},
+                {loopActive.get(), 14}});
     else
-    {
-        ofRow(loopModeButton, 118);
-    }
-    ofRow(loopActive, 14);
-    newRow("loop");
+        layRow({{nullptr, 0}, {loopModeButton.get(), 118}, {loopActive.get(), 14}});
 
-    ofRow(zoomButton, 16);
-    ofRow(labels[startL], p.getWidth() - 72 - 16 - 2 * padding);
-    ofRow(discreteSampleEditors[startL], 72);
-    newRow("endL");
+    layRow({{nullptr, 0},
+            {zoomButton.get(), 16},
+            {labels[startL].get(), 40},
+            {discreteSampleEditors[startL].get(), valW}});
+    layRow({{labels[endL].get(), 0}, {discreteSampleEditors[endL].get(), valW}});
 
-    ofRow(labels[endL], p.getWidth() - 72 - padding);
-    ofRow(discreteSampleEditors[endL], 72);
-    newRow("endL");
-
-    // 25 34 18 40
-    ofRow(labels[fadeL], 25);
-    ofRow(discreteSampleEditors[fadeL], 34);
-    addPad(7);
-    ofRow(glyphLabels[curve], 18);
-    ofRow(sampleEditors[curve], 40);
-    newRow("fadecurve");
+    layRow({{labels[fadeL].get(), 0},
+            {discreteSampleEditors[fadeL].get(), leftValW},
+            {glyphLabels[curve].get(), glyphW},
+            {sampleEditors[curve].get(), rightValW}});
 
     addGap(10);
 
-    ofRow(labels[src], 25);
-    ofRow(srcButton, 34);
-    addPad(7);
-    ofRow(glyphLabels[volume], 18);
-    ofRow(sampleEditors[volume], 40);
-    newRow("srcvol");
+    layRow({{labels[src].get(), 0},
+            {srcButton.get(), leftValW},
+            {glyphLabels[volume].get(), glyphW},
+            {sampleEditors[volume].get(), rightValW}});
 
-    ofRow(glyphLabels[pan], 25);
-    ofRow(sampleEditors[pan], 34);
-    addPad(7);
-    ofRow(glyphLabels[tune], 18);
-    ofRow(sampleEditors[tune], 40);
-    newRow("traktune");
+    layRow({{nullptr, 0},
+            {glyphLabels[pan].get(), glyphW},
+            {sampleEditors[pan].get(), leftValW},
+            {glyphLabels[tune].get(), glyphW},
+            {sampleEditors[tune].get(), rightValW}});
 
     /*
      * This is the section avovce the waveform

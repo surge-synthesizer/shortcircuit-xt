@@ -57,6 +57,9 @@ MappingDisplay::MappingDisplay(MacroMappingVariantPane *p)
     zoneHeader = std::make_unique<MappingZoneHeader>(this);
     addAndMakeVisible(*zoneHeader);
 
+    divider = std::make_unique<sst::jucegui::components::NamedPanelDivider>(false);
+    addAndMakeVisible(*divider);
+
     using ffac =
         connectors::SingleValueFactory<floatAttachment_t, cmsg::UpdateZoneMappingFloatValue>;
     using ifac =
@@ -333,10 +336,13 @@ void MappingDisplay::resized()
     auto z = b;
     zoneHeader->setBounds(b.withHeight(headerSize));
 
+    auto side = MacroMappingVariantPane::sideBoxFor(*this);
+
     // Mapping Display
     z = b.withTrimmedTop(headerSize);
-    auto viewArea = z.withWidth(getWidth() - controlSize - 5);
+    auto viewArea = z.withRight(side.getX() - MacroMappingVariantPane::sideBoxDividerPad);
     zoneLayoutViewport->setBounds(viewArea);
+    divider->setBounds(MacroMappingVariantPane::sideBoxDividerFor(*this));
     /*
      * mappingViewport->setBounds(viewArea);
     auto kbdY = viewArea.getBottom() - mappingViewport->viewport->getScrollBarThickness() -
@@ -346,7 +352,7 @@ void MappingDisplay::resized()
 */
 
     // Side Pane — hardcoded from SVG export (201×214)
-    auto rx = getWidth() - controlSize;
+    auto rx = side.getRight() - controlSize;
     auto hs = headerSize;
     auto sp = [rx, hs](int x, int y, int w, int h) -> juce::Rectangle<int> {
         return {rx + x, hs + y + 3, w, h};
