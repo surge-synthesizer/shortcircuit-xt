@@ -310,6 +310,9 @@ bool SCXTPlugin::notePortsInfo(uint32_t index, bool isInput,
 
 clap_process_status SCXTPlugin::process(const clap_process *process) noexcept
 {
+    // a bounce right after a project load would otherwise render silence over the load
+    if (renderOffline)
+        engine->waitForStoppedEngineWork(std::chrono::minutes(2));
     return process_nonblock(process);
 }
 

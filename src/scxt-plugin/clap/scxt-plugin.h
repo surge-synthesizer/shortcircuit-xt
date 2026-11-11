@@ -106,6 +106,16 @@ struct SCXTPlugin : public plugHelper_t, sst::clap_juce_shim::EditorProvider
     clap_process_status process_nonblock(const clap_process *process) SST_CPPUTILS_NONBLOCKING;
     bool handleEvent(const clap_event_header_t *);
 
+    // offline, process waits out a host load instead of rendering silence over it
+    bool implementsRender() const noexcept override { return true; }
+    bool renderHasHardRealtimeRequirement() noexcept override { return false; }
+    bool renderSetMode(clap_plugin_render_mode mode) noexcept override
+    {
+        renderOffline = (mode == CLAP_RENDER_OFFLINE);
+        return true;
+    }
+    std::atomic<bool> renderOffline{false};
+
     bool implementsState() const noexcept override { return true; }
     bool stateSave(const clap_ostream *stream) noexcept override;
     bool stateLoad(const clap_istream *stream) noexcept override;
