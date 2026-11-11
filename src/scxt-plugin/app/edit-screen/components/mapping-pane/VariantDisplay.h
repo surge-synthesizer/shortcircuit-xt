@@ -51,8 +51,6 @@ struct SampleWaveform;
 
 struct VariantDisplay : juce::Component, HasEditor, KeyCommandTarget
 {
-    static constexpr int sidePanelWidth{136};
-    static constexpr int sidePanelDividerPad{10};
     enum Ctrl
     {
         startP,
@@ -195,12 +193,7 @@ struct VariantDisplay : juce::Component, HasEditor, KeyCommandTarget
     // is any active variant normalized, for the edit-all clear menu item
     bool anyVariantNormalized() const;
 
-    juce::Rectangle<int> sampleDisplayRegion()
-    {
-        return getLocalBounds()
-            .withTrimmedRight(sidePanelWidth + sidePanelDividerPad)
-            .withTrimmedTop(5);
-    }
+    juce::Rectangle<int> sampleDisplayRegion();
 
     void resized() override;
 

@@ -47,6 +47,12 @@ struct MacroMappingVariantPane : sst::jucegui::components::NamedPanel, HasEditor
 
     void resized() override;
 
+    // side box of a child display, sitting exactly over processor 4 in the row below
+    static juce::Rectangle<int> sideBoxFor(const juce::Component &display);
+    // the vertical rule between a child display and its side box
+    static juce::Rectangle<int> sideBoxDividerFor(const juce::Component &display);
+    static constexpr int sideBoxDividerPad{10};
+
     void setMappingData(const engine::Zone::ZoneMappingData &);
     void setSampleData(const engine::Zone::Variants &);
     void setGroupZoneMappingSummary(const engine::Part::zoneMappingSummary_t &);
