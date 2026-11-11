@@ -354,3 +354,39 @@ TEST_CASE("Host saves while the serial thread edits stay whole", "[host-state]")
     REQUIRE(f.th.sync());
     REQUIRE(f.part()->getGroups().size() == 41);
 }
+
+TEST_CASE("An offline render waits for a host load and then sounds", "[host-state]")
+{
+    std::string blob;
+    {
+        HostFixture src;
+        src.send(cmsg::AddSampleWithRange(
+            {samplePath("WavStereo48k.wav").u8string(), 60, 0, 127, 0, 127}));
+        REQUIRE(hostZoneCount(src) == 1);
+        blob = src.save();
+    }
+
+    HostFixture f;
+    // from here this thread is the host's render thread
+    f.th.audioThreadProvider.reset();
+
+    REQUIRE(hsm::hostStateLoad(f.engine(), std::string(blob)));
+    REQUIRE(f.slot().status().first == HostSlot::PENDING);
+
+    REQUIRE(f.engine().waitForStoppedEngineWork(std::chrono::seconds(20)));
+    REQUIRE(f.slot().status().first == HostSlot::IDLE);
+    REQUIRE(f.engine().stopEngineRequests == 0);
+    REQUIRE(hostZoneCount(f) == 1);
+
+    // the first block after the wait plays the note, not the silence of a stopped engine
+    f.engine().processNoteOnEvent(0, 0, 60, -1, 1.f, 0.f);
+    float peak{0};
+    for (int b = 0; b < 64; ++b)
+    {
+        f.engine().processAudio();
+        const auto &o = f.engine().getPatch()->busses.mainBus.output;
+        for (int i = 0; i < (int)scxt::blockSize; ++i)
+            peak = std::max({peak, std::fabs(o[0][i]), std::fabs(o[1][i])});
+    }
+    REQUIRE(peak > 0.01f);
+}
