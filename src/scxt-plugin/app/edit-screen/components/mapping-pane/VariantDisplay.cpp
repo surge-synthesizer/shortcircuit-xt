@@ -671,7 +671,7 @@ void VariantDisplay::rebuild()
         srcButton->setLabel("LIN");
         break;
     case dsp::InterpolationTypes::ZOHAA:
-        srcButton->setLabel("ZAA");
+        srcButton->setLabel("VINTAGE");
         break;
     case dsp::InterpolationTypes::ZeroOrderHold:
         srcButton->setLabel("ZOH");
@@ -1019,7 +1019,7 @@ void VariantDisplay::showSRCMenu()
     add(dsp::InterpolationTypes::Sinc, "Sinc");
     add(dsp::InterpolationTypes::Cubic, "Cubic");
     add(dsp::InterpolationTypes::Linear, "Linear");
-    add(dsp::InterpolationTypes::ZOHAA, "Zero-Order Hold (Anti-Aliased)");
+    add(dsp::InterpolationTypes::ZOHAA, "Vintage");
     add(dsp::InterpolationTypes::ZeroOrderHold, "Zero Order Hold");
 
     p.showMenuAsync(editor->defaultPopupMenuOptions());
