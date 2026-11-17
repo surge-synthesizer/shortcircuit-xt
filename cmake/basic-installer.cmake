@@ -166,6 +166,12 @@ else ()
     find_program(SCXT_DPKG_DEB dpkg-deb)
     if (SCXT_DPKG_DEB)
         set(SCXT_DEB shortcircuit-xt-linux${SCXT_EXTRA_INSTALLER_NAME}-${SCXT_DATE}-${VERSION_CHUNK}.deb)
+        # a v tag is a release; make_deb.sh turns anything else into a nightly version
+        if ("${GIT_IMPLIED_DISPLAY_VERSION}" MATCHES "^v[0-9]")
+            set(SCXT_DEB_VERSION "${GIT_IMPLIED_DISPLAY_VERSION}")
+        else ()
+            set(SCXT_DEB_VERSION "${SCXT_DATE}-${VERSION_CHUNK}")
+        endif ()
         message(STATUS "Debian package: Target is installer/${SCXT_DEB}")
         add_custom_command(
                 TARGET shortcircuit-installer
@@ -173,7 +179,8 @@ else ()
                 USES_TERMINAL
                 WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                 COMMAND ${CMAKE_COMMAND} -E make_directory installer
-                COMMAND ${CMAKE_SOURCE_DIR}/scripts/installer_linux/make_deb.sh ${SCXT_PRODUCT_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}/installer/${SCXT_DEB} "${SCXT_DATE}-${VERSION_CHUNK}"
+                COMMAND ${CMAKE_COMMAND} -E env DEB_BASE_VERSION=${CMAKE_PROJECT_VERSION_MAJOR}.${CMAKE_PROJECT_VERSION_MINOR}.${CMAKE_PROJECT_VERSION_PATCH}
+                    ${CMAKE_SOURCE_DIR}/scripts/installer_linux/make_deb.sh ${SCXT_PRODUCT_DIR} ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}/installer/${SCXT_DEB} "${SCXT_DEB_VERSION}"
                 COMMAND ${CMAKE_COMMAND} -E echo "Debian package in: installer/${SCXT_DEB}")
     endif ()
 endif ()
