@@ -102,6 +102,7 @@ Provides: vst-plugin
 Section: sound
 Priority: optional
 Homepage: https://github.com/surge-synthesizer/shortcircuit-xt
+Sndstation-Kind: clap-plugin
 Description: Sampler virtual instrument
  Shortcircuit XT includes CLAP and VST3 instrument formats for use in
  compatible hosts and a standalone executable.
