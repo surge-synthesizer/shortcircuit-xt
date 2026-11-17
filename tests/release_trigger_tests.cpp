@@ -1113,3 +1113,26 @@ TEST_CASE("One per key streams", "[releasetrigger]")
     REQUIRE(!opart.getGroup(0)->triggerConditions.releaseOnePerKey);
     REQUIRE(opart.getGroup(1)->triggerConditions.releaseOnePerKey);
 }
+
+TEST_CASE("One per key after immediate termination of all voices", "[releasetrigger]")
+{
+    // cleaned-up voices stay in the engine pool; the one-per-key scan must skip them (#2811)
+    static constexpr int KEY_C{60}, KEY_G{67};
+
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto &part = setupGroups(*eng, 2);
+    setVoiceCreation(part, 0, VCM::ON_NOTE_OFF);
+    setVoiceCreation(part, 1, VCM::ON_NOTE_OFF);
+    part.getGroup(0)->triggerConditions.releaseOnePerKey = true;
+
+    auto tap = [&eng](int key) {
+        eng->processNoteOnEvent(0, 0, key, -1, 1.f, 0.f);
+        eng->processNoteOffEvent(0, 0, key, -1, 0.f);
+    };
+
+    tap(KEY_C);
+    tap(KEY_G);
+    eng->immediatelyTerminateAllVoices();
+    tap(KEY_C);
+    REQUIRE(countLiveVoicesForKey(*part.getGroup(0), KEY_C) == 1);
+}

@@ -92,6 +92,8 @@ void Voice::cleanupVoice()
     zone->removeVoice(this);
     zone = nullptr;
     isVoiceAssigned = false;
+    // A cleaned-up voice stays in the engine pool; it must not look playing to scans over it
+    isVoicePlaying = false;
     engine->voiceManagerResponder.doVoiceEndCallback(this);
     engine->activeVoices--;
 

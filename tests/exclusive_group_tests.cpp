@@ -290,3 +290,26 @@ TEST_CASE("Exclusive Group - old ZoneMappingData JSON loads without crash", "[ex
     REQUIRE(zmd.rootKey == 60);
     REQUIRE(zmd.velocitySens == Approx(1.0));
 }
+
+TEST_CASE("Exclusive Group - note after immediate termination of all voices", "[exclusive_group]")
+{
+    // immediatelyTerminateAllVoices (part replace, patch load) cleans voices up in place; a
+    // later choke scan must not touch them (issue #2811)
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    setupTwoGroups(*eng);
+    auto &part = *eng->getPatch()->getPart(0);
+    part.getGroup(0)->outputInfo.exclusiveGroup = 1;
+    part.getGroup(1)->outputInfo.exclusiveGroup = 1;
+
+    eng->processNoteOnEvent(0, 0, 40, -1, 1.f, 0.f);
+    eng->processNoteOnEvent(0, 0, 44, -1, 1.f, 0.f);
+    eng->processNoteOnEvent(0, 0, 46, -1, 1.f, 0.f);
+    REQUIRE(part.getGroup(0)->getZone(0)->activeVoices == 3);
+
+    eng->immediatelyTerminateAllVoices();
+    REQUIRE(part.getGroup(0)->getZone(0)->activeVoices == 0);
+
+    eng->processNoteOnEvent(0, 0, 52, -1, 1.f, 0.f);
+    REQUIRE(part.getGroup(1)->getZone(0)->activeVoices == 1);
+    runBlocks(*eng);
+}

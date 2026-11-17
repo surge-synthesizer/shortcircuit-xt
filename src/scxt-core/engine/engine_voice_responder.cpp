@@ -228,7 +228,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             continue;
         for (auto *ov : engine.voices)
         {
-            if (!ov || !ov->isVoicePlaying || !ov->createdByReleaseTrigger)
+            if (!ov || !ov->isVoiceAssigned || !ov->isVoicePlaying || !ov->createdByReleaseTrigger)
                 continue;
             if (ov->zone->parentGroup != g || ov->key != v->key || ov->channel != v->channel)
                 continue;
@@ -271,7 +271,7 @@ int32_t Engine::VoiceManagerResponder::initializeMultipleVoices(
             continue;
         for (auto *ov : engine.voices)
         {
-            if (!ov || ov == v || !ov->isVoicePlaying)
+            if (!ov || ov == v || !ov->isVoiceAssigned || !ov->isVoicePlaying)
                 continue;
             if (ov->zone->parentGroup == v->zone->parentGroup)
                 continue;
