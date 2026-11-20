@@ -371,7 +371,8 @@ TEST_CASE("An offline render waits for a host load and then sounds", "[host-stat
     f.th.audioThreadProvider.reset();
 
     REQUIRE(hsm::hostStateLoad(f.engine(), std::string(blob)));
-    REQUIRE(f.slot().status().first == HostSlot::PENDING);
+    // serial may have taken it already; with no audio thread it can't finish without us
+    REQUIRE(f.slot().status().first != HostSlot::IDLE);
 
     REQUIRE(f.engine().waitForStoppedEngineWork(std::chrono::seconds(20)));
     REQUIRE(f.slot().status().first == HostSlot::IDLE);
