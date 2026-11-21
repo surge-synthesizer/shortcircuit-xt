@@ -98,14 +98,21 @@ else ()
 endif ()
 
 string(TIMESTAMP SCXT_DATE "%Y-%m-%d")
+# a v-tag build is named for its release; nightlies keep the date-hash the website links to
+if ("${GIT_IMPLIED_DISPLAY_VERSION}" MATCHES "^v([0-9].*)$")
+    set(SCXT_INSTALLER_VERSION "${CMAKE_MATCH_1}")
+else ()
+    set(SCXT_INSTALLER_VERSION "${SCXT_DATE}-${VERSION_CHUNK}")
+endif ()
+message(STATUS "Installer version is ${SCXT_INSTALLER_VERSION}")
 if (WIN32)
     if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
-        set(SCXT_ZIP shortcircuit-xt-win${BITS}-${CMAKE_GENERATOR_PLATFORM}-${SCXT_DATE}-${VERSION_CHUNK}.zip)
+        set(SCXT_ZIP shortcircuit-xt-win${BITS}-${CMAKE_GENERATOR_PLATFORM}-${SCXT_INSTALLER_VERSION}.zip)
     else()
-        set(SCXT_ZIP shortcircuit-xt-win${BITS}-${SCXT_DATE}-${VERSION_CHUNK}.zip)
+        set(SCXT_ZIP shortcircuit-xt-win${BITS}-${SCXT_INSTALLER_VERSION}.zip)
     endif()
 else ()
-    set(SCXT_ZIP shortcircuit-xt-linux${SCXT_EXTRA_INSTALLER_NAME}-${SCXT_DATE}-${VERSION_CHUNK}.zip)
+    set(SCXT_ZIP shortcircuit-xt-linux${SCXT_EXTRA_INSTALLER_NAME}-${SCXT_INSTALLER_VERSION}.zip)
 endif ()
 message(STATUS "Installer ZIP is ${SCXT_ZIP}")
 
@@ -116,7 +123,7 @@ if (APPLE)
             POST_BUILD
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMAND ${CMAKE_COMMAND} -E make_directory installer
-            COMMAND ${CMAKE_SOURCE_DIR}/libs/sst/sst-plugininfra/scripts/installer_mac/make_installer.sh "Shortcircuit XT" ${CMAKE_BINARY_DIR}/shortcircuit-products ${CMAKE_SOURCE_DIR}/resources/installer_mac ${CMAKE_BINARY_DIR}/installer "${SCXT_DATE}-${VERSION_CHUNK}"
+            COMMAND ${CMAKE_SOURCE_DIR}/libs/sst/sst-plugininfra/scripts/installer_mac/make_installer.sh "Shortcircuit XT" ${CMAKE_BINARY_DIR}/shortcircuit-products ${CMAKE_SOURCE_DIR}/resources/installer_mac ${CMAKE_BINARY_DIR}/installer "${SCXT_INSTALLER_VERSION}"
     )
 elseif (WIN32)
     message(STATUS "Configuring for Windows installer")
@@ -131,7 +138,8 @@ elseif (WIN32)
         if ("${CMAKE_GENERATOR_PLATFORM}" STREQUAL "arm64ec")
             message(STATUS "Zip only for now on arm64ec")
         else()
-            cmake_path(REMOVE_EXTENSION SCXT_ZIP OUTPUT_VARIABLE SCXT_INSTALLER)
+            # a release version has dots, so only drop the .zip
+            cmake_path(REMOVE_EXTENSION SCXT_ZIP LAST_ONLY OUTPUT_VARIABLE SCXT_INSTALLER)
             add_custom_command(
                 TARGET shortcircuit-installer
                 POST_BUILD
@@ -139,7 +147,7 @@ elseif (WIN32)
                 COMMAND ${CMAKE_COMMAND} -E make_directory installer
                 COMMAND innosetup::compiler
                 /O"${CMAKE_BINARY_DIR}/installer" /F"${SCXT_INSTALLER}"
-                /DName="Shortcircuit XT" /DNameCondensed="Shortcircuit XT" /DVersion="${SCXT_DATE}-${VERSION_CHUNK}"
+                /DName="Shortcircuit XT" /DNameCondensed="Shortcircuit XT" /DVersion="${SCXT_INSTALLER_VERSION}"
                 /DID="8BDBC849-F102-44A0-9BFA-B28556BDE40B"
                 /DCLAP /DVST3 /DSA
                 /DIcon="${CMAKE_SOURCE_DIR}/resources/images/scxt.ico"
@@ -165,12 +173,12 @@ else ()
     # non-debian hosts still get the zip
     find_program(SCXT_DPKG_DEB dpkg-deb)
     if (SCXT_DPKG_DEB)
-        set(SCXT_DEB shortcircuit-xt-linux${SCXT_EXTRA_INSTALLER_NAME}-${SCXT_DATE}-${VERSION_CHUNK}.deb)
+        set(SCXT_DEB shortcircuit-xt-linux${SCXT_EXTRA_INSTALLER_NAME}-${SCXT_INSTALLER_VERSION}.deb)
         # a v tag is a release; make_deb.sh turns anything else into a nightly version
         if ("${GIT_IMPLIED_DISPLAY_VERSION}" MATCHES "^v[0-9]")
             set(SCXT_DEB_VERSION "${GIT_IMPLIED_DISPLAY_VERSION}")
         else ()
-            set(SCXT_DEB_VERSION "${SCXT_DATE}-${VERSION_CHUNK}")
+            set(SCXT_DEB_VERSION "${SCXT_INSTALLER_VERSION}")
         endif ()
         message(STATUS "Debian package: Target is installer/${SCXT_DEB}")
         add_custom_command(
