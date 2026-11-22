@@ -280,6 +280,27 @@ TEST_CASE("A release with no press behind it sounds nothing", "[releasetrigger]"
     REQUIRE(liveVoices(part, 0) == 1);
 }
 
+TEST_CASE("A wildcard note off lets the press go without a release voice", "[releasetrigger]")
+{
+    std::unique_ptr<scxt::engine::Engine> eng(makeEngine());
+    auto &part = setupGroups(*eng, 1);
+    setVoiceCreation(part, 0, VCM::ON_NOTE_OFF);
+
+    auto [port, channel, key] = GENERATE(std::tuple<int16_t, int16_t, int16_t>{-1, 0, PLAY_KEY},
+                                         std::tuple<int16_t, int16_t, int16_t>{0, -1, PLAY_KEY},
+                                         std::tuple<int16_t, int16_t, int16_t>{0, 0, -1},
+                                         std::tuple<int16_t, int16_t, int16_t>{-1, -1, -1});
+    INFO("port " << port << " channel " << channel << " key " << key);
+
+    eng->processNoteOnEvent(0, 0, PLAY_KEY, 17, 1.f, 0.f);
+    eng->processNoteOffEvent(port, channel, key, 17, 0.f);
+    REQUIRE(liveVoices(part, 0) == 0);
+
+    // the wildcard consumed the press, so there is nothing left to release
+    eng->processNoteOffEvent(0, 0, PLAY_KEY, 17, 0.f);
+    REQUIRE(liveVoices(part, 0) == 0);
+}
+
 TEST_CASE("A note on group and a release group split one key", "[releasetrigger]")
 {
     std::unique_ptr<scxt::engine::Engine> eng(makeEngine());

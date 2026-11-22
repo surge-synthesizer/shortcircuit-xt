@@ -2377,6 +2377,10 @@ void Engine::fireReleaseTriggers(int16_t port, int16_t channel, int16_t key, int
     if (!anyGroupCreatesVoicesOnRelease())
         return;
 
+    // a wildcard note off has no single key to start a release voice on
+    if (port < 0 || channel < 0 || key < 0)
+        return;
+
     voiceCreationPass = VoiceCreationMode::ON_NOTE_OFF;
     ungatedPassHeldSeconds = secondsSince(press.pressedAt);
     releasePassDice = press.dice;

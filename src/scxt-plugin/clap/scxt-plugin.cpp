@@ -233,6 +233,10 @@ bool SCXTPlugin::stateLoad(const clap_istream *istream) noexcept
     if (!scxt::messaging::hostStateLoad(*engine, std::string(buffer.data())))
         return false;
 
+    // the held macros already answer with the loaded values, so the host can rescan now
+    nextMainThreadAction |= RESCAN_PARAM_IVT;
+    _host.requestCallback();
+
     // queued behind the load, so the host rescans the loaded values
     auto bypass = engine->getMessageController()->threadingChecker.bypassChecksInScope();
     scxt::messaging::client::clientSendToSerialization(
