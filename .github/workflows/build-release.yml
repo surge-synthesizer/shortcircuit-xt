@@ -34,9 +34,7 @@ jobs:
             name: macos
             cmakeArgs: -GNinja -D"CMAKE_OSX_ARCHITECTURES=arm64;x86_64"
 
-          - name: ubuntu-arm
-            os: ubuntu-24.04-arm
-            cmakeArgs: -GNinja -DSCXT_EXTRA_INSTALLER_NAME=-aarch64
+          # linux, both arches, ships from docker below
 
     steps:
       - name: Checkout code
@@ -86,13 +84,20 @@ jobs:
           name: build-${{ matrix.name }}
 
   build_plugin_docker:
-    name: Docker Build Ubuntu22 ${{ matrix.name }}
-    runs-on: ubuntu-latest
+    name: Docker Build Ubuntu22 ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-          - name: Clap First
-            installer_dir: clapfirst
+          - arch: x64
+            os: ubuntu-latest
+            image: ghcr.io/surge-synthesizer/sst-dockerimages/ubuntu22_gcc12:main
+            cmakeArgs: ""
+
+          - arch: arm64
+            os: ubuntu-24.04-arm
+            image: ghcr.io/surge-synthesizer/sst-dockerimages/ubuntu22_gcc12_arm64:main
+            cmakeArgs: -DSCXT_EXTRA_INSTALLER_NAME=-aarch64
 
     steps:
       - name: Checkout code
@@ -104,10 +109,10 @@ jobs:
       - name: Build in Docker
         uses: surge-synthesizer/sst-githubactions/cmake-in-docker@main
         with:
-          image: ghcr.io/surge-synthesizer/sst-dockerimages/ubuntu22_gcc12:main
+          image: ${{ matrix.image }}
           username: ${{ github.actor }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          cmakeArgs: -DCMAKE_BUILD_TYPE=Release -GNinja
+          cmakeArgs: -DCMAKE_BUILD_TYPE=Release -GNinja ${{ matrix.cmakeArgs }}
           target: shortcircuit-installer
 
 
@@ -115,11 +120,18 @@ jobs:
         run: |
           ls -l ./build/installer
 
+      - name: Check glibc
+        uses: surge-synthesizer/sst-githubactions/check-glibc@main
+        with:
+          path: ./build/shortcircuit-products
+          maxGlibc: "2.35"
+          maxGlibcxx: "3.4.30"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           path: build/installer
-          name: build-docker-${{matrix.installer_dir }}
+          name: build-docker-linux-${{ matrix.arch }}
 
 
   publish-scxt-nightly:
