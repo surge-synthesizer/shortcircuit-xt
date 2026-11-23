@@ -413,6 +413,9 @@ struct DriveFSArea : juce::Component, HasEditor, KeyCommandTarget
         for (auto &c : lcontents)
             contents.emplace_back(c);
         listView->refresh();
+        // a new directory starts at the top
+        if (listView->viewPort)
+            listView->viewPort->setViewPosition(0, 0);
 
         // Persist the directory so it survives editor recreation (see GH #2070)
         editor->setTabSelection(BrowserPane::browserPathKey, currentPath.u8string());
