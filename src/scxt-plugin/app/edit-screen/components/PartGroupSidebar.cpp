@@ -776,6 +776,28 @@ struct GroupZoneSidebarBase : juce::Component,
         return res.empty() ? collect(all) : res;
     }
 
+    static selection::SelectionManager::SelectActionContents
+    groupAction(const za_t &a, bool selecting, bool distinct, bool lead)
+    {
+        auto se = selection::SelectionManager::SelectActionContents(a, selecting, distinct, lead);
+        se.forZone = false;
+        return se;
+    }
+
+    // selects the groups from anchor to row, each with its zones, the anchor leading
+    bool sweepGroups(const za_t &anchor, const za_t &row, bool additive)
+    {
+        auto range = rowsBetween(anchor, row, false);
+        if (range.empty())
+            return false;
+        // one action each since only a lone group action expands into its zones
+        editor->doSelectionAction(groupAction(anchor, true, !additive, true));
+        for (const auto &g : range)
+            if (g != anchor)
+                editor->doSelectionAction(groupAction(g, true, false, false));
+        return true;
+    }
+
     void addGroup()
     {
         auto &mc = partGroupSidebar->editor->msgCont;
@@ -862,29 +884,11 @@ struct GroupSidebar : GroupZoneSidebarBase<GroupSidebar, false>
             return;
         }
 
-        using sac_t = selection::SelectionManager::SelectActionContents;
-        auto groupAction = [](const za_t &a, bool selecting, bool distinct, bool lead) {
-            auto se = sac_t(a, selecting, distinct, lead);
-            se.forZone = false;
-            return se;
-        };
-
         auto anchorOK = lastGroupClicked.part == rowZone.part && lastGroupClicked.group >= 0 &&
                         lastGroupClicked != rowZone;
-        if (mods.isShiftDown() && anchorOK)
-        {
-            auto range = rowsBetween(lastGroupClicked, rowZone, false);
-            if (!range.empty())
-            {
-                auto additive = mods.isCommandDown();
-                // one action each so every group brings its zones, anchor first as the lead
-                editor->doSelectionAction(groupAction(lastGroupClicked, true, !additive, true));
-                for (const auto &g : range)
-                    if (g != lastGroupClicked)
-                        editor->doSelectionAction(groupAction(g, true, false, false));
-                return;
-            }
-        }
+        if (mods.isShiftDown() && anchorOK &&
+            sweepGroups(lastGroupClicked, rowZone, mods.isCommandDown()))
+            return;
 
         if (mods.isCommandDown())
             editor->doSelectionAction(groupAction(rowZone, !isSelected, false, !isSelected));
@@ -925,10 +929,21 @@ struct ZoneSidebar : GroupZoneSidebarBase<ZoneSidebar, true>
             - click group is select entire groups zones, command or alt adds them
             - shift click sweeps from the anchor, replacing the selection
             - shift command click adds the sweep to the selection
+            - shift click on a group sweeps whole groups from the anchor's group
             - command click is non-contiguous toggle select zone
             - alt-click is move lead or add and make lead
          */
         using sac_t = selection::SelectionManager::SelectActionContents;
+        if (mods.isShiftDown() && rowZone.zone < 0 && rowZone.group >= 0 &&
+            lastZoneClicked.part == rowZone.part && lastZoneClicked.group >= 0 &&
+            lastZoneClicked.group != rowZone.group)
+        {
+            auto anchor = lastZoneClicked;
+            anchor.zone = -1;
+            if (sweepGroups(anchor, rowZone, mods.isCommandDown()))
+                return;
+        }
+
         auto anchorOK = lastZoneClicked.part == rowZone.part && lastZoneClicked.zone >= 0 &&
                         lastZoneClicked != rowZone;
         if (mods.isShiftDown() && rowZone.zone >= 0 && anchorOK)
