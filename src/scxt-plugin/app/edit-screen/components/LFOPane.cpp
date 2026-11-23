@@ -474,7 +474,9 @@ struct CurveLFOPane : juce::Component, HasEditor
 
     struct CurveDataSource : public sst::jucegui::data::CompactPlotSource
     {
-        modulation::modulators::CurveLFO curveLfo;
+        // must precede curveLfo, which takes it by reference
+        sst::basic_blocks::dsp::RNG displayRng;
+        modulation::modulators::CurveLFO curveLfo{displayRng, true};
 
         LfoPane *parent{nullptr};
         sst::basic_blocks::modulators::Transport dummyTransport;

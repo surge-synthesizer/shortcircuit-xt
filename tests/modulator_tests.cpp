@@ -588,3 +588,39 @@ TEST_CASE("Curve 01 remappers", "[modulation]")
     REQUIRE(slf(0.5f) > 0.5f);
     REQUIRE(flf(0.5f) > slf(0.5f));
 }
+
+TEST_CASE("A display CurveLFO draws its noise without touching the audio generator", "[modulation]")
+{
+    using clfo_t = scxt::modulation::modulators::CurveLFO;
+    using MS = scxt::modulation::ModulatorStorage;
+
+    // the engine ctor normally fills this
+    scxt::dsp::twoToTheXTable.init();
+
+    MS ms;
+    ms.modulatorShape = MS::LFO_SH_NOISE;
+    sst::basic_blocks::modulators::Transport transport;
+    transport.tempo = 120;
+
+    // differently seeded so a draw from either audio generator would show in the curves
+    sst::basic_blocks::dsp::RNG rngA(2112), rngB(8675309), refA(2112);
+    clfo_t lfoA(rngA, true), lfoB(rngB, true);
+
+    std::vector<float> outA, outB;
+    for (auto [lfo, out] : {std::pair{&lfoA, &outA}, std::pair{&lfoB, &outB}})
+    {
+        lfo->assign(&ms, &transport);
+        lfo->setSampleRate(48000);
+        lfo->attack(0, 0, ms.modulatorShape);
+        for (int i = 0; i < 2000; ++i)
+        {
+            lfo->process(4, 0, 0, 0, 0, 0, false, false, true);
+            out->push_back(lfo->output);
+        }
+    }
+
+    REQUIRE(outA == outB);
+    REQUIRE(
+        std::any_of(outA.begin(), outA.end(), [first = outA[0]](auto f) { return f != first; }));
+    REQUIRE(rngA.unifU32() == refA.unifU32());
+}
