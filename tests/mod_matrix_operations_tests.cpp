@@ -193,6 +193,32 @@ struct Fixture
 };
 } // namespace mod_target_proc_change_test
 
+TEST_CASE("Processor mod targets label by slot not processor", "[modulation]")
+{
+    namespace mt = mod_target_proc_change_test;
+    using TI = scxt::modulation::shared::TargetIdentifier;
+
+    mt::Fixture f;
+    f.setType(scxt::dsp::processor::proct_CytomicSVF);
+
+    auto zmd = scxt::voice::modulation::getVoiceMatrixMetadata(f.zone());
+    auto gmd = scxt::modulation::getGroupMatrixMetadata(f.group());
+    auto zt = scxt::voice::modulation::MatrixEndpoints::ProcessorTarget::floatParam(0, 0);
+    auto gt = scxt::modulation::GroupMatrixEndpoints::ProcessorTarget::floatParam(0, 0);
+
+    auto [zl, zen] = mt::rowLabel(zmd, zt);
+    auto [gl, gen] = mt::rowLabel(gmd, gt);
+    REQUIRE(zl == "P1: Cutoff");
+    REQUIRE(zen);
+    REQUIRE(gl == "P1: Cutoff");
+    REQUIRE(gen);
+
+    REQUIRE(mt::rowLabel(zmd, TI{'proc', 'mix ', 0}).first == "P1: Mix");
+    REQUIRE(mt::rowLabel(zmd, TI{'proc', 'oldb', 0}).first == "P1: Out Lvl");
+    REQUIRE(mt::rowLabel(gmd, TI{'gprc', 'mix ', 0}).first == "P1: Mix");
+    REQUIRE(mt::rowLabel(gmd, TI{'gprc', 'oldb', 0}).first == "P1: Out Lvl");
+}
+
 TEST_CASE("Mod targets on an emptied processor slot still label themselves", "[modulation]")
 {
     namespace mt = mod_target_proc_change_test;
@@ -206,9 +232,9 @@ TEST_CASE("Mod targets on an emptied processor slot still label themselves", "[m
     f.setType(proct_CytomicSVF);
     auto [zl, zen] = mt::rowLabel(scxt::voice::modulation::getVoiceMatrixMetadata(f.zone()), zt);
     auto [gl, gen] = mt::rowLabel(scxt::modulation::getGroupMatrixMetadata(f.group()), gt);
-    REQUIRE(zl.rfind("P1.", 0) == 0);
+    REQUIRE(zl.rfind("P1: ", 0) == 0);
     REQUIRE(zen);
-    REQUIRE(gl.rfind("P1.", 0) == 0);
+    REQUIRE(gl.rfind("P1: ", 0) == 0);
     REQUIRE(gen);
 
     f.setType(proct_none);
@@ -270,7 +296,7 @@ TEST_CASE("Mod targets past a smaller processor's parameters still label themsel
     auto zt0 = scxt::voice::modulation::MatrixEndpoints::ProcessorTarget::floatParam(0, 0);
     auto [zl0, zen0] = mt::rowLabel(scxt::voice::modulation::getVoiceMatrixMetadata(f.zone()), zt0);
     INFO("present label '" << zl0 << "'");
-    REQUIRE(zl0.rfind("P1." + f.zone().processorDescription[0].typeShortName + ": ", 0) == 0);
+    REQUIRE(zl0.rfind("P1: ", 0) == 0);
     REQUIRE(zl0.find("none") == std::string::npos);
 }
 

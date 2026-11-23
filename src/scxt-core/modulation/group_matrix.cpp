@@ -68,7 +68,7 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
                                 const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
                 auto &d = z.processorDescription[t.index];
                 return shared::processorTargetShortPath(
-                    d, t.index, d.type != dsp::processor::proct_none, absentWhat);
+                    t.index, d.type != dsp::processor::proct_none, absentWhat);
             };
         };
 
@@ -123,7 +123,7 @@ GroupMatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32
                 [icopy = i](const engine::Group &z,
                             const GroupMatrixConfig::TargetIdentifier &t) -> std::string {
                 auto &d = z.processorDescription[t.index];
-                return shared::processorTargetShortPath(d, t.index, icopy < d.numFloatParams,
+                return shared::processorTargetShortPath(t.index, icopy < d.numFloatParams,
                                                         std::to_string(icopy + 1));
             };
             auto elShortFn = [icopy =

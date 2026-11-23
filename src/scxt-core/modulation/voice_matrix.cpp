@@ -421,7 +421,7 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         return [absentWhat](const engine::Zone &z,
                             const MatrixConfig::TargetIdentifier &t) -> std::string {
             auto &d = z.processorDescription[t.index];
-            return shmo::processorTargetShortPath(d, t.index, d.type != dsp::processor::proct_none,
+            return shmo::processorTargetShortPath(t.index, d.type != dsp::processor::proct_none,
                                                   absentWhat);
         };
     };
@@ -474,7 +474,7 @@ MatrixEndpoints::ProcessorTarget::ProcessorTarget(engine::Engine *e, uint32_t p)
         auto elShortPathFn = [icopy = i](const engine::Zone &z,
                                          const MatrixConfig::TargetIdentifier &t) -> std::string {
             auto &d = z.processorDescription[t.index];
-            return shmo::processorTargetShortPath(d, t.index, icopy < d.numFloatParams,
+            return shmo::processorTargetShortPath(t.index, icopy < d.numFloatParams,
                                                   std::to_string(icopy + 1));
         };
         auto elShortFn = [icopy = i](const engine::Zone &z,
