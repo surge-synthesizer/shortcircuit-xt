@@ -60,6 +60,9 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     juce::Rectangle<int> startSampleHZ, endSampleHZ, startLoopHZ, endLoopHZ;
     // each loop marker's fade node, on its curve; on the marker itself when there is no fade
     juce::Rectangle<int> fadeStartLoopHZ, fadeEndLoopHZ;
+    // the top strip between the loop chevrons, which drags the whole loop
+    juce::Rectangle<int> loopBodyHZ;
+    bool loopBodyHover{false};
     std::vector<std::pair<int, int>> slicePixelAndSamplePositions;
     static constexpr int sliceSnapZoneInPixels{4};
     static constexpr int zeroCrossingSnapZoneInPixels{12};
@@ -78,6 +81,7 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
         HZ_DRAG_LOOPEND,
         HZ_DRAG_FADE_LOOPSTART,
         HZ_DRAG_FADE_LOOPEND,
+        HZ_DRAG_LOOPBODY,
     } mouseState{MouseState::NONE};
     bool isFadeDrag() const
     {
@@ -98,6 +102,10 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     juce::Point<float> fadeDragStart;
     float fadeDragStartCurve{0.f};
 
+    // a loop body drag moves both markers by however far the mouse has come
+    int64_t loopDragStartLoop{0}, loopDragEndLoop{0}, loopDragMouseSample{0};
+    void dragLoopBody(float xpos);
+
     // the loop marker the in-flight fade drag measures from
     int64_t fadeAnchor();
     int64_t clampedLoopFade();
@@ -117,6 +125,18 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     juce::Path upperStroke[2], lowerStroke[2], upperFill[2], lowerFill[2];
     void rebuildEnvelopePaths();
 
+    // everything the envelope paths depend on, so marker edits don't rescan the sample
+    struct EnvelopeKey
+    {
+        const void *sample{nullptr};
+        SampleID sampleID;
+        juce::Rectangle<int> bounds;
+        int height{0};
+        float pctStart{0}, zoomFactor{0}, vStart{0}, vZoom{0}, norm{0};
+        bool reversed{false};
+        bool operator==(const EnvelopeKey &) const = default;
+    } envelopeKey;
+
     /*
      * A reversed variant plays from endSample back down to startSample, so the sample is drawn
      * mirrored and playback still reads left to right. Everything the zoom container hands us -
@@ -134,6 +154,8 @@ struct SampleWaveform : juce::Component, HasEditor, sst::jucegui::components::Zo
     void mouseUp(const juce::MouseEvent &e) override;
     void mouseDrag(const juce::MouseEvent &e) override;
     void mouseMove(const juce::MouseEvent &e) override;
+    void mouseExit(const juce::MouseEvent &e) override;
+    void setLoopBodyHover(bool h);
     void mouseDoubleClick(const juce::MouseEvent &e) override;
 
     Component *associatedComponent() override { return this; }

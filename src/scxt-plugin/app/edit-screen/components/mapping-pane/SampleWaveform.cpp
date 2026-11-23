@@ -83,11 +83,21 @@ void SampleWaveform::rebuildHotZones()
     {
         fadeStartLoopHZ = fadeBox(v.startLoop);
         fadeEndLoopHZ = fadeBox(v.endLoop);
+
+        // mirroring swaps which chevron is on the left
+        auto lb = startLoopHZ.getX() <= endLoopHZ.getX() ? startLoopHZ : endLoopHZ;
+        auto rb = startLoopHZ.getX() <= endLoopHZ.getX() ? endLoopHZ : startLoopHZ;
+        if (rb.getX() > lb.getRight())
+            loopBodyHZ = juce::Rectangle<int>::leftTopRightBottom(lb.getRight(), lb.getY(),
+                                                                  rb.getX(), lb.getBottom());
+        else
+            loopBodyHZ = {};
     }
     else
     {
         fadeStartLoopHZ = {};
         fadeEndLoopHZ = {};
+        loopBodyHZ = {};
     }
     repaint();
 
@@ -197,6 +207,20 @@ void SampleWaveform::rebuildEnvelopePaths()
     {
         return;
     }
+
+    auto key = EnvelopeKey{.sample = samp.get(),
+                           .sampleID = v.sampleID,
+                           .bounds = r,
+                           .height = getHeight(),
+                           .pctStart = pctStart,
+                           .zoomFactor = zoomFactor,
+                           .vStart = vStart,
+                           .vZoom = vZoom,
+                           .norm = v.normalizationAmplitude,
+                           .reversed = isReversed()};
+    if (key == envelopeKey)
+        return;
+    envelopeKey = key;
 
     usedChannels = std::min((int)samp->channels, 2);
     /*
@@ -389,6 +413,8 @@ void SampleWaveform::mouseDown(const juce::MouseEvent &e)
         mouseState = MouseState::HZ_DRAG_FADE_LOOPEND;
     else if (fadeStartLoopHZ.contains(posi))
         mouseState = MouseState::HZ_DRAG_FADE_LOOPSTART;
+    else if (loopBodyHZ.contains(posi))
+        mouseState = MouseState::HZ_DRAG_LOOPBODY;
     else
         mouseState = MouseState::NONE;
 
@@ -405,6 +431,13 @@ void SampleWaveform::mouseDown(const juce::MouseEvent &e)
             fadeDragStart = e.position;
             fadeDragStartCurve = v.loopCurve;
             fadeDragAxis = FadeDragAxis::UNDECIDED;
+        }
+        else if (mouseState == MouseState::HZ_DRAG_LOOPBODY)
+        {
+            auto &v = display->variantView.variants[display->selectedVariation];
+            loopDragStartLoop = v.startLoop;
+            loopDragEndLoop = v.endLoop;
+            loopDragMouseSample = sampleForXPixel(e.position.x);
         }
         else if (auto *f = draggedPoint())
         {
@@ -460,6 +493,7 @@ int64_t *SampleWaveform::draggedPoint()
     case MouseState::HZ_DRAG_FADE_LOOPSTART:
     case MouseState::HZ_DRAG_FADE_LOOPEND:
         return &v.loopFade;
+    case MouseState::HZ_DRAG_LOOPBODY:
     case MouseState::NONE:
         break;
     }
@@ -510,6 +544,12 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
         return;
     }
 
+    if (mouseState == MouseState::HZ_DRAG_LOOPBODY)
+    {
+        dragLoopBody(e.position.x);
+        return;
+    }
+
     if (e.mods.isShiftDown())
     {
         samplePos = snapToZeroCrossingNear(samplePos, xpos);
@@ -549,6 +589,34 @@ void SampleWaveform::mouseDrag(const juce::MouseEvent &e)
         display->onVariantFieldChanged(*f);
 }
 
+void SampleWaveform::dragLoopBody(float xpos)
+{
+    auto &v = display->variantView.variants[display->selectedVariation];
+    auto samp = editor->sampleManager.getSample(v.sampleID);
+    if (!samp)
+        return;
+
+    // the same bounds the markers stop at, with the fade held at its drag-start length
+    auto len = loopDragEndLoop - loopDragStartLoop;
+    auto fade =
+        scxt::dsp::clampLoopFade(v.loopFade, v.startSample, loopDragStartLoop, loopDragEndLoop);
+    auto lo = v.startSample + fade;
+    auto hi = std::max((int64_t)samp->getSampleLength() - len, lo);
+
+    auto ns = std::clamp(loopDragStartLoop + sampleForXPixel(xpos) - loopDragMouseSample, lo, hi);
+    if (ns == v.startLoop)
+        return;
+
+    v.startLoop = ns;
+    v.endLoop = ns + len;
+
+    // both markers in one edit, so no voice ever sees them half moved
+    using SV = engine::Zone::SingleVariant;
+    static_assert(offsetof(SV, endLoop) == offsetof(SV, startLoop) + sizeof(SV::startLoop));
+    display->onSamplePointChangedFromGUI(offsetof(SV, startLoop),
+                                         sizeof(SV::startLoop) + sizeof(SV::endLoop));
+}
+
 void SampleWaveform::mouseUp(const juce::MouseEvent &e)
 {
     // close an open drag first: leaving the gesture open would swallow later
@@ -562,6 +630,8 @@ void SampleWaveform::mouseUp(const juce::MouseEvent &e)
                 display->variantView.variants[display->selectedVariation].loopCurve);
         display->endVariantGesture();
         mouseState = MouseState::NONE;
+        setLoopBodyHover(loopBodyHZ.contains(e.position.roundToInt()));
+        repaint();
         return;
     }
     if (e.mods.isPopupMenu() && onPopupMenu)
@@ -570,9 +640,20 @@ void SampleWaveform::mouseUp(const juce::MouseEvent &e)
     }
 }
 
+void SampleWaveform::setLoopBodyHover(bool h)
+{
+    if (h == loopBodyHover)
+        return;
+    loopBodyHover = h;
+    repaint();
+}
+
+void SampleWaveform::mouseExit(const juce::MouseEvent &) { setLoopBodyHover(false); }
+
 void SampleWaveform::mouseMove(const juce::MouseEvent &e)
 {
     auto posi = e.position.roundToInt();
+    setLoopBodyHover(loopBodyHZ.contains(posi));
     if (startSampleHZ.contains(posi) || endSampleHZ.contains(posi) || startLoopHZ.contains(posi) ||
         endLoopHZ.contains(posi))
     {
@@ -582,6 +663,11 @@ void SampleWaveform::mouseMove(const juce::MouseEvent &e)
     if (fadeStartLoopHZ.contains(posi) || fadeEndLoopHZ.contains(posi))
     {
         setMouseCursor(juce::MouseCursor::UpDownLeftRightResizeCursor);
+        return;
+    }
+    if (loopBodyHover)
+    {
+        setMouseCursor(juce::MouseCursor::DraggingHandCursor);
         return;
     }
 
@@ -900,6 +986,12 @@ void SampleWaveform::paint(juce::Graphics &g)
     }
     if (v.loopActive)
     {
+        if (loopBodyHover || mouseState == MouseState::HZ_DRAG_LOOPBODY)
+        {
+            g.setColour(a2a.withAlpha(0.5f));
+            g.fillRect(loopBodyHZ);
+        }
+
         g.setColour(juce::Colours::aliceblue);
         if (ls >= 0 && ls <= getWidth())
         {
