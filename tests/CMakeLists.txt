@@ -13,6 +13,7 @@ add_executable(scxt-test
 		processors_and_fx.cpp
 		processor_param_name_tests.cpp
 		mod_tooltip_tests.cpp
+		mod_tooltip_switch_tests.cpp
 		processor_int_change_tests.cpp
 		vfx_temposync_tests.cpp
 		generator_tests.cpp

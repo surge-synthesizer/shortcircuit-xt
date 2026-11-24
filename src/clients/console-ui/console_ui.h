@@ -29,6 +29,7 @@
 #define SCXT_SRC_CLIENTS_CONSOLE_UI_CONSOLE_UI_H
 
 #include <memory>
+#include <optional>
 #include <mutex>
 #include <thread>
 #include <atomic>
@@ -194,7 +195,12 @@ struct ConsoleUI
         const scxt::messaging::client::processorDataResponsePayload_t &d) ON_STUB;
 
     void onZoneVoiceMatrixMetadata(const scxt::voice::modulation::voiceMatrixMetadata_t &) ON_STUB;
-    void onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &) ON_STUB;
+    // the routing table as the mod pane gets it, with its tooltip payload
+    std::optional<scxt::voice::modulation::Matrix::RoutingTable> lastZoneMatrix;
+    void onZoneVoiceMatrix(const scxt::voice::modulation::Matrix::RoutingTable &rt)
+    {
+        lastZoneMatrix = rt;
+    }
 
     void onGroupMatrixMetadata(const scxt::modulation::groupMatrixMetadata_t &) ON_STUB;
     void onGroupMatrix(const scxt::modulation::GroupMatrix::RoutingTable &) ON_STUB;
