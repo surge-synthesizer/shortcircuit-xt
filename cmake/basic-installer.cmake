@@ -151,6 +151,7 @@ elseif (WIN32)
                 /DID="8BDBC849-F102-44A0-9BFA-B28556BDE40B"
                 /DCLAP /DVST3 /DSA
                 /DIcon="${CMAKE_SOURCE_DIR}/resources/images/scxt.ico"
+                /DBanner="${CMAKE_SOURCE_DIR}/resources/images/SCBanner.png"
                 /DArch=$<TARGET_PROPERTY:innosetup::compiler,ARCH_ID>
                 /DLicense="${CMAKE_SOURCE_DIR}/resources/LICENSE.agpl3"
                 /DStagedAssets="${SCXT_PRODUCT_DIR}"
