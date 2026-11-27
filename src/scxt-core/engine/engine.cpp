@@ -204,6 +204,9 @@ Engine::~Engine()
     {
         if (v)
         {
+            // unhook from its zone first, or the zone's teardown reaches a dead voice
+            if (v->isVoiceAssigned)
+                v->cleanupVoice();
             v->~Voice();
             v = nullptr;
         }

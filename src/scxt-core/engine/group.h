@@ -445,10 +445,11 @@ struct Group : MoveableOnly<Group>,
     bool isInTerminationFadeout() const { return blocksToTerminate > 0 && terminationSequence > 0; }
 
   private:
-    zoneContainer_t zones;
+    // declared ahead of zones so a zone torn down with live voices still finds them
     std::vector<Zone *> activeZoneWeakRefs;
     uint32_t rescanWeakRefs{0};
     bool inZoneWalk{false};
+    zoneContainer_t zones;
     // counted in the part's activeGroups until the group terminates
     bool heldByPart{false};
 
