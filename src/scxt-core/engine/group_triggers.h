@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <memory>
 #include <array>
+#include <cstddef>
 #include <variant>
 
 #include "configuration.h"
@@ -329,7 +330,9 @@ struct GroupTriggerConditions
     bool evaluate(const Engine &, const Group &, int16_t channel, int16_t midiKey,
                   bool skipRoundRobin) const;
 
-    std::array<GroupTriggerBuffer, scxt::triggerConditionsPerGroup> conditionBuffers;
+    // triggers are placement new'd here; each buffer is 2048 bytes so every slot stays aligned
+    alignas(std::max_align_t)
+        std::array<GroupTriggerBuffer, scxt::triggerConditionsPerGroup> conditionBuffers;
     std::array<GroupTrigger *, scxt::triggerConditionsPerGroup> conditions{};
 };
 
